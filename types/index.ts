@@ -5,12 +5,16 @@ export type Location = {
   created_at: string
 }
 
+export type ZoneCell = {
+  row: number
+  col: number
+}
+
 export type Zone = {
   id: string
   location_id: string
   name: string
-  row_index: number
-  col_index: number
+  cells: ZoneCell[]
   has_tiers: boolean
   tier_count: number
   notes?: string
@@ -36,7 +40,6 @@ export type InventoryEntry = {
   expiry_date?: string
   notes?: string
   updated_at: string
-  // Joined fields
   product?: Product
   zone?: Zone
 }
@@ -55,7 +58,7 @@ export function getExpiryStatus(expiry_date?: string): ExpiryStatus {
 }
 
 export const EXPIRY_COLORS: Record<ExpiryStatus, string> = {
-  expired: '#EF4444',  // đỏ
-  warning: '#F59E0B',  // vàng
-  ok: '#22C55E',       // xanh
+  expired: '#EF4444',
+  warning: '#F59E0B',
+  ok: '#22C55E',
 }

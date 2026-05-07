@@ -1,17 +1,14 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import { Location, Zone, Product, InventoryEntry } from '../types'
+import { Location, Zone, ZoneCell, Product, InventoryEntry } from '../types'
 
 type WarehouseStore = {
-  // State
   locations: Location[]
   selectedLocationId: string | null
   zones: Zone[]
   products: Product[]
-  inventoryEntries: InventoryEntry[]
   isLoading: boolean
 
-  // Actions
   setSelectedLocation: (id: string) => void
   fetchLocations: () => Promise<void>
   fetchZones: (locationId: string) => Promise<void>
@@ -23,7 +20,7 @@ type WarehouseStore = {
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
   updateInventoryEntry: (id: string, data: Partial<InventoryEntry>) => Promise<void>
   deleteInventoryEntry: (id: string) => Promise<void>
-  addZone: (data: Partial<Zone>) => Promise<void>
+  addZone: (data: { name: string; cells: ZoneCell[]; tier_count: number; location_id: string }) => Promise<void>
   updateZone: (id: string, data: Partial<Zone>) => Promise<void>
   deleteZone: (id: string) => Promise<boolean>
 }
@@ -33,7 +30,6 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   selectedLocationId: null,
   zones: [],
   products: [],
-  inventoryEntries: [],
   isLoading: false,
 
   setSelectedLocation: (id) => {
@@ -80,10 +76,17 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   searchProducts: async (query) => {
+    const { data: products } = await supabase
+      .from('products')
+      .select('*')
+      .ilike('name', `%${query}%`)
+      .eq('is_archived', false)
+    if (!products || products.length === 0) return []
+    const productIds = products.map(p => p.id)
     const { data } = await supabase
       .from('inventory_entries')
       .select('*, product:products(*), zone:zones(*)')
-      .ilike('products.name', `%${query}%`)
+      .in('product_id', productIds)
       .gt('quantity_boxes', 0)
     return data || []
   },
@@ -125,9 +128,16 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   addZone: async (data) => {
+    const payload = {
+      name: data.name,
+      cells: data.cells,
+      tier_count: data.tier_count,
+      has_tiers: data.tier_count > 1,
+      location_id: data.location_id,
+    }
     const { data: created } = await supabase
       .from('zones')
-      .insert(data)
+      .insert(payload)
       .select()
       .single()
     if (created) set((s) => ({ zones: [...s.zones, created] }))
@@ -141,14 +151,13 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   deleteZone: async (id) => {
-    // Kiểm tra còn hàng không
     const { data: entries } = await supabase
       .from('inventory_entries')
       .select('id')
       .eq('zone_id', id)
       .gt('quantity_boxes', 0)
       .limit(1)
-    if (entries && entries.length > 0) return false // còn hàng, không xóa
+    if (entries && entries.length > 0) return false
     await supabase.from('zones').delete().eq('id', id)
     set((s) => ({ zones: s.zones.filter((z) => z.id !== id) }))
     return true
