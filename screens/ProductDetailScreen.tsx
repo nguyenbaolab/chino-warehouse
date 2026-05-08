@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
   Alert,
+  Modal,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -13,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
-import { EXPIRY_COLORS, getExpiryStatus, InventoryEntry, Product, Zone } from '../types'
+import { formatExpiryDate, getExpiryColorHex, InventoryEntry, Product, Zone } from '../types'
 
 type ProductDetailRouteParams = {
   productId: string
@@ -35,7 +37,7 @@ export default function ProductDetailScreen() {
   const route = useRoute()
   const { productId } = route.params as ProductDetailRouteParams
   const { colors } = useThemeStore()
-  const { updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
+  const { zones, updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [lots, setLots] = useState<InventoryEntry[]>([])
@@ -45,6 +47,14 @@ export default function ProductDetailScreen() {
   const [editQuantity, setEditQuantity] = useState('')
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [editWarningDays, setEditWarningDays] = useState('30')
+  const [isSavingProduct, setIsSavingProduct] = useState(false)
+
+  const [moveLot, setMoveLot] = useState<InventoryEntry | null>(null)
+  const [targetZoneId, setTargetZoneId] = useState<string | null>(null)
+  const [targetTier, setTargetTier] = useState<number | null>(null)
+  const [showZoneOptions, setShowZoneOptions] = useState(false)
+  const [showTierOptions, setShowTierOptions] = useState(false)
 
   async function loadData() {
     setIsLoading(true)
@@ -58,6 +68,7 @@ export default function ProductDetailScreen() {
     ])
     setProduct(productData ?? null)
     setLots((lotData as InventoryEntry[]) ?? [])
+    setEditWarningDays(String(productData?.warning_days ?? 30))
     setIsLoading(false)
   }
 
@@ -93,8 +104,8 @@ export default function ProductDetailScreen() {
       expiry_date: editExpiryDate.trim() || undefined,
       notes: editNotes.trim() || undefined,
     })
+    setLots((prev) => prev.map((item) => (item.id === lot.id ? { ...item, quantity_boxes: quantity, expiry_date: editExpiryDate.trim() || undefined, notes: editNotes.trim() || undefined } : item)))
     setEditingLotId(null)
-    await loadData()
   }
 
   function handleDeleteLot(lot: InventoryEntry) {
@@ -106,10 +117,57 @@ export default function ProductDetailScreen() {
         onPress: async () => {
           await deleteInventoryEntry(lot.id)
           if (editingLotId === lot.id) setEditingLotId(null)
-          await loadData()
+          setLots((prev) => prev.filter((item) => item.id !== lot.id))
         },
       },
     ])
+  }
+
+  async function handleSaveWarningDays() {
+    if (!product) return
+    const warningDays = Number(editWarningDays)
+    if (!Number.isFinite(warningDays) || warningDays <= 0) {
+      Alert.alert('Ngưỡng cảnh báo không hợp lệ', 'Ngưỡng cảnh báo (ngày) phải lớn hơn 0.')
+      return
+    }
+    setIsSavingProduct(true)
+    const { data: updated } = await supabase
+      .from('products')
+      .update({ warning_days: Math.floor(warningDays) })
+      .eq('id', product.id)
+      .select('*')
+      .single()
+    if (updated) {
+      setProduct(updated)
+      useWarehouseStore.setState((s) => ({
+        products: s.products.map((p) => (p.id === updated.id ? updated : p)),
+      }))
+    }
+    setIsSavingProduct(false)
+  }
+
+  function openMoveLot(lot: InventoryEntry) {
+    setMoveLot(lot)
+    setTargetZoneId(null)
+    setTargetTier(null)
+    setShowZoneOptions(false)
+    setShowTierOptions(false)
+  }
+
+  const availableTargetZones = zones.filter((z) => z.id !== moveLot?.zone_id)
+  const selectedTargetZone = zones.find((z) => z.id === targetZoneId) ?? null
+  const availableTargetTiers = selectedTargetZone
+    ? Array.from({ length: Math.max(selectedTargetZone.tier_count || 1, 1) }, (_, idx) => idx + 1)
+    : []
+
+  async function confirmMoveLot() {
+    if (!moveLot || !targetZoneId || !targetTier) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng chọn zone đích và tầng đích.')
+      return
+    }
+    await updateInventoryEntry(moveLot.id, { zone_id: targetZoneId, tier: targetTier })
+    setLots((prev) => prev.map((lot) => (lot.id === moveLot.id ? { ...lot, zone_id: targetZoneId, tier: targetTier, zone: zones.find((z) => z.id === targetZoneId) } : lot)))
+    setMoveLot(null)
   }
 
   function handleAddNewLot() {
@@ -143,6 +201,22 @@ export default function ProductDetailScreen() {
           <Text style={[styles.productName, { color: colors.text }]}>{product?.name ?? 'Không xác định'}</Text>
           {!!product?.barcode && <Text style={[styles.infoText, { color: colors.sub }]}>Barcode: {product.barcode}</Text>}
           {!!product?.notes && <Text style={[styles.infoText, { color: colors.sub }]}>Ghi chú: {product.notes}</Text>}
+          <Text style={[styles.infoText, { color: colors.sub }]}>
+            Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
+          </Text>
+          <View style={styles.warningEditRow}>
+            <TextInput
+              style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+              value={editWarningDays}
+              onChangeText={setEditWarningDays}
+              keyboardType="numeric"
+              placeholder="30"
+              placeholderTextColor={colors.sub}
+            />
+            <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveWarningDays}>
+              <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity style={[styles.addLotBtn, { backgroundColor: colors.accent }]} onPress={handleAddNewLot}>
@@ -155,22 +229,34 @@ export default function ProductDetailScreen() {
           <Text style={{ color: colors.sub }}>Chưa có lô hàng cho sản phẩm này.</Text>
         ) : (
           lots.map((lot) => {
-            const dotColor = EXPIRY_COLORS[getExpiryStatus(lot.expiry_date)]
+            const dotColor = getExpiryColorHex(lot.expiry_date, product?.warning_days ?? 30)
             const zone = lot.zone as Zone | undefined
             return (
               <View key={lot.id} style={[styles.lotWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <TouchableOpacity style={styles.lotRow} onPress={() => openInlineEdit(lot)}>
+                <View style={styles.lotRow}>
                   <View style={styles.lotMain}>
                     <Text style={[styles.lotTitle, { color: colors.text }]}>
                       {zone?.name ?? 'Zone?'} · Tầng {lot.tier}
                     </Text>
                     <Text style={[styles.lotSub, { color: colors.sub }]}>
-                      {lot.quantity_boxes} thùng · Hạn: {lot.expiry_date ?? 'Không hạn'}
+                      {lot.quantity_boxes} thùng · Hạn: {formatExpiryDate(lot.expiry_date)}
                     </Text>
                     {!!lot.notes && <Text style={[styles.lotSub, { color: colors.sub }]}>{lot.notes}</Text>}
                   </View>
                   <View style={styles.lotActions}>
                     <View style={[styles.expiryDot, { backgroundColor: dotColor }]} />
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                      onPress={() => openInlineEdit(lot)}
+                    >
+                      <Text style={styles.deleteBtnText}>✏️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                      onPress={() => openMoveLot(lot)}
+                    >
+                      <Text style={styles.deleteBtnText}>→</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.deleteBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
                       onPress={() => handleDeleteLot(lot)}
@@ -178,7 +264,7 @@ export default function ProductDetailScreen() {
                       <Text style={styles.deleteBtnText}>🗑️</Text>
                     </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
+                </View>
 
                 {editingLotId === lot.id && (
                   <View style={[styles.editBox, { borderColor: colors.border, backgroundColor: colors.bg }]}>
@@ -228,6 +314,85 @@ export default function ProductDetailScreen() {
           })
         )}
       </ScrollView>
+
+      <Modal visible={!!moveLot} transparent animationType="slide" onRequestClose={() => setMoveLot(null)}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setMoveLot(null)} />
+          <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Chuyển lô hàng</Text>
+
+            <Text style={[styles.editLabel, { color: colors.sub }]}>Zone đích</Text>
+            <Pressable
+              style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+              onPress={() => {
+                setShowZoneOptions((v) => !v)
+                setShowTierOptions(false)
+              }}
+            >
+              <Text style={{ color: targetZoneId ? colors.text : colors.sub }}>
+                {selectedTargetZone?.name ?? 'Chọn zone đích'}
+              </Text>
+            </Pressable>
+            {showZoneOptions && (
+              <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                {availableTargetZones.map((zone) => (
+                  <TouchableOpacity
+                    key={zone.id}
+                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                    onPress={() => {
+                      setTargetZoneId(zone.id)
+                      const tiers = Math.max(zone.tier_count || 1, 1)
+                      setTargetTier(tiers === 1 ? 1 : null)
+                      setShowZoneOptions(false)
+                    }}
+                  >
+                    <Text style={{ color: colors.text }}>{zone.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <Text style={[styles.editLabel, { color: colors.sub, marginTop: 8 }]}>Tầng đích</Text>
+            <Pressable
+              style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, opacity: selectedTargetZone ? 1 : 0.5 }]}
+              onPress={() => {
+                if (!selectedTargetZone || availableTargetTiers.length <= 1) return
+                setShowTierOptions((v) => !v)
+                setShowZoneOptions(false)
+              }}
+            >
+              <Text style={{ color: targetTier ? colors.text : colors.sub }}>
+                {targetTier ? `Tầng ${targetTier}` : 'Chọn tầng đích'}
+              </Text>
+            </Pressable>
+            {showTierOptions && availableTargetTiers.length > 1 && (
+              <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                {availableTargetTiers.map((tierNum) => (
+                  <TouchableOpacity
+                    key={tierNum}
+                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                    onPress={() => {
+                      setTargetTier(tierNum)
+                      setShowTierOptions(false)
+                    }}
+                  >
+                    <Text style={{ color: colors.text }}>Tầng {tierNum}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.moveActions}>
+              <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.bg }]} onPress={() => setMoveLot(null)}>
+                <Text style={{ color: colors.sub }}>Huỷ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.accent }]} onPress={confirmMoveLot}>
+                <Text style={{ color: colors.card, fontWeight: '700' }}>Xác nhận</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -247,6 +412,9 @@ const styles = StyleSheet.create({
   infoBox: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
   productName: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
   infoText: { fontSize: 13, marginTop: 2 },
+  warningEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  warningInput: { flex: 1, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  warningSaveBtn: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9 },
   addLotBtn: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginBottom: 14 },
   addLotBtnText: { fontWeight: '700' },
   lotWrap: { borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 10 },
@@ -256,6 +424,7 @@ const styles = StyleSheet.create({
   lotSub: { fontSize: 12, marginTop: 2 },
   lotActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   expiryDot: { width: 10, height: 10, borderRadius: 5 },
+  actionBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   deleteBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   deleteBtnText: { fontSize: 11 },
   editBox: { borderWidth: 1, borderRadius: 10, padding: 10, marginTop: 10 },
@@ -264,4 +433,12 @@ const styles = StyleSheet.create({
   editActions: { flexDirection: 'row', gap: 8 },
   cancelBtn: { flex: 1, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
   saveBtn: { flex: 1, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
+  modalBox: { borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 1, padding: 16 },
+  modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  selectBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  optionsWrap: { borderWidth: 1, borderRadius: 10, marginTop: 6, overflow: 'hidden' },
+  optionRow: { borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
+  moveActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
 })

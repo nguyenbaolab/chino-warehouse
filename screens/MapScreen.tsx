@@ -6,7 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
-import { Zone, ZoneCell, InventoryEntry, getExpiryStatus, EXPIRY_COLORS, ZONE_COLORS } from '../types'
+import { Zone, ZoneCell, InventoryEntry, EXPIRY_COLORS, getExpiryColor, getExpiryColorHex, ZONE_COLORS } from '../types'
 import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
 const GRID_ROWS = 6
@@ -43,8 +43,8 @@ function getCellRadius(cells: ZoneCell[], row: number, col: number) {
 export default function MapScreen() {
   const navigation = useNavigation<any>()
   const {
-    locations, selectedLocationId, zones, isLoading,
-    fetchLocations, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts
+    locations, selectedLocationId, zones, products, inventoryEntries, isLoading,
+    fetchLocations, fetchProducts, fetchInventoryByZone, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts
   } = useWarehouseStore()
   const { colors, loadTheme } = useThemeStore()
 
@@ -68,7 +68,14 @@ export default function MapScreen() {
   useEffect(() => {
     loadTheme()
     fetchLocations()
+    fetchProducts()
   }, [])
+
+  useEffect(() => {
+    if (!selectedLocationId || zones.length === 0) return
+    // Đồng bộ lot hiện tại của các zone để auto hiển thị chấm đỏ/vàng
+    Promise.all(zones.map((zone) => fetchInventoryByZone(zone.id)))
+  }, [selectedLocationId, zones, fetchInventoryByZone])
 
   async function handleSearch(text: string) {
     setSearchQuery(text)
@@ -83,7 +90,8 @@ export default function MapScreen() {
     setSearchResults(results)
     const map = new Map<string, string>()
     for (const r of results) {
-      if (r.zone_id) map.set(r.zone_id, EXPIRY_COLORS[getExpiryStatus(r.expiry_date)])
+      const warningDays = r.product?.warning_days ?? products.find((p) => p.id === r.product_id)?.warning_days ?? 30
+      if (r.zone_id) map.set(r.zone_id, getExpiryColorHex(r.expiry_date, warningDays))
     }
     setHighlightedZones(map)
   }
@@ -227,6 +235,35 @@ export default function MapScreen() {
     return `rgba(${r},${g},${b},${opacity})`
   }
 
+  const autoZoneDots = useMemo(() => {
+    const selectedZoneSet = new Set(zones.map((z) => z.id))
+    const map = new Map<string, string>()
+
+    for (const zone of zones) {
+      const zoneEntries = inventoryEntries.filter((entry) => (
+        selectedZoneSet.has(entry.zone_id) && entry.zone_id === zone.id && entry.quantity_boxes > 0
+      ))
+      if (zoneEntries.length === 0) continue
+
+      let hasExpired = false
+      let hasWarning = false
+      for (const entry of zoneEntries) {
+        const warningDays = entry.product?.warning_days ?? products.find((p) => p.id === entry.product_id)?.warning_days ?? 30
+        const color = getExpiryColor(entry.expiry_date, warningDays)
+        if (color === 'red') {
+          hasExpired = true
+          break
+        }
+        if (color === 'yellow') hasWarning = true
+      }
+
+      if (hasExpired) map.set(zone.id, EXPIRY_COLORS.expired)
+      else if (hasWarning) map.set(zone.id, EXPIRY_COLORS.warning)
+    }
+
+    return map
+  }, [zones, inventoryEntries, products])
+
   function renderGrid() {
     const rows = []
     for (let r = 1; r <= GRID_ROWS; r++) {
@@ -237,7 +274,9 @@ export default function MapScreen() {
         const isOtherZone = zone && editingZone && zone.id !== editingZone.id
         const isSearchActive = highlightedZones.size > 0
         const isHighlighted = zone ? highlightedZones.has(zone.id) : false
-        const expiryDotColor = zone ? highlightedZones.get(zone.id) : undefined
+        const expiryDotColor = zone
+          ? (isSearchActive ? highlightedZones.get(zone.id) : autoZoneDots.get(zone.id))
+          : undefined
         const zoneColor = zone?.color ?? ZONE_COLORS[0]
         const centerCell = zone ? getCenterCell(zone.cells) : null
         const isCenter = centerCell?.row === r && centerCell?.col === c
@@ -389,7 +428,7 @@ export default function MapScreen() {
           {isSearchPanelExpanded ? (
             searchResults.slice(0, 5).map(r => (
               <View key={r.id} style={styles.resultItem}>
-                <View style={[styles.dot, { backgroundColor: EXPIRY_COLORS[getExpiryStatus(r.expiry_date)] }]} />
+                <View style={[styles.dot, { backgroundColor: getExpiryColorHex(r.expiry_date, r.product?.warning_days ?? 30) }]} />
                 <Text style={[styles.resultText, { color: colors.text }]} numberOfLines={1}>
                   {r.product?.name} — {r.zone?.name} T{r.tier} — {r.quantity_boxes} thùng
                 </Text>

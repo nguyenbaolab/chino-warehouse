@@ -145,6 +145,7 @@ export default function AddInventoryScreen() {
       name: newProductName.trim(),
       barcode: newProductBarcode.trim() || undefined,
       notes: newProductNote.trim() || undefined,
+      warning_days: 30,
       is_archived: false,
     })
     setIsCreatingProduct(false)
@@ -154,8 +155,7 @@ export default function AddInventoryScreen() {
       return
     }
 
-    // Đồng bộ lại danh sách và tự chọn sản phẩm vừa tạo
-    await fetchProducts()
+    // Store đã được update trực tiếp trong addProduct
     setSelectedProduct(created)
     setSearchQuery('')
     setShowCreateProduct(false)

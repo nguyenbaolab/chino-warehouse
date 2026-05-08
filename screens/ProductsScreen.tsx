@@ -13,7 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
-import { EXPIRY_COLORS, getExpiryStatus } from '../types'
+import { formatExpiryDate, getExpiryColorHex } from '../types'
 import { supabase } from '../lib/supabase'
 
 export default function ProductsScreen() {
@@ -36,6 +36,7 @@ export default function ProductsScreen() {
   const [editName, setEditName] = useState('')
   const [editBarcode, setEditBarcode] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [editWarningDays, setEditWarningDays] = useState('30')
   const [isEditingArchived, setIsEditingArchived] = useState(false)
 
   useEffect(() => {
@@ -73,6 +74,7 @@ export default function ProductsScreen() {
     setEditName(product.name)
     setEditBarcode(product.barcode ?? '')
     setEditNotes(product.notes ?? '')
+    setEditWarningDays(String(product.warning_days ?? 30))
     setIsEditingArchived(product.is_archived)
     setEditModalVisible(true)
   }
@@ -83,11 +85,17 @@ export default function ProductsScreen() {
       Alert.alert('Thiếu thông tin', 'Tên sản phẩm không được để trống.')
       return
     }
+    const warningDays = Number(editWarningDays)
+    if (!Number.isFinite(warningDays) || warningDays <= 0) {
+      Alert.alert('Ngưỡng cảnh báo không hợp lệ', 'Ngưỡng cảnh báo (ngày) phải lớn hơn 0.')
+      return
+    }
 
     const payload = {
       name: editName.trim(),
       barcode: editBarcode.trim() || null,
       notes: editNotes.trim() || null,
+      warning_days: Math.floor(warningDays),
     }
     const { data: updated } = await supabase
       .from('products')
@@ -173,8 +181,8 @@ export default function ProductsScreen() {
     }
 
     return Array.from(map.values()).sort((a, b) => {
-      const aTime = a.expiry_date ? new Date(a.expiry_date).getTime() : Number.POSITIVE_INFINITY
-      const bTime = b.expiry_date ? new Date(b.expiry_date).getTime() : Number.POSITIVE_INFINITY
+      const aTime = a.expiry_date ? new Date(`${a.expiry_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
+      const bTime = b.expiry_date ? new Date(`${b.expiry_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
       return aTime - bTime
     })
   }
@@ -277,12 +285,12 @@ export default function ProductsScreen() {
                 ) : (
                   <View style={styles.lotGroupWrap}>
                     {groupedLots.map((lot, index) => {
-                      const dotColor = EXPIRY_COLORS[getExpiryStatus(lot.expiry_date)]
+                      const dotColor = getExpiryColorHex(lot.expiry_date, product.warning_days ?? 30)
                       return (
                         <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
                           <View style={[styles.expiryDot, { backgroundColor: dotColor }]} />
                           <Text style={[styles.lotText, { color: colors.sub }]}>
-                            Hạn: {lot.expiry_date ?? 'Không hạn'} · {lot.quantity_boxes} thùng
+                            Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng
                           </Text>
                         </View>
                       )
@@ -326,6 +334,16 @@ export default function ProductsScreen() {
                   value={editNotes}
                   onChangeText={setEditNotes}
                   placeholder="Optional"
+                  placeholderTextColor={colors.sub}
+                />
+
+                <Text style={[styles.modalLabel, { color: colors.sub }]}>Ngưỡng cảnh báo (ngày)</Text>
+                <TextInput
+                  style={[styles.modalInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                  value={editWarningDays}
+                  onChangeText={setEditWarningDays}
+                  keyboardType="numeric"
+                  placeholder="30"
                   placeholderTextColor={colors.sub}
                 />
 

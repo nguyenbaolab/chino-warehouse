@@ -28,6 +28,7 @@ export type Product = {
   barcode?: string
   image_url?: string
   notes?: string
+  warning_days: number
   is_archived: boolean
   created_at: string
 }
@@ -46,16 +47,47 @@ export type InventoryEntry = {
 }
 
 export type ExpiryStatus = 'expired' | 'warning' | 'ok'
+export type ExpiryColor = 'red' | 'yellow' | 'green'
 
-export function getExpiryStatus(expiry_date?: string): ExpiryStatus {
-  if (!expiry_date) return 'ok'
+function parseExpiryDate(expiry_date?: string): Date | null {
+  if (!expiry_date) return null
+  const parsed = new Date(`${expiry_date}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed
+}
+
+export function getExpiryColor(expiryDate?: string, warningDays = 30): ExpiryColor {
+  const expiry = parseExpiryDate(expiryDate)
+  if (!expiry) return 'green'
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const expiry = new Date(expiry_date)
-  const diffDays = Math.floor((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-  if (diffDays <= 0) return 'expired'
-  if (diffDays <= 30) return 'warning'
+  const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  if (diffDays <= 0) return 'red'
+  if (diffDays <= Math.max(1, warningDays)) return 'yellow'
+  return 'green'
+}
+
+export function getExpiryStatus(expiry_date?: string, warning_days = 30): ExpiryStatus {
+  const color = getExpiryColor(expiry_date, warning_days)
+  if (color === 'red') return 'expired'
+  if (color === 'yellow') return 'warning'
   return 'ok'
+}
+
+export function getExpiryColorHex(expiryDate?: string, warningDays = 30): string {
+  const color = getExpiryColor(expiryDate, warningDays)
+  if (color === 'red') return '#EF4444'
+  if (color === 'yellow') return '#F59E0B'
+  return '#22C55E'
+}
+
+export function formatExpiryDate(expiryDate?: string): string {
+  const parsed = parseExpiryDate(expiryDate)
+  if (!parsed) return 'Không hạn'
+  const yyyy = parsed.getFullYear()
+  const mm = String(parsed.getMonth() + 1).padStart(2, '0')
+  const dd = String(parsed.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
 }
 
 export const EXPIRY_COLORS: Record<ExpiryStatus, string> = {

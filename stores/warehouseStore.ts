@@ -125,6 +125,11 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .insert(data)
       .select()
       .single()
+    if (created) {
+      set((s) => ({
+        products: [...s.products.filter((p) => p.id !== created.id), created].sort((a, b) => a.name.localeCompare(b.name)),
+      }))
+    }
     return created
   },
 

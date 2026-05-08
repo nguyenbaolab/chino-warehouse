@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,7 +14,7 @@ import {
 } from 'react-native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
-import { EXPIRY_COLORS, getExpiryStatus, InventoryEntry, Zone } from '../types'
+import { formatExpiryDate, getExpiryColorHex, InventoryEntry, Zone } from '../types'
 
 type ZoneDetailSheetProps = {
   visible: boolean
@@ -34,7 +35,7 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: ZoneDetailSheetProps) {
   const { colors } = useThemeStore()
-  const { fetchInventoryByZone, updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
+  const { zones, fetchInventoryByZone, updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
 
   const [entries, setEntries] = useState<InventoryEntry[]>([])
   const [selectedTier, setSelectedTier] = useState(1)
@@ -44,6 +45,11 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
   const [editQuantity, setEditQuantity] = useState('')
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [moveLot, setMoveLot] = useState<InventoryEntry | null>(null)
+  const [targetZoneId, setTargetZoneId] = useState<string | null>(null)
+  const [targetTier, setTargetTier] = useState<number | null>(null)
+  const [showZoneOptions, setShowZoneOptions] = useState(false)
+  const [showTierOptions, setShowTierOptions] = useState(false)
 
   useEffect(() => {
     if (!visible || !zone) return
@@ -125,8 +131,8 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
     // Sắp xếp lot theo hạn gần nhất trước để hiển thị và lấy "lô xấu nhất"
     const groups = Array.from(map.values()).map((group) => {
       const sortedLots = [...group.lots].sort((a, b) => {
-        const aTime = a.expiry_date ? new Date(a.expiry_date).getTime() : Number.POSITIVE_INFINITY
-        const bTime = b.expiry_date ? new Date(b.expiry_date).getTime() : Number.POSITIVE_INFINITY
+        const aTime = a.expiry_date ? new Date(`${a.expiry_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
+        const bTime = b.expiry_date ? new Date(`${b.expiry_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
         return aTime - bTime
       })
       return { ...group, lots: sortedLots }
@@ -187,6 +193,30 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
         },
       },
     ])
+  }
+
+  function openMoveLot(entry: InventoryEntry) {
+    setMoveLot(entry)
+    setTargetZoneId(null)
+    setTargetTier(null)
+    setShowZoneOptions(false)
+    setShowTierOptions(false)
+  }
+
+  const availableTargetZones = zones.filter((z) => z.id !== moveLot?.zone_id)
+  const selectedTargetZone = zones.find((z) => z.id === targetZoneId) ?? null
+  const availableTargetTiers = selectedTargetZone
+    ? Array.from({ length: Math.max(selectedTargetZone.tier_count || 1, 1) }, (_, idx) => idx + 1)
+    : []
+
+  async function confirmMoveLot() {
+    if (!moveLot || !targetZoneId || !targetTier) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng chọn zone đích và tầng đích.')
+      return
+    }
+    await updateInventoryEntry(moveLot.id, { zone_id: targetZoneId, tier: targetTier })
+    setMoveLot(null)
+    await reloadCurrentZoneInventory()
   }
 
   function handlePressAddInventory() {
@@ -278,7 +308,8 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                   </View>
                 ) : filteredGroupedProducts.map((group) => {
                   const worstLot = group.lots[0]
-                  const worstColor = EXPIRY_COLORS[getExpiryStatus(worstLot?.expiry_date)]
+                  const worstWarningDays = worstLot?.product?.warning_days ?? 30
+                  const worstColor = getExpiryColorHex(worstLot?.expiry_date, worstWarningDays)
 
                   return (
                     <View key={group.productId} style={[styles.groupWrap, { borderBottomColor: colors.border }]}>
@@ -300,8 +331,8 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                       {/* Danh sách từng lô của sản phẩm, luôn expanded */}
                       <View style={styles.lotList}>
                         {group.lots.map((lot) => {
-                          const lotColor = EXPIRY_COLORS[getExpiryStatus(lot.expiry_date)]
-                          const lotExpiry = lot.expiry_date ?? 'Không hạn'
+                          const lotColor = getExpiryColorHex(lot.expiry_date, lot.product?.warning_days ?? 30)
+                          const lotExpiry = formatExpiryDate(lot.expiry_date)
                           return (
                             <View key={lot.id}>
                               <TouchableOpacity
@@ -314,6 +345,18 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                                 </View>
                                 <View style={styles.lotRight}>
                                   <View style={[styles.expiryDot, { backgroundColor: lotColor }]} />
+                                  <TouchableOpacity
+                                    style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                    onPress={() => navigation.navigate('ProductDetail', { productId: lot.product_id })}
+                                  >
+                                    <Text style={styles.deleteLotBtnText}>i</Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                    onPress={() => openMoveLot(lot)}
+                                  >
+                                    <Text style={styles.deleteLotBtnText}>→</Text>
+                                  </TouchableOpacity>
                                   <TouchableOpacity
                                     style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                                     onPress={() => handleDeleteLot(lot)}
@@ -384,6 +427,85 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
             <Text style={[styles.addBtnText, { color: colors.card }]}>Thêm hàng</Text>
           </TouchableOpacity>
         </View>
+
+        <Modal visible={!!moveLot} transparent animationType="slide" onRequestClose={() => setMoveLot(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setMoveLot(null)} />
+            <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Chuyển lô hàng</Text>
+
+              <Text style={[styles.editLabel, { color: colors.sub }]}>Zone đích</Text>
+              <Pressable
+                style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                onPress={() => {
+                  setShowZoneOptions((v) => !v)
+                  setShowTierOptions(false)
+                }}
+              >
+                <Text style={{ color: selectedTargetZone ? colors.text : colors.sub }}>
+                  {selectedTargetZone?.name ?? 'Chọn zone đích'}
+                </Text>
+              </Pressable>
+              {showZoneOptions && (
+                <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                  {availableTargetZones.map((zoneItem) => (
+                    <TouchableOpacity
+                      key={zoneItem.id}
+                      style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                      onPress={() => {
+                        setTargetZoneId(zoneItem.id)
+                        const tiersCount = Math.max(zoneItem.tier_count || 1, 1)
+                        setTargetTier(tiersCount === 1 ? 1 : null)
+                        setShowZoneOptions(false)
+                      }}
+                    >
+                      <Text style={{ color: colors.text }}>{zoneItem.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <Text style={[styles.editLabel, { color: colors.sub, marginTop: 8 }]}>Tầng đích</Text>
+              <Pressable
+                style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, opacity: selectedTargetZone ? 1 : 0.5 }]}
+                onPress={() => {
+                  if (!selectedTargetZone || availableTargetTiers.length <= 1) return
+                  setShowTierOptions((v) => !v)
+                  setShowZoneOptions(false)
+                }}
+              >
+                <Text style={{ color: targetTier ? colors.text : colors.sub }}>
+                  {targetTier ? `Tầng ${targetTier}` : 'Chọn tầng đích'}
+                </Text>
+              </Pressable>
+              {showTierOptions && availableTargetTiers.length > 1 && (
+                <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                  {availableTargetTiers.map((tierNum) => (
+                    <TouchableOpacity
+                      key={tierNum}
+                      style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                      onPress={() => {
+                        setTargetTier(tierNum)
+                        setShowTierOptions(false)
+                      }}
+                    >
+                      <Text style={{ color: colors.text }}>Tầng {tierNum}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.editActions}>
+                <TouchableOpacity style={[styles.editCancelBtn, { backgroundColor: colors.bg }]} onPress={() => setMoveLot(null)}>
+                  <Text style={{ color: colors.sub }}>Huỷ</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.editSaveBtn, { backgroundColor: colors.accent }]} onPress={confirmMoveLot}>
+                  <Text style={{ color: colors.card, fontWeight: '700' }}>Xác nhận</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   )
@@ -594,4 +716,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
+  modalBox: { borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 1, padding: 16 },
+  modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  selectBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  optionsWrap: { borderWidth: 1, borderRadius: 10, marginTop: 6, overflow: 'hidden' },
+  optionRow: { borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
 })

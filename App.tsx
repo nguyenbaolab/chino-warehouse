@@ -10,6 +10,7 @@ import ProductsScreen from './screens/ProductsScreen'
 import SettingsScreen from './screens/SettingsScreen'
 import AddInventoryScreen from './screens/AddInventoryScreen'
 import ProductDetailScreen from './screens/ProductDetailScreen'
+import NotificationsScreen from './screens/NotificationsScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -33,6 +34,11 @@ function TabNavigator() {
         name="Products"
         component={ProductsScreen}
         options={{ tabBarLabel: 'Sản phẩm', tabBarIcon: () => <Text>📦</Text> }}
+      />
+      <Tab.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{ tabBarLabel: 'Thông báo', tabBarIcon: () => <Text>🔔</Text> }}
       />
       <Tab.Screen
         name="Settings"
