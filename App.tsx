@@ -8,6 +8,7 @@ import { Text } from 'react-native'
 import MapScreen from './screens/MapScreen'
 import ProductsScreen from './screens/ProductsScreen'
 import SettingsScreen from './screens/SettingsScreen'
+import AddInventoryScreen from './screens/AddInventoryScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -45,7 +46,10 @@ export default function App() {
   return (
     <NavigationContainer>
       <StatusBar style="light" />
-      <TabNavigator />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Tabs" component={TabNavigator} />
+        <Stack.Screen name="AddInventory" component={AddInventoryScreen} />
+      </Stack.Navigator>
     </NavigationContainer>
   )
 }

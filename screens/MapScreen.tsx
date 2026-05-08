@@ -3,9 +3,11 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform
 } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { Zone, ZoneCell, InventoryEntry, getExpiryStatus, EXPIRY_COLORS, ZONE_COLORS } from '../types'
+import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
 const GRID_ROWS = 6
 const GRID_COLS = 6
@@ -39,6 +41,7 @@ function getCellRadius(cells: ZoneCell[], row: number, col: number) {
 }
 
 export default function MapScreen() {
+  const navigation = useNavigation<any>()
   const {
     locations, selectedLocationId, zones, isLoading,
     fetchLocations, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts
@@ -55,6 +58,7 @@ export default function MapScreen() {
 
   const [nameModal, setNameModal] = useState(false)
   const [actionModal, setActionModal] = useState(false)
+  const [zoneDetailVisible, setZoneDetailVisible] = useState(false)
   const [tappedZone, setTappedZone] = useState<Zone | null>(null)
   const [zoneName, setZoneName] = useState('')
   const [tierCount, setTierCount] = useState('1')
@@ -170,6 +174,12 @@ export default function MapScreen() {
     setSelectedCells(tappedZone.cells ?? [])
     setMode('selecting')
     setActionModal(false)
+  }
+
+  function openZoneDetail() {
+    if (!tappedZone) return
+    setActionModal(false)
+    setZoneDetailVisible(true)
   }
 
   async function handleDeleteZone() {
@@ -453,7 +463,7 @@ export default function MapScreen() {
             <Text style={[styles.actionSub, { color: colors.sub }]}>
               {tappedZone?.cells?.length} ô · {tappedZone?.tier_count} tầng
             </Text>
-            <TouchableOpacity style={[styles.actionBtn, { borderBottomColor: colors.border }]} onPress={() => setActionModal(false)}>
+            <TouchableOpacity style={[styles.actionBtn, { borderBottomColor: colors.border }]} onPress={openZoneDetail}>
               <Text style={[styles.actionBtnText, { color: colors.text }]}>📦 Xem hàng trong zone</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.actionBtn, { borderBottomColor: colors.border }]} onPress={startEditZone}>
@@ -465,6 +475,13 @@ export default function MapScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <ZoneDetailSheet
+        visible={zoneDetailVisible}
+        zone={tappedZone}
+        onClose={() => setZoneDetailVisible(false)}
+        navigation={navigation}
+      />
     </SafeAreaView>
   )
 }
