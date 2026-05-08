@@ -7,6 +7,7 @@ type WarehouseStore = {
   selectedLocationId: string | null
   zones: Zone[]
   products: Product[]
+  inventoryEntries: InventoryEntry[]
   isLoading: boolean
 
   setSelectedLocation: (id: string) => void
@@ -36,6 +37,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   selectedLocationId: null,
   zones: [],
   products: [],
+  inventoryEntries: [],
   isLoading: false,
 
   setSelectedLocation: (id) => {
@@ -75,10 +77,15 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   fetchInventoryByZone: async (zoneId) => {
     const { data } = await supabase
       .from('inventory_entries')
-      .select('*, product:products(*)')
+      .select('*, product:products(*), zone:zones(*)')
       .eq('zone_id', zoneId)
       .gt('quantity_boxes', 0)
-    return data || []
+    const entries = data || []
+    set((s) => {
+      const next = s.inventoryEntries.filter((entry) => entry.zone_id !== zoneId)
+      return { inventoryEntries: [...next, ...entries] }
+    })
+    return entries
   },
 
   searchProducts: async (query) => {
@@ -122,15 +129,32 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   addInventoryEntry: async (data) => {
-    await supabase.from('inventory_entries').insert(data)
+    const { data: created } = await supabase
+      .from('inventory_entries')
+      .insert(data)
+      .select('*, product:products(*), zone:zones(*)')
+      .single()
+    if (created) {
+      set((s) => ({
+        inventoryEntries: [...s.inventoryEntries.filter((entry) => entry.id !== created.id), created],
+      }))
+    }
   },
 
   updateInventoryEntry: async (id, data) => {
     await supabase.from('inventory_entries').update(data).eq('id', id)
+    set((s) => ({
+      inventoryEntries: s.inventoryEntries.map((entry) => (
+        entry.id === id ? { ...entry, ...data } : entry
+      )),
+    }))
   },
 
   deleteInventoryEntry: async (id) => {
     await supabase.from('inventory_entries').delete().eq('id', id)
+    set((s) => ({
+      inventoryEntries: s.inventoryEntries.filter((entry) => entry.id !== id),
+    }))
   },
 
   addZone: async (data) => {

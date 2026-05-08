@@ -20,6 +20,7 @@ type AddInventoryRouteParams = {
   zoneName: string
   zoneColor: string
   tier: number
+  productId?: string
 }
 
 // Parse DD/MM/YYYY -> YYYY-MM-DD để lưu xuống Supabase
@@ -51,9 +52,9 @@ function parseDisplayDateToIso(raw: string): string | null {
 export default function AddInventoryScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
-  const { zoneId, zoneName, zoneColor, tier } = route.params as AddInventoryRouteParams
+  const { zoneId, zoneName, zoneColor, tier, productId } = route.params as AddInventoryRouteParams
   const { colors } = useThemeStore()
-  const { products, fetchProducts, addProduct, addInventoryEntry } = useWarehouseStore()
+  const { products, fetchProducts, addProduct, addInventoryEntry, updateInventoryEntry } = useWarehouseStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -78,6 +79,12 @@ export default function AddInventoryScreen() {
     return products.filter((p) => p.name.toLowerCase().includes(query))
   }, [products, searchQuery])
   const isSearching = searchQuery.trim().length > 0
+
+  useEffect(() => {
+    if (!productId || selectedProduct) return
+    const pref = products.find((p) => p.id === productId)
+    if (pref) setSelectedProduct(pref)
+  }, [productId, products, selectedProduct])
 
   async function handleCreateProduct() {
     if (!newProductName.trim()) {
@@ -161,10 +168,11 @@ export default function AddInventoryScreen() {
             text: 'Cộng thêm',
             onPress: async () => {
               const newQuantity = duplicatedLot.quantity_boxes + quantity
-              await supabase
-                .from('inventory_entries')
-                .update({ quantity_boxes: newQuantity, notes: batchNote.trim() || undefined })
-                .eq('id', duplicatedLot.id)
+              // Đi qua store để state local cập nhật ngay
+              await updateInventoryEntry(duplicatedLot.id, {
+                quantity_boxes: newQuantity,
+                notes: batchNote.trim() || undefined,
+              })
               setIsSaving(false)
               navigation.goBack()
             },

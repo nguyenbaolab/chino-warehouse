@@ -9,6 +9,7 @@ import MapScreen from './screens/MapScreen'
 import ProductsScreen from './screens/ProductsScreen'
 import SettingsScreen from './screens/SettingsScreen'
 import AddInventoryScreen from './screens/AddInventoryScreen'
+import ProductDetailScreen from './screens/ProductDetailScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -49,6 +50,7 @@ export default function App() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Tabs" component={TabNavigator} />
         <Stack.Screen name="AddInventory" component={AddInventoryScreen} />
+        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

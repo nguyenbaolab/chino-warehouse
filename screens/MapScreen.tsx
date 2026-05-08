@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform
@@ -51,6 +51,7 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InventoryEntry[]>([])
   const [highlightedZones, setHighlightedZones] = useState<Map<string, string>>(new Map())
+  const [isSearchPanelExpanded, setIsSearchPanelExpanded] = useState(true)
 
   const [mode, setMode] = useState<'normal' | 'selecting'>('normal')
   const [selectedCells, setSelectedCells] = useState<ZoneCell[]>([])
@@ -71,6 +72,8 @@ export default function MapScreen() {
 
   async function handleSearch(text: string) {
     setSearchQuery(text)
+    // Mỗi lần query thay đổi thì reset panel về expanded
+    setIsSearchPanelExpanded(true)
     if (text.trim().length < 2) {
       setSearchResults([])
       setHighlightedZones(new Map())
@@ -89,7 +92,27 @@ export default function MapScreen() {
     setSearchQuery('')
     setSearchResults([])
     setHighlightedZones(new Map())
+    setIsSearchPanelExpanded(true)
   }
+
+  const collapsedSearchSummaries = useMemo(() => {
+    const map = new Map<string, { productName: string; totalBoxes: number; zoneIds: Set<string> }>()
+    for (const entry of searchResults) {
+      const productId = entry.product_id
+      const current = map.get(productId)
+      if (current) {
+        current.totalBoxes += entry.quantity_boxes
+        current.zoneIds.add(entry.zone_id)
+      } else {
+        map.set(productId, {
+          productName: entry.product?.name ?? 'Sản phẩm không xác định',
+          totalBoxes: entry.quantity_boxes,
+          zoneIds: new Set([entry.zone_id]),
+        })
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.productName.localeCompare(b.productName))
+  }, [searchResults])
 
   function startAddZone() {
     setEditingZone(null)
@@ -351,15 +374,34 @@ export default function MapScreen() {
       {/* Search results */}
       {searchResults.length > 0 && mode === 'normal' && (
         <View style={[styles.resultsBox, { backgroundColor: colors.card }]}>
-          <Text style={[styles.resultsTitle, { color: colors.sub }]}>Kết quả ({searchResults.length})</Text>
-          {searchResults.slice(0, 5).map(r => (
-            <View key={r.id} style={styles.resultItem}>
-              <View style={[styles.dot, { backgroundColor: EXPIRY_COLORS[getExpiryStatus(r.expiry_date)] }]} />
-              <Text style={[styles.resultText, { color: colors.text }]} numberOfLines={1}>
-                {r.product?.name} — {r.zone?.name} T{r.tier} — {r.quantity_boxes} thùng
+          <View style={styles.resultsHeaderRow}>
+            <Text style={[styles.resultsTitle, { color: colors.sub }]}>Kết quả ({searchResults.length})</Text>
+            <TouchableOpacity
+              style={[styles.resultsToggleBtn, { backgroundColor: colors.bg }]}
+              onPress={() => setIsSearchPanelExpanded((prev) => !prev)}
+            >
+              <Text style={[styles.resultsToggleText, { color: colors.text }]}>
+                {isSearchPanelExpanded ? '▴' : '▾'}
               </Text>
-            </View>
-          ))}
+            </TouchableOpacity>
+          </View>
+
+          {isSearchPanelExpanded ? (
+            searchResults.slice(0, 5).map(r => (
+              <View key={r.id} style={styles.resultItem}>
+                <View style={[styles.dot, { backgroundColor: EXPIRY_COLORS[getExpiryStatus(r.expiry_date)] }]} />
+                <Text style={[styles.resultText, { color: colors.text }]} numberOfLines={1}>
+                  {r.product?.name} — {r.zone?.name} T{r.tier} — {r.quantity_boxes} thùng
+                </Text>
+              </View>
+            ))
+          ) : (
+            collapsedSearchSummaries.map((summary, idx) => (
+              <Text key={`${summary.productName}-${idx}`} style={[styles.resultText, styles.collapsedSummaryText, { color: colors.text }]} numberOfLines={1}>
+                {summary.productName} — {summary.totalBoxes} thùng — {summary.zoneIds.size} zone
+              </Text>
+            ))
+          )}
         </View>
       )}
 
@@ -506,9 +548,13 @@ const styles = StyleSheet.create({
   instructionText: { fontWeight: 'bold', fontSize: 14 },
   instructionSub: { fontSize: 12, marginTop: 2 },
   resultsBox: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 12 },
+  resultsHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   resultsTitle: { fontSize: 12, marginBottom: 6 },
+  resultsToggleBtn: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  resultsToggleText: { fontSize: 12, fontWeight: '700' },
   resultItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
   resultText: { fontSize: 13, marginLeft: 8, flex: 1 },
+  collapsedSummaryText: { marginLeft: 0, marginBottom: 5 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   grid: { padding: 16 },
   gridRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 0 },

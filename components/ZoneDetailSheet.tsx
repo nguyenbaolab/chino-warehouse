@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
@@ -32,11 +34,16 @@ function hexToRgba(hex: string, alpha: number): string {
 
 export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: ZoneDetailSheetProps) {
   const { colors } = useThemeStore()
-  const { fetchInventoryByZone } = useWarehouseStore()
+  const { fetchInventoryByZone, updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
 
   const [entries, setEntries] = useState<InventoryEntry[]>([])
   const [selectedTier, setSelectedTier] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [tierSearchQueries, setTierSearchQueries] = useState<Record<number, string>>({})
+  const [editingLotId, setEditingLotId] = useState<string | null>(null)
+  const [editQuantity, setEditQuantity] = useState('')
+  const [editExpiryDate, setEditExpiryDate] = useState('')
+  const [editNotes, setEditNotes] = useState('')
 
   useEffect(() => {
     if (!visible || !zone) return
@@ -65,6 +72,28 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
       isMounted = false
     }
   }, [fetchInventoryByZone, visible, zone?.id])
+
+  // Validate định dạng YYYY-MM-DD
+  function isValidIsoDate(raw: string): boolean {
+    if (!raw.trim()) return true
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim())
+    if (!match) return false
+    const year = Number(match[1])
+    const month = Number(match[2])
+    const day = Number(match[3])
+    const date = new Date(year, month - 1, day)
+    return (
+      date.getFullYear() === year &&
+      date.getMonth() === month - 1 &&
+      date.getDate() === day
+    )
+  }
+
+  async function reloadCurrentZoneInventory() {
+    if (!zone) return
+    const data = await fetchInventoryByZone(zone.id)
+    setEntries(data)
+  }
 
   const tierCount = zone?.tier_count ?? 1
   const tiers = Array.from({ length: Math.max(tierCount, 1) }, (_, index) => index + 1)
@@ -106,9 +135,58 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
     return groups.sort((a, b) => a.productName.localeCompare(b.productName))
   }, [currentTierEntries])
 
+  const currentSearchQuery = (tierSearchQueries[selectedTier] ?? '').trim().toLowerCase()
+  const filteredGroupedProducts = useMemo(() => {
+    if (!currentSearchQuery) return groupedProducts
+    return groupedProducts.filter((group) => group.productName.toLowerCase().includes(currentSearchQuery))
+  }, [groupedProducts, currentSearchQuery])
+
   function handlePressLot(entry: InventoryEntry) {
-    // Placeholder cho sửa/xóa lô ở bước sau
-    console.log('ZoneDetailSheet: selected lot entry', entry)
+    // Tap lô để mở/đóng inline form chỉnh sửa
+    if (editingLotId === entry.id) {
+      setEditingLotId(null)
+      return
+    }
+    setEditingLotId(entry.id)
+    setEditQuantity(String(entry.quantity_boxes))
+    setEditExpiryDate(entry.expiry_date ?? '')
+    setEditNotes(entry.notes ?? '')
+  }
+
+  async function handleSaveLot(entry: InventoryEntry) {
+    const quantity = Number(editQuantity)
+    if (!Number.isFinite(quantity) || quantity < 1) {
+      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải lớn hơn hoặc bằng 1.')
+      return
+    }
+    if (!isValidIsoDate(editExpiryDate)) {
+      Alert.alert('Hạn không hợp lệ', 'Hạn sử dụng phải theo định dạng YYYY-MM-DD.')
+      return
+    }
+
+    // Lưu lot đang sửa vào Supabase qua store
+    await updateInventoryEntry(entry.id, {
+      quantity_boxes: quantity,
+      expiry_date: editExpiryDate.trim() || undefined,
+      notes: editNotes.trim() || undefined,
+    })
+    setEditingLotId(null)
+    await reloadCurrentZoneInventory()
+  }
+
+  function handleDeleteLot(entry: InventoryEntry) {
+    Alert.alert('Xóa lô hàng', 'Xóa lô hàng này?', [
+      { text: 'Huỷ', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteInventoryEntry(entry.id)
+          if (editingLotId === entry.id) setEditingLotId(null)
+          await reloadCurrentZoneInventory()
+        },
+      },
+    ])
   }
 
   function handlePressAddInventory() {
@@ -169,6 +247,16 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
             </ScrollView>
           )}
 
+          <View style={styles.searchWrap}>
+            <TextInput
+              style={[styles.searchInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+              value={tierSearchQueries[selectedTier] ?? ''}
+              onChangeText={(text) => setTierSearchQueries((prev) => ({ ...prev, [selectedTier]: text }))}
+              placeholder="Tìm sản phẩm trong tầng..."
+              placeholderTextColor={colors.sub}
+            />
+          </View>
+
           <View style={styles.content}>
             {isLoading ? (
               <ActivityIndicator color={colors.accent} style={styles.loading} />
@@ -184,7 +272,11 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
               </View>
             ) : (
               <ScrollView showsVerticalScrollIndicator={false}>
-                {groupedProducts.map((group) => {
+                {filteredGroupedProducts.length === 0 ? (
+                  <View style={styles.emptyWrap}>
+                    <Text style={[styles.emptyText, { color: colors.sub }]}>Không tìm thấy sản phẩm phù hợp</Text>
+                  </View>
+                ) : filteredGroupedProducts.map((group) => {
                   const worstLot = group.lots[0]
                   const worstColor = EXPIRY_COLORS[getExpiryStatus(worstLot?.expiry_date)]
 
@@ -192,9 +284,14 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                     <View key={group.productId} style={[styles.groupWrap, { borderBottomColor: colors.border }]}>
                       <View style={styles.itemRow}>
                         <View style={styles.itemMain}>
-                          <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                            {group.productName}
-                          </Text>
+                          <TouchableOpacity
+                            onPress={() => navigation.navigate('ProductDetail', { productId: group.productId })}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                              {group.productName}
+                            </Text>
+                          </TouchableOpacity>
                           <Text style={[styles.itemQty, { color: colors.sub }]}>{group.totalBoxes} thùng</Text>
                         </View>
                         <View style={[styles.expiryDot, { backgroundColor: worstColor }]} />
@@ -206,17 +303,73 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                           const lotColor = EXPIRY_COLORS[getExpiryStatus(lot.expiry_date)]
                           const lotExpiry = lot.expiry_date ?? 'Không hạn'
                           return (
-                            <TouchableOpacity
-                              key={lot.id}
-                              style={[styles.lotRow, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                              onPress={() => handlePressLot(lot)}
-                            >
-                              <View style={styles.lotInfo}>
-                                <Text style={[styles.lotText, { color: colors.text }]}>{lot.quantity_boxes} thùng</Text>
-                                <Text style={[styles.lotSubText, { color: colors.sub }]}>Hạn: {lotExpiry}</Text>
-                              </View>
-                              <View style={[styles.expiryDot, { backgroundColor: lotColor }]} />
-                            </TouchableOpacity>
+                            <View key={lot.id}>
+                              <TouchableOpacity
+                                style={[styles.lotRow, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                                onPress={() => handlePressLot(lot)}
+                              >
+                                <View style={styles.lotInfo}>
+                                  <Text style={[styles.lotText, { color: colors.text }]}>{lot.quantity_boxes} thùng</Text>
+                                  <Text style={[styles.lotSubText, { color: colors.sub }]}>Hạn: {lotExpiry}</Text>
+                                </View>
+                                <View style={styles.lotRight}>
+                                  <View style={[styles.expiryDot, { backgroundColor: lotColor }]} />
+                                  <TouchableOpacity
+                                    style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                    onPress={() => handleDeleteLot(lot)}
+                                  >
+                                    <Text style={styles.deleteLotBtnText}>🗑️</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </TouchableOpacity>
+
+                              {editingLotId === lot.id && (
+                                <View style={[styles.editBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
+                                  <Text style={[styles.editLabel, { color: colors.sub }]}>Số thùng</Text>
+                                  <TextInput
+                                    style={[styles.editInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                                    keyboardType="numeric"
+                                    value={editQuantity}
+                                    onChangeText={setEditQuantity}
+                                    placeholder="1"
+                                    placeholderTextColor={colors.sub}
+                                  />
+
+                                  <Text style={[styles.editLabel, { color: colors.sub }]}>Hạn sử dụng (YYYY-MM-DD)</Text>
+                                  <TextInput
+                                    style={[styles.editInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                                    value={editExpiryDate}
+                                    onChangeText={setEditExpiryDate}
+                                    placeholder="2026-12-30"
+                                    placeholderTextColor={colors.sub}
+                                  />
+
+                                  <Text style={[styles.editLabel, { color: colors.sub }]}>Ghi chú</Text>
+                                  <TextInput
+                                    style={[styles.editInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                                    value={editNotes}
+                                    onChangeText={setEditNotes}
+                                    placeholder="Optional"
+                                    placeholderTextColor={colors.sub}
+                                  />
+
+                                  <View style={styles.editActions}>
+                                    <TouchableOpacity
+                                      style={[styles.editCancelBtn, { backgroundColor: colors.bg }]}
+                                      onPress={() => setEditingLotId(null)}
+                                    >
+                                      <Text style={{ color: colors.sub }}>Huỷ</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                      style={[styles.editSaveBtn, { backgroundColor: colors.accent }]}
+                                      onPress={() => handleSaveLot(lot)}
+                                    >
+                                      <Text style={{ color: colors.card, fontWeight: '700' }}>Lưu</Text>
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
+                              )}
+                            </View>
                           )
                         })}
                       </View>
@@ -292,6 +445,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  searchWrap: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 13,
+  },
   content: {
     paddingHorizontal: 16,
     minHeight: 220,
@@ -357,9 +521,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  lotRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   lotInfo: {
     flex: 1,
     marginRight: 8,
+  },
+  deleteLotBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteLotBtnText: {
+    fontSize: 11,
+  },
+  editBox: {
+    marginTop: -2,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+  },
+  editLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  editInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+    marginBottom: 8,
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  editCancelBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  editSaveBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   lotText: {
     fontSize: 13,
