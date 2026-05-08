@@ -1,0 +1,58 @@
+# Chino's Warehouse — Cursor AI Rules
+
+## Project
+Ứng dụng quản lý kho hàng nội bộ cho Chino's Boba Tea & Asian Market, Joensuu, Finland.
+React Native (Expo) + TypeScript + Supabase + Zustand. Chạy iOS & Android qua Expo Go.
+
+## Tech Stack
+- Mobile: React Native (Expo SDK), TypeScript
+- State: Zustand (warehouseStore, themeStore)
+- Backend: Supabase (PostgreSQL + Realtime)
+- Navigation: React Navigation (Bottom Tabs + Native Stack)
+- Barcode: expo-barcode-scanner
+
+## Cấu trúc thư mục
+chino-warehouse/
+├── screens/          # MapScreen, ProductsScreen, SettingsScreen
+├── components/       # Shared components (tạo mới vào đây)
+├── stores/           # warehouseStore.ts, themeStore.ts
+├── types/            # index.ts — tất cả types + helpers
+├── lib/              # supabase.ts
+└── __tests__/        # Jest tests cho logic functions
+
+## Conventions
+- Comment code bằng tiếng Việt
+- Functional components + hooks, không dùng class components
+- Luôn dùng `useThemeStore()` để lấy colors — không hardcode màu sắc
+- Accent color mặc định: colors.accent (#22C55E dark / #16a34a light)
+- Không tự thêm npm package mới khi chưa được yêu cầu
+- Không hỏi lại những gì đã rõ trong CONTEXT.md hoặc types — cứ làm
+
+## Data Model quan trọng
+- Zone có `cells: ZoneCell[]` (mảng {row, col}, 1-indexed), `color: string`, `tier_count: number`
+- InventoryEntry: số lượng tính theo **thùng nguyên**, `quantity_boxes: number`
+- Hạn sử dụng: dùng `getExpiryStatus(expiry_date)` → 'expired' | 'warning' | 'ok'
+- Màu hạn: dùng `EXPIRY_COLORS[status]` từ types/index.ts
+
+## UI Rules
+- Dark theme mặc định, support light theme qua themeStore
+- SafeAreaView + `Platform.OS === 'android'` topSpacer ở mọi screen
+- CELL_SIZE = 56, GRID = 6x6, bắt đầu từ hàng 1 cột 1
+- Modal dùng `animationType="slide"` cho form, `"fade"` cho action sheet
+- Không dùng external UI library — StyleSheet thuần
+
+## Những gì đã xong
+- Supabase schema (locations, zones, products, inventory_entries)
+- warehouseStore: fetch, search, CRUD zones/products/inventory
+- themeStore: dark/light toggle, lưu AsyncStorage
+- MapScreen: lưới 6x6, multi-cell zone, màu zone, search, zone CRUD
+- SettingsScreen: theme toggle
+- Navigation: 3 tabs (Kho, Sản phẩm, Cài đặt)
+
+## Còn phải làm (theo thứ tự ưu tiên)
+1. ZoneDetailSheet — tap zone → danh sách sản phẩm theo tầng
+2. ProductDetailScreen — chi tiết sản phẩm + sửa/xóa lô hàng
+3. ProductsScreen — danh sách + tìm kiếm + thêm sản phẩm mới
+4. AddInventoryForm — thêm lô hàng vào zone
+5. BarcodeScanner — quét mã vạch → kết quả như search
+6. F18: Low stock warning (quantity_boxes <= 1)
