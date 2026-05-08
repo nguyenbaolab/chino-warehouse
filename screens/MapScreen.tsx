@@ -4,38 +4,67 @@ import {
   TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform
 } from 'react-native'
 import { useWarehouseStore } from '../stores/warehouseStore'
-import { Zone, ZoneCell, InventoryEntry, getExpiryStatus, EXPIRY_COLORS } from '../types'
+import { useThemeStore } from '../stores/themeStore'
+import { Zone, ZoneCell, InventoryEntry, getExpiryStatus, EXPIRY_COLORS, ZONE_COLORS } from '../types'
 
 const GRID_ROWS = 6
 const GRID_COLS = 6
 const CELL_SIZE = 56
+
+// Tìm ô trung tâm của zone để hiện tên
+function getCenterCell(cells: ZoneCell[]): ZoneCell {
+  if (cells.length === 0) return { row: 1, col: 1 }
+  const avgRow = cells.reduce((s, c) => s + c.row, 0) / cells.length
+  const avgCol = cells.reduce((s, c) => s + c.col, 0) / cells.length
+  return cells.reduce((best, c) => {
+    const dBest = Math.abs(best.row - avgRow) + Math.abs(best.col - avgCol)
+    const dCurr = Math.abs(c.row - avgRow) + Math.abs(c.col - avgCol)
+    return dCurr < dBest ? c : best
+  }, cells[0])
+}
+
+// Tính border radius để các ô liền nhau trông liền mạch
+function getCellRadius(cells: ZoneCell[], row: number, col: number) {
+  const has = (r: number, c: number) => cells.some(cell => cell.row === r && cell.col === c)
+  const top = has(row - 1, col)
+  const bottom = has(row + 1, col)
+  const left = has(row, col - 1)
+  const right = has(row, col + 1)
+  return {
+    borderTopLeftRadius: top || left ? 2 : 10,
+    borderTopRightRadius: top || right ? 2 : 10,
+    borderBottomLeftRadius: bottom || left ? 2 : 10,
+    borderBottomRightRadius: bottom || right ? 2 : 10,
+  }
+}
 
 export default function MapScreen() {
   const {
     locations, selectedLocationId, zones, isLoading,
     fetchLocations, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts
   } = useWarehouseStore()
+  const { colors, loadTheme } = useThemeStore()
 
-  // Search
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InventoryEntry[]>([])
   const [highlightedZones, setHighlightedZones] = useState<Map<string, string>>(new Map())
 
-  // Zone creation/edit mode
   const [mode, setMode] = useState<'normal' | 'selecting'>('normal')
   const [selectedCells, setSelectedCells] = useState<ZoneCell[]>([])
   const [editingZone, setEditingZone] = useState<Zone | null>(null)
 
-  // Modals
   const [nameModal, setNameModal] = useState(false)
   const [actionModal, setActionModal] = useState(false)
   const [tappedZone, setTappedZone] = useState<Zone | null>(null)
   const [zoneName, setZoneName] = useState('')
   const [tierCount, setTierCount] = useState('1')
+  const [selectedColor, setSelectedColor] = useState(ZONE_COLORS[0])
 
-  useEffect(() => { fetchLocations() }, [])
+  useEffect(() => {
+    loadTheme()
+    fetchLocations()
+  }, [])
 
-  // --- Search ---
   async function handleSearch(text: string) {
     setSearchQuery(text)
     if (text.trim().length < 2) {
@@ -47,9 +76,7 @@ export default function MapScreen() {
     setSearchResults(results)
     const map = new Map<string, string>()
     for (const r of results) {
-      if (r.zone_id) {
-        map.set(r.zone_id, EXPIRY_COLORS[getExpiryStatus(r.expiry_date)])
-      }
+      if (r.zone_id) map.set(r.zone_id, EXPIRY_COLORS[getExpiryStatus(r.expiry_date)])
     }
     setHighlightedZones(map)
   }
@@ -60,10 +87,10 @@ export default function MapScreen() {
     setHighlightedZones(new Map())
   }
 
-  // --- Zone creation ---
   function startAddZone() {
     setEditingZone(null)
     setSelectedCells([])
+    setSelectedColor(ZONE_COLORS[0])
     setMode('selecting')
   }
 
@@ -83,9 +110,7 @@ export default function MapScreen() {
 
   function toggleCell(r: number, c: number) {
     const occupiedZone = getCellZone(r, c)
-    // Nếu ô đang thuộc zone khác (không phải zone đang edit) thì không cho chọn
     if (occupiedZone && editingZone?.id !== occupiedZone.id) return
-
     if (isCellSelected(r, c)) {
       setSelectedCells(prev => prev.filter(cell => !(cell.row === r && cell.col === c)))
     } else {
@@ -100,6 +125,7 @@ export default function MapScreen() {
     }
     setZoneName(editingZone?.name ?? '')
     setTierCount(String(editingZone?.tier_count ?? 1))
+    setSelectedColor(editingZone?.color ?? ZONE_COLORS[0])
     setNameModal(true)
   }
 
@@ -115,12 +141,14 @@ export default function MapScreen() {
         cells: selectedCells,
         tier_count: parseInt(tierCount) || 1,
         has_tiers: parseInt(tierCount) > 1,
+        color: selectedColor,
       })
     } else {
       await addZone({
         name: zoneName.trim(),
         cells: selectedCells,
         tier_count: parseInt(tierCount) || 1,
+        color: selectedColor,
         location_id: selectedLocationId,
       })
     }
@@ -130,7 +158,6 @@ export default function MapScreen() {
     setEditingZone(null)
   }
 
-  // --- Zone actions (tap in normal mode) ---
   function handleZoneTap(zone: Zone) {
     if (mode === 'selecting') return
     setTappedZone(zone)
@@ -159,7 +186,14 @@ export default function MapScreen() {
     ])
   }
 
-  // --- Render grid ---
+  // Hex màu zone → màu nền nhạt hơn (thêm opacity)
+  function zoneBgColor(hex: string, opacity = 0.25): string {
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return `rgba(${r},${g},${b},${opacity})`
+  }
+
   function renderGrid() {
     const rows = []
     for (let r = 1; r <= GRID_ROWS; r++) {
@@ -168,60 +202,72 @@ export default function MapScreen() {
         const zone = getCellZone(r, c)
         const isSelected = isCellSelected(r, c)
         const isOtherZone = zone && editingZone && zone.id !== editingZone.id
-        const dotColor = zone ? highlightedZones.get(zone.id) : undefined
+        const isSearchActive = highlightedZones.size > 0
+        const isHighlighted = zone ? highlightedZones.has(zone.id) : false
+        const expiryDotColor = zone ? highlightedZones.get(zone.id) : undefined
+        const zoneColor = zone?.color ?? ZONE_COLORS[0]
+        const centerCell = zone ? getCenterCell(zone.cells) : null
+        const isCenter = centerCell?.row === r && centerCell?.col === c
+        const radius = zone ? getCellRadius(zone.cells, r, c) : {
+          borderTopLeftRadius: 10, borderTopRightRadius: 10,
+          borderBottomLeftRadius: 10, borderBottomRightRadius: 10
+        }
 
-        let cellStyle: any[] = [styles.cell]
-        let labelColor = '#22C55E'
+        let bgColor = colors.cellEmpty
+        let borderColor = colors.cellBorder
+        let opacity = 1
 
         if (mode === 'selecting') {
           if (isSelected) {
-            cellStyle.push(styles.cellSelected)
-            labelColor = '#fff'
-          } else if (isOtherZone) {
-            cellStyle.push(styles.cellBlocked)
-            labelColor = '#444'
-          } else if (zone && !editingZone) {
-            cellStyle.push(styles.cellBlocked)
-            labelColor = '#444'
-          } else {
-            cellStyle.push(styles.cellEmpty)
+            bgColor = selectedColor
+            borderColor = selectedColor
+          } else if (isOtherZone || (zone && !editingZone)) {
+            opacity = 0.3
           }
         } else {
           if (zone) {
-            cellStyle.push(styles.cellFilled)
-          } else {
-            cellStyle.push(styles.cellEmpty)
+            bgColor = zoneBgColor(zoneColor)
+            borderColor = zoneColor
+            if (isSearchActive && !isHighlighted) opacity = 0.25
           }
         }
-
-        // Chỉ hiện label ở ô đầu tiên của zone (cells[0])
-        const isFirstCell = zone?.cells?.[0]?.row === r && zone?.cells?.[0]?.col === c
 
         cols.push(
           <TouchableOpacity
             key={`${r}-${c}`}
-            style={cellStyle}
-            onPress={() => mode === 'selecting' ? toggleCell(r, c) : (zone ? handleZoneTap(zone) : null)}
+            style={[
+              styles.cell,
+              { backgroundColor: bgColor, borderColor, opacity },
+              radius,
+            ]}
+            onPress={() => mode === 'selecting'
+              ? toggleCell(r, c)
+              : (zone ? handleZoneTap(zone) : null)
+            }
             activeOpacity={0.7}
           >
-            {isFirstCell && zone && (
-              <Text style={[styles.zoneLabel, { color: labelColor }]} numberOfLines={1}>
+            {/* Tên zone ở ô trung tâm */}
+            {mode !== 'selecting' && isCenter && zone && (
+              <Text style={[styles.zoneLabel, { color: zoneColor }]} numberOfLines={2}>
                 {zone.name}
               </Text>
             )}
-            {mode === 'normal' && dotColor && (
-              <View style={[styles.dot, { backgroundColor: dotColor }]} />
-            )}
+
+            {/* Checkmark khi đang select */}
             {mode === 'selecting' && isSelected && (
               <Text style={styles.checkmark}>✓</Text>
+            )}
+
+            {/* Chấm hạn sử dụng khi search */}
+            {mode === 'normal' && expiryDotColor && (
+              <View style={[styles.expiryDot, { backgroundColor: expiryDotColor }]} />
             )}
           </TouchableOpacity>
         )
       }
       rows.push(
         <View key={r} style={styles.gridRow}>
-          {/* Row label */}
-          <Text style={styles.axisLabel}>{r}</Text>
+          <Text style={[styles.axisLabel, { color: colors.sub }]}>{r}</Text>
           {cols}
         </View>
       )
@@ -230,20 +276,19 @@ export default function MapScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top padding for notch */}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.topSpacer} />
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>🏪 Chino's Warehouse</Text>
+        <Text style={[styles.title, { color: colors.text }]}>🏪 Chino's Warehouse</Text>
         {mode === 'normal' ? (
-          <TouchableOpacity style={styles.addBtn} onPress={startAddZone}>
+          <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.accent }]} onPress={startAddZone}>
             <Text style={styles.addBtnText}>+ Zone</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.cancelBtn} onPress={cancelSelect}>
-            <Text style={styles.cancelBtnText}>Hủy</Text>
+          <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.card }]} onPress={cancelSelect}>
+            <Text style={[styles.cancelBtnText, { color: colors.text }]}>Hủy</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -253,41 +298,41 @@ export default function MapScreen() {
         {locations.map(loc => (
           <TouchableOpacity
             key={loc.id}
-            style={[styles.locBtn, selectedLocationId === loc.id && styles.locBtnActive]}
+            style={[styles.locBtn, { backgroundColor: selectedLocationId === loc.id ? colors.accent : colors.card }]}
             onPress={() => setSelectedLocation(loc.id)}
           >
-            <Text style={[styles.locText, selectedLocationId === loc.id && styles.locTextActive]}>
+            <Text style={[styles.locText, { color: selectedLocationId === loc.id ? '#fff' : colors.sub }]}>
               {loc.name}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Search bar (chỉ hiện khi normal mode) */}
+      {/* Search */}
       {mode === 'normal' && (
         <View style={styles.searchRow}>
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
             placeholder="Tìm sản phẩm..."
-            placeholderTextColor="#555"
+            placeholderTextColor={colors.sub}
             value={searchQuery}
             onChangeText={handleSearch}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={clearSearch} style={styles.clearBtn}>
-              <Text style={{ color: '#fff' }}>✕</Text>
+            <TouchableOpacity onPress={clearSearch} style={[styles.clearBtn, { backgroundColor: colors.card }]}>
+              <Text style={{ color: colors.text }}>✕</Text>
             </TouchableOpacity>
           )}
         </View>
       )}
 
-      {/* Hướng dẫn khi đang chọn ô */}
+      {/* Instruction khi selecting */}
       {mode === 'selecting' && (
-        <View style={styles.instructionBox}>
-          <Text style={styles.instructionText}>
-            {editingZone ? `Đang sửa zone "${editingZone.name}"` : 'Chọn các ô để tạo zone mới'}
+        <View style={[styles.instructionBox, { backgroundColor: colors.card }]}>
+          <Text style={[styles.instructionText, { color: colors.accent }]}>
+            {editingZone ? `Đang sửa "${editingZone.name}"` : 'Chọn các ô để tạo zone mới'}
           </Text>
-          <Text style={styles.instructionSub}>
+          <Text style={[styles.instructionSub, { color: colors.sub }]}>
             Đã chọn {selectedCells.length} ô
           </Text>
         </View>
@@ -295,12 +340,12 @@ export default function MapScreen() {
 
       {/* Search results */}
       {searchResults.length > 0 && mode === 'normal' && (
-        <View style={styles.resultsBox}>
-          <Text style={styles.resultsTitle}>Kết quả ({searchResults.length})</Text>
+        <View style={[styles.resultsBox, { backgroundColor: colors.card }]}>
+          <Text style={[styles.resultsTitle, { color: colors.sub }]}>Kết quả ({searchResults.length})</Text>
           {searchResults.slice(0, 5).map(r => (
             <View key={r.id} style={styles.resultItem}>
               <View style={[styles.dot, { backgroundColor: EXPIRY_COLORS[getExpiryStatus(r.expiry_date)] }]} />
-              <Text style={styles.resultText} numberOfLines={1}>
+              <Text style={[styles.resultText, { color: colors.text }]} numberOfLines={1}>
                 {r.product?.name} — {r.zone?.name} T{r.tier} — {r.quantity_boxes} thùng
               </Text>
             </View>
@@ -310,16 +355,15 @@ export default function MapScreen() {
 
       {/* Grid */}
       {isLoading ? (
-        <ActivityIndicator color="#22C55E" style={{ marginTop: 40 }} />
+        <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
       ) : (
         <ScrollView>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={styles.grid}>
-              {/* Column labels */}
               <View style={styles.gridRow}>
                 <View style={styles.axisCorner} />
                 {Array.from({ length: GRID_COLS }, (_, i) => (
-                  <Text key={i} style={[styles.axisLabel, styles.colLabel]}>{i + 1}</Text>
+                  <Text key={i} style={[styles.axisLabel, styles.colLabel, { color: colors.sub }]}>{i + 1}</Text>
                 ))}
               </View>
               {renderGrid()}
@@ -328,10 +372,10 @@ export default function MapScreen() {
         </ScrollView>
       )}
 
-      {/* Confirm button khi đang select */}
+      {/* Confirm bar */}
       {mode === 'selecting' && (
-        <View style={styles.confirmBar}>
-          <TouchableOpacity style={styles.confirmBtn} onPress={confirmSelection}>
+        <View style={[styles.confirmBar, { backgroundColor: colors.bg, borderTopColor: colors.border }]}>
+          <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: colors.accent }]} onPress={confirmSelection}>
             <Text style={styles.confirmBtnText}>
               {editingZone ? 'Xác nhận chỉnh sửa' : 'Tạo zone'} ({selectedCells.length} ô)
             </Text>
@@ -339,40 +383,60 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* Bottom spacer */}
       <View style={styles.bottomSpacer} />
 
-      {/* Modal đặt tên zone */}
+      {/* Modal đặt tên + chọn màu */}
       <Modal visible={nameModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>
+          <View style={[styles.modalBox, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
               {editingZone ? 'Sửa zone' : 'Đặt tên zone'}
             </Text>
-            <Text style={styles.label}>Tên zone *</Text>
+
+            <Text style={[styles.label, { color: colors.sub }]}>Tên zone *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
               value={zoneName}
               onChangeText={setZoneName}
               placeholder="VD: A1, Khu lạnh..."
-              placeholderTextColor="#555"
+              placeholderTextColor={colors.sub}
               autoFocus
             />
-            <Text style={styles.label}>Số tầng kệ</Text>
+
+            <Text style={[styles.label, { color: colors.sub }]}>Số tầng kệ</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
               value={tierCount}
               onChangeText={setTierCount}
               keyboardType="numeric"
             />
+
+            <Text style={[styles.label, { color: colors.sub }]}>Màu zone</Text>
+            <View style={styles.colorRow}>
+              {ZONE_COLORS.map(color => (
+                <TouchableOpacity
+                  key={color}
+                  style={[
+                    styles.colorDot,
+                    { backgroundColor: color },
+                    selectedColor === color && styles.colorDotSelected
+                  ]}
+                  onPress={() => setSelectedColor(color)}
+                />
+              ))}
+            </View>
+
             <View style={styles.modalActions}>
               <TouchableOpacity
                 onPress={() => setNameModal(false)}
-                style={styles.modalCancelBtn}
+                style={[styles.modalCancelBtn, { backgroundColor: colors.bg }]}
               >
-                <Text style={{ color: '#888' }}>Hủy</Text>
+                <Text style={{ color: colors.sub }}>Hủy</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={saveZone} style={styles.modalSaveBtn}>
+              <TouchableOpacity
+                onPress={saveZone}
+                style={[styles.modalSaveBtn, { backgroundColor: colors.accent }]}
+              >
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>Lưu</Text>
               </TouchableOpacity>
             </View>
@@ -380,25 +444,22 @@ export default function MapScreen() {
         </View>
       </Modal>
 
-      {/* Action modal khi tap zone */}
+      {/* Action modal */}
       <Modal visible={actionModal} transparent animationType="fade">
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setActionModal(false)}
-        >
-          <View style={styles.actionBox}>
-            <Text style={styles.actionTitle}>{tappedZone?.name}</Text>
-            <Text style={styles.actionSub}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setActionModal(false)}>
+          <View style={[styles.actionBox, { backgroundColor: colors.card }]}>
+            <View style={[styles.actionColorBar, { backgroundColor: tappedZone?.color ?? colors.accent }]} />
+            <Text style={[styles.actionTitle, { color: colors.text }]}>{tappedZone?.name}</Text>
+            <Text style={[styles.actionSub, { color: colors.sub }]}>
               {tappedZone?.cells?.length} ô · {tappedZone?.tier_count} tầng
             </Text>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => setActionModal(false)}>
-              <Text style={styles.actionBtnText}>📦 Xem hàng trong zone</Text>
+            <TouchableOpacity style={[styles.actionBtn, { borderBottomColor: colors.border }]} onPress={() => setActionModal(false)}>
+              <Text style={[styles.actionBtnText, { color: colors.text }]}>📦 Xem hàng trong zone</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn} onPress={startEditZone}>
-              <Text style={styles.actionBtnText}>✏️ Sửa zone</Text>
+            <TouchableOpacity style={[styles.actionBtn, { borderBottomColor: colors.border }]} onPress={startEditZone}>
+              <Text style={[styles.actionBtnText, { color: colors.text }]}>✏️ Sửa zone</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, styles.actionBtnDanger]} onPress={handleDeleteZone}>
+            <TouchableOpacity style={[styles.actionBtn, { borderBottomWidth: 0 }]} onPress={handleDeleteZone}>
               <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>🗑️ Xóa zone</Text>
             </TouchableOpacity>
           </View>
@@ -409,107 +470,61 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#111' },
+  container: { flex: 1 },
   topSpacer: { height: Platform.OS === 'android' ? 16 : 0 },
   bottomSpacer: { height: 16 },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12
-  },
-  title: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
-  addBtn: { backgroundColor: '#22C55E', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  title: { fontSize: 17, fontWeight: 'bold' },
+  addBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
   addBtnText: { color: '#fff', fontWeight: 'bold' },
-  cancelBtn: { backgroundColor: '#333', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
-  cancelBtnText: { color: '#fff' },
+  cancelBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
+  cancelBtnText: { fontWeight: 'bold' },
   locationRow: { paddingHorizontal: 16, marginBottom: 8, flexGrow: 0 },
-  locBtn: {
-    paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 20, backgroundColor: '#222', marginRight: 8
-  },
-  locBtnActive: { backgroundColor: '#22C55E' },
-  locText: { color: '#888', fontSize: 13 },
-  locTextActive: { color: '#fff', fontWeight: 'bold' },
-  searchRow: {
-    flexDirection: 'row', alignItems: 'center',
-    marginHorizontal: 16, marginBottom: 10
-  },
-  searchInput: {
-    flex: 1, backgroundColor: '#222', color: '#fff',
-    borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14
-  },
-  clearBtn: { marginLeft: 8, backgroundColor: '#333', padding: 10, borderRadius: 10 },
-  instructionBox: {
-    marginHorizontal: 16, marginBottom: 10,
-    backgroundColor: '#1e3a2f', borderRadius: 10, padding: 12
-  },
-  instructionText: { color: '#22C55E', fontWeight: 'bold', fontSize: 14 },
-  instructionSub: { color: '#888', fontSize: 12, marginTop: 2 },
-  resultsBox: {
-    marginHorizontal: 16, marginBottom: 8,
-    backgroundColor: '#1a1a1a', borderRadius: 10, padding: 12
-  },
-  resultsTitle: { color: '#888', fontSize: 12, marginBottom: 6 },
+  locBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginRight: 8 },
+  locText: { fontSize: 13 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 10 },
+  searchInput: { flex: 1, borderRadius: 10, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14 },
+  clearBtn: { marginLeft: 8, padding: 10, borderRadius: 10 },
+  instructionBox: { marginHorizontal: 16, marginBottom: 10, borderRadius: 10, padding: 12 },
+  instructionText: { fontWeight: 'bold', fontSize: 14 },
+  instructionSub: { fontSize: 12, marginTop: 2 },
+  resultsBox: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 12 },
+  resultsTitle: { fontSize: 12, marginBottom: 6 },
   resultItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  resultText: { color: '#fff', fontSize: 13, marginLeft: 8, flex: 1 },
+  resultText: { fontSize: 13, marginLeft: 8, flex: 1 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   grid: { padding: 16 },
-  gridRow: { flexDirection: 'row', alignItems: 'center' },
-  axisCorner: { width: 20, height: CELL_SIZE + 4 },
-  axisLabel: { width: 20, color: '#555', fontSize: 11, textAlign: 'center' },
-  colLabel: { width: CELL_SIZE + 4, marginHorizontal: 2 },
+  gridRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 0 },
+  axisCorner: { width: 20, height: CELL_SIZE },
+  axisLabel: { width: 20, fontSize: 10, textAlign: 'center' },
+  colLabel: { width: CELL_SIZE, marginHorizontal: 2, marginBottom: 4 },
   cell: {
     width: CELL_SIZE, height: CELL_SIZE,
-    margin: 2, borderRadius: 8,
-    justifyContent: 'center', alignItems: 'center'
+    marginHorizontal: 2, marginVertical: 2,
+    borderWidth: 1.5,
+    justifyContent: 'center', alignItems: 'center',
   },
-  cellEmpty: { backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#2a2a2a' },
-  cellFilled: { backgroundColor: '#1e3a2f', borderWidth: 1, borderColor: '#2d5a3d' },
-  cellSelected: { backgroundColor: '#22C55E', borderWidth: 2, borderColor: '#16a34a' },
-  cellBlocked: { backgroundColor: '#1a1a1a', borderWidth: 1, borderColor: '#1a1a1a', opacity: 0.4 },
-  zoneLabel: { fontSize: 10, fontWeight: 'bold', textAlign: 'center' },
+  zoneLabel: { fontSize: 10, fontWeight: 'bold', textAlign: 'center', paddingHorizontal: 2 },
   checkmark: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  confirmBar: {
-    paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: '#111', borderTopWidth: 1, borderTopColor: '#222'
-  },
-  confirmBtn: {
-    backgroundColor: '#22C55E', borderRadius: 12,
-    paddingVertical: 14, alignItems: 'center'
-  },
+  expiryDot: { position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4 },
+  confirmBar: { paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1 },
+  confirmBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   confirmBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-end'
-  },
-  modalBox: {
-    backgroundColor: '#1a1a1a',
-    borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24
-  },
-  modalTitle: { color: '#fff', fontSize: 17, fontWeight: 'bold', marginBottom: 16 },
-  label: { color: '#888', fontSize: 12, marginBottom: 4 },
-  input: {
-    backgroundColor: '#222', color: '#fff', borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12, fontSize: 14
-  },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
-  modalCancelBtn: {
-    flex: 1, backgroundColor: '#222', padding: 14,
-    borderRadius: 10, alignItems: 'center'
-  },
-  modalSaveBtn: {
-    flex: 1, backgroundColor: '#22C55E', padding: 14,
-    borderRadius: 10, alignItems: 'center'
-  },
-  actionBox: {
-    backgroundColor: '#1a1a1a', marginHorizontal: 40,
-    borderRadius: 16, padding: 20, marginBottom: 200
-  },
-  actionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', textAlign: 'center' },
-  actionSub: { color: '#666', fontSize: 12, textAlign: 'center', marginBottom: 16 },
-  actionBtn: {
-    paddingVertical: 14, borderBottomWidth: 1,
-    borderBottomColor: '#222', alignItems: 'center'
-  },
-  actionBtnDanger: { borderBottomWidth: 0 },
-  actionBtnText: { color: '#fff', fontSize: 15 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalBox: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24 },
+  modalTitle: { fontSize: 17, fontWeight: 'bold', marginBottom: 16 },
+  label: { fontSize: 12, marginBottom: 4 },
+  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 12, fontSize: 14 },
+  colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
+  colorDot: { width: 32, height: 32, borderRadius: 16 },
+  colorDotSelected: { borderWidth: 3, borderColor: '#fff' },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  modalCancelBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center' },
+  modalSaveBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center' },
+  actionBox: { marginHorizontal: 32, borderRadius: 16, overflow: 'hidden', marginBottom: 180 },
+  actionColorBar: { height: 4 },
+  actionTitle: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginTop: 16 },
+  actionSub: { fontSize: 12, textAlign: 'center', marginBottom: 16 },
+  actionBtn: { paddingVertical: 14, borderBottomWidth: 1, alignItems: 'center' },
+  actionBtnText: { fontSize: 15 },
 })

@@ -17,6 +17,7 @@ export type Zone = {
   cells: ZoneCell[]
   has_tiers: boolean
   tier_count: number
+  color: string
   notes?: string
   updated_at: string
 }
@@ -62,3 +63,18 @@ export const EXPIRY_COLORS: Record<ExpiryStatus, string> = {
   warning: '#F59E0B',
   ok: '#22C55E',
 }
+
+export const ZONE_COLORS = [
+  '#22C55E', // Xanh lá
+  '#3B82F6', // Xanh dương
+  '#A855F7', // Tím
+  '#EC4899', // Hồng
+  '#F97316', // Cam
+  '#EAB308', // Vàng
+  '#06B6D4', // Xanh ngọc
+  '#F43F5E', // Đỏ san hô
+  '#A16207', // Nâu
+  '#94A3B8', // Xám bạc
+  '#65A30D', // Xanh rêu
+  '#6366F1', // Indigo
+]

@@ -20,7 +20,13 @@ type WarehouseStore = {
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
   updateInventoryEntry: (id: string, data: Partial<InventoryEntry>) => Promise<void>
   deleteInventoryEntry: (id: string) => Promise<void>
-  addZone: (data: { name: string; cells: ZoneCell[]; tier_count: number; location_id: string }) => Promise<void>
+  addZone: (data: {
+    name: string
+    cells: ZoneCell[]
+    tier_count: number
+    color: string
+    location_id: string
+  }) => Promise<void>
   updateZone: (id: string, data: Partial<Zone>) => Promise<void>
   deleteZone: (id: string) => Promise<boolean>
 }
@@ -133,6 +139,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       cells: data.cells,
       tier_count: data.tier_count,
       has_tiers: data.tier_count > 1,
+      color: data.color,
       location_id: data.location_id,
     }
     const { data: created } = await supabase
