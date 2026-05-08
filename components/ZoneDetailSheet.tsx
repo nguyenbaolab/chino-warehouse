@@ -74,9 +74,41 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
     [entries, selectedTier]
   )
 
-  function handlePressProduct(entry: InventoryEntry) {
-    // Placeholder cho ProductDetail ở bước sau
-    console.log('ZoneDetailSheet: selected product entry', entry)
+  const groupedProducts = useMemo(() => {
+    const map = new Map<string, { productId: string; productName: string; totalBoxes: number; lots: InventoryEntry[] }>()
+
+    for (const entry of currentTierEntries) {
+      const productId = entry.product_id
+      const current = map.get(productId)
+      if (current) {
+        current.totalBoxes += entry.quantity_boxes
+        current.lots.push(entry)
+      } else {
+        map.set(productId, {
+          productId,
+          productName: entry.product?.name ?? 'Sản phẩm không xác định',
+          totalBoxes: entry.quantity_boxes,
+          lots: [entry],
+        })
+      }
+    }
+
+    // Sắp xếp lot theo hạn gần nhất trước để hiển thị và lấy "lô xấu nhất"
+    const groups = Array.from(map.values()).map((group) => {
+      const sortedLots = [...group.lots].sort((a, b) => {
+        const aTime = a.expiry_date ? new Date(a.expiry_date).getTime() : Number.POSITIVE_INFINITY
+        const bTime = b.expiry_date ? new Date(b.expiry_date).getTime() : Number.POSITIVE_INFINITY
+        return aTime - bTime
+      })
+      return { ...group, lots: sortedLots }
+    })
+
+    return groups.sort((a, b) => a.productName.localeCompare(b.productName))
+  }, [currentTierEntries])
+
+  function handlePressLot(entry: InventoryEntry) {
+    // Placeholder cho sửa/xóa lô ở bước sau
+    console.log('ZoneDetailSheet: selected lot entry', entry)
   }
 
   function handlePressAddInventory() {
@@ -152,26 +184,45 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
               </View>
             ) : (
               <ScrollView showsVerticalScrollIndicator={false}>
-                {currentTierEntries.map((entry) => (
-                  <TouchableOpacity
-                    key={entry.id}
-                    style={[styles.itemRow, { borderBottomColor: colors.border }]}
-                    onPress={() => handlePressProduct(entry)}
-                  >
-                    <View style={styles.itemMain}>
-                      <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                        {entry.product?.name ?? 'Sản phẩm không xác định'}
-                      </Text>
-                      <Text style={[styles.itemQty, { color: colors.sub }]}>{entry.quantity_boxes} thùng</Text>
+                {groupedProducts.map((group) => {
+                  const worstLot = group.lots[0]
+                  const worstColor = EXPIRY_COLORS[getExpiryStatus(worstLot?.expiry_date)]
+
+                  return (
+                    <View key={group.productId} style={[styles.groupWrap, { borderBottomColor: colors.border }]}>
+                      <View style={styles.itemRow}>
+                        <View style={styles.itemMain}>
+                          <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                            {group.productName}
+                          </Text>
+                          <Text style={[styles.itemQty, { color: colors.sub }]}>{group.totalBoxes} thùng</Text>
+                        </View>
+                        <View style={[styles.expiryDot, { backgroundColor: worstColor }]} />
+                      </View>
+
+                      {/* Danh sách từng lô của sản phẩm, luôn expanded */}
+                      <View style={styles.lotList}>
+                        {group.lots.map((lot) => {
+                          const lotColor = EXPIRY_COLORS[getExpiryStatus(lot.expiry_date)]
+                          const lotExpiry = lot.expiry_date ?? 'Không hạn'
+                          return (
+                            <TouchableOpacity
+                              key={lot.id}
+                              style={[styles.lotRow, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                              onPress={() => handlePressLot(lot)}
+                            >
+                              <View style={styles.lotInfo}>
+                                <Text style={[styles.lotText, { color: colors.text }]}>{lot.quantity_boxes} thùng</Text>
+                                <Text style={[styles.lotSubText, { color: colors.sub }]}>Hạn: {lotExpiry}</Text>
+                              </View>
+                              <View style={[styles.expiryDot, { backgroundColor: lotColor }]} />
+                            </TouchableOpacity>
+                          )
+                        })}
+                      </View>
                     </View>
-                    <View
-                      style={[
-                        styles.expiryDot,
-                        { backgroundColor: EXPIRY_COLORS[getExpiryStatus(entry.expiry_date)] },
-                      ]}
-                    />
-                  </TouchableOpacity>
-                ))}
+                  )
+                })}
               </ScrollView>
             )}
           </View>
@@ -270,8 +321,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  groupWrap: {
     borderBottomWidth: 1,
-    paddingVertical: 12,
+    paddingBottom: 10,
+    marginBottom: 8,
   },
   itemMain: {
     flex: 1,
@@ -289,6 +344,30 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+  },
+  lotList: {
+    gap: 8,
+  },
+  lotRow: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  lotInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  lotText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  lotSubText: {
+    marginTop: 2,
+    fontSize: 12,
   },
   addBtn: {
     margin: 16,

@@ -13,6 +13,7 @@ import { useRoute, useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { Product } from '../types'
+import { supabase } from '../lib/supabase'
 
 type AddInventoryRouteParams = {
   zoneId: string
@@ -76,6 +77,7 @@ export default function AddInventoryScreen() {
     if (!query) return products
     return products.filter((p) => p.name.toLowerCase().includes(query))
   }, [products, searchQuery])
+  const isSearching = searchQuery.trim().length > 0
 
   async function handleCreateProduct() {
     if (!newProductName.trim()) {
@@ -100,7 +102,7 @@ export default function AddInventoryScreen() {
     // Đồng bộ lại danh sách và tự chọn sản phẩm vừa tạo
     await fetchProducts()
     setSelectedProduct(created)
-    setSearchQuery(created.name)
+    setSearchQuery('')
     setShowCreateProduct(false)
     setNewProductName('')
     setNewProductBarcode('')
@@ -126,6 +128,52 @@ export default function AddInventoryScreen() {
     }
 
     setIsSaving(true)
+
+    // Kiểm tra trùng lot theo product + zone + tier + expiry trước khi insert
+    let duplicateQuery = supabase
+      .from('inventory_entries')
+      .select('id, quantity_boxes')
+      .eq('product_id', selectedProduct.id)
+      .eq('zone_id', zoneId)
+      .eq('tier', tier)
+      .limit(1)
+
+    duplicateQuery = expiryDateIso
+      ? duplicateQuery.eq('expiry_date', expiryDateIso)
+      : duplicateQuery.is('expiry_date', null)
+
+    const { data: duplicatedLots } = await duplicateQuery
+    const duplicatedLot = duplicatedLots?.[0]
+
+    if (duplicatedLot) {
+      Alert.alert(
+        'Đã có lô này',
+        `Đã có lô này, bạn muốn cộng thêm ${quantity} thùng?`,
+        [
+          {
+            text: 'Hủy',
+            style: 'cancel',
+            onPress: () => {
+              setIsSaving(false)
+            },
+          },
+          {
+            text: 'Cộng thêm',
+            onPress: async () => {
+              const newQuantity = duplicatedLot.quantity_boxes + quantity
+              await supabase
+                .from('inventory_entries')
+                .update({ quantity_boxes: newQuantity, notes: batchNote.trim() || undefined })
+                .eq('id', duplicatedLot.id)
+              setIsSaving(false)
+              navigation.goBack()
+            },
+          },
+        ]
+      )
+      return
+    }
+
     await addInventoryEntry({
       product_id: selectedProduct.id,
       zone_id: zoneId,
@@ -135,7 +183,6 @@ export default function AddInventoryScreen() {
       notes: batchNote.trim() || undefined,
     })
     setIsSaving(false)
-
     navigation.goBack()
   }
 
@@ -171,20 +218,38 @@ export default function AddInventoryScreen() {
           onChangeText={setSearchQuery}
         />
 
-        <View style={[styles.productList, { borderColor: colors.border, backgroundColor: colors.card }]}>
-          {filteredProducts.slice(0, 8).map((product) => {
-            const active = selectedProduct?.id === product.id
-            return (
+        {selectedProduct ? (
+          <View style={[styles.selectedProductBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.selectedProductMain}>
+              <Text style={[styles.selectedProductName, { color: colors.text }]} numberOfLines={1}>
+                {selectedProduct.name}
+              </Text>
+              {!!selectedProduct.barcode && (
+                <Text style={[styles.selectedProductBarcode, { color: colors.sub }]} numberOfLines={1}>
+                  {selectedProduct.barcode}
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity
+              style={[styles.clearSelectedBtn, { backgroundColor: colors.bg }]}
+              onPress={() => {
+                setSelectedProduct(null)
+                setSearchQuery('')
+              }}
+            >
+              <Text style={[styles.clearSelectedText, { color: colors.sub }]}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        ) : isSearching ? (
+          <View style={[styles.productList, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            {filteredProducts.slice(0, 8).map((product) => (
               <TouchableOpacity
                 key={product.id}
-                style={[
-                  styles.productRow,
-                  {
-                    borderBottomColor: colors.border,
-                    backgroundColor: active ? colors.bg : 'transparent',
-                  },
-                ]}
-                onPress={() => setSelectedProduct(product)}
+                style={[styles.productRow, { borderBottomColor: colors.border }]}
+                onPress={() => {
+                  setSelectedProduct(product)
+                  setSearchQuery('')
+                }}
               >
                 <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
                   {product.name}
@@ -195,20 +260,26 @@ export default function AddInventoryScreen() {
                   </Text>
                 )}
               </TouchableOpacity>
-            )
-          })}
-          {filteredProducts.length === 0 && (
-            <View style={styles.emptyProductWrap}>
-              <Text style={[styles.emptyProductText, { color: colors.sub }]}>Không tìm thấy sản phẩm phù hợp.</Text>
-              <TouchableOpacity
-                style={[styles.createBtn, { backgroundColor: colors.accent }]}
-                onPress={() => setShowCreateProduct((v) => !v)}
-              >
-                <Text style={[styles.createBtnText, { color: colors.card }]}>Tạo sản phẩm mới</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+            ))}
+            {filteredProducts.length === 0 && (
+              <View style={styles.emptyProductWrap}>
+                <Text style={[styles.emptyProductText, { color: colors.sub }]}>Không tìm thấy sản phẩm phù hợp.</Text>
+                <TouchableOpacity
+                  style={[styles.createBtn, { backgroundColor: colors.accent }]}
+                  onPress={() => setShowCreateProduct((v) => !v)}
+                >
+                  <Text style={[styles.createBtnText, { color: colors.card }]}>Tạo sản phẩm mới</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={[styles.searchHintBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.searchHintText, { color: colors.sub }]}>
+              Nhập tên sản phẩm để hiện danh sách gợi ý.
+            </Text>
+          </View>
+        )}
 
         {showCreateProduct && (
           <View style={[styles.createWrap, { borderColor: colors.border, backgroundColor: colors.card }]}>
@@ -255,6 +326,7 @@ export default function AddInventoryScreen() {
         <TextInput
           style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
           keyboardType="numeric"
+          placeholderTextColor={colors.sub}
           value={quantityBoxes}
           onChangeText={setQuantityBoxes}
         />
@@ -362,6 +434,48 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 12,
     overflow: 'hidden',
+  },
+  searchHintBox: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  searchHintText: {
+    fontSize: 13,
+  },
+  selectedProductBox: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  selectedProductMain: {
+    flex: 1,
+  },
+  selectedProductName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  selectedProductBarcode: {
+    marginTop: 2,
+    fontSize: 12,
+  },
+  clearSelectedBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clearSelectedText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   productRow: {
     paddingHorizontal: 12,
