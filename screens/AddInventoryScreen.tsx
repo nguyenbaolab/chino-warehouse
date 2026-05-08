@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Alert,
+  Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -16,10 +17,11 @@ import { Product } from '../types'
 import { supabase } from '../lib/supabase'
 
 type AddInventoryRouteParams = {
-  zoneId: string
-  zoneName: string
-  zoneColor: string
-  tier: number
+  zoneId?: string
+  tierId?: number
+  zoneName?: string
+  zoneColor?: string
+  tier?: number
   productId?: string
 }
 
@@ -52,9 +54,24 @@ function parseDisplayDateToIso(raw: string): string | null {
 export default function AddInventoryScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
-  const { zoneId, zoneName, zoneColor, tier, productId } = route.params as AddInventoryRouteParams
+  const {
+    zoneId: initialZoneId,
+    tierId: initialTierId,
+    zoneName,
+    zoneColor,
+    tier,
+    productId,
+  } = (route.params as AddInventoryRouteParams) || {}
   const { colors } = useThemeStore()
-  const { products, fetchProducts, addProduct, addInventoryEntry, updateInventoryEntry } = useWarehouseStore()
+  const {
+    products,
+    zones,
+    fetchProducts,
+    fetchLocations,
+    addProduct,
+    addInventoryEntry,
+    updateInventoryEntry,
+  } = useWarehouseStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -68,10 +85,15 @@ export default function AddInventoryScreen() {
   const [newProductBarcode, setNewProductBarcode] = useState('')
   const [newProductNote, setNewProductNote] = useState('')
   const [isCreatingProduct, setIsCreatingProduct] = useState(false)
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(initialZoneId ?? null)
+  const [selectedTier, setSelectedTier] = useState<number | null>(initialTierId ?? tier ?? null)
+  const [showZoneOptions, setShowZoneOptions] = useState(false)
+  const [showTierOptions, setShowTierOptions] = useState(false)
 
   useEffect(() => {
+    fetchLocations()
     fetchProducts()
-  }, [fetchProducts])
+  }, [fetchLocations, fetchProducts])
 
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -85,6 +107,32 @@ export default function AddInventoryScreen() {
     const pref = products.find((p) => p.id === productId)
     if (pref) setSelectedProduct(pref)
   }, [productId, products, selectedProduct])
+
+  const selectedZone = useMemo(
+    () => zones.find((zone) => zone.id === selectedZoneId) ?? null,
+    [zones, selectedZoneId]
+  )
+
+  const availableTiers = useMemo(() => {
+    if (!selectedZone) return []
+    return Array.from({ length: Math.max(selectedZone.tier_count || 1, 1) }, (_, idx) => idx + 1)
+  }, [selectedZone])
+
+  useEffect(() => {
+    if (!selectedZone) {
+      setSelectedTier(null)
+      return
+    }
+    // Zone 1 tầng thì tự động chọn tầng 1
+    if (availableTiers.length === 1) {
+      setSelectedTier(1)
+      return
+    }
+    // Nếu tier cũ không còn hợp lệ theo zone mới thì reset
+    if (selectedTier && !availableTiers.includes(selectedTier)) {
+      setSelectedTier(null)
+    }
+  }, [selectedZone, availableTiers, selectedTier])
 
   async function handleCreateProduct() {
     if (!newProductName.trim()) {
@@ -122,6 +170,15 @@ export default function AddInventoryScreen() {
       return
     }
 
+    if (!selectedZoneId) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng chọn zone.')
+      return
+    }
+    if (!selectedTier) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng chọn tầng.')
+      return
+    }
+
     const quantity = Number(quantityBoxes)
     if (!Number.isFinite(quantity) || quantity < 1) {
       Alert.alert('Số thùng không hợp lệ', 'Số thùng phải lớn hơn hoặc bằng 1.')
@@ -141,8 +198,8 @@ export default function AddInventoryScreen() {
       .from('inventory_entries')
       .select('id, quantity_boxes')
       .eq('product_id', selectedProduct.id)
-      .eq('zone_id', zoneId)
-      .eq('tier', tier)
+      .eq('zone_id', selectedZoneId)
+      .eq('tier', selectedTier)
       .limit(1)
 
     duplicateQuery = expiryDateIso
@@ -184,8 +241,8 @@ export default function AddInventoryScreen() {
 
     await addInventoryEntry({
       product_id: selectedProduct.id,
-      zone_id: zoneId,
-      tier,
+      zone_id: selectedZoneId,
+      tier: selectedTier,
       quantity_boxes: quantity,
       expiry_date: expiryDateIso ?? undefined,
       notes: batchNote.trim() || undefined,
@@ -196,7 +253,7 @@ export default function AddInventoryScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <View style={[styles.topColorBar, { backgroundColor: zoneColor || colors.accent }]} />
+      <View style={[styles.topColorBar, { backgroundColor: selectedZone?.color || zoneColor || colors.accent }]} />
 
       {/* Header có nút hủy quay lại màn trước */}
       <View style={styles.headerRow}>
@@ -207,14 +264,73 @@ export default function AddInventoryScreen() {
       </View>
 
       <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
-        {/* Zone/tầng chỉ hiển thị thông tin, không cho sửa */}
-        <View style={[styles.readonlyBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.readonlyText, { color: colors.sub }]}>
-            Zone: <Text style={[styles.readonlyValue, { color: colors.text }]}>{zoneName}</Text>
-          </Text>
-          <Text style={[styles.readonlyText, { color: colors.sub }]}>
-            Tầng: <Text style={[styles.readonlyValue, { color: colors.text }]}>Tầng {tier}</Text>
-          </Text>
+        {/* Dropdown zone + tầng */}
+        <View style={styles.zoneTierRow}>
+          <View style={styles.zoneTierCol}>
+            <Text style={[styles.label, { color: colors.sub }]}>Chọn zone *</Text>
+            <Pressable
+              style={[styles.selectBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => {
+                setShowZoneOptions((v) => !v)
+                setShowTierOptions(false)
+              }}
+            >
+              <Text style={{ color: selectedZone ? colors.text : colors.sub }}>
+                {selectedZone?.name ?? zoneName ?? 'Chọn zone'}
+              </Text>
+            </Pressable>
+            {showZoneOptions && (
+              <View style={[styles.optionsWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {zones.map((zone) => (
+                  <TouchableOpacity
+                    key={zone.id}
+                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                    onPress={() => {
+                      setSelectedZoneId(zone.id)
+                      setShowZoneOptions(false)
+                    }}
+                  >
+                    <Text style={{ color: colors.text }}>{zone.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View style={styles.zoneTierCol}>
+            <Text style={[styles.label, { color: colors.sub }]}>Chọn tầng *</Text>
+            <Pressable
+              style={[
+                styles.selectBtn,
+                { backgroundColor: colors.card, borderColor: colors.border, opacity: selectedZone ? 1 : 0.5 },
+              ]}
+              onPress={() => {
+                if (!selectedZone || availableTiers.length <= 1) return
+                setShowTierOptions((v) => !v)
+                setShowZoneOptions(false)
+              }}
+            >
+              <Text style={{ color: selectedTier ? colors.text : colors.sub }}>
+                {selectedTier ? `Tầng ${selectedTier}` : 'Chọn tầng'}
+              </Text>
+            </Pressable>
+            {showTierOptions && selectedZone && availableTiers.length > 1 && (
+              <View style={[styles.optionsWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {availableTiers.map((tierNum) => (
+                  <TouchableOpacity
+                    key={tierNum}
+                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                    onPress={() => {
+                      setSelectedTier(tierNum)
+                      setShowTierOptions(false)
+                    }}
+                  >
+                    <Text style={{ color: colors.text }}>Tầng {tierNum}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
         </View>
 
         <Text style={[styles.label, { color: colors.sub }]}>Tìm/chọn sản phẩm *</Text>
@@ -420,6 +536,31 @@ const styles = StyleSheet.create({
   },
   readonlyValue: {
     fontWeight: '700',
+  },
+  zoneTierRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 12,
+  },
+  zoneTierCol: {
+    flex: 1,
+  },
+  selectBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  optionsWrap: {
+    borderWidth: 1,
+    borderRadius: 10,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  optionRow: {
+    borderBottomWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   label: {
     fontSize: 12,
