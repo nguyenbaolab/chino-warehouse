@@ -19,6 +19,8 @@ import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone } fr
 
 type ProductDetailRouteParams = {
   productId: string
+  scannedBarcode?: string
+  barcodeAssignedAt?: number
 }
 
 function isValidIsoDate(raw: string): boolean {
@@ -35,9 +37,9 @@ function isValidIsoDate(raw: string): boolean {
 export default function ProductDetailScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
-  const { productId } = route.params as ProductDetailRouteParams
+  const { productId, scannedBarcode, barcodeAssignedAt } = route.params as ProductDetailRouteParams
   const { colors } = useThemeStore()
-  const { zones, updateInventoryEntry, deleteInventoryEntry, updateProductStockThresholds } = useWarehouseStore()
+  const { zones, updateInventoryEntry, deleteInventoryEntry, updateProductStockThresholds, updateBarcode } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [lots, setLots] = useState<InventoryEntry[]>([])
@@ -47,6 +49,7 @@ export default function ProductDetailScreen() {
   const [editQuantity, setEditQuantity] = useState('')
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [editBarcode, setEditBarcode] = useState('')
   const [editWarningDays, setEditWarningDays] = useState('30')
   const [editLowWarningBoxes, setEditLowWarningBoxes] = useState('3')
   const [editLowCriticalBoxes, setEditLowCriticalBoxes] = useState('1')
@@ -70,6 +73,7 @@ export default function ProductDetailScreen() {
     ])
     setProduct(productData ?? null)
     setLots((lotData as InventoryEntry[]) ?? [])
+    setEditBarcode(productData?.barcode ?? '')
     setEditWarningDays(String(productData?.warning_days ?? 30))
     setEditLowWarningBoxes(String(productData?.low_warning_boxes ?? 3))
     setEditLowCriticalBoxes(String(productData?.low_critical_boxes ?? 1))
@@ -79,6 +83,12 @@ export default function ProductDetailScreen() {
   useEffect(() => {
     loadData()
   }, [productId])
+
+  useEffect(() => {
+    if (!scannedBarcode) return
+    setEditBarcode(scannedBarcode)
+    navigation.setParams({ scannedBarcode: undefined, barcodeAssignedAt: undefined })
+  }, [scannedBarcode, barcodeAssignedAt])
 
   function openInlineEdit(lot: InventoryEntry) {
     if (editingLotId === lot.id) {
@@ -146,6 +156,16 @@ export default function ProductDetailScreen() {
       useWarehouseStore.setState((s) => ({
         products: s.products.map((p) => (p.id === updated.id ? updated : p)),
       }))
+    }
+    setIsSavingProduct(false)
+  }
+
+  async function handleSaveBarcode() {
+    if (!product) return
+    setIsSavingProduct(true)
+    const updated = await updateBarcode(product.id, editBarcode)
+    if (updated) {
+      setProduct(updated)
     }
     setIsSavingProduct(false)
   }
@@ -239,6 +259,27 @@ export default function ProductDetailScreen() {
         <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.productName, { color: colors.text }]}>{product?.name ?? 'Không xác định'}</Text>
           {!!product?.barcode && <Text style={[styles.infoText, { color: colors.sub }]}>Barcode: {product.barcode}</Text>}
+          <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
+            Mã vạch
+          </Text>
+          <View style={styles.warningEditRow}>
+            <TextInput
+              style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+              value={editBarcode}
+              onChangeText={setEditBarcode}
+              placeholder="Chưa có mã vạch"
+              placeholderTextColor={colors.sub}
+            />
+            <TouchableOpacity
+              style={[styles.scanBarcodeBtn, { backgroundColor: colors.accent }]}
+              onPress={() => navigation.navigate('BarcodeScanner', { mode: 'assign', productId })}
+            >
+              <Text style={[styles.scanBarcodeText, { color: colors.card }]}>📷</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveBarcode}>
+              <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
+            </TouchableOpacity>
+          </View>
           {!!product?.notes && <Text style={[styles.infoText, { color: colors.sub }]}>Ghi chú: {product.notes}</Text>}
           <Text style={[styles.infoText, { color: colors.sub }]}>
             Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
@@ -498,6 +539,14 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 13, marginTop: 2 },
   warningEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
   warningInput: { flex: 1, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  scanBarcodeBtn: {
+    width: 40,
+    height: 36,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanBarcodeText: { fontSize: 16 },
   warningSaveBtn: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9 },
   addLotBtn: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginBottom: 14 },
   addLotBtnText: { fontWeight: '700' },

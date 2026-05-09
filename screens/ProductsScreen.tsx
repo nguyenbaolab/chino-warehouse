@@ -227,13 +227,21 @@ export default function ProductsScreen() {
       </TouchableOpacity>
 
       <View style={styles.searchWrap}>
-        <TextInput
-          style={[styles.searchInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Tìm sản phẩm theo tên..."
-          placeholderTextColor={colors.sub}
-        />
+        <View style={styles.searchRow}>
+          <TextInput
+            style={[styles.searchInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Tìm sản phẩm theo tên..."
+            placeholderTextColor={colors.sub}
+          />
+          <TouchableOpacity
+            style={[styles.scanBtn, { backgroundColor: colors.accent }]}
+            onPress={() => navigation.navigate('BarcodeScanner')}
+          >
+            <Text style={styles.scanBtnText}>📷</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -442,13 +450,24 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
   },
   searchWrap: { paddingHorizontal: 16, marginBottom: 8 },
+  searchRow: { flexDirection: 'row', alignItems: 'center' },
   searchInput: {
+    flex: 1,
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
   },
+  scanBtn: {
+    marginLeft: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanBtnText: { fontSize: 16 },
   zoneFilterScroll: { maxHeight: 44, marginBottom: 8 },
   zoneFilterRow: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
   zoneChip: {

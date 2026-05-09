@@ -11,6 +11,7 @@ import SettingsScreen from './screens/SettingsScreen'
 import AddInventoryScreen from './screens/AddInventoryScreen'
 import ProductDetailScreen from './screens/ProductDetailScreen'
 import NotificationsScreen from './screens/NotificationsScreen'
+import BarcodeScannerScreen from './screens/BarcodeScannerScreen'
 
 const Tab = createBottomTabNavigator()
 const Stack = createNativeStackNavigator()
@@ -57,6 +58,7 @@ export default function App() {
         <Stack.Screen name="Tabs" component={TabNavigator} />
         <Stack.Screen name="AddInventory" component={AddInventoryScreen} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="BarcodeScanner" component={BarcodeScannerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

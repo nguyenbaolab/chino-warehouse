@@ -41,18 +41,35 @@ Chino's Warehouse la app noi bo cho chu cua hang va nhan vien de tra cuu ton kho
   - `low_critical_boxes`
 
 ## Da hoan thanh
-- F02, F03, F04, F05, F06, F07, F09
+- F02, F03, F04, F05, F06, F07, F09, F10
 - F11, F12, F13, F14, F15, F16, F17
 - F18 (hoan thien theo nguong per-product + badge thong bao + UI da polish)
 
 ## Con thieu
 - F01 searchable dropdown chon kho
-- F10 scanner UI flow
 - F08 anh san pham
 - F19-F25 (theo roadmap PRD, chua implement)
 
 ## Next tasks de bat dau ngay
-1. F10 BarcodeScanner end-to-end (camera, ket qua, fallback them thu cong)
-2. F01 location selector searchable dropdown dung PRD
-3. Dong bo UX ket qua search/scan giua map va product detail
-4. Chuan hoa test cases cho status do/cam/vang/xanh theo quantity + expiry
+1. F01 location selector searchable dropdown dung PRD
+2. Dong bo UX ket qua search/scan giua map va product detail
+3. Chuan hoa test cases cho status do/cam/vang/xanh theo quantity + expiry
+4. F19 canh bao han <14 ngay theo rule rieng
+
+## F10 BarcodeScanner flow
+- Mo scanner tu `MapScreen` hoac `ProductsScreen` qua nut scan ben canh o tim kiem.
+- Co the mo scanner tu `ProductDetailScreen` o che do gan barcode cho san pham hien tai.
+- Quet thanh cong:
+  - Tim theo `barcode` (exact match) qua `searchByBarcode()`.
+  - Neu tim thay -> mo `ProductDetail`.
+  - Neu khong tim thay -> Alert:
+    - `Them thu cong` -> mo `AddInventory`
+    - `Quet lai` -> tiep tuc scanner.
+- Neu tu choi quyen camera -> hien huong dan + nut `Mo cai dat`.
+- Scanner co 2 mode:
+  - `search`: quet de tim san pham
+  - `assign`: quet de tra barcode ve `ProductDetailScreen` (nguoi dung bam `Luu` de luu DB)
+
+## Ghi chu data model lien quan barcode
+- Field `products.barcode` da co san trong DB (text, optional) va dang duoc dung cho F10.
+- Barcode co the nhap tay hoac quet truc tiep trong `ProductDetailScreen`.

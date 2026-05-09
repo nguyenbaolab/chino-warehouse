@@ -21,6 +21,7 @@ type WarehouseStore = {
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
   updateInventoryEntry: (id: string, data: Partial<InventoryEntry>) => Promise<void>
   deleteInventoryEntry: (id: string) => Promise<void>
+  updateBarcode: (productId: string, barcode?: string) => Promise<Product | null>
   updateProductStockThresholds: (
     productId: string,
     data: { low_warning_boxes?: number; low_critical_boxes?: number }
@@ -164,6 +165,26 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     set((s) => ({
       inventoryEntries: s.inventoryEntries.filter((entry) => entry.id !== id),
     }))
+  },
+
+  updateBarcode: async (productId, barcode) => {
+    const { data: updated } = await supabase
+      .from('products')
+      .update({ barcode: barcode?.trim() ? barcode.trim() : null })
+      .eq('id', productId)
+      .select('*')
+      .single()
+
+    if (updated) {
+      set((s) => ({
+        products: s.products.map((p) => (p.id === updated.id ? updated : p)),
+        inventoryEntries: s.inventoryEntries.map((entry) => (
+          entry.product_id === updated.id ? { ...entry, product: updated } : entry
+        )),
+      }))
+      return updated
+    }
+    return null
   },
 
   updateProductStockThresholds: async (productId, data) => {

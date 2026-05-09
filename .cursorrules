@@ -9,7 +9,7 @@ React Native (Expo) + TypeScript + Supabase + Zustand. Chạy iOS & Android qua 
 - State: Zustand (warehouseStore, themeStore)
 - Backend: Supabase (PostgreSQL + Realtime)
 - Navigation: React Navigation (Bottom Tabs + Native Stack)
-- Barcode: expo-barcode-scanner
+- Barcode: expo-camera (CameraView + onBarcodeScanned)
 
 ## Cấu trúc thư mục
 chino-warehouse/

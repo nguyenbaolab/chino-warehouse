@@ -415,6 +415,12 @@ export default function MapScreen() {
             value={searchQuery}
             onChangeText={handleSearch}
           />
+          <TouchableOpacity
+            onPress={() => navigation.navigate('BarcodeScanner')}
+            style={[styles.scanBtn, { backgroundColor: colors.accent }]}
+          >
+            <Text style={styles.scanBtnText}>📷</Text>
+          </TouchableOpacity>
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={clearSearch} style={[styles.clearBtn, { backgroundColor: colors.card }]}>
               <Text style={{ color: colors.text }}>✕</Text>
@@ -626,6 +632,15 @@ const styles = StyleSheet.create({
   locText: { fontSize: 13 },
   searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 10 },
   searchInput: { flex: 1, borderRadius: 10, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14 },
+  scanBtn: {
+    marginLeft: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanBtnText: { fontSize: 16 },
   clearBtn: { marginLeft: 8, padding: 10, borderRadius: 10 },
   instructionBox: { marginHorizontal: 16, marginBottom: 10, borderRadius: 10, padding: 12 },
   instructionText: { fontWeight: 'bold', fontSize: 14 },

@@ -11,7 +11,7 @@
 - F07 - Man hinh chi tiet san pham: ✅ Done
 - F08 - Hinh anh san pham: 📋 Backlog
 - F09 - Tim kiem san pham theo ten: ✅ Done
-- F10 - Quet ma vach: 🚧 WIP
+- F10 - Quet ma vach: ✅ Done
 - F11 - Quan ly ton kho theo thung: ✅ Done
 - F12 - Theo doi han su dung bang mau: ✅ Done
 - F13 - Ghi chu san pham va lo hang: ✅ Done
@@ -32,7 +32,7 @@
 - **Map + Zone**: F02-F06 da hoan thien cho luong core trong kho.
 - **Product + Inventory**: F07, F09, F11-F16 da hoan thien.
 - **Alerting**: F18 da nang cap theo nguong thung per-product (`low_warning_boxes`, `low_critical_boxes`).
-- **Scanner + Multi-location UX**: F01, F10 con dang WIP.
+- **Scanner + Multi-location UX**: F10 da xong (scan -> ProductDetail/AddInventory), F01 con WIP.
 - **Phase 2/3**: F08, F19-F25 de backlog.
 
 ## Business rules bat buoc
@@ -56,7 +56,7 @@
 - **zones**
   - `id`, `location_id`, `name`, `cells`, `tier_count`, `color`, `has_tiers`, `updated_at`
 - **products**
-  - `id`, `name`, `barcode`, `warning_days`
+  - `id`, `name`, `barcode` (co san, optional), `warning_days`
   - `low_warning_boxes` (moi, default 3)
   - `low_critical_boxes` (moi, default 1)
   - `notes`, `is_archived`, `created_at`
@@ -82,3 +82,18 @@
   - Cam = con rat it (critical)
   - Vang = sap het hang/sap het han
   - Xanh = binh thuong
+
+## F10 flow (da implement)
+- Nut scan tren `MapScreen` va `ProductsScreen`.
+- `BarcodeScannerScreen` fullscreen voi vung quet trung tam.
+- Scanner co 2 mode:
+  - `search`: flow tim san pham theo barcode nhu hien tai
+  - `assign`: tra barcode ve `ProductDetailScreen` de gan cho san pham dang sua
+- Quet thanh cong:
+  - Tim `barcode` exact match qua `searchByBarcode()`.
+  - Co ket qua -> navigate `ProductDetail`.
+  - Khong co ket qua -> cho phep `Them thu cong` (mo `AddInventory`) hoac `Quet lai`.
+- Trong `ProductDetailScreen`, barcode co the:
+  - Nhap tay trong o `Ma vach`
+  - Quet bang nut `📷`
+  - Bam `Luu` de cap nhat field `products.barcode`
