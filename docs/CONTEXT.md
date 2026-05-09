@@ -15,6 +15,7 @@ Chino's Warehouse la app noi bo cho chu cua hang va nhan vien de tra cuu ton kho
   4. Vang: `quantity_boxes <= low_warning_boxes` hoac sap het han
   5. Xanh: con lai
 - **Mau cam** da them vao bo mau status va da duoc dung qua `useThemeStore()` (khong hardcode cho luong moi).
+- **Cham mau UI** da doi tu huong cu (`getExpiryStatus`) sang `getCombinedStatus()` cho cac man hinh co dot status.
 
 ## Cac man hinh da duoc cap nhat cham mau theo logic moi
 - `ProductDetailScreen`: cham mau tung lot theo `getCombinedStatus()`; them UI cap nhat nguong thung.
@@ -22,6 +23,16 @@ Chino's Warehouse la app noi bo cho chu cua hang va nhan vien de tra cuu ton kho
 - `ProductsScreen`: cham mau tong san pham theo worst case cua tat ca lot.
 - `MapScreen`: cham mau zone khi search theo combined status.
 - `NotificationsScreen`: thong bao + badge han/thung theo nguong per-product.
+
+## UI fixes gan day
+- `NotificationsScreen`:
+  - Fix layout badge de khong overflow khoi card
+  - Badge can phai, ten san pham co lai khong gian
+  - Giu 1 cham mau lon ben trai ten san pham
+  - Bo cham mau nho o dong `Han: ...`
+- `ProductsScreen`:
+  - Dot tieu de san pham to, de doc
+  - Dot o dong lot (`Han: ... · X thung`) giu size nho 8px
 
 ## Trang thai F18
 - **F18 da hoan thien**: canh bao sap het hang khong con hardcode `<= 1`.
@@ -32,13 +43,13 @@ Chino's Warehouse la app noi bo cho chu cua hang va nhan vien de tra cuu ton kho
 ## Da hoan thanh
 - F02, F03, F04, F05, F06, F07, F09
 - F11, F12, F13, F14, F15, F16, F17
-- F18 (hoan thien theo nguong per-product + badge thong bao)
+- F18 (hoan thien theo nguong per-product + badge thong bao + UI da polish)
 
 ## Con thieu
 - F01 searchable dropdown chon kho
 - F10 scanner UI flow
 - F08 anh san pham
-- F19-F25 (theo roadmap PRD)
+- F19-F25 (theo roadmap PRD, chua implement)
 
 ## Next tasks de bat dau ngay
 1. F10 BarcodeScanner end-to-end (camera, ket qua, fallback them thu cong)

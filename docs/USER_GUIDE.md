@@ -36,7 +36,7 @@ Neu trung lot (cung san pham + zone + tang + han), app se hoi co cong don so thu
 - **Chuyen lo**: bam nut mui ten, chon zone dich va tang dich
 
 ## Cach doc tab Thong bao
-Moi card thong bao co the co toi da 2 badge:
+Moi card thong bao co the co toi da 2 badge (chi hien khi co van de):
 
 - Badge han:
   - `Da het han` (do)
@@ -46,14 +46,14 @@ Moi card thong bao co the co toi da 2 badge:
   - `Con rat it` (do)
   - `Sap het hang` (vang)
 
-Neu khong co badge nao thi trang thai dang binh thuong.
+Neu khong co badge nao thi san pham dang o trang thai binh thuong.
 
 ## Cach doi nguong canh bao ngay va thung
 1. Mo `Chi tiet san pham`
-2. O phan thong tin san pham, cap nhat:
+2. O phan thong tin san pham (ngay duoi ten/barcode), cap nhat:
    - `Nguong canh bao (ngay)`
    - `Nguong canh bao sap het (thung)`
    - `Nguong canh bao con rat it (thung)`
 3. Bam `Luu` o tung dong
 
-Sau khi luu, thong bao va mau cham cua san pham se cap nhat theo nguong moi.
+Sau khi luu, thong bao va mau cham cua san pham se cap nhat theo nguong moi tren map, products va notifications.

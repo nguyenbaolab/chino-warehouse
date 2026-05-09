@@ -291,7 +291,7 @@ export default function ProductsScreen() {
               >
                 <View style={styles.itemHeader}>
                   <View style={styles.itemTitleRow}>
-                    <View style={[styles.expiryDot, { backgroundColor: productDotColor }]} />
+                    <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
                     <Text
                       style={[
                         styles.itemName,
@@ -339,7 +339,7 @@ export default function ProductsScreen() {
                             : colors.statusOk
                       return (
                         <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
-                          <View style={[styles.expiryDot, { backgroundColor: dotColor }]} />
+                          <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
                           <Text style={[styles.lotText, { color: colors.sub }]}>
                             Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng
                           </Text>
@@ -478,7 +478,8 @@ const styles = StyleSheet.create({
   lotGroupWrap: { marginTop: 8, gap: 4 },
   lotRow: { flexDirection: 'row', alignItems: 'center' },
   lotText: { fontSize: 12, marginLeft: 6 },
-  expiryDot: { width: 8, height: 8, borderRadius: 4 },
+  titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'center' },
+  lotDot: { width: 8, height: 8, borderRadius: 4 },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalBox: {
     borderTopLeftRadius: 18,

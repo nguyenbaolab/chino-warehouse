@@ -3,6 +3,14 @@
 ## Gioi thieu
 Day la ung dung React Native (Expo) cho Chino's Boba Tea & Asian Market, dung de quan ly ton kho noi bo theo zone/tang, theo doi han su dung va canh bao ton kho theo nguong tung san pham.
 
+## Trang thai hien tai (tom tat)
+- Core inventory flow da hoat dong (map, products, product detail, add/edit/delete/move lot).
+- He thong canh bao F18 da done voi 2 nguong per-product:
+  - `low_warning_boxes` (default 3)
+  - `low_critical_boxes` (default 1)
+- Dot status dang dung logic `getCombinedStatus()` (do/cam/vang/xanh).
+- Barcode scanner UI flow (F10) chua hoan thien.
+
 ## Tech stack
 - React Native + Expo
 - TypeScript

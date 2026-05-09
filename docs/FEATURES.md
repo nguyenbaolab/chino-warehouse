@@ -31,7 +31,7 @@
 ## Mo ta ngan theo nhom
 - **Map + Zone**: F02-F06 da hoan thien cho luong core trong kho.
 - **Product + Inventory**: F07, F09, F11-F16 da hoan thien.
-- **Alerting**: F18 da nang cap theo nguong thung per-product.
+- **Alerting**: F18 da nang cap theo nguong thung per-product (`low_warning_boxes`, `low_critical_boxes`).
 - **Scanner + Multi-location UX**: F01, F10 con dang WIP.
 - **Phase 2/3**: F08, F19-F25 de backlog.
 
@@ -57,8 +57,8 @@
   - `id`, `location_id`, `name`, `cells`, `tier_count`, `color`, `has_tiers`, `updated_at`
 - **products**
   - `id`, `name`, `barcode`, `warning_days`
-  - `low_warning_boxes` (moi)
-  - `low_critical_boxes` (moi)
+  - `low_warning_boxes` (moi, default 3)
+  - `low_critical_boxes` (moi, default 1)
   - `notes`, `is_archived`, `created_at`
 - **inventory_entries**
   - `id`, `product_id`, `zone_id`, `tier`
@@ -74,6 +74,11 @@
   - Action sheet: `animationType="fade"`
 - Status mau trong theme:
   - `statusExpired` (do)
-  - `statusCritical` (cam)
+  - `statusCritical` (cam, critical)
   - `statusWarning` (vang)
   - `statusOk` (xanh)
+- Mau tong hop khi render dot:
+  - Do = het hang/het han
+  - Cam = con rat it (critical)
+  - Vang = sap het hang/sap het han
+  - Xanh = binh thuong

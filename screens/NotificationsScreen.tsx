@@ -8,7 +8,6 @@ import { formatExpiryDate, getCombinedStatus, getCombinedStatusRank, getExpirySt
 type NotificationItem = {
   key: string
   severity: 1 | 2 | 3 | 4
-  icon: string
   productId: string
   productName: string
   zoneName: string
@@ -89,7 +88,6 @@ export default function NotificationsScreen() {
       items.push({
         key: `${productId}-${worstEntry.id}`,
         severity: worstRank as 1 | 2 | 3 | 4,
-        icon: worstStatus === 'expired' ? '🔴' : worstStatus === 'critical' ? '🟠' : worstStatus === 'warning' ? '🟡' : '🟢',
         productId,
         productName,
         zoneName: worstEntry.zone?.name ?? 'Zone?',
@@ -122,8 +120,21 @@ export default function NotificationsScreen() {
               onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
             >
               <View style={styles.headerRow}>
-                <View style={styles.row}>
-                  <Text style={[styles.icon, { color: colors.text }]}>{item.icon}</Text>
+                <View style={styles.leftWrap}>
+                  <View
+                    style={[
+                      styles.titleDot,
+                      {
+                        backgroundColor: item.combinedStatus === 'expired'
+                          ? colors.statusExpired
+                          : item.combinedStatus === 'critical'
+                            ? colors.statusCritical
+                            : item.combinedStatus === 'warning'
+                              ? colors.statusWarning
+                              : colors.statusOk,
+                      },
+                    ]}
+                  />
                   <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{item.productName}</Text>
                 </View>
                 <View style={styles.badgesRow}>
@@ -143,6 +154,7 @@ export default function NotificationsScreen() {
                           styles.badgeText,
                           { color: item.expiryBadge.tone === 'expired' ? colors.statusExpired : colors.statusWarning },
                         ]}
+                        numberOfLines={1}
                       >
                         {item.expiryBadge.label}
                       </Text>
@@ -164,6 +176,7 @@ export default function NotificationsScreen() {
                           styles.badgeText,
                           { color: item.stockBadge.tone === 'expired' ? colors.statusExpired : colors.statusWarning },
                         ]}
+                        numberOfLines={1}
                       >
                         {item.stockBadge.label}
                       </Text>
@@ -175,20 +188,6 @@ export default function NotificationsScreen() {
                 {item.zoneName} · Tầng {item.tier} · {item.quantityBoxes} thùng
               </Text>
               <View style={styles.row}>
-                <View
-                  style={[
-                    styles.dot,
-                    {
-                      backgroundColor: item.combinedStatus === 'expired'
-                        ? colors.statusExpired
-                        : item.combinedStatus === 'critical'
-                          ? colors.statusCritical
-                          : item.combinedStatus === 'warning'
-                            ? colors.statusWarning
-                            : colors.statusOk,
-                    },
-                  ]}
-                />
                 <Text style={[styles.sub, { color: colors.sub }]}>Hạn: {formatExpiryDate(item.expiryDate)}</Text>
               </View>
             </TouchableOpacity>
@@ -205,13 +204,22 @@ const styles = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
+  leftWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 },
   row: { flexDirection: 'row', alignItems: 'center' },
-  icon: { marginRight: 6 },
-  name: { fontSize: 14, fontWeight: '700', flex: 1 },
-  badgesRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '58%' },
+  titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'center' },
+  name: { fontSize: 15, fontWeight: '700', flex: 1, minWidth: 0 },
+  badgesRow: {
+    flexShrink: 0,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    maxWidth: '50%',
+  },
   badge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontSize: 10, fontWeight: '700' },
+  badgeText: { fontSize: 10, fontWeight: '700', maxWidth: '100%' },
   sub: { fontSize: 12, marginTop: 4 },
-  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
 })
