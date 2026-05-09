@@ -1,40 +1,56 @@
-# Chino's Warehouse — Context
+# Chino's Warehouse - Context
 
-## App là gì
-Ứng dụng nội bộ giúp nhân viên Chino's Boba Tea & Asian Market tra cứu hàng trong kho mà không cần xuống tận nơi kiểm tra. Tìm sản phẩm theo tên hoặc quét mã vạch → biết ngay hàng ở zone nào, tầng nào, còn bao nhiêu thùng, hạn sử dụng thế nào.
+## Muc tieu
+Ung dung noi bo giup nhan vien tim nhanh san pham trong kho theo ten/zone/tang, theo doi han su dung va muc ton theo thung, dong bo realtime tren nhieu thiet bi.
 
-## Người dùng
-Chủ cửa hàng + 1–2 nhân viên. Không cần đăng nhập. Mở app lên dùng luôn.
+## Cap nhat moi nhat (05/2026)
+- Them 2 field tren `products`:
+  - `low_warning_boxes` (default 3)
+  - `low_critical_boxes` (default 1)
+- Them ham `getCombinedStatus()` trong `types/index.ts` de xep rank mau theo ca han su dung + so thung:
+  - Do: het hang hoac het han
+  - Cam: con rat it
+  - Vang: sap het hang hoac sap het han
+  - Xanh: binh thuong
+- Da cap nhat logic cham mau tai:
+  - `MapScreen`
+  - `ProductsScreen`
+  - `ProductDetailScreen`
+  - `ZoneDetailSheet`
+  - `NotificationsScreen`
+- `ProductDetailScreen` da co them UI luu 2 nguong canh bao thung moi.
+- F18 (canh bao sap het hang) duoc nang cap theo nguong rieng tung san pham, khong hardcode.
 
-## Trạng thái hiện tại
+## Trang thai tinh nang
+### Da hoan thanh
+- F02, F03, F04, F05, F06, F07, F09
+- F11, F12, F13, F14, F15, F16, F17
+- F18 (hoan thien theo nguong per-product + badge thong bao)
 
-### ✅ Đã xong
-- Database Supabase: `locations`, `zones`, `products`, `inventory_entries`
-- Realtime bật cho `zones` và `inventory_entries`
-- Zustand stores: `warehouseStore`, `themeStore`
-- **MapScreen**: lưới kho 6×6 (1-indexed), zone nhiều ô, màu zone riêng, tên ở ô trung tâm, ô liền nhau liền mạch, tìm kiếm sản phẩm, chấm màu hạn sử dụng khi search, thêm/sửa/xóa zone
-- **SettingsScreen**: toggle dark/light theme
-- Navigation: 3 tab (Kho 🗺️ / Sản phẩm 📦 / Cài đặt ⚙️)
+### Chua hoan thanh
+- F01: location selector dang chip list, chua phai searchable dropdown day du
+- F10: scanner UI flow chua xong
+- F08, F19, F20, F21, F22, F23, F24, F25
 
-### ❌ Chưa làm
-| Tính năng | Mô tả | Ưu tiên |
-|---|---|---|
-| ZoneDetailSheet | Tap zone → bottom sheet danh sách sản phẩm theo tầng | 🔴 Cao |
-| ProductDetailScreen | Chi tiết sản phẩm, sửa/xóa lô hàng | 🔴 Cao |
-| ProductsScreen | Danh sách tất cả sản phẩm, tìm kiếm, thêm mới | 🔴 Cao |
-| AddInventoryForm | Thêm lô hàng: chọn sản phẩm, zone, tầng, số thùng, hạn | 🔴 Cao |
-| BarcodeScanner | Camera quét mã vạch → kết quả như search | 🟡 Trung bình |
-| Low stock warning | Icon cảnh báo khi còn ≤ 1 thùng | 🟡 Trung bình |
+## Business rules bat buoc
+- Don vi ton kho la thung nguyen.
+- Thung dang dung do van tinh la 1.
+- Chi cap nhat ton khi bo thung di hoan toan.
+- Khong xoa zone neu van con lot co `quantity_boxes > 0`.
+- Mot san pham co the nam o nhieu zone/tang cung luc.
 
-## Business rules quan trọng
-- Số lượng tính theo **thùng nguyên** — thùng đang dùng dở vẫn tính là 1
-- Chỉ cập nhật khi bỏ thùng đi hoàn toàn
-- Xóa zone chỉ được khi không còn lô hàng nào (`quantity_boxes > 0`)
-- Màu hạn: đỏ = hết hạn/hôm nay, vàng = 1–30 ngày, xanh = >30 ngày
-- Một sản phẩm có thể có ở nhiều zone/tầng cùng lúc
+## File can uu tien doc
+- `types/index.ts`
+- `stores/warehouseStore.ts`
+- `stores/themeStore.ts`
+- `screens/MapScreen.tsx`
+- `screens/ProductsScreen.tsx`
+- `screens/ProductDetailScreen.tsx`
+- `screens/NotificationsScreen.tsx`
+- `components/ZoneDetailSheet.tsx`
 
-## File quan trọng
-- `types/index.ts` — tất cả types, `getExpiryStatus()`, `EXPIRY_COLORS`, `ZONE_COLORS`
-- `stores/warehouseStore.ts` — mọi logic fetch/CRUD
-- `stores/themeStore.ts` — theme colors
-- `lib/supabase.ts` — Supabase client
+## Tai lieu chi tiet
+- Xem `docs/CONTEXT.md`
+- Xem `docs/FEATURES.md`
+- Xem `docs/README.md`
+- Xem `docs/USER_GUIDE.md`

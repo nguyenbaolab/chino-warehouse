@@ -21,6 +21,10 @@ type WarehouseStore = {
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
   updateInventoryEntry: (id: string, data: Partial<InventoryEntry>) => Promise<void>
   deleteInventoryEntry: (id: string) => Promise<void>
+  updateProductStockThresholds: (
+    productId: string,
+    data: { low_warning_boxes?: number; low_critical_boxes?: number }
+  ) => Promise<Product | null>
   addZone: (data: {
     name: string
     cells: ZoneCell[]
@@ -160,6 +164,30 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     set((s) => ({
       inventoryEntries: s.inventoryEntries.filter((entry) => entry.id !== id),
     }))
+  },
+
+  updateProductStockThresholds: async (productId, data) => {
+    const payload: { low_warning_boxes?: number; low_critical_boxes?: number } = {}
+    if (typeof data.low_warning_boxes === 'number') payload.low_warning_boxes = data.low_warning_boxes
+    if (typeof data.low_critical_boxes === 'number') payload.low_critical_boxes = data.low_critical_boxes
+
+    const { data: updated } = await supabase
+      .from('products')
+      .update(payload)
+      .eq('id', productId)
+      .select('*')
+      .single()
+
+    if (updated) {
+      set((s) => ({
+        products: s.products.map((p) => (p.id === updated.id ? updated : p)),
+        inventoryEntries: s.inventoryEntries.map((entry) => (
+          entry.product_id === updated.id ? { ...entry, product: updated } : entry
+        )),
+      }))
+      return updated
+    }
+    return null
   },
 
   addZone: async (data) => {

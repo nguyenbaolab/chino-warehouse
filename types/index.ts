@@ -29,6 +29,8 @@ export type Product = {
   image_url?: string
   notes?: string
   warning_days: number
+  low_warning_boxes: number
+  low_critical_boxes: number
   is_archived: boolean
   created_at: string
 }
@@ -48,6 +50,7 @@ export type InventoryEntry = {
 
 export type ExpiryStatus = 'expired' | 'warning' | 'ok'
 export type ExpiryColor = 'red' | 'yellow' | 'green'
+export type CombinedStatus = 'expired' | 'critical' | 'warning' | 'ok'
 
 function parseExpiryDate(expiry_date?: string): Date | null {
   if (!expiry_date) return null
@@ -81,6 +84,32 @@ export function getExpiryColorHex(expiryDate?: string, warningDays = 30): string
   return '#22C55E'
 }
 
+export function getCombinedStatus(
+  quantity_boxes: number,
+  expiry_date?: string,
+  low_warning_boxes = 3,
+  low_critical_boxes = 1,
+  warning_days = 30
+): CombinedStatus {
+  if (quantity_boxes <= 0) return 'expired'
+  if (getExpiryStatus(expiry_date, warning_days) === 'expired') return 'expired'
+  if (quantity_boxes <= Math.max(0, low_critical_boxes)) return 'critical'
+  if (
+    quantity_boxes <= Math.max(0, low_warning_boxes) ||
+    getExpiryStatus(expiry_date, warning_days) === 'warning'
+  ) {
+    return 'warning'
+  }
+  return 'ok'
+}
+
+export function getCombinedStatusRank(status: CombinedStatus): number {
+  if (status === 'expired') return 1
+  if (status === 'critical') return 2
+  if (status === 'warning') return 3
+  return 4
+}
+
 export function formatExpiryDate(expiryDate?: string): string {
   const parsed = parseExpiryDate(expiryDate)
   if (!parsed) return 'Không hạn'
@@ -90,8 +119,9 @@ export function formatExpiryDate(expiryDate?: string): string {
   return `${yyyy}-${mm}-${dd}`
 }
 
-export const EXPIRY_COLORS: Record<ExpiryStatus, string> = {
+export const EXPIRY_COLORS: Record<CombinedStatus, string> = {
   expired: '#EF4444',
+  critical: '#F97316',
   warning: '#F59E0B',
   ok: '#22C55E',
 }

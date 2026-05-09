@@ -10,6 +10,13 @@ export type ThemeColors = {
   accent: string
   cellEmpty: string
   cellBorder: string
+  statusExpired: string
+  statusCritical: string
+  statusWarning: string
+  statusOk: string
+  badgeExpiredBg: string
+  badgeCriticalBg: string
+  badgeWarningBg: string
 }
 
 const darkColors: ThemeColors = {
@@ -21,6 +28,13 @@ const darkColors: ThemeColors = {
   accent: '#22C55E',
   cellEmpty: '#1a1a1a',
   cellBorder: '#2a2a2a',
+  statusExpired: '#EF4444',
+  statusCritical: '#F97316',
+  statusWarning: '#F59E0B',
+  statusOk: '#22C55E',
+  badgeExpiredBg: '#3b1f22',
+  badgeCriticalBg: '#3a281d',
+  badgeWarningBg: '#3a3219',
 }
 
 const lightColors: ThemeColors = {
@@ -32,6 +46,13 @@ const lightColors: ThemeColors = {
   accent: '#16a34a',
   cellEmpty: '#e8e8e8',
   cellBorder: '#d0d0d0',
+  statusExpired: '#DC2626',
+  statusCritical: '#EA580C',
+  statusWarning: '#D97706',
+  statusOk: '#16a34a',
+  badgeExpiredBg: '#fee2e2',
+  badgeCriticalBg: '#ffedd5',
+  badgeWarningBg: '#fef3c7',
 }
 
 type ThemeStore = {

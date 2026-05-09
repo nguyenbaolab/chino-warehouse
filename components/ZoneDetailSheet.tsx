@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
-import { formatExpiryDate, getExpiryColorHex, InventoryEntry, Zone } from '../types'
+import { formatExpiryDate, getCombinedStatus, getCombinedStatusRank, InventoryEntry, Zone } from '../types'
 
 type ZoneDetailSheetProps = {
   visible: boolean
@@ -307,9 +307,37 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                     <Text style={[styles.emptyText, { color: colors.sub }]}>Không tìm thấy sản phẩm phù hợp</Text>
                   </View>
                 ) : filteredGroupedProducts.map((group) => {
-                  const worstLot = group.lots[0]
-                  const worstWarningDays = worstLot?.product?.warning_days ?? 30
-                  const worstColor = getExpiryColorHex(worstLot?.expiry_date, worstWarningDays)
+                  const worstLot = [...group.lots].sort((a, b) => {
+                    const statusA = getCombinedStatus(
+                      a.quantity_boxes,
+                      a.expiry_date,
+                      a.product?.low_warning_boxes ?? 3,
+                      a.product?.low_critical_boxes ?? 1,
+                      a.product?.warning_days ?? 30
+                    )
+                    const statusB = getCombinedStatus(
+                      b.quantity_boxes,
+                      b.expiry_date,
+                      b.product?.low_warning_boxes ?? 3,
+                      b.product?.low_critical_boxes ?? 1,
+                      b.product?.warning_days ?? 30
+                    )
+                    return getCombinedStatusRank(statusA) - getCombinedStatusRank(statusB)
+                  })[0]
+                  const worstStatus = getCombinedStatus(
+                    worstLot?.quantity_boxes ?? 0,
+                    worstLot?.expiry_date,
+                    worstLot?.product?.low_warning_boxes ?? 3,
+                    worstLot?.product?.low_critical_boxes ?? 1,
+                    worstLot?.product?.warning_days ?? 30
+                  )
+                  const worstColor = worstStatus === 'expired'
+                    ? colors.statusExpired
+                    : worstStatus === 'critical'
+                      ? colors.statusCritical
+                      : worstStatus === 'warning'
+                        ? colors.statusWarning
+                        : colors.statusOk
 
                   return (
                     <View key={group.productId} style={[styles.groupWrap, { borderBottomColor: colors.border }]}>
@@ -331,7 +359,20 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                       {/* Danh sách từng lô của sản phẩm, luôn expanded */}
                       <View style={styles.lotList}>
                         {group.lots.map((lot) => {
-                          const lotColor = getExpiryColorHex(lot.expiry_date, lot.product?.warning_days ?? 30)
+                          const lotStatus = getCombinedStatus(
+                            lot.quantity_boxes,
+                            lot.expiry_date,
+                            lot.product?.low_warning_boxes ?? 3,
+                            lot.product?.low_critical_boxes ?? 1,
+                            lot.product?.warning_days ?? 30
+                          )
+                          const lotColor = lotStatus === 'expired'
+                            ? colors.statusExpired
+                            : lotStatus === 'critical'
+                              ? colors.statusCritical
+                              : lotStatus === 'warning'
+                                ? colors.statusWarning
+                                : colors.statusOk
                           const lotExpiry = formatExpiryDate(lot.expiry_date)
                           return (
                             <View key={lot.id}>

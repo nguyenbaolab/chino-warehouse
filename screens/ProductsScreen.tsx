@@ -13,7 +13,7 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
-import { formatExpiryDate, getExpiryColorHex } from '../types'
+import { CombinedStatus, formatExpiryDate, getCombinedStatus, getCombinedStatusRank } from '../types'
 import { supabase } from '../lib/supabase'
 
 export default function ProductsScreen() {
@@ -187,6 +187,33 @@ export default function ProductsScreen() {
     })
   }
 
+  function getWorstStatusForProduct(productId: string): CombinedStatus {
+    const hasZoneFilter = selectedZoneIds.length > 0
+    const entries = inventoryEntries.filter((entry) => (
+      entry.product_id === productId &&
+      (!hasZoneFilter || selectedZoneSet.has(entry.zone_id))
+    ))
+    if (entries.length === 0) return 'ok'
+
+    let worstStatus: CombinedStatus = 'ok'
+    let worstRank = 99
+    for (const entry of entries) {
+      const status = getCombinedStatus(
+        entry.quantity_boxes,
+        entry.expiry_date,
+        entry.product?.low_warning_boxes ?? 3,
+        entry.product?.low_critical_boxes ?? 1,
+        entry.product?.warning_days ?? 30
+      )
+      const rank = getCombinedStatusRank(status)
+      if (rank < worstRank) {
+        worstRank = rank
+        worstStatus = status
+      }
+    }
+    return worstStatus
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <Text style={[styles.title, { color: colors.text }]}>📦 Sản phẩm</Text>
@@ -247,6 +274,14 @@ export default function ProductsScreen() {
         <ScrollView contentContainerStyle={styles.list}>
           {filteredProducts.map((product) => {
             const groupedLots = getGroupedLotsByExpiry(product.id)
+            const worstStatus = getWorstStatusForProduct(product.id)
+            const productDotColor = worstStatus === 'expired'
+              ? colors.statusExpired
+              : worstStatus === 'critical'
+                ? colors.statusCritical
+                : worstStatus === 'warning'
+                  ? colors.statusWarning
+                  : colors.statusOk
             return (
               <TouchableOpacity
                 key={product.id}
@@ -255,15 +290,18 @@ export default function ProductsScreen() {
                 onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
               >
                 <View style={styles.itemHeader}>
-                  <Text
-                    style={[
-                      styles.itemName,
-                      { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {product.name}
-                  </Text>
+                  <View style={styles.itemTitleRow}>
+                    <View style={[styles.expiryDot, { backgroundColor: productDotColor }]} />
+                    <Text
+                      style={[
+                        styles.itemName,
+                        { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {product.name}
+                    </Text>
+                  </View>
                   <TouchableOpacity
                     style={[styles.editBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
                     onPress={() => openEditProduct(product.id)}
@@ -285,7 +323,20 @@ export default function ProductsScreen() {
                 ) : (
                   <View style={styles.lotGroupWrap}>
                     {groupedLots.map((lot, index) => {
-                      const dotColor = getExpiryColorHex(lot.expiry_date, product.warning_days ?? 30)
+                      const lotStatus = getCombinedStatus(
+                        lot.quantity_boxes,
+                        lot.expiry_date,
+                        product.low_warning_boxes ?? 3,
+                        product.low_critical_boxes ?? 1,
+                        product.warning_days ?? 30
+                      )
+                      const dotColor = lotStatus === 'expired'
+                        ? colors.statusExpired
+                        : lotStatus === 'critical'
+                          ? colors.statusCritical
+                          : lotStatus === 'warning'
+                            ? colors.statusWarning
+                            : colors.statusOk
                       return (
                         <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
                           <View style={[styles.expiryDot, { backgroundColor: dotColor }]} />
@@ -410,6 +461,7 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
   itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  itemTitleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
   itemName: { fontSize: 15, fontWeight: '700' },
   editBtn: {
     width: 28,

@@ -6,7 +6,7 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
-import { Zone, ZoneCell, InventoryEntry, EXPIRY_COLORS, getExpiryColor, getExpiryColorHex, ZONE_COLORS } from '../types'
+import { Zone, ZoneCell, InventoryEntry, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
 import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
 const GRID_ROWS = 6
@@ -90,8 +90,22 @@ export default function MapScreen() {
     setSearchResults(results)
     const map = new Map<string, string>()
     for (const r of results) {
-      const warningDays = r.product?.warning_days ?? products.find((p) => p.id === r.product_id)?.warning_days ?? 30
-      if (r.zone_id) map.set(r.zone_id, getExpiryColorHex(r.expiry_date, warningDays))
+      const product = r.product ?? products.find((p) => p.id === r.product_id)
+      const status = getCombinedStatus(
+        r.quantity_boxes,
+        r.expiry_date,
+        product?.low_warning_boxes ?? 3,
+        product?.low_critical_boxes ?? 1,
+        product?.warning_days ?? 30
+      )
+      const color = status === 'expired'
+        ? colors.statusExpired
+        : status === 'critical'
+          ? colors.statusCritical
+          : status === 'warning'
+            ? colors.statusWarning
+            : colors.statusOk
+      if (r.zone_id) map.set(r.zone_id, color)
     }
     setHighlightedZones(map)
   }
@@ -245,24 +259,35 @@ export default function MapScreen() {
       ))
       if (zoneEntries.length === 0) continue
 
-      let hasExpired = false
-      let hasWarning = false
+      let worstRank = 99
+      let worstStatus: 'expired' | 'critical' | 'warning' | 'ok' = 'ok'
       for (const entry of zoneEntries) {
-        const warningDays = entry.product?.warning_days ?? products.find((p) => p.id === entry.product_id)?.warning_days ?? 30
-        const color = getExpiryColor(entry.expiry_date, warningDays)
-        if (color === 'red') {
-          hasExpired = true
-          break
+        const product = entry.product ?? products.find((p) => p.id === entry.product_id)
+        const status = getCombinedStatus(
+          entry.quantity_boxes,
+          entry.expiry_date,
+          product?.low_warning_boxes ?? 3,
+          product?.low_critical_boxes ?? 1,
+          product?.warning_days ?? 30
+        )
+        const rank = getCombinedStatusRank(status)
+        if (rank < worstRank) {
+          worstRank = rank
+          worstStatus = status
         }
-        if (color === 'yellow') hasWarning = true
       }
-
-      if (hasExpired) map.set(zone.id, EXPIRY_COLORS.expired)
-      else if (hasWarning) map.set(zone.id, EXPIRY_COLORS.warning)
+      if (worstStatus !== 'ok') {
+        const dotColor = worstStatus === 'expired'
+          ? colors.statusExpired
+          : worstStatus === 'critical'
+            ? colors.statusCritical
+            : colors.statusWarning
+        map.set(zone.id, dotColor)
+      }
     }
 
     return map
-  }, [zones, inventoryEntries, products])
+  }, [zones, inventoryEntries, products, colors.statusCritical, colors.statusExpired, colors.statusWarning])
 
   function renderGrid() {
     const rows = []
@@ -428,7 +453,26 @@ export default function MapScreen() {
           {isSearchPanelExpanded ? (
             searchResults.slice(0, 5).map(r => (
               <View key={r.id} style={styles.resultItem}>
-                <View style={[styles.dot, { backgroundColor: getExpiryColorHex(r.expiry_date, r.product?.warning_days ?? 30) }]} />
+                <View
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: (() => {
+                        const status = getCombinedStatus(
+                          r.quantity_boxes,
+                          r.expiry_date,
+                          r.product?.low_warning_boxes ?? 3,
+                          r.product?.low_critical_boxes ?? 1,
+                          r.product?.warning_days ?? 30
+                        )
+                        if (status === 'expired') return colors.statusExpired
+                        if (status === 'critical') return colors.statusCritical
+                        if (status === 'warning') return colors.statusWarning
+                        return colors.statusOk
+                      })(),
+                    },
+                  ]}
+                />
                 <Text style={[styles.resultText, { color: colors.text }]} numberOfLines={1}>
                   {r.product?.name} — {r.zone?.name} T{r.tier} — {r.quantity_boxes} thùng
                 </Text>

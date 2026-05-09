@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
-import { formatExpiryDate, getExpiryColorHex, InventoryEntry, Product, Zone } from '../types'
+import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone } from '../types'
 
 type ProductDetailRouteParams = {
   productId: string
@@ -37,7 +37,7 @@ export default function ProductDetailScreen() {
   const route = useRoute()
   const { productId } = route.params as ProductDetailRouteParams
   const { colors } = useThemeStore()
-  const { zones, updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
+  const { zones, updateInventoryEntry, deleteInventoryEntry, updateProductStockThresholds } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [lots, setLots] = useState<InventoryEntry[]>([])
@@ -48,6 +48,8 @@ export default function ProductDetailScreen() {
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editWarningDays, setEditWarningDays] = useState('30')
+  const [editLowWarningBoxes, setEditLowWarningBoxes] = useState('3')
+  const [editLowCriticalBoxes, setEditLowCriticalBoxes] = useState('1')
   const [isSavingProduct, setIsSavingProduct] = useState(false)
 
   const [moveLot, setMoveLot] = useState<InventoryEntry | null>(null)
@@ -69,6 +71,8 @@ export default function ProductDetailScreen() {
     setProduct(productData ?? null)
     setLots((lotData as InventoryEntry[]) ?? [])
     setEditWarningDays(String(productData?.warning_days ?? 30))
+    setEditLowWarningBoxes(String(productData?.low_warning_boxes ?? 3))
+    setEditLowCriticalBoxes(String(productData?.low_critical_boxes ?? 1))
     setIsLoading(false)
   }
 
@@ -146,6 +150,41 @@ export default function ProductDetailScreen() {
     setIsSavingProduct(false)
   }
 
+  async function handleSaveLowWarningBoxes() {
+    if (!product) return
+    const lowWarningBoxes = Number(editLowWarningBoxes)
+    if (!Number.isFinite(lowWarningBoxes) || lowWarningBoxes < 1) {
+      Alert.alert('Ngưỡng không hợp lệ', 'Ngưỡng cảnh báo sắp hết (thùng) phải lớn hơn hoặc bằng 1.')
+      return
+    }
+    setIsSavingProduct(true)
+    const updated = await updateProductStockThresholds(product.id, {
+      low_warning_boxes: Math.floor(lowWarningBoxes),
+    })
+    if (updated) setProduct(updated)
+    setIsSavingProduct(false)
+  }
+
+  async function handleSaveLowCriticalBoxes() {
+    if (!product) return
+    const lowCriticalBoxes = Number(editLowCriticalBoxes)
+    const lowWarningBoxes = Number(editLowWarningBoxes)
+    if (!Number.isFinite(lowCriticalBoxes) || lowCriticalBoxes < 0) {
+      Alert.alert('Ngưỡng không hợp lệ', 'Ngưỡng còn rất ít (thùng) phải lớn hơn hoặc bằng 0.')
+      return
+    }
+    if (Number.isFinite(lowWarningBoxes) && lowCriticalBoxes > lowWarningBoxes) {
+      Alert.alert('Ngưỡng không hợp lệ', 'Ngưỡng còn rất ít không được lớn hơn ngưỡng cảnh báo sắp hết.')
+      return
+    }
+    setIsSavingProduct(true)
+    const updated = await updateProductStockThresholds(product.id, {
+      low_critical_boxes: Math.floor(lowCriticalBoxes),
+    })
+    if (updated) setProduct(updated)
+    setIsSavingProduct(false)
+  }
+
   function openMoveLot(lot: InventoryEntry) {
     setMoveLot(lot)
     setTargetZoneId(null)
@@ -217,6 +256,38 @@ export default function ProductDetailScreen() {
               <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
             </TouchableOpacity>
           </View>
+          <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
+            Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
+          </Text>
+          <View style={styles.warningEditRow}>
+            <TextInput
+              style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+              value={editLowWarningBoxes}
+              onChangeText={setEditLowWarningBoxes}
+              keyboardType="numeric"
+              placeholder="3"
+              placeholderTextColor={colors.sub}
+            />
+            <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveLowWarningBoxes}>
+              <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
+            Ngưỡng cảnh báo còn rất ít (thùng): {product?.low_critical_boxes ?? 1}
+          </Text>
+          <View style={styles.warningEditRow}>
+            <TextInput
+              style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+              value={editLowCriticalBoxes}
+              onChangeText={setEditLowCriticalBoxes}
+              keyboardType="numeric"
+              placeholder="1"
+              placeholderTextColor={colors.sub}
+            />
+            <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveLowCriticalBoxes}>
+              <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity style={[styles.addLotBtn, { backgroundColor: colors.accent }]} onPress={handleAddNewLot}>
@@ -229,7 +300,20 @@ export default function ProductDetailScreen() {
           <Text style={{ color: colors.sub }}>Chưa có lô hàng cho sản phẩm này.</Text>
         ) : (
           lots.map((lot) => {
-            const dotColor = getExpiryColorHex(lot.expiry_date, product?.warning_days ?? 30)
+            const status = getCombinedStatus(
+              lot.quantity_boxes,
+              lot.expiry_date,
+              product?.low_warning_boxes ?? 3,
+              product?.low_critical_boxes ?? 1,
+              product?.warning_days ?? 30
+            )
+            const dotColor = status === 'expired'
+              ? colors.statusExpired
+              : status === 'critical'
+                ? colors.statusCritical
+                : status === 'warning'
+                  ? colors.statusWarning
+                  : colors.statusOk
             const zone = lot.zone as Zone | undefined
             return (
               <View key={lot.id} style={[styles.lotWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>

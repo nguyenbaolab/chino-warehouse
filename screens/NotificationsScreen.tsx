@@ -3,19 +3,21 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
-import { formatExpiryDate, getExpiryColor, getExpiryColorHex } from '../types'
+import { formatExpiryDate, getCombinedStatus, getCombinedStatusRank, getExpiryStatus } from '../types'
 
 type NotificationItem = {
   key: string
-  severity: 1 | 2 | 3
+  severity: 1 | 2 | 3 | 4
   icon: string
-  iconColor: string
   productId: string
   productName: string
   zoneName: string
   tier: number
   quantityBoxes: number
   expiryDate?: string
+  combinedStatus: 'expired' | 'critical' | 'warning' | 'ok'
+  expiryBadge?: { label: string; tone: 'expired' | 'warning' }
+  stockBadge?: { label: string; tone: 'expired' | 'warning' }
 }
 
 export default function NotificationsScreen() {
@@ -43,53 +45,60 @@ export default function NotificationsScreen() {
     const items: NotificationItem[] = []
     for (const [productId, entries] of productMap.entries()) {
       const productName = entries[0]?.product?.name ?? 'Sản phẩm không xác định'
-      const warningDays = entries[0]?.product?.warning_days ?? 30
+      const product = entries[0]?.product
+      const warningDays = product?.warning_days ?? 30
+      const lowWarningBoxes = product?.low_warning_boxes ?? 3
+      const lowCriticalBoxes = product?.low_critical_boxes ?? 1
       let worstEntry = entries[0]
-      let worstRank = 3 // red=1 yellow=2 green=3
-      let hasLowStock = false
+      let worstRank = 99
+      let worstStatus: 'expired' | 'critical' | 'warning' | 'ok' = 'ok'
 
       for (const entry of entries) {
-        if (entry.quantity_boxes <= 1) hasLowStock = true
-        const color = getExpiryColor(entry.expiry_date, warningDays)
-        const rank = color === 'red' ? 1 : color === 'yellow' ? 2 : 3
+        const status = getCombinedStatus(
+          entry.quantity_boxes,
+          entry.expiry_date,
+          entry.product?.low_warning_boxes ?? lowWarningBoxes,
+          entry.product?.low_critical_boxes ?? lowCriticalBoxes,
+          entry.product?.warning_days ?? warningDays
+        )
+        const rank = getCombinedStatusRank(status)
         if (rank < worstRank) {
           worstRank = rank
           worstEntry = entry
+          worstStatus = status
         }
       }
 
-      // Chỉ hiện nếu có expiry đỏ/vàng hoặc có lot sắp hết hàng
-      if (worstRank === 3 && !hasLowStock) continue
+      const expiryStatus = getExpiryStatus(worstEntry.expiry_date, warningDays)
+      const expiryBadge = expiryStatus === 'expired'
+        ? { label: 'Đã hết hạn', tone: 'expired' as const }
+        : expiryStatus === 'warning'
+          ? { label: 'Sắp hết hạn', tone: 'warning' as const }
+          : undefined
 
-      let severity: 1 | 2 | 3 = 2
-      let icon = '🟡'
-      let iconColor = '#F59E0B'
-      if (worstRank === 1) {
-        severity = 1
-        icon = '🔴'
-        iconColor = '#EF4444'
-      } else if (worstRank === 2) {
-        severity = 2
-        icon = '🟡'
-        iconColor = '#F59E0B'
-      } else {
-        // Hạn xa nhưng sắp hết hàng
-        severity = 3
-        icon = '🟠'
-        iconColor = '#F97316'
-      }
+      const stockBadge = worstEntry.quantity_boxes <= 0
+        ? { label: 'Đã hết hàng', tone: 'expired' as const }
+        : worstEntry.quantity_boxes <= lowCriticalBoxes
+          ? { label: 'Còn rất ít', tone: 'expired' as const }
+          : worstEntry.quantity_boxes <= lowWarningBoxes
+            ? { label: 'Sắp hết hàng', tone: 'warning' as const }
+            : undefined
+
+      if (!expiryBadge && !stockBadge) continue
 
       items.push({
         key: `${productId}-${worstEntry.id}`,
-        severity,
-        icon,
-        iconColor,
+        severity: worstRank as 1 | 2 | 3 | 4,
+        icon: worstStatus === 'expired' ? '🔴' : worstStatus === 'critical' ? '🟠' : worstStatus === 'warning' ? '🟡' : '🟢',
         productId,
         productName,
         zoneName: worstEntry.zone?.name ?? 'Zone?',
         tier: worstEntry.tier,
         quantityBoxes: worstEntry.quantity_boxes,
         expiryDate: worstEntry.expiry_date,
+        combinedStatus: worstStatus,
+        expiryBadge,
+        stockBadge,
       })
     }
 
@@ -112,15 +121,74 @@ export default function NotificationsScreen() {
               style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
             >
-              <View style={styles.row}>
-                <Text style={[styles.icon, { color: item.iconColor }]}>{item.icon}</Text>
-                <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{item.productName}</Text>
+              <View style={styles.headerRow}>
+                <View style={styles.row}>
+                  <Text style={[styles.icon, { color: colors.text }]}>{item.icon}</Text>
+                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{item.productName}</Text>
+                </View>
+                <View style={styles.badgesRow}>
+                  {item.expiryBadge && (
+                    <View
+                      style={[
+                        styles.badge,
+                        {
+                          backgroundColor: item.expiryBadge.tone === 'expired'
+                            ? colors.badgeExpiredBg
+                            : colors.badgeWarningBg,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.badgeText,
+                          { color: item.expiryBadge.tone === 'expired' ? colors.statusExpired : colors.statusWarning },
+                        ]}
+                      >
+                        {item.expiryBadge.label}
+                      </Text>
+                    </View>
+                  )}
+                  {item.stockBadge && (
+                    <View
+                      style={[
+                        styles.badge,
+                        {
+                          backgroundColor: item.stockBadge.tone === 'expired'
+                            ? colors.badgeExpiredBg
+                            : colors.badgeWarningBg,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.badgeText,
+                          { color: item.stockBadge.tone === 'expired' ? colors.statusExpired : colors.statusWarning },
+                        ]}
+                      >
+                        {item.stockBadge.label}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
               <Text style={[styles.sub, { color: colors.sub }]}>
                 {item.zoneName} · Tầng {item.tier} · {item.quantityBoxes} thùng
               </Text>
               <View style={styles.row}>
-                <View style={[styles.dot, { backgroundColor: item.severity === 3 ? '#F97316' : getExpiryColorHex(item.expiryDate, 30) }]} />
+                <View
+                  style={[
+                    styles.dot,
+                    {
+                      backgroundColor: item.combinedStatus === 'expired'
+                        ? colors.statusExpired
+                        : item.combinedStatus === 'critical'
+                          ? colors.statusCritical
+                          : item.combinedStatus === 'warning'
+                            ? colors.statusWarning
+                            : colors.statusOk,
+                    },
+                  ]}
+                />
                 <Text style={[styles.sub, { color: colors.sub }]}>Hạn: {formatExpiryDate(item.expiryDate)}</Text>
               </View>
             </TouchableOpacity>
@@ -137,9 +205,13 @@ const styles = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center' },
   icon: { marginRight: 6 },
   name: { fontSize: 14, fontWeight: '700', flex: 1 },
+  badgesRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '58%' },
+  badge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeText: { fontSize: 10, fontWeight: '700' },
   sub: { fontSize: 12, marginTop: 4 },
   dot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
 })
