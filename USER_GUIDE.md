@@ -58,13 +58,15 @@ Hệ thống đang vận hành **một kho**; chưa có màn hình **thêm hay c
 
 ## 8) Ý nghĩa màu (chuẩn tài liệu)
 
+**Vàng** = có việc cần kiểm tra: **sắp hết hàng** (tồn ≤ `low_warning_boxes`) **hoặc sắp hết hạn** (trong khoảng cảnh báo ngày) — **cùng một màu**, không còn tách riêng màu cam.
+
 | Mức | Điều kiện | Màu | Hex |
 |-----|-----------|-----|-----|
 | Hết hàng / Còn rất ít | 0–1 thùng | Đỏ | `#EF4444` |
-| Sắp hết hàng | ≤ `low_warning_boxes` | Cam | `#F97316` |
+| Sắp hết hàng | ≤ `low_warning_boxes` | Vàng | `#FDE047` |
 | Hết hạn | đã hết hạn | Đỏ | `#EF4444` |
-| Sắp hết hạn | trong khoảng cảnh báo ngày | Vàng | `#EAB308` |
-| Bình thường | không thuộc các mức trên | Xanh lá | `#22C55E` |
+| Sắp hết hạn | trong khoảng cảnh báo ngày | Vàng | `#FDE047` |
+| Bình thường | không thuộc các mức trên | Xanh | `#22C55E` |
 
 ---
 

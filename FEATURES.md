@@ -8,13 +8,15 @@ Ma trận tính năng so với roadmap nội bộ. Trạng thái phản ánh **t
 
 ## Bảng màu chuẩn (đồng bộ với `CONTEXT.md`)
 
+Status **không còn cam**: sắp hết hàng và sắp hết hạn **cùng vàng** — `#FACC15` (`EXPIRY_COLORS` + dark `themeStore`), light **`#EAB308`**.
+
 | Mức | Điều kiện | Màu | Hex |
 |-----|-----------|-----|-----|
 | Hết hàng / Còn rất ít | 0–1 thùng | Đỏ | `#EF4444` |
-| Sắp hết hàng | ≤ `low_warning_boxes` | Cam | `#F97316` |
+| Sắp hết hàng | ≤ `low_warning_boxes` | Vàng | `#FACC15` |
 | Hết hạn | expired | Đỏ | `#EF4444` |
-| Sắp hết hạn | warning days | Vàng | `#EAB308` |
-| Bình thường | ok | Xanh lá | `#22C55E` |
+| Sắp hết hạn | warning days | Vàng | `#FACC15` |
+| Bình thường | ok | Xanh | `#22C55E` |
 
 ---
 
@@ -35,7 +37,7 @@ Ma trận tính năng so với roadmap nội bộ. Trạng thái phản ánh **t
 | **F11** | Thông báo (`NotificationsScreen`) | **Partial** | Backlog: đủ cảnh báo sắp hết hàng theo `low_warning_boxes`. |
 | **F12** | Theme sáng/tối | **Done** | |
 | **F13** | Hạn sử dụng + cảnh báo theo ngày | **Done** | Màu: bảng trên. |
-| **F14** | Ngưỡng tồn (low stock) | **Partial** | `low_warning_boxes` default 3 + UI; `low_critical` hướng hardcode 1, bỏ UI (TODO). |
+| **F14** | Ngưỡng tồn (low stock) | **Partial** | `low_warning_boxes` default 3 + UI; `low_critical` hướng hardcode 1, bỏ UI (TODO). **Màu status:** bỏ cam; `critical` + `warning` cùng vàng `#FACC15` (`EXPIRY_COLORS` / dark theme), light `#EAB308`. |
 | **F15** | Màn Cài đặt | **Done** / **Partial** | Chủ yếu theme; chưa auth. |
 | **F16** | Hiệu năng / tối ưu | **Partial** | Luôn có chỗ cải thiện. |
 | **F17** | UX polish | **Partial** | Ví dụ bottom tab trên màn stack mới: chưa. |

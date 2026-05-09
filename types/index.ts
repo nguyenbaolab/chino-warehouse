@@ -80,7 +80,7 @@ export function getExpiryStatus(expiry_date?: string, warning_days = 30): Expiry
 export function getExpiryColorHex(expiryDate?: string, warningDays = 30): string {
   const color = getExpiryColor(expiryDate, warningDays)
   if (color === 'red') return '#EF4444'
-  if (color === 'yellow') return '#F59E0B'
+  if (color === 'yellow') return '#FACC15'
   return '#22C55E'
 }
 
@@ -121,8 +121,8 @@ export function formatExpiryDate(expiryDate?: string): string {
 
 export const EXPIRY_COLORS: Record<CombinedStatus, string> = {
   expired: '#EF4444',
-  critical: '#F97316',
-  warning: '#F59E0B',
+  critical: '#FACC15',
+  warning: '#FACC15',
   ok: '#22C55E',
 }
 

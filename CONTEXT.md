@@ -58,13 +58,17 @@ USER_GUIDE.md
 
 ## 4) Hệ thống màu chuẩn (tham chiếu)
 
+**Không còn màu cam trong status.** “Sắp hết hàng” và “sắp hết hạn” dùng **cùng một vàng** (đậm hơn bậc trước); trong code `getCombinedStatus` vẫn có khóa `critical` | `warning` nhưng **cùng map màu** — token **`#FACC15`** (`EXPIRY_COLORS`); dark theme **`#FACC15`**; light theme **`#EAB308`** (`themeStore`).
+
 | Mức | Điều kiện | Màu | Hex |
 |-----|-----------|-----|-----|
 | Hết hàng / Còn rất ít | 0–1 thùng | Đỏ | `#EF4444` |
-| Sắp hết hàng | ≤ `low_warning_boxes` | Cam | `#F97316` |
+| Sắp hết hàng | ≤ `low_warning_boxes` | Vàng | `#FACC15` |
 | Hết hạn | `expired` | Đỏ | `#EF4444` |
-| Sắp hết hạn | theo `warning days` | Vàng | `#EAB308` |
-| Bình thường | `ok` | Xanh lá | `#22C55E` |
+| Sắp hết hạn | theo `warning days` | Vàng | `#FACC15` |
+| Bình thường | `ok` | Xanh | `#22C55E` |
+
+**Triển khai hex:** `EXPIRY_COLORS.critical` = `EXPIRY_COLORS.warning` = **`#FACC15`**; `getExpiryColorHex` (`'yellow'`) = **`#FACC15`**. `themeStore`: dark — `statusCritical` & `statusWarning` **`#FACC15`**; light — cả hai **`#EAB308`**.
 
 ---
 
@@ -107,7 +111,6 @@ USER_GUIDE.md
 | Hạng mục | Ghi chú dependency |
 |----------|-------------------|
 | Thêm **barcode field** vào `AddInventoryScreen` | Độc lập. |
-| **Fix màu** cam / vàng đúng hex §4 | Theme `themeStore` + chỗ dùng màu. |
 | **Bỏ UI** `low_critical_boxes`, **hardcode = 1** trong logic hiển thị | Đồng bộ với DB nếu cần giữ cột cố định. |
 | **Fix `NotificationsScreen`**: hiện đủ cảnh báo sắp hết hàng (`quantity_boxes <= low_warning_boxes`) | Phụ thuộc rule tồn + có thể cần đồng bộ màu §4. |
 | **Bottom tab bar** cho các màn hình mới (stack) | Navigation structure. |
@@ -151,8 +154,7 @@ USER_GUIDE.md
 
 ## 13) TODO sau khi docs (ưu tiên thực hiện trong code)
 
-1. Fix màu **cam** (`#F97316`) và **vàng** (`#EAB308`) đúng hex trong theme.
-2. Bỏ UI `low_critical_boxes` khỏi `ProductDetailScreen`, hardcode = **1** trong logic.
-3. Fix `NotificationsScreen`: hiện đủ cảnh báo sắp hết hàng (`quantity_boxes <= low_warning_boxes`).
-4. Thêm bottom tab bar cho các màn hình mới (stack).
-5. Thêm barcode field vào `AddInventoryScreen`.
+1. Bỏ UI `low_critical_boxes` khỏi `ProductDetailScreen`, hardcode = **1** trong logic.
+2. Fix `NotificationsScreen`: hiện đủ cảnh báo sắp hết hàng (`quantity_boxes <= low_warning_boxes`).
+3. Thêm bottom tab bar cho các màn hình mới (stack).
+4. Thêm barcode field vào `AddInventoryScreen`.

@@ -67,6 +67,7 @@ Chi tiết cây file: **`CONTEXT.md` §2**.
 - **Một kho**; grid **6×6**; barcode scanner **3 mode**; `searchByBarcode` **local sync**.
 - **`AddInventoryScreen`**: chưa có field barcode.
 - **`low_warning_boxes`** default **3** + UI **ProductDetail**; **`low_critical_boxes`**: hướng **hardcode 1**, bỏ UI (TODO trong `CONTEXT.md` §13).
+- **Màu status:** đỏ `#EF4444` (hết / còn rất ít / hết hạn), vàng `#FDE047` (sắp hết hàng **hoặc** sắp hết hạn — gộp một màu), xanh `#22C55E` (ổn); light theme vàng nhạt hơn qua `themeStore` — chi tiết **`CONTEXT.md` §4**.
 
 ---
 
