@@ -66,10 +66,14 @@ Chino's Warehouse la app noi bo cho chu cua hang va nhan vien de tra cuu ton kho
     - `Them thu cong` -> mo `AddInventory`
     - `Quet lai` -> tiep tuc scanner.
 - Neu tu choi quyen camera -> hien huong dan + nut `Mo cai dat`.
-- Scanner co 2 mode:
+- Scanner co 3 mode:
   - `search`: quet de tim san pham
   - `assign`: quet de tra barcode ve `ProductDetailScreen` (nguoi dung bam `Luu` de luu DB)
+  - `locate`: quet de tra `scannedProduct` ve `MapScreen` va trigger search/highlight zone
+- `searchByBarcode()` hien tai la ham sync, filter local store (`products`) thay vi goi Supabase.
 
 ## Ghi chu data model lien quan barcode
 - Field `products.barcode` da co san trong DB (text, optional) va dang duoc dung cho F10.
 - Barcode co the nhap tay hoac quet truc tiep trong `ProductDetailScreen`.
+- Tren `MapScreen`, scan barcode khong navigate vao chi tiet ma se tim va dinh vi zone nhu search bang ten.
+- Sau khi store da load `products`, scan tren `MapScreen` co 0 network call cho buoc tra barcode.

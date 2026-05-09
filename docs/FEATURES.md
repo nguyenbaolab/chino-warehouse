@@ -86,13 +86,18 @@
 ## F10 flow (da implement)
 - Nut scan tren `MapScreen` va `ProductsScreen`.
 - `BarcodeScannerScreen` fullscreen voi vung quet trung tam.
-- Scanner co 2 mode:
+- Scanner co 3 mode:
   - `search`: flow tim san pham theo barcode nhu hien tai
   - `assign`: tra barcode ve `ProductDetailScreen` de gan cho san pham dang sua
+- Scanner co mode thu 3:
+  - `locate`: tra `productName` ve `MapScreen`, tu dong dien o tim kiem va trigger highlight zone
 - Quet thanh cong:
   - Tim `barcode` exact match qua `searchByBarcode()`.
   - Co ket qua -> navigate `ProductDetail`.
   - Khong co ket qua -> cho phep `Them thu cong` (mo `AddInventory`) hoac `Quet lai`.
+- Rieng `MapScreen`:
+  - Scan se chay theo mode `locate` va giu nguoi dung tren map
+  - Neu barcode khong ton tai -> hien Alert "Không tìm thấy sản phẩm với mã vạch này"
 - Trong `ProductDetailScreen`, barcode co the:
   - Nhap tay trong o `Ma vach`
   - Quet bang nut `📷`

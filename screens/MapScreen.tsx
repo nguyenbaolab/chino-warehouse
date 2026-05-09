@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform
 } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { Zone, ZoneCell, InventoryEntry, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
@@ -42,6 +42,8 @@ function getCellRadius(cells: ZoneCell[], row: number, col: number) {
 
 export default function MapScreen() {
   const navigation = useNavigation<any>()
+  const route = useRoute<any>()
+  const isFocused = useIsFocused()
   const {
     locations, selectedLocationId, zones, products, inventoryEntries, isLoading,
     fetchLocations, fetchProducts, fetchInventoryByZone, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts
@@ -64,12 +66,32 @@ export default function MapScreen() {
   const [zoneName, setZoneName] = useState('')
   const [tierCount, setTierCount] = useState('1')
   const [selectedColor, setSelectedColor] = useState(ZONE_COLORS[0])
+  const scannedProductName: string | undefined = route.params?.scannedProductName
+  const locateScannedAt: number | undefined = route.params?.locateScannedAt
 
   useEffect(() => {
     loadTheme()
     fetchLocations()
     fetchProducts()
   }, [])
+
+  useEffect(() => {
+    if (!isFocused) return
+    console.log('[MapScreen][locate] focus params:', {
+      scannedProductName,
+      locateScannedAt,
+    })
+    if (scannedProductName) {
+      console.log('[MapScreen][locate] triggering search for:', scannedProductName)
+      setSearchQuery(scannedProductName)
+      handleSearch(scannedProductName)
+      navigation.setParams({
+        scannedProductName: undefined,
+        locateScannedAt: undefined,
+      })
+      return
+    }
+  }, [isFocused, scannedProductName, locateScannedAt])
 
   useEffect(() => {
     if (!selectedLocationId || zones.length === 0) return
@@ -416,7 +438,7 @@ export default function MapScreen() {
             onChangeText={handleSearch}
           />
           <TouchableOpacity
-            onPress={() => navigation.navigate('BarcodeScanner')}
+            onPress={() => navigation.navigate('BarcodeScanner', { mode: 'locate' })}
             style={[styles.scanBtn, { backgroundColor: colors.accent }]}
           >
             <Text style={styles.scanBtnText}>📷</Text>

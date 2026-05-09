@@ -16,7 +16,7 @@ type WarehouseStore = {
   fetchProducts: () => Promise<void>
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
-  searchByBarcode: (barcode: string) => Promise<InventoryEntry[]>
+  searchByBarcode: (barcode: string) => Product | null
   addProduct: (data: Partial<Product>) => Promise<Product | null>
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
   updateInventoryEntry: (id: string, data: Partial<InventoryEntry>) => Promise<void>
@@ -109,19 +109,11 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return data || []
   },
 
-  searchByBarcode: async (barcode) => {
-    const { data: product } = await supabase
-      .from('products')
-      .select('*')
-      .eq('barcode', barcode)
-      .single()
-    if (!product) return []
-    const { data } = await supabase
-      .from('inventory_entries')
-      .select('*, product:products(*), zone:zones(*)')
-      .eq('product_id', product.id)
-      .gt('quantity_boxes', 0)
-    return data || []
+  searchByBarcode: (barcode) => {
+    const normalized = barcode.trim().toLowerCase()
+    if (!normalized) return null
+    const { products } = get()
+    return products.find((p) => p.barcode?.toLowerCase() === normalized) ?? null
   },
 
   addProduct: async (data) => {

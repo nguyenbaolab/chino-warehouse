@@ -6,7 +6,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 
 type BarcodeScannerParams = {
-  mode?: 'search' | 'assign'
+  mode?: 'search' | 'assign' | 'locate'
   productId?: string
 }
 
@@ -15,7 +15,7 @@ export default function BarcodeScannerScreen() {
   const route = useRoute<any>()
   const { mode = 'search', productId: assignProductId } = (route.params || {}) as BarcodeScannerParams
   const { colors } = useThemeStore()
-  const { searchByBarcode } = useWarehouseStore()
+  const { searchByBarcode, products } = useWarehouseStore()
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -33,6 +33,7 @@ export default function BarcodeScannerScreen() {
     setIsSearching(true)
 
     const barcode = data.trim()
+    console.log('[BarcodeScanner] scanned barcode:', barcode, 'mode:', mode)
 
     if (mode === 'assign') {
       setIsSearching(false)
@@ -52,11 +53,40 @@ export default function BarcodeScannerScreen() {
       return
     }
 
-    const results = await searchByBarcode(barcode)
+    const product = searchByBarcode(barcode)
     setIsSearching(false)
+    console.log('[BarcodeScanner] searchByBarcode product:', product?.id ?? null)
 
-    if (results.length > 0) {
-      const productId = results[0].product_id
+    if (mode === 'locate') {
+      if (product) {
+        const params = {
+          scannedProductName: product.name,
+          locateScannedAt: Date.now(),
+        }
+        console.log('[BarcodeScanner][locate] product found, navigating params:', params)
+        navigation.navigate('Tabs', {
+          screen: 'Map',
+          params,
+        })
+      } else {
+        console.log('[BarcodeScanner][locate] product not found for barcode')
+        Alert.alert('Không tìm thấy sản phẩm với mã vạch này', '', [
+          {
+            text: 'Quét lại',
+            style: 'cancel',
+            onPress: () => setIsScanLocked(false),
+          },
+          {
+            text: 'Đóng',
+            onPress: () => navigation.goBack(),
+          },
+        ])
+      }
+      return
+    }
+
+    if (product) {
+      const productId = product.id
       navigation.replace('ProductDetail', { productId })
       return
     }
@@ -111,7 +141,7 @@ export default function BarcodeScannerScreen() {
       <CameraView
         style={StyleSheet.absoluteFillObject}
         facing="back"
-        onBarcodeScanned={isScanLocked ? undefined : handleScanned}
+        onBarcodeScanned={isScanLocked || (mode === 'locate' && products.length === 0) ? undefined : handleScanned}
         barcodeScannerSettings={{
           barcodeTypes: ['ean13', 'ean8', 'code128', 'code39', 'upc_a', 'upc_e', 'qr'],
         }}
@@ -124,9 +154,19 @@ export default function BarcodeScannerScreen() {
 
         <View style={styles.scanAreaWrap}>
           <Text style={styles.scanHint}>
-            {mode === 'assign' ? 'Quét mã vạch để gán cho sản phẩm' : 'Đưa mã vạch vào khung'}
+            {mode === 'assign'
+              ? 'Quét mã vạch để gán cho sản phẩm'
+              : mode === 'locate'
+                ? 'Quét mã vạch để định vị trong kho'
+                : 'Đưa mã vạch vào khung'}
           </Text>
           <View style={[styles.scanFrame, { borderColor: colors.accent }]} />
+          {mode === 'locate' && products.length === 0 && (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={colors.accent} />
+              <Text style={[styles.loadingText, { color: colors.text }]}>Đang tải dữ liệu sản phẩm...</Text>
+            </View>
+          )}
           {isSearching && (
             <View style={styles.loadingWrap}>
               <ActivityIndicator color={colors.accent} />
