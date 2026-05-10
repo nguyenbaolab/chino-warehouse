@@ -70,7 +70,7 @@ Chi tiết cây file: **`docs/project/CONTEXT.md` §2**.
 - **Nhiều location** có thể có trong DB; tab Kho có **hàng nút chọn kho**. Lưới **6×6**; barcode scanner **3 mode**; `searchByBarcode` trên store local.
 - **`AddInventoryScreen`**: chưa có field barcode lô (xem PLAN / KNOWN_ISSUES).
 - **`low_warning_boxes`** default **3** + UI **ProductDetail**; **`low_critical_boxes`**: kế hoạch hardcode **1**, bỏ UI (xem `docs/phases/phase-1/PLAN.md`).
-- **Màu status:** theo **REQUIREMENTS §5**; lệch triển khai (0–1 thùng) → **KI-001** trong `docs/KNOWN_ISSUES.md`.
+- **Màu status:** theo **REQUIREMENTS §5**; 0–1 thùng = đỏ (`critical` / KI-001 đã resolved).
 
 ---
 

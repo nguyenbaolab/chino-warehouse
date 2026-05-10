@@ -20,13 +20,12 @@ F18: Tab Thông báo đầy đủ (cảnh báo tồn + hạn)
 
 ## TODO còn lại (theo thứ tự ưu tiên)
 
-1. Fix KI-001: critical màu đỏ (0–1 thùng)
-2. Bỏ UI `low_critical_boxes`, hardcode = 1
-3. Fix `NotificationsScreen`: format card đúng §7.6
-4. Thêm toggle lọc "có vấn đề" ở `ProductsScreen`
-5. Thêm tổng thùng ở `ProductsScreen`
-6. Bottom tab bar cho màn hình stack
-7. Barcode field ở `AddInventoryScreen`
-8. Verify F17 Realtime
-9. Fix KI-003: tab bar theo themeStore
-10. Fix KI-004: đổi kho xóa search
+1. Bỏ UI `low_critical_boxes`, hardcode = 1
+2. Fix `NotificationsScreen`: format card đúng §7.6
+3. Thêm toggle lọc "có vấn đề" ở `ProductsScreen`
+4. Thêm tổng thùng ở `ProductsScreen`
+5. Bottom tab bar cho màn hình stack
+6. Barcode field ở `AddInventoryScreen`
+7. Verify F17 Realtime
+8. Fix KI-003: tab bar theo themeStore
+9. Fix KI-004: đổi kho xóa search

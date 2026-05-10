@@ -121,7 +121,7 @@ export function formatExpiryDate(expiryDate?: string): string {
 
 export const EXPIRY_COLORS: Record<CombinedStatus, string> = {
   expired: '#EF4444',
-  critical: '#FACC15',
+  critical: '#EF4444',
   warning: '#FACC15',
   ok: '#22C55E',
 }

@@ -70,7 +70,7 @@ Các file KHÔNG cần upload (thay đổi liên tục):
 
 ## Màu status (chuẩn — không được thay đổi nếu không có chỉ đạo)
 
-- 0–1 thùng    → Đỏ #EF4444 (CHƯA FIX — xem KI-001 trong docs/KNOWN_ISSUES.md)
+- 0–1 thùng    → Đỏ #EF4444 (đã fix KI-001)
 - ≤ low_warning_boxes → Vàng #FACC15
 - Hết hạn      → Đỏ #EF4444
 - ≤ warning_days     → Vàng #FACC15
@@ -86,11 +86,10 @@ F14 Thêm sản phẩm, F16 Sửa/xóa lô, F17 Realtime (cần verify)
 
 ## Còn phải làm (theo thứ tự)
 
-1. Fix KI-001: critical → màu đỏ
-2. Bỏ UI low_critical_boxes, hardcode = 1
-3. Fix NotificationsScreen: format card (tổng thùng + thùng có vấn đề)
-4. Toggle lọc "có vấn đề" ở ProductsScreen
-5. Tổng thùng ở ProductsScreen
-6. Bottom tab bar cho stack screens
-7. Barcode field ở AddInventoryScreen
-8. Verify F17 Realtime
+1. Bỏ UI low_critical_boxes, hardcode = 1
+2. Fix NotificationsScreen: format card (tổng thùng + thùng có vấn đề)
+3. Toggle lọc "có vấn đề" ở ProductsScreen
+4. Tổng thùng ở ProductsScreen
+5. Bottom tab bar cho stack screens
+6. Barcode field ở AddInventoryScreen
+7. Verify F17 Realtime

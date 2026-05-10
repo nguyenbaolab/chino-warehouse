@@ -39,7 +39,7 @@ Trên tab **Kho**, phía trên bản đồ có **hàng nút** chọn kho đang x
 - Xem lô, số thùng, hạn, zone/tầng.
 - **Mã vạch**: nhập tay hoặc bấm **📷** → camera mode **`assign`** → quay lại màn hình → **Lưu**.
 - **Ngưỡng sắp hết hàng** (`low_warning_boxes`): mặc định **3**, có thể chỉnh tại đây.
-- Mức **hết hàng / còn rất ít** (0–1 thùng): theo **REQUIREMENTS.md §5** phải là **đỏ**; nếu trên app vẫn thấy **vàng** cho 1 thùng → đó là bug đã ghi trong `docs/KNOWN_ISSUES.md` (KI-001). Kế hoạch: bỏ chỉnh `low_critical_boxes` trên UI, hardcode = 1.
+- Mức **hết hàng / còn rất ít** (0–1 thùng): theo **REQUIREMENTS.md §5** là **đỏ** trên chấm màu / theme (`critical`). Kế hoạch: bỏ chỉnh `low_critical_boxes` trên UI, hardcode = 1.
 
 ---
 

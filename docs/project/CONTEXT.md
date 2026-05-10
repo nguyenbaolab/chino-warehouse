@@ -95,7 +95,7 @@ Tham chiếu đầy đủ: **`docs/project/REQUIREMENTS.md` §5**.
 
 Tóm tắt nhanh:
 
-- **0–1 thùng** → Đỏ `#EF4444` (trên UI có thể chưa đúng — **KI-001**)
+- **0–1 thùng** → Đỏ `#EF4444` (đã khớp UI sau KI-001)
 - **≤ low_warning_boxes** → Vàng `#FACC15`
 - **Hết hạn** → Đỏ `#EF4444`
 - **≤ warning_days** (sắp hết hạn) → Vàng `#FACC15`
