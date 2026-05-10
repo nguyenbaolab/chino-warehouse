@@ -29,6 +29,7 @@ Joensuu, Finland. React Native (Expo) + TypeScript + Supabase + Zustand.
 - Luôn dùng useThemeStore() để lấy colors — không hardcode màu
 - Không tự thêm npm package mới khi chưa được yêu cầu
 - Khi bí → ghi vào docs/BLOCKERS.md, dừng lại hỏi người dùng
+- **Supabase schema:** mỗi lần thêm / xóa / sửa bảng, cột, index, policy… phải tạo **file migration mới** trong `supabase/migrations/`, đặt tên theo format `YYYYMMDD_HHmmss_mô_tả_ngắn_gọn.sql` (ví dụ `20260510_143000_add_deferred_column_to_products.sql`). **Một thay đổi độc lập = một file riêng**; tên file phải rõ ràng, đọc là biết thay đổi gì; **không** gộp nhiều thay đổi không liên quan vào một file.
 
 ## Quy tắc cập nhật tài liệu
 
