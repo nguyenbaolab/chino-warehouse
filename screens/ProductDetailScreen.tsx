@@ -53,8 +53,8 @@ export default function ProductDetailScreen() {
   const [editBarcode, setEditBarcode] = useState('')
   const [editWarningDays, setEditWarningDays] = useState('30')
   const [editLowWarningBoxes, setEditLowWarningBoxes] = useState('3')
-  const [editLowCriticalBoxes, setEditLowCriticalBoxes] = useState('1')
   const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const [detailsExpanded, setDetailsExpanded] = useState(false)
 
   const [moveLot, setMoveLot] = useState<InventoryEntry | null>(null)
   const [targetZoneId, setTargetZoneId] = useState<string | null>(null)
@@ -75,7 +75,7 @@ export default function ProductDetailScreen() {
         lot.quantity_boxes,
         lot.expiry_date,
         product?.low_warning_boxes ?? 3,
-        product?.low_critical_boxes ?? 1,
+        1,
         product?.warning_days ?? 30
       )
       return st !== 'ok'
@@ -97,7 +97,6 @@ export default function ProductDetailScreen() {
     setEditBarcode(productData?.barcode ?? '')
     setEditWarningDays(String(productData?.warning_days ?? 30))
     setEditLowWarningBoxes(String(productData?.low_warning_boxes ?? 3))
-    setEditLowCriticalBoxes(String(productData?.low_critical_boxes ?? 1))
     setIsLoading(false)
   }, [productId])
 
@@ -209,26 +208,6 @@ export default function ProductDetailScreen() {
     setIsSavingProduct(false)
   }
 
-  async function handleSaveLowCriticalBoxes() {
-    if (!product) return
-    const lowCriticalBoxes = Number(editLowCriticalBoxes)
-    const lowWarningBoxes = Number(editLowWarningBoxes)
-    if (!Number.isFinite(lowCriticalBoxes) || lowCriticalBoxes < 0) {
-      Alert.alert('Ngưỡng không hợp lệ', 'Ngưỡng còn rất ít (thùng) phải lớn hơn hoặc bằng 0.')
-      return
-    }
-    if (Number.isFinite(lowWarningBoxes) && lowCriticalBoxes > lowWarningBoxes) {
-      Alert.alert('Ngưỡng không hợp lệ', 'Ngưỡng còn rất ít không được lớn hơn ngưỡng cảnh báo sắp hết.')
-      return
-    }
-    setIsSavingProduct(true)
-    const updated = await updateProductStockThresholds(product.id, {
-      low_critical_boxes: Math.floor(lowCriticalBoxes),
-    })
-    if (updated) setProduct(updated)
-    setIsSavingProduct(false)
-  }
-
   function openMoveLot(lot: InventoryEntry) {
     setMoveLot(lot)
     setTargetZoneId(null)
@@ -270,6 +249,13 @@ export default function ProductDetailScreen() {
     })
   }
 
+  function getHostTabName(): string {
+    const tabNav = navigation.getParent()?.getParent()
+    const st = tabNav?.getState()
+    if (!st?.routes || st.index === undefined) return 'Products'
+    return String(st.routes[st.index]?.name ?? 'Products')
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
@@ -282,77 +268,76 @@ export default function ProductDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.productName, { color: colors.text }]}>{product?.name ?? 'Không xác định'}</Text>
-          {!!product?.barcode && <Text style={[styles.infoText, { color: colors.sub }]}>Barcode: {product.barcode}</Text>}
-          <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
-            Mã vạch
-          </Text>
-          <View style={styles.warningEditRow}>
-            <TextInput
-              style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={editBarcode}
-              onChangeText={setEditBarcode}
-              placeholder="Chưa có mã vạch"
-              placeholderTextColor={colors.sub}
-            />
-            <TouchableOpacity
-              style={[styles.scanBarcodeBtn, { backgroundColor: colors.accent }]}
-              onPress={() => navigation.navigate('BarcodeScanner', { mode: 'assign', productId })}
-            >
-              <Text style={[styles.scanBarcodeText, { color: colors.card }]}>📷</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveBarcode}>
-              <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
-            </TouchableOpacity>
-          </View>
           {!!product?.notes && <Text style={[styles.infoText, { color: colors.sub }]}>Ghi chú: {product.notes}</Text>}
-          <Text style={[styles.infoText, { color: colors.sub }]}>
-            Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
-          </Text>
-          <View style={styles.warningEditRow}>
-            <TextInput
-              style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={editWarningDays}
-              onChangeText={setEditWarningDays}
-              keyboardType="numeric"
-              placeholder="30"
-              placeholderTextColor={colors.sub}
-            />
-            <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveWarningDays}>
-              <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
-            Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
-          </Text>
-          <View style={styles.warningEditRow}>
-            <TextInput
-              style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={editLowWarningBoxes}
-              onChangeText={setEditLowWarningBoxes}
-              keyboardType="numeric"
-              placeholder="3"
-              placeholderTextColor={colors.sub}
-            />
-            <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveLowWarningBoxes}>
-              <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
-            Ngưỡng cảnh báo còn rất ít (thùng): {product?.low_critical_boxes ?? 1}
-          </Text>
-          <View style={styles.warningEditRow}>
-            <TextInput
-              style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={editLowCriticalBoxes}
-              onChangeText={setEditLowCriticalBoxes}
-              keyboardType="numeric"
-              placeholder="1"
-              placeholderTextColor={colors.sub}
-            />
-            <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveLowCriticalBoxes}>
-              <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.detailsToggleRow, { borderColor: colors.border, backgroundColor: colors.bg }]}
+            onPress={() => setDetailsExpanded((v) => !v)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.detailsToggleLabel, { color: colors.text }]}>
+              {detailsExpanded ? 'Thu gọn' : 'Chi tiết'}
+            </Text>
+            <Text style={[styles.detailsToggleArrow, { color: colors.sub }]}>{detailsExpanded ? '▴' : '▾'}</Text>
+          </TouchableOpacity>
+          {detailsExpanded && (
+            <>
+              <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>Mã vạch</Text>
+              <View style={styles.warningEditRow}>
+                <TextInput
+                  style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                  value={editBarcode}
+                  onChangeText={setEditBarcode}
+                  placeholder="Chưa có mã vạch"
+                  placeholderTextColor={colors.sub}
+                />
+                <TouchableOpacity
+                  style={[styles.scanBarcodeBtn, { backgroundColor: colors.accent }]}
+                  onPress={() => navigation.navigate('BarcodeScanner', {
+                    mode: 'assign',
+                    productId,
+                    returnTab: getHostTabName(),
+                  })}
+                >
+                  <Text style={[styles.scanBarcodeText, { color: colors.card }]}>📷</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveBarcode}>
+                  <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.infoText, { color: colors.sub }]}>
+                Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
+              </Text>
+              <View style={styles.warningEditRow}>
+                <TextInput
+                  style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                  value={editWarningDays}
+                  onChangeText={setEditWarningDays}
+                  keyboardType="numeric"
+                  placeholder="30"
+                  placeholderTextColor={colors.sub}
+                />
+                <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveWarningDays}>
+                  <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
+                Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
+              </Text>
+              <View style={styles.warningEditRow}>
+                <TextInput
+                  style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                  value={editLowWarningBoxes}
+                  onChangeText={setEditLowWarningBoxes}
+                  keyboardType="numeric"
+                  placeholder="3"
+                  placeholderTextColor={colors.sub}
+                />
+                <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveLowWarningBoxes}>
+                  <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={[styles.lotsToolbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -384,7 +369,7 @@ export default function ProductDetailScreen() {
               lot.quantity_boxes,
               lot.expiry_date,
               product?.low_warning_boxes ?? 3,
-              product?.low_critical_boxes ?? 1,
+              1,
               product?.warning_days ?? 30
             )
             const dotColor = status === 'expired'
@@ -574,6 +559,18 @@ const styles = StyleSheet.create({
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   content: { padding: 16, paddingBottom: 20 },
   infoBox: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
+  detailsToggleRow: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  detailsToggleLabel: { fontSize: 14, fontWeight: '600' },
+  detailsToggleArrow: { fontSize: 14, fontWeight: '700' },
   lotsToolbar: {
     flexDirection: 'row',
     alignItems: 'center',

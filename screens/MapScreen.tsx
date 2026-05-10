@@ -53,7 +53,7 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InventoryEntry[]>([])
   const [highlightedZones, setHighlightedZones] = useState<Map<string, string>>(new Map())
-  const [isSearchPanelExpanded, setIsSearchPanelExpanded] = useState(true)
+  const [isSearchPanelExpanded, setIsSearchPanelExpanded] = useState(false)
 
   const [mode, setMode] = useState<'normal' | 'selecting'>('normal')
   const [selectedCells, setSelectedCells] = useState<ZoneCell[]>([])
@@ -101,8 +101,6 @@ export default function MapScreen() {
 
   async function handleSearch(text: string) {
     setSearchQuery(text)
-    // Mỗi lần query thay đổi thì reset panel về expanded
-    setIsSearchPanelExpanded(true)
     if (text.trim().length < 2) {
       setSearchResults([])
       setHighlightedZones(new Map())
@@ -110,6 +108,7 @@ export default function MapScreen() {
     }
     const results = await searchProducts(text)
     setSearchResults(results)
+    setIsSearchPanelExpanded(false)
     const map = new Map<string, string>()
     for (const r of results) {
       const product = r.product ?? products.find((p) => p.id === r.product_id)
@@ -472,7 +471,10 @@ export default function MapScreen() {
               style={[styles.resultsToggleBtn, { backgroundColor: colors.bg }]}
               onPress={() => setIsSearchPanelExpanded((prev) => !prev)}
             >
-              <Text style={[styles.resultsToggleText, { color: colors.text }]}>
+              <Text style={[styles.resultsToggleLabel, { color: colors.text }]}>
+                {isSearchPanelExpanded ? 'Thu gọn' : 'Chi tiết'}
+              </Text>
+              <Text style={[styles.resultsToggleText, { color: colors.sub }]}>
                 {isSearchPanelExpanded ? '▴' : '▾'}
               </Text>
             </TouchableOpacity>
@@ -670,7 +672,15 @@ const styles = StyleSheet.create({
   resultsBox: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 12 },
   resultsHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
   resultsTitle: { fontSize: 12, marginBottom: 6 },
-  resultsToggleBtn: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  resultsToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  resultsToggleLabel: { fontSize: 13, fontWeight: '600' },
   resultsToggleText: { fontSize: 12, fontWeight: '700' },
   resultItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
   resultText: { fontSize: 13, marginLeft: 8, flex: 1 },

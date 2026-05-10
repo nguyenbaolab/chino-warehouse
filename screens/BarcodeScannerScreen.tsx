@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Linking, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { CameraView, Camera } from 'expo-camera'
-import { CommonActions, useNavigation, useRoute } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 
 type BarcodeScannerParams = {
   mode?: 'search' | 'assign' | 'locate'
   productId?: string
+  /** Tab chứa stack (Map / Products / Notifications) — dùng khi `assign` để quay lại ProductDetail sau quét */
+  returnTab?: string
 }
 
 export default function BarcodeScannerScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
-  const { mode = 'search', productId: assignProductId } = (route.params || {}) as BarcodeScannerParams
+  const { mode = 'search', productId: assignProductId, returnTab } = (route.params || {}) as BarcodeScannerParams
   const { colors } = useThemeStore()
   const { searchByBarcode, products } = useWarehouseStore()
 
@@ -37,16 +39,17 @@ export default function BarcodeScannerScreen() {
 
     if (mode === 'assign') {
       setIsSearching(false)
-      const state = navigation.getState()
-      const previousRoute = state.routes[state.index - 1]
-      if (previousRoute?.name === 'ProductDetail') {
-        navigation.dispatch({
-          ...CommonActions.setParams({
-            scannedBarcode: barcode,
-            barcodeAssignedAt: Date.now(),
-            productId: assignProductId,
-          }),
-          source: previousRoute.key,
+      if (returnTab && assignProductId) {
+        navigation.navigate('Tabs', {
+          screen: returnTab,
+          params: {
+            screen: 'ProductDetail',
+            params: {
+              productId: assignProductId,
+              scannedBarcode: barcode,
+              barcodeAssignedAt: Date.now(),
+            },
+          },
         })
       }
       navigation.goBack()
@@ -66,8 +69,12 @@ export default function BarcodeScannerScreen() {
         console.log('[BarcodeScanner][locate] product found, navigating params:', params)
         navigation.navigate('Tabs', {
           screen: 'Map',
-          params,
+          params: {
+            screen: 'MapMain',
+            params,
+          },
         })
+        navigation.goBack()
       } else {
         console.log('[BarcodeScanner][locate] product not found for barcode')
         Alert.alert('Không tìm thấy sản phẩm với mã vạch này', '', [
@@ -87,7 +94,14 @@ export default function BarcodeScannerScreen() {
 
     if (product) {
       const productId = product.id
-      navigation.replace('ProductDetail', { productId })
+      navigation.navigate('Tabs', {
+        screen: 'Products',
+        params: {
+          screen: 'ProductDetail',
+          params: { productId },
+        },
+      })
+      navigation.goBack()
       return
     }
 
@@ -97,7 +111,13 @@ export default function BarcodeScannerScreen() {
       [
         {
           text: 'Thêm thủ công',
-          onPress: () => navigation.replace('AddInventory'),
+          onPress: () => {
+            navigation.navigate('Tabs', {
+              screen: 'Products',
+              params: { screen: 'AddInventory', params: {} },
+            })
+            navigation.goBack()
+          },
         },
         {
           text: 'Quét lại',

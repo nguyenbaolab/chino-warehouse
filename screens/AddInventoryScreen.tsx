@@ -185,8 +185,8 @@ export default function AddInventoryScreen() {
     }
 
     const quantity = Number(quantityBoxes)
-    if (!Number.isFinite(quantity) || quantity < 1) {
-      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải lớn hơn hoặc bằng 1.')
+    if (!Number.isFinite(quantity) || quantity < 0 || quantity !== Math.floor(quantity)) {
+      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn hoặc bằng 0.')
       return
     }
 

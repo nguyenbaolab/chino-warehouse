@@ -66,3 +66,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/NotificationsScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Không còn `TypeError` từ `.has` trên Products; lọc lô có vấn đề chỉ còn ở chi tiết SP
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Navigation + ProductDetail + Map + Thông báo + Thêm/Sửa lô (0 thùng)
+
+- **Task:** Tab bar hiện trên `ProductDetail` / `AddInventory` (stack lồng trong tab); `BarcodeScanner` fullscreen modal; `ProductDetail`: hardcode `low_critical_boxes = 1`, gỡ UI ngưỡng critical, gộp mã vạch + `low_warning_boxes` + `warning_days` vào section **Chi tiết** / **Thu gọn** (mặc định thu gọn); `MapScreen`: panel kết quả tìm mặc định thu gọn sau khi tìm, nút **Chi tiết** / **Thu gọn**; `NotificationsScreen`: pill tồn **Hết hàng** (0 thùng) / **Còn rất ít** (1 thùng) đỏ; `AddInventoryScreen` + `ZoneDetailSheet`: cho phép **0 thùng** (số nguyên ≥ 0).
+- **Files thay đổi:** `App.tsx`, `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/MapScreen.tsx`, `screens/NotificationsScreen.tsx`, `screens/AddInventoryScreen.tsx`, `components/ZoneDetailSheet.tsx`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** `returnTab` cho luồng gán mã vạch sau quét; navigate lồng `Tabs` → tab → `MapMain` / `ProductDetail` / `AddInventory`
+- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

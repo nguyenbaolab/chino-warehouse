@@ -20,12 +20,19 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Lý do:** Ngưỡng nguy hiểm không nên tùy chỉnh lung tung.
 - **Thay thế đã xem xét:** Cho chỉnh `low_critical_boxes` trên UI (từ chối; có thể hardcode = 1 trong logic).
 
+### low_critical_boxes = 1 cố định trong logic, không còn UI chỉnh
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Toàn app dùng **`low_critical_boxes = 1`** khi gọi `getCombinedStatus` / tính combined (không đọc chỉnh từ UI). **Đã gỡ hoàn toàn** block chỉnh “còn rất ít (thùng)” trên `ProductDetailScreen`. Cột DB có thể còn nhưng không còn đường cập nhật từ màn hình này.
+- **Lý do:** Thống nhất PRD (0–1 thùng đỏ) và tránh nhập sai ngưỡng critical.
+- **Thay thế đã xem xét:** Giữ input đồng bộ DB — từ chối.
+
 ---
 
 ### low_warning_boxes configurable per sản phẩm
 
 - **Ngày:** tháng 5/2026
-- **Quyết định:** Mỗi sản phẩm chỉnh ngưỡng **vàng** “sắp hết hàng” riêng (mặc định **3** thùng), tại màn chi tiết sản phẩm.
+- **Quyết định:** Mỗi sản phẩm chỉnh ngưỡng **vàng** “sắp hết hàng” riêng (mặc định **3** thùng), tại màn chi tiết sản phẩm (trong section **Chi tiết** có thể thu gọn).
 - **Lý do:** Mỗi SKU có tần suất bán / dự trữ khác nhau.
 - **Thay thế đã xem xét:** Một ngưỡng cố định toàn app.
 
@@ -34,7 +41,7 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 ### warning_days configurable per sản phẩm
 
 - **Ngày:** tháng 5/2026
-- **Quyết định:** Mỗi sản phẩm chỉnh số ngày cảnh báo trước hạn (mặc định **30**), tại màn chi tiết sản phẩm.
+- **Quyết định:** Mỗi sản phẩm chỉnh số ngày cảnh báo trước hạn (mặc định **30**), tại màn chi tiết sản phẩm (trong section **Chi tiết** có thể thu gọn).
 - **Lý do:** Chu kỳ nhập hàng / shelf life khác nhau giữa các loại hàng.
 - **Thay thế đã xem xét:** 30 ngày cứng cho mọi sản phẩm.
 

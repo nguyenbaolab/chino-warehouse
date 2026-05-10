@@ -6,41 +6,61 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 
 ---
 
-## Task gần nhất — UI Thông báo / Sản phẩm / Chi tiết
+## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng
 
-### 1) `NotificationsScreen`
+### 1) `App.tsx` — Tab bar trên stack con
 
-**Thay đổi:** Mỗi card: hàng đầu chỉ **tên SP** (chấm màu worst combined). Ngay dưới: một dòng `Tổng X thùng | Y thùng có vấn đề`. **Dòng tiếp theo:** tối đa **hai pill** trên **cùng một hàng** — chỉ hiện pill có cảnh báo (không pill “xanh”): tồn **Hết hàng** / **Sắp hết hàng**, hạn **Hết hạn** / **Sắp hết hạn**; chữ + viền `#EF4444` / `#FACC15`. Không còn dòng zone/tầng/hạn trên card.
+**Thay đổi:** Mỗi tab (`Map`, `Products`, `Notifications`) dùng **stack riêng**: màn chính (`MapMain` / `ProductsMain` / `NotificationsMain`) + `ProductDetail` + `AddInventory`. Tab **Cài đặt** chỉ có `SettingsMain`. Root stack: `Tabs` + `BarcodeScanner` (**fullScreenModal**, không tab bar).
 
 **Test:**
 
-1. Có ít nhất một SP có lô đỏ hoặc vàng (tồn/hạn theo ngưỡng).
-2. Tab **Thông báo** — đúng X/Y; pill nằm **dưới** dòng tổng, cùng hàng; chỉ pill đỏ/vàng khi có vấn đề tương ứng.
-3. Bấm card → mở **Chi tiết** đúng SP.
+1. Từ **Kho** / **Sản phẩm** / **Thông báo** mở **Chi tiết SP** — thanh tab dưới **vẫn hiện**; **Đóng** quay về đúng tab.
+2. Từ chi tiết mở **Thêm hàng** — tab bar **vẫn hiện**; Hủy/ lưu xong quay lại hợp lý.
+3. Mở **BarcodeScanner** (từ Kho / Sản phẩm / Chi tiết) — **fullscreen**, **không** tab bar; đóng scanner về đúng ngữ cảnh.
+4. **Locate** từ Kho: quét SP có trong hệ thống — về tab Kho, ô tìm kiếm + highlight zone (params `MapMain`).
+5. **Assign** mã vạch từ Chi tiết: sau quét, về lại chi tiết đúng SP với mã đã điền (tham số `returnTab`).
 
 ---
 
-### 2) `ProductsScreen`
+### 2) `ProductDetailScreen`
 
-**Thay đổi:** Mỗi dòng SP: **Tổng N thùng** (cạnh nút ✏️). **Không** có toggle **Có vấn đề** trên màn này. Lọc theo tìm kiếm + zone chip như trước.
+**Thay đổi:** `getCombinedStatus` dùng **`low_critical_boxes = 1` cố định**; không còn UI chỉnh critical. **Mã vạch**, **warning_days**, **low_warning_boxes** nằm trong một khối **Chi tiết** / **Thu gọn** (mặc định thu gọn; nhãn + mũi tên ▾ / ▴). Giữ toolbar **Tổng … thùng** + **Có vấn đề** + **Thêm lô**.
 
 **Test:**
 
-1. So sánh tổng thùng trên card với tổng thủ công từ các lô (cùng zone filter nếu có).
-2. Không thấy hàng **Có vấn đề** / không crash khi dùng tab Sản phẩm.
-3. Chọn zone chip — danh sách SP vẫn lọc đúng theo zone.
+1. Mở chi tiết — chỉ thấy tên + ghi chú (nếu có) + nút **Chi tiết**; bấm mở — chỉnh barcode / ngày / ngưỡng vàng; **Thu gọn** đóng lại.
+2. Lọc **Có vấn đề** và danh sách lô vẫn đúng (combined dùng critical = 1).
 
 ---
 
-### 3) `ProductDetailScreen`
+### 3) `MapScreen` — Kết quả tìm
 
-**Thay đổi:** Thanh **Tổng … thùng** + Switch **Có vấn đề** phía trên nút **Thêm lô hàng mới**. Bật lọc chỉ hiện lô có combined ≠ `ok`; nếu không có lô khớp — thông báo rõ.
+**Thay đổi:** Sau khi tìm được kết quả (≥ 2 ký tự), panel kết quả **mặc định thu gọn**. Header có **Chi tiết** + ▾ / **Thu gọn** + ▴ (cùng hàng với số lượng kết quả).
 
 **Test:**
 
-1. SP có nhiều lô — số **Tổng** khớp tổng số thùng mọi lô.
-2. Bật **Có vấn đề** — chỉ còn lô đỏ/vàng; tắt — lại đủ danh sách.
-3. SP chỉ có lô xanh — bật **Có vấn đề** — thấy dòng “Không có lô đỏ/vàng…”.
+1. Gõ từ khóa hợp lệ — panel thu gọn, bấm **Chi tiết** mở danh sách (tối đa 5 dòng như cũ).
+2. **Thu gọn** — lại dạng tóm tắt theo SP.
+3. Xóa ô tìm — panel reset hợp lý.
+
+---
+
+### 4) `NotificationsScreen` — Pill tồn
+
+**Thay đổi:** **0 thùng** → pill đỏ **Hết hàng**; **1 thùng** → pill đỏ **Còn rất ít**; ngưỡng vàng “sắp hết” theo `low_warning_boxes` (như trước). Hạn giữ **Hết hạn** / **Sắp hết hạn**.
+
+**Test:** Card có lô 0 thùng / 1 thùng / chỉ vàng — nhãn pill tồn khớp.
+
+---
+
+### 5) `AddInventoryScreen` + `ZoneDetailSheet`
+
+**Thay đổi:** Số thùng cho phép **0** (số nguyên ≥ 0), không còn bắt buộc ≥ 1.
+
+**Test:**
+
+1. Thêm lô với **0** thùng — lưu được (hoặc luồng cộng dồn trùng lô vẫn hợp lệ nếu backend cho).
+2. Sửa lô trong sheet zone — nhập **0** — lưu được.
 
 ---
 

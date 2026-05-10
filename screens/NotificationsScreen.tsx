@@ -57,7 +57,6 @@ export default function NotificationsScreen() {
       const product = entries[0]?.product
       const warningDays = product?.warning_days ?? 30
       const lowWarningBoxes = product?.low_warning_boxes ?? 3
-      const lowCriticalBoxes = product?.low_critical_boxes ?? 1
 
       let totalBoxes = 0
       let issueBoxes = 0
@@ -70,7 +69,7 @@ export default function NotificationsScreen() {
           entry.quantity_boxes,
           entry.expiry_date,
           entry.product?.low_warning_boxes ?? lowWarningBoxes,
-          entry.product?.low_critical_boxes ?? lowCriticalBoxes,
+          1,
           entry.product?.warning_days ?? warningDays
         )
         const rank = getCombinedStatusRank(status)
@@ -85,26 +84,29 @@ export default function NotificationsScreen() {
 
       if (issueBoxes === 0) continue
 
-      let hasStockRed = false
+      let stockRedKind: 'het_hang' | 'con_rat_it' | null = null
       let hasStockYellow = false
       let hasExpiryRed = false
       let hasExpiryYellow = false
       for (const entry of entries) {
         const q = entry.quantity_boxes
-        if (q <= 0) hasStockRed = true
-        else if (q <= lowCriticalBoxes) hasStockRed = true
-        else if (q <= lowWarningBoxes) hasStockYellow = true
+        if (q <= 0) stockRedKind = 'het_hang'
+        else if (q === 1) {
+          if (stockRedKind !== 'het_hang') stockRedKind = 'con_rat_it'
+        } else if (q <= lowWarningBoxes) hasStockYellow = true
 
         const es = getExpiryStatus(entry.expiry_date, warningDays)
         if (es === 'expired') hasExpiryRed = true
         else if (es === 'warning') hasExpiryYellow = true
       }
 
-      const stockPill = hasStockRed
+      const stockPill = stockRedKind === 'het_hang'
         ? { label: 'Hết hàng', level: 'red' as const }
-        : hasStockYellow
-          ? { label: 'Sắp hết hàng', level: 'yellow' as const }
-          : undefined
+        : stockRedKind === 'con_rat_it'
+          ? { label: 'Còn rất ít', level: 'red' as const }
+          : hasStockYellow
+            ? { label: 'Sắp hết hàng', level: 'yellow' as const }
+            : undefined
 
       const expiryPill = hasExpiryRed
         ? { label: 'Hết hạn', level: 'red' as const }
