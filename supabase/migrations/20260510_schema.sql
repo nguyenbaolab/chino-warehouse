@@ -1,0 +1,93 @@
+-- ============================================================
+-- Chino's Warehouse — Full Database Schema
+-- Phiên bản: 1.0 | Tháng 5/2026
+-- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
+-- ============================================================
+
+
+-- ============================================================
+-- BẢNG CHÍNH
+-- ============================================================
+
+-- 1. Locations (kho/khu vực)
+CREATE TABLE locations (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        TEXT        NOT NULL,
+  description TEXT,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- 2. Zones (ô trong kho)
+CREATE TABLE zones (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  location_id UUID        REFERENCES locations(id) ON DELETE CASCADE,
+  name        TEXT        NOT NULL,
+  cells       JSONB       DEFAULT '[]',         -- mảng {row, col} 1-based
+  color       TEXT        DEFAULT '#22C55E',
+  has_tiers   BOOLEAN     DEFAULT false,
+  tier_count  INTEGER     DEFAULT 1,
+  notes       TEXT,
+  updated_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- 3. Products (sản phẩm)
+CREATE TABLE products (
+  id                UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name              TEXT        NOT NULL,
+  barcode           TEXT,
+  image_url         TEXT,
+  notes             TEXT,
+  is_archived       BOOLEAN     DEFAULT false,
+  warning_days      INTEGER     NOT NULL DEFAULT 30,
+  low_warning_boxes INTEGER     NOT NULL DEFAULT 3,
+  low_critical_boxes INTEGER    NOT NULL DEFAULT 1,
+  created_at        TIMESTAMPTZ DEFAULT now()
+);
+
+-- 4. Inventory entries (lô hàng)
+CREATE TABLE inventory_entries (
+  id             UUID    PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id     UUID    REFERENCES products(id) ON DELETE CASCADE,
+  zone_id        UUID    REFERENCES zones(id) ON DELETE CASCADE,
+  tier           INTEGER DEFAULT 1,
+  quantity_boxes INTEGER NOT NULL DEFAULT 0,
+  expiry_date    DATE,
+  notes          TEXT,
+  updated_at     TIMESTAMPTZ DEFAULT now()
+);
+
+
+-- ============================================================
+-- INDEXES
+-- ============================================================
+
+CREATE INDEX ON products(name);
+CREATE INDEX ON products(barcode);
+CREATE INDEX ON inventory_entries(zone_id);
+CREATE INDEX ON inventory_entries(product_id);
+
+
+-- ============================================================
+-- ROW LEVEL SECURITY
+-- ============================================================
+
+ALTER TABLE locations         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE zones             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory_entries ENABLE ROW LEVEL SECURITY;
+
+-- Phase 1: không có auth — cho phép tất cả
+-- Phase 3: thay bằng policy kiểm tra user role
+CREATE POLICY "allow_all" ON locations         FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON zones             FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON products          FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON inventory_entries FOR ALL TO anon USING (true) WITH CHECK (true);
+
+
+-- ============================================================
+-- SEED DATA
+-- ============================================================
+
+-- 1 kho mặc định cho Phase 1
+INSERT INTO locations (name, description)
+VALUES ('Kho', 'Phòng kho tầng dưới');
