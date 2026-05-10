@@ -46,3 +46,6 @@ yarn-error.*
 
 #backup
 /supabase/backups
+
+#temp
+/supabase/temp
