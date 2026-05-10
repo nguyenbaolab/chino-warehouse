@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Modal,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -60,6 +61,26 @@ export default function ProductDetailScreen() {
   const [targetTier, setTargetTier] = useState<number | null>(null)
   const [showZoneOptions, setShowZoneOptions] = useState(false)
   const [showTierOptions, setShowTierOptions] = useState(false)
+  const [showIssuesOnly, setShowIssuesOnly] = useState(false)
+
+  const totalLotBoxes = useMemo(
+    () => lots.reduce((sum, lot) => sum + lot.quantity_boxes, 0),
+    [lots]
+  )
+
+  const displayedLots = useMemo(() => {
+    if (!showIssuesOnly) return lots
+    return lots.filter((lot) => {
+      const st = getCombinedStatus(
+        lot.quantity_boxes,
+        lot.expiry_date,
+        product?.low_warning_boxes ?? 3,
+        product?.low_critical_boxes ?? 1,
+        product?.warning_days ?? 30
+      )
+      return st !== 'ok'
+    })
+  }, [lots, showIssuesOnly, product])
 
   const loadData = useCallback(async () => {
     setIsLoading(true)
@@ -334,6 +355,19 @@ export default function ProductDetailScreen() {
           </View>
         </View>
 
+        <View style={[styles.lotsToolbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.totalBoxesToolbar, { color: colors.text }]}>Tổng {totalLotBoxes} thùng</Text>
+          <View style={styles.issuesToggleInner}>
+            <Text style={{ color: colors.sub, fontSize: 13 }}>Có vấn đề</Text>
+            <Switch
+              value={showIssuesOnly}
+              onValueChange={setShowIssuesOnly}
+              trackColor={{ false: '#ccc', true: colors.accent }}
+              thumbColor="#fff"
+            />
+          </View>
+        </View>
+
         <TouchableOpacity style={[styles.addLotBtn, { backgroundColor: colors.accent }]} onPress={handleAddNewLot}>
           <Text style={[styles.addLotBtnText, { color: colors.card }]}>Thêm lô hàng mới</Text>
         </TouchableOpacity>
@@ -342,8 +376,10 @@ export default function ProductDetailScreen() {
           <Text style={{ color: colors.sub }}>Đang tải...</Text>
         ) : lots.length === 0 ? (
           <Text style={{ color: colors.sub }}>Chưa có lô hàng cho sản phẩm này.</Text>
+        ) : displayedLots.length === 0 ? (
+          <Text style={{ color: colors.sub }}>Không có lô đỏ/vàng (đang bật lọc Có vấn đề).</Text>
         ) : (
-          lots.map((lot) => {
+          displayedLots.map((lot) => {
             const status = getCombinedStatus(
               lot.quantity_boxes,
               lot.expiry_date,
@@ -538,6 +574,18 @@ const styles = StyleSheet.create({
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   content: { padding: 16, paddingBottom: 20 },
   infoBox: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
+  lotsToolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 12,
+  },
+  totalBoxesToolbar: { fontSize: 15, fontWeight: '700' },
+  issuesToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   productName: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
   infoText: { fontSize: 13, marginTop: 2 },
   warningEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },

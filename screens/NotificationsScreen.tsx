@@ -3,20 +3,30 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
-import { formatExpiryDate, getCombinedStatus, getCombinedStatusRank, getExpiryStatus } from '../types'
+import { CombinedStatus, getCombinedStatus, getCombinedStatusRank, getExpiryStatus } from '../types'
+
+/** Màu pill theo mức combined (đỏ = hết/critical tồn hoặc hết hạn; vàng = sắp hết / warning). */
+const PILL_RED = '#EF4444'
+const PILL_YELLOW = '#FACC15'
+
+function lotHasIssueStatus(status: CombinedStatus): boolean {
+  return status !== 'ok'
+}
+
+type PillLevel = 'red' | 'yellow'
 
 type NotificationItem = {
   key: string
-  severity: 1 | 2 | 3 | 4
   productId: string
   productName: string
-  zoneName: string
-  tier: number
-  quantityBoxes: number
-  expiryDate?: string
-  combinedStatus: 'expired' | 'critical' | 'warning' | 'ok'
-  expiryBadge?: { label: string; tone: 'expired' | 'warning' }
-  stockBadge?: { label: string; tone: 'expired' | 'warning' }
+  totalBoxes: number
+  issueBoxes: number
+  worstStatus: CombinedStatus
+  worstRank: number
+  /** Tồn kho: Hết hàng (đỏ) / Sắp hết hàng (vàng) — theo ngưỡng thùng, không trộn hạn */
+  stockPill?: { label: string; level: PillLevel }
+  /** Hạn: Hết hạn (đỏ) / Sắp hết hạn (vàng) — getExpiryStatus */
+  expiryPill?: { label: string; level: PillLevel }
 }
 
 export default function NotificationsScreen() {
@@ -48,11 +58,14 @@ export default function NotificationsScreen() {
       const warningDays = product?.warning_days ?? 30
       const lowWarningBoxes = product?.low_warning_boxes ?? 3
       const lowCriticalBoxes = product?.low_critical_boxes ?? 1
-      let worstEntry = entries[0]
+
+      let totalBoxes = 0
+      let issueBoxes = 0
+      let worstStatus: CombinedStatus = 'ok'
       let worstRank = 99
-      let worstStatus: 'expired' | 'critical' | 'warning' | 'ok' = 'ok'
 
       for (const entry of entries) {
+        totalBoxes += entry.quantity_boxes
         const status = getCombinedStatus(
           entry.quantity_boxes,
           entry.expiry_date,
@@ -63,44 +76,56 @@ export default function NotificationsScreen() {
         const rank = getCombinedStatusRank(status)
         if (rank < worstRank) {
           worstRank = rank
-          worstEntry = entry
           worstStatus = status
+        }
+        if (lotHasIssueStatus(status)) {
+          issueBoxes += entry.quantity_boxes
         }
       }
 
-      const expiryStatus = getExpiryStatus(worstEntry.expiry_date, warningDays)
-      const expiryBadge = expiryStatus === 'expired'
-        ? { label: 'Đã hết hạn', tone: 'expired' as const }
-        : expiryStatus === 'warning'
-          ? { label: 'Sắp hết hạn', tone: 'warning' as const }
+      if (issueBoxes === 0) continue
+
+      let hasStockRed = false
+      let hasStockYellow = false
+      let hasExpiryRed = false
+      let hasExpiryYellow = false
+      for (const entry of entries) {
+        const q = entry.quantity_boxes
+        if (q <= 0) hasStockRed = true
+        else if (q <= lowCriticalBoxes) hasStockRed = true
+        else if (q <= lowWarningBoxes) hasStockYellow = true
+
+        const es = getExpiryStatus(entry.expiry_date, warningDays)
+        if (es === 'expired') hasExpiryRed = true
+        else if (es === 'warning') hasExpiryYellow = true
+      }
+
+      const stockPill = hasStockRed
+        ? { label: 'Hết hàng', level: 'red' as const }
+        : hasStockYellow
+          ? { label: 'Sắp hết hàng', level: 'yellow' as const }
           : undefined
 
-      const stockBadge = worstEntry.quantity_boxes <= 0
-        ? { label: 'Đã hết hàng', tone: 'expired' as const }
-        : worstEntry.quantity_boxes <= lowCriticalBoxes
-          ? { label: 'Còn rất ít', tone: 'expired' as const }
-          : worstEntry.quantity_boxes <= lowWarningBoxes
-            ? { label: 'Sắp hết hàng', tone: 'warning' as const }
-            : undefined
-
-      if (!expiryBadge && !stockBadge) continue
+      const expiryPill = hasExpiryRed
+        ? { label: 'Hết hạn', level: 'red' as const }
+        : hasExpiryYellow
+          ? { label: 'Sắp hết hạn', level: 'yellow' as const }
+          : undefined
 
       items.push({
-        key: `${productId}-${worstEntry.id}`,
-        severity: worstRank as 1 | 2 | 3 | 4,
+        key: productId,
         productId,
         productName,
-        zoneName: worstEntry.zone?.name ?? 'Zone?',
-        tier: worstEntry.tier,
-        quantityBoxes: worstEntry.quantity_boxes,
-        expiryDate: worstEntry.expiry_date,
-        combinedStatus: worstStatus,
-        expiryBadge,
-        stockBadge,
+        totalBoxes,
+        issueBoxes,
+        worstStatus,
+        worstRank,
+        stockPill,
+        expiryPill,
       })
     }
 
-    return items.sort((a, b) => a.severity - b.severity)
+    return items.sort((a, b) => a.worstRank - b.worstRank)
   }, [inventoryEntries])
 
   return (
@@ -125,71 +150,68 @@ export default function NotificationsScreen() {
                     style={[
                       styles.titleDot,
                       {
-                        backgroundColor: item.combinedStatus === 'expired'
+                        backgroundColor: item.worstStatus === 'expired'
                           ? colors.statusExpired
-                          : item.combinedStatus === 'critical'
+                          : item.worstStatus === 'critical'
                             ? colors.statusCritical
-                            : item.combinedStatus === 'warning'
+                            : item.worstStatus === 'warning'
                               ? colors.statusWarning
                               : colors.statusOk,
                       },
                     ]}
                   />
-                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{item.productName}</Text>
-                </View>
-                <View style={styles.badgesRow}>
-                  {item.expiryBadge && (
-                    <View
-                      style={[
-                        styles.badge,
-                        {
-                          backgroundColor: item.expiryBadge.tone === 'expired'
-                            ? colors.badgeExpiredBg
-                            : colors.badgeWarningBg,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.badgeText,
-                          { color: item.expiryBadge.tone === 'expired' ? colors.statusExpired : colors.statusWarning },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {item.expiryBadge.label}
-                      </Text>
-                    </View>
-                  )}
-                  {item.stockBadge && (
-                    <View
-                      style={[
-                        styles.badge,
-                        {
-                          backgroundColor: item.stockBadge.tone === 'expired'
-                            ? colors.badgeExpiredBg
-                            : colors.badgeWarningBg,
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.badgeText,
-                          { color: item.stockBadge.tone === 'expired' ? colors.statusExpired : colors.statusWarning },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {item.stockBadge.label}
-                      </Text>
-                    </View>
-                  )}
+                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>{item.productName}</Text>
                 </View>
               </View>
-              <Text style={[styles.sub, { color: colors.sub }]}>
-                {item.zoneName} · Tầng {item.tier} · {item.quantityBoxes} thùng
+              <Text style={[styles.summary, { color: colors.sub }]}>
+                Tổng {item.totalBoxes} thùng | {item.issueBoxes} thùng có vấn đề
               </Text>
-              <View style={styles.row}>
-                <Text style={[styles.sub, { color: colors.sub }]}>Hạn: {formatExpiryDate(item.expiryDate)}</Text>
-              </View>
+              {(item.stockPill || item.expiryPill) && (
+                <View style={styles.pillsRow}>
+                  {item.stockPill && (
+                    <View
+                      style={[
+                        styles.pill,
+                        {
+                          backgroundColor: item.stockPill.level === 'red' ? colors.badgeExpiredBg : colors.badgeWarningBg,
+                          borderColor: item.stockPill.level === 'red' ? PILL_RED : PILL_YELLOW,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          { color: item.stockPill.level === 'red' ? PILL_RED : PILL_YELLOW },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item.stockPill.label}
+                      </Text>
+                    </View>
+                  )}
+                  {item.expiryPill && (
+                    <View
+                      style={[
+                        styles.pill,
+                        {
+                          backgroundColor: item.expiryPill.level === 'red' ? colors.badgeExpiredBg : colors.badgeWarningBg,
+                          borderColor: item.expiryPill.level === 'red' ? PILL_RED : PILL_YELLOW,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.pillText,
+                          { color: item.expiryPill.level === 'red' ? PILL_RED : PILL_YELLOW },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item.expiryPill.label}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -204,22 +226,18 @@ const styles = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start' },
   leftWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'center' },
-  name: { fontSize: 15, fontWeight: '700', flex: 1, minWidth: 0 },
-  badgesRow: {
-    flexShrink: 0,
+  pillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-end',
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 4,
-    maxWidth: '50%',
+    gap: 8,
+    marginTop: 8,
   },
-  badge: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontSize: 10, fontWeight: '700', maxWidth: '100%' },
-  sub: { fontSize: 12, marginTop: 4 },
+  pill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
+  pillText: { fontSize: 11, fontWeight: '700' },
+  titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'flex-start', marginTop: 2 },
+  name: { fontSize: 15, fontWeight: '700', flex: 1, minWidth: 0 },
+  summary: { fontSize: 13, marginTop: 8, fontWeight: '600' },
 })

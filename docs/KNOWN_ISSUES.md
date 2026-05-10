@@ -57,3 +57,16 @@
 - **Hướng fix:** Tránh race `fetchProducts` trên `AddInventoryScreen`; refetch chi tiết khi màn focus (`useFocusEffect` + `loadData`).
 - **Trạng thái:** Resolved
 - **Đã fix:** (1) `AddInventoryScreen`: chỉ `fetchProducts()` khi `products.length === 0` — tránh response cũ ghi đè sau `addProduct`. (2) `addInventoryEntry` trong store vẫn merge `inventoryEntries` đúng. (3) `ProductDetailScreen`: `useFocusEffect` gọi `loadData()` mỗi lần màn được focus — cập nhật `lots` sau khi thêm lô từ stack.
+
+---
+
+### [KI-006] ProductsScreen — bật "Có vấn đề" gây TypeError `.has` of undefined
+
+- **Mức độ:** High (runtime)
+- **File liên quan:** `screens/ProductsScreen.tsx`
+- **Mô tả:** `filteredProducts` (`useMemo`) gọi `productIdsWithIssueLot.has(...)` trong khi `productIdsWithIssueLot` được khai báo **sau** cùng hook — temporal dead zone: biến `undefined` tại thời điểm closure chạy.
+- **Cách tái hiện (bản lỗi):** Bật toggle **Có vấn đề** — crash ngay.
+- **Hướng fix:** Đặt thứ tự hook: `selectedZoneSet` → `totalBoxesByProduct` → `productIdsWithIssueLot` → rồi mới `filteredProducts`.
+- **Trạng thái:** Resolved
+
+---

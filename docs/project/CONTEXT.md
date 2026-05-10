@@ -69,6 +69,12 @@ README.md
 - **BarcodeScanner:** fullscreen, **không** có bottom tab bar.
 - **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng.
 
+**Danh sách / lọc (UI):**
+
+- **NotificationsScreen:** mỗi card theo SP — pill tồn (**Sắp hết hàng** / **Hết hàng**) và pill hạn (**Sắp hết hạn** / **Hết hạn**) với màu `#EF4444` / `#FACC15`; dòng `Tổng X thùng | Y thùng có vấn đề` (Y = tổng thùng các lô có `getCombinedStatus` ≠ `ok`); tap → `ProductDetail`.
+- **ProductsScreen:** mỗi card hiện **tổng thùng**; toggle **Có vấn đề** chỉ giữ SP có ít nhất một lô đỏ/vàng (`combined` ≠ `ok`).
+- **ProductDetailScreen:** thanh **Tổng … thùng** + toggle **Có vấn đề** lọc danh sách lô; refetch khi focus (`useFocusEffect` + `loadData`).
+
 ---
 
 ## §4 Store — `warehouseStore.ts`

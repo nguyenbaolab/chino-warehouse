@@ -143,6 +143,19 @@ export default function ProductsScreen() {
     ])
   }
 
+  const selectedZoneSet = useMemo(() => new Set(selectedZoneIds), [selectedZoneIds])
+
+  const totalBoxesByProduct = useMemo(() => {
+    const map = new Map<string, number>()
+    const hasZoneFilter = selectedZoneIds.length > 0
+    for (const entry of inventoryEntries) {
+      if (hasZoneFilter && !selectedZoneSet.has(entry.zone_id)) continue
+      const id = entry.product_id
+      map.set(id, (map.get(id) ?? 0) + entry.quantity_boxes)
+    }
+    return map
+  }, [inventoryEntries, selectedZoneIds, selectedZoneSet])
+
   const filteredProducts = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase()
     const hasZoneFilter = selectedZoneIds.length > 0
@@ -159,8 +172,6 @@ export default function ProductsScreen() {
       ))
     })
   }, [products, searchQuery, selectedZoneIds, inventoryEntries])
-
-  const selectedZoneSet = useMemo(() => new Set(selectedZoneIds), [selectedZoneIds])
 
   function getGroupedLotsByExpiry(productId: string) {
     const hasZoneFilter = selectedZoneIds.length > 0
@@ -310,6 +321,9 @@ export default function ProductsScreen() {
                       {product.name}
                     </Text>
                   </View>
+                  <Text style={[styles.totalBoxesLabel, { color: colors.sub }]}>
+                    Tổng {totalBoxesByProduct.get(product.id) ?? 0} thùng
+                  </Text>
                   <TouchableOpacity
                     style={[styles.editBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
                     onPress={() => openEditProduct(product.id)}
@@ -479,8 +493,9 @@ const styles = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
-  itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  itemTitleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
+  itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
+  itemTitleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 4, minWidth: 0 },
+  totalBoxesLabel: { fontSize: 12, fontWeight: '600', flexShrink: 0, maxWidth: '28%' },
   itemName: { fontSize: 15, fontWeight: '700' },
   editBtn: {
     width: 28,

@@ -21,11 +21,10 @@ F18: Tab Thông báo đầy đủ (cảnh báo tồn + hạn)
 ## TODO còn lại (theo thứ tự ưu tiên)
 
 1. Bỏ UI `low_critical_boxes`, hardcode = 1
-2. Fix `NotificationsScreen`: format card đúng §7.6
-3. Thêm toggle lọc "có vấn đề" ở `ProductsScreen`
-4. Thêm tổng thùng ở `ProductsScreen`
-5. Bottom tab bar cho màn hình stack
-6. Barcode field ở `AddInventoryScreen`
-7. Verify F17 Realtime
-8. Fix KI-003: tab bar theo themeStore
-9. Fix KI-004: đổi kho xóa search
+2. Bottom tab bar cho màn hình stack
+3. Barcode field ở `AddInventoryScreen`
+4. Verify F17 Realtime
+5. Fix KI-003: tab bar theo themeStore
+6. Fix KI-004: đổi kho xóa search (Deferred — xem `docs/KNOWN_ISSUES.md` KI-004)
+
+**Đã làm (UI, tháng 5/2026):** `NotificationsScreen` card §7.6 (tổng + thùng có vấn đề); `ProductsScreen` + `ProductDetailScreen` tổng thùng + toggle **Có vấn đề**.

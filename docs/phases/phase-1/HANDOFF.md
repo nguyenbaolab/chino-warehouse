@@ -4,31 +4,50 @@
 
 Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 
-## Task gần nhất — KI-005 (đã fix code)
+---
 
-**Mô tả:** (1) Sau khi thêm sản phẩm mới hoặc lô từ **Thêm hàng** (`AddInventoryScreen`), quay lại tab **Sản phẩm** phải thấy dữ liệu cập nhật ngay. (2) Từ **Chi tiết sản phẩm** → **Thêm lô** → `goBack()` về chi tiết, danh sách **lô** phải hiện lô vừa thêm **không cần** rời màn rồi vào lại.
+## Task gần nhất — UI Thông báo / Sản phẩm / Chi tiết
 
-**Hướng dẫn test (thủ công):**
+### 1) `NotificationsScreen`
 
-### A — Tab Sản phẩm (race `fetchProducts`)
+**Thay đổi:** Mỗi card: hàng đầu chỉ **tên SP** (chấm màu worst combined). Ngay dưới: một dòng `Tổng X thùng | Y thùng có vấn đề`. **Dòng tiếp theo:** tối đa **hai pill** trên **cùng một hàng** — chỉ hiện pill có cảnh báo (không pill “xanh”): tồn **Hết hàng** / **Sắp hết hàng**, hạn **Hết hạn** / **Sắp hết hạn**; chữ + viền `#EF4444` / `#FACC15`. Không còn dòng zone/tầng/hạn trên card.
 
-1. Mở tab **Sản phẩm** (store đã có danh sách SP).
-2. Mở **Thêm hàng**, tạo **sản phẩm mới**, lưu.
-3. Quay tab **Sản phẩm** — tên SP mới **xuất hiện ngay**.
+**Test:**
 
-### B — Chi tiết SP + lô mới (`useFocusEffect`)
+1. Có ít nhất một SP có lô đỏ hoặc vàng (tồn/hạn theo ngưỡng).
+2. Tab **Thông báo** — đúng X/Y; pill nằm **dưới** dòng tổng, cùng hàng; chỉ pill đỏ/vàng khi có vấn đề tương ứng.
+3. Bấm card → mở **Chi tiết** đúng SP.
 
-1. Mở **Chi tiết sản phẩm** có ít nhất một lô (để so sánh).
-2. **Thêm lô hàng mới** (cùng SP hoặc luồng từ chi tiết), lưu → `goBack()` về **Chi tiết**.
-3. Kiểm tra danh sách lô trên chi tiết **có lô vừa thêm** (zone/tầng/số thùng/hạn đúng) **ngay**, không cần back ra Products rồi vào lại.
+---
 
-### C — Thêm lô rồi về tab Sản phẩm (store)
+### 2) `ProductsScreen`
 
-1. Từ **Thêm hàng** thêm lô cho SP đã có, lưu, về tab **Sản phẩm**.
-2. Nhóm lô / chấm màu (nếu hiển thị) phản ánh **không cần** ép refresh bằng cách rời app.
+**Thay đổi:** Mỗi dòng SP: **Tổng N thùng** (cạnh nút ✏️). **Không** có toggle **Có vấn đề** trên màn này. Lọc theo tìm kiếm + zone chip như trước.
 
-**Kỳ vọng kỹ thuật:** Không race `fetchProducts()` trên mount `AddInventoryScreen` sau `addProduct`; `ProductDetailScreen` refetch `loadData` mỗi lần focus.
+**Test:**
+
+1. So sánh tổng thùng trên card với tổng thủ công từ các lô (cùng zone filter nếu có).
+2. Không thấy hàng **Có vấn đề** / không crash khi dùng tab Sản phẩm.
+3. Chọn zone chip — danh sách SP vẫn lọc đúng theo zone.
+
+---
+
+### 3) `ProductDetailScreen`
+
+**Thay đổi:** Thanh **Tổng … thùng** + Switch **Có vấn đề** phía trên nút **Thêm lô hàng mới**. Bật lọc chỉ hiện lô có combined ≠ `ok`; nếu không có lô khớp — thông báo rõ.
+
+**Test:**
+
+1. SP có nhiều lô — số **Tổng** khớp tổng số thùng mọi lô.
+2. Bật **Có vấn đề** — chỉ còn lô đỏ/vàng; tắt — lại đủ danh sách.
+3. SP chỉ có lô xanh — bật **Có vấn đề** — thấy dòng “Không có lô đỏ/vàng…”.
+
+---
+
+## Task cũ — KI-005 (đã fix trước đó)
+
+Xem `docs/KNOWN_ISSUES.md` (KI-005 Resolved): race `fetchProducts` trên `AddInventoryScreen`; `ProductDetail` refetch khi focus.
 
 ## Sẽ cập nhật khi
 
-DEV hoàn thành tất cả TODO trong `docs/phases/phase-1/PLAN.md` (hoặc QA xác nhận xong lượt test KI-005).
+DEV hoàn thành TODO trong `PLAN.md` hoặc QA xác nhận xong lượt test trên.
