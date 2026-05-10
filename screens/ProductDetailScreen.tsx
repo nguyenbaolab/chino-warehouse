@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   Alert,
   Modal,
@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { useNavigation, useRoute } from '@react-navigation/native'
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
@@ -61,7 +61,7 @@ export default function ProductDetailScreen() {
   const [showZoneOptions, setShowZoneOptions] = useState(false)
   const [showTierOptions, setShowTierOptions] = useState(false)
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     setIsLoading(true)
     const [{ data: productData }, { data: lotData }] = await Promise.all([
       supabase.from('products').select('*').eq('id', productId).single(),
@@ -78,11 +78,14 @@ export default function ProductDetailScreen() {
     setEditLowWarningBoxes(String(productData?.low_warning_boxes ?? 3))
     setEditLowCriticalBoxes(String(productData?.low_critical_boxes ?? 1))
     setIsLoading(false)
-  }
-
-  useEffect(() => {
-    loadData()
   }, [productId])
+
+  // Refetch khi màn có focus (ví dụ quay lại từ AddInventory) — state `lots` là local, không đọc từ store
+  useFocusEffect(
+    useCallback(() => {
+      void loadData()
+    }, [loadData])
+  )
 
   useEffect(() => {
     if (!scannedBarcode) return

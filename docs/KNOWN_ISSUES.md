@@ -43,15 +43,17 @@
 - **Mô tả:** Khi bấm chọn kho khác (`setSelectedLocation`), không gọi `clearSearch` — vi phạm **REQUIREMENTS.md §7.1** (đổi kho → xóa kết quả tìm).
 - **Cách tái hiện:** Tìm sản phẩm trên kho A → chuyển sang kho B — panel kết quả / highlight zone cũ vẫn có thể còn.
 - **Hướng fix:** Khi đổi `selectedLocationId`, gọi `clearSearch()` hoặc tương đương reset state tìm kiếm.
-- **Trạng thái:** Open
+- **Trạng thái:** Deferred
+- **Ghi chú:** Phase 1 chỉ có 1 kho duy nhất, chưa có UI thêm/sửa/xóa kho (F20 — Phase 2). Không thể tái hiện lỗi này ở Phase 1. Reopen khi Phase 2 implement multi-kho.
 
 ---
 
 ### [KI-005] Add sản phẩm / lô không refresh UI ngay
 
 - **Mức độ:** Medium
-- **File liên quan:** `screens/AddInventoryScreen.tsx`, `stores/warehouseStore.ts`
-- **Mô tả:** Sau khi thêm sản phẩm hoặc lô hàng mới, danh sách không tự cập nhật — phải chuyển sang màn hình khác rồi quay lại mới thấy.
-- **Cách tái hiện:** Thêm sản phẩm mới → ở lại màn hình Products → không thấy sản phẩm vừa thêm.
-- **Hướng fix:** Kiểm tra action `addProduct` / `addInventoryEntry` trong `warehouseStore` có trigger re-fetch hoặc cập nhật local state không.
-- **Trạng thái:** Open (chưa verify — cần test)
+- **File liên quan:** `screens/AddInventoryScreen.tsx`, `screens/ProductDetailScreen.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** Sau khi thêm sản phẩm hoặc lô hàng mới, danh sách không tự cập nhật — phải chuyển sang màn hình khác rồi quay lại mới thấy. Riêng chi tiết SP: sau **Thêm hàng** → `goBack()` về `ProductDetailScreen`, danh sách lô (`lots` local) không refetch nên không thấy lô mới.
+- **Cách tái hiện:** (1) Thêm SP mới → tab Sản phẩm không thấy SP. (2) Từ chi tiết SP → Thêm lô → quay lại chi tiết — không thấy lô mới.
+- **Hướng fix:** Tránh race `fetchProducts` trên `AddInventoryScreen`; refetch chi tiết khi màn focus (`useFocusEffect` + `loadData`).
+- **Trạng thái:** Resolved
+- **Đã fix:** (1) `AddInventoryScreen`: chỉ `fetchProducts()` khi `products.length === 0` — tránh response cũ ghi đè sau `addProduct`. (2) `addInventoryEntry` trong store vẫn merge `inventoryEntries` đúng. (3) `ProductDetailScreen`: `useFocusEffect` gọi `loadData()` mỗi lần màn được focus — cập nhật `lots` sau khi thêm lô từ stack.

@@ -92,7 +92,12 @@ export default function AddInventoryScreen() {
 
   useEffect(() => {
     fetchLocations()
-    fetchProducts()
+    // Không gọi fetchProducts() mỗi lần mount: request async có thể hoàn thành
+    // SAU addProduct và ghi đè store → mất SP mới trên tab Sản phẩm (KI-005).
+    // Chỉ fetch khi store chưa có danh sách (edge: vào thẳng màn này).
+    if (useWarehouseStore.getState().products.length === 0) {
+      void fetchProducts()
+    }
   }, [fetchLocations, fetchProducts])
 
   const filteredProducts = useMemo(() => {
