@@ -68,6 +68,50 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 
 Xem `docs/KNOWN_ISSUES.md` (KI-005 Resolved): race `fetchProducts` trên `AddInventoryScreen`; `ProductDetail` refetch khi focus.
 
+---
+
+## Known issues mở (0 thùng) — xem `docs/KNOWN_ISSUES.md`
+
+### [KI-006] ProductDetail — không sửa số thùng về 0
+
+- **Test / tái hiện:** Từ chi tiết SP, sửa lô inline, nhập **0** thùng — vẫn bị validation chặn (trong khi sheet zone đã cho nhập 0).
+- **Hướng QA:** Sau khi DEV sửa, xác nhận lưu 0 từ chi tiết và chấm màu / thông báo vẫn nhất quán.
+
+### [KI-007] Lô 0 thùng biến mất khỏi app
+
+- **Test / tái hiện:** Trong `ZoneDetailSheet`, đổi lô về **0** thùng và lưu — lô không còn trong danh sách / map (cần quyết định business: giữ dòng lô 0 vs xóa record vs trigger xóa ở store).
+- **Hướng QA:** Thống nhất PRD với DEV (giữ lô “hết hàng” hay coi như xóa lô); retest Thông báo / bản đồ sau fix.
+
+**Ghi chú:** Mục Resolved cũ về TypeError `.has` trên ProductsScreen hiện mang mã **KI-008** trong `KNOWN_ISSUES.md` (trước đây ghi KI-006).
+
+---
+
+## Cập nhật docs mới (chưa implement code)
+
+### Quyết định đã chốt (tham chiếu `docs/DECISIONS.md`)
+
+1. Cảnh báo tồn kho xét theo **tổng thùng per sản phẩm**, không theo từng lô; logic hạn vẫn theo từng lô.
+2. Lô `quantity_boxes = 0` **giữ lại**, không tự xóa; tại `ProductDetailScreen` sẽ hiển thị `Lô này đã hết hàng [Xóa lô]`.
+3. `NotificationsScreen` giữ 2 pill nhưng đổi format card:
+   - Dòng 1: `Còn ... thùng` (tổng tất cả lô).
+   - Dòng 2: `Số thùng sắp hết hạn: ... thùng`.
+   - Pill tồn theo tổng thùng; pill hạn theo lô xấu nhất.
+4. Tab Thông báo có 2 tab con: **Có vấn đề / Để sau**; thao tác Để sau theo **sản phẩm**.
+
+### Cần quyết định trước khi code
+
+- `docs/BLOCKERS.md` đã thêm **[BLK-002]**: cần chốt nơi lưu trạng thái **Để sau** (Supabase cột/bảng mới hoặc local Zustand).
+
+### Hướng dẫn test sau khi implement
+
+1. Với sản phẩm có nhiều lô, thay đổi 1 lô nhưng tổng không đổi ngưỡng: pill tồn không đổi theo tổng.
+2. Với sản phẩm tổng thùng vượt/ngang/dưới ngưỡng: pill tồn đổi đúng theo tổng thùng sản phẩm.
+3. Đổi lô về 0 thùng: lô vẫn còn trong danh sách, hiện label hết hàng, không tự mất.
+4. Tab Thông báo:
+   - Tab **Có vấn đề** hiển thị đúng card format mới.
+   - Bấm **Để sau** chuyển card sang tab Để sau.
+   - Chuyển ngược từ Để sau về Có vấn đề hoạt động đúng.
+
 ## Sẽ cập nhật khi
 
 DEV hoàn thành TODO trong `PLAN.md` hoặc QA xác nhận xong lượt test trên.

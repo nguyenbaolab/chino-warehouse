@@ -60,13 +60,32 @@
 
 ---
 
-### [KI-006] ProductsScreen — bật "Có vấn đề" gây TypeError `.has` of undefined
+### [KI-006] Không sửa được số thùng về 0 từ ProductDetailScreen
+
+- **Mức độ:** Medium
+- **File liên quan:** `screens/ProductDetailScreen.tsx`
+- **Mô tả:** Đã fix được nhập 0 ở `ZoneDetailSheet` nhưng `ProductDetailScreen` vẫn chặn giá trị 0.
+- **Trạng thái:** Open
+
+---
+
+### [KI-007] Lô 0 thùng bị xóa khỏi app thay vì giữ lại
+
+- **Mức độ:** High
+- **File liên quan:** `components/ZoneDetailSheet.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** Khi cập nhật lô về 0 thùng, lô bị xóa hoàn toàn khỏi app — không còn hiện trong danh sách, không báo hết hàng được.
+- **Hướng fix:** Bỏ logic tự xóa khi `quantity_boxes = 0`, giữ lại lô và hiển thị label hết hàng trong `ProductDetailScreen`.
+- **Trạng thái:** Open — cần bàn thêm về business logic
+
+---
+
+### [KI-008] ProductsScreen — bật "Có vấn đề" gây TypeError `.has` of undefined *(trước đây ghi nhận là KI-006)*
 
 - **Mức độ:** High (runtime)
 - **File liên quan:** `screens/ProductsScreen.tsx`
 - **Mô tả:** `filteredProducts` (`useMemo`) gọi `productIdsWithIssueLot.has(...)` trong khi `productIdsWithIssueLot` được khai báo **sau** cùng hook — temporal dead zone: biến `undefined` tại thời điểm closure chạy.
 - **Cách tái hiện (bản lỗi):** Bật toggle **Có vấn đề** — crash ngay.
-- **Hướng fix:** Đặt thứ tự hook: `selectedZoneSet` → `totalBoxesByProduct` → `productIdsWithIssueLot` → rồi mới `filteredProducts`.
+- **Hướng fix:** Đặt thứ tự hook: `selectedZoneSet` → `totalBoxesByProduct` → `productIdsWithIssueLot` → rồi mới `filteredProducts`; hoặc gỡ toggle / filter (đã làm trong code sau đó).
 - **Trạng thái:** Resolved
 
 ---

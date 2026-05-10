@@ -71,3 +71,44 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quyết định:** Warehouse là **một module** trong hệ app nội bộ lớn hơn (kho, chấm công, chia ca, …). Auth và phân quyền chi tiết thiết kế **sau** khi có yêu cầu cụ thể.
 - **Lý do:** Lộ trình chủ cửa hàng; tránh over-engineer giai đoạn đầu.
 - **Thay thế đã xem xét:** Tích hợp auth ngay trong Phase 1.
+
+---
+
+### Tồn kho theo tổng thùng per sản phẩm
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Cảnh báo tồn kho (`low_warning_boxes`, critical) xét theo **tổng số thùng của tất cả lô trong cùng sản phẩm**, không xét theo từng lô riêng lẻ.
+- **Logic hạn sử dụng:** Vẫn giữ theo từng lô như hiện tại.
+- **Lý do:** Tổng thùng phản ánh đúng nhu cầu nhập thêm hàng ở mức sản phẩm.
+
+---
+
+### Lô 0 thùng được giữ lại, không tự xóa
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Lô về `quantity_boxes = 0` vẫn tồn tại trong DB, không tự động xóa.
+- **Hiển thị:** Trên `ProductDetailScreen`, lô 0 thùng hiển thị một dòng: `Lô này đã hết hàng [Xóa lô]`.
+- **Vận hành:** Nhân viên chủ động bấm xóa khi muốn, không xóa tự động.
+- **Notifications:** Không tạo thông báo riêng theo từng lô.
+
+---
+
+### NotificationsScreen — format card mới
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Card thông báo gồm:
+  - Dòng 1: `Còn ... thùng` (tổng tất cả lô của sản phẩm).
+  - Dòng 2: `Số thùng sắp hết hạn: ... thùng` (tổng thùng của lô vàng/đỏ theo hạn).
+  - Pill 1: trạng thái tồn kho theo **tổng thùng sản phẩm**.
+  - Pill 2: trạng thái hạn theo **lô xấu nhất**.
+- **Ghi chú:** Giữ nguyên 2 pill, không đổi vị trí UI.
+
+---
+
+### NotificationsScreen — tab Có vấn đề / Để sau
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Tab Thông báo có 2 tab con: **Có vấn đề** và **Để sau**.
+- **Luồng:** Tab Có vấn đề hiển thị danh sách sản phẩm có vấn đề; mỗi card có nút **Để sau**. Tab Để sau hiển thị sản phẩm đã đánh dấu và cho phép chuyển lại Có vấn đề.
+- **Phạm vi đánh dấu:** Đánh dấu **theo sản phẩm**, không theo lô.
+- **Lý do:** Giảm nhiễu thông báo và cho phép xử lý theo thứ tự ưu tiên.

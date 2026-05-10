@@ -63,15 +63,18 @@ README.md
 
 ## §3 Navigation structure
 
-- **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`).
-- **Stack screens (thứ tự):** `Tabs` → `AddInventory` → `ProductDetail` → `BarcodeScanner`.
+- **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
+- **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar.
 - **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
-- **BarcodeScanner:** fullscreen, **không** có bottom tab bar.
+- **Map tab:** `MapStack` (`MapMain` → `ProductDetail` → `AddInventory`).
+- **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory`).
+- **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory`).
+- **Settings tab:** `SettingsStack` chỉ có `SettingsMain`.
 - **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng.
 
 **Danh sách / lọc (UI):**
 
-- **NotificationsScreen:** mỗi card theo SP — pill tồn (**Sắp hết hàng** / **Hết hàng**) và pill hạn (**Sắp hết hạn** / **Hết hạn**) với màu `#EF4444` / `#FACC15`; dòng `Tổng X thùng | Y thùng có vấn đề` (Y = tổng thùng các lô có `getCombinedStatus` ≠ `ok`); tap → `ProductDetail`.
+- **NotificationsScreen:** có 2 tab con **Có vấn đề / Để sau**. Card theo SP có format: dòng 1 `Còn ... thùng` (tổng tất cả lô), dòng 2 `Số thùng sắp hết hạn: ... thùng`, dưới cùng là 2 pill cùng hàng (pill tồn + pill hạn). Tap card → `ProductDetail`.
 - **ProductsScreen:** mỗi card hiện **tổng thùng**; toggle **Có vấn đề** chỉ giữ SP có ít nhất một lô đỏ/vàng (`combined` ≠ `ok`).
 - **ProductDetailScreen:** thanh **Tổng … thùng** + toggle **Có vấn đề** lọc danh sách lô; refetch khi focus (`useFocusEffect` + `loadData`).
 

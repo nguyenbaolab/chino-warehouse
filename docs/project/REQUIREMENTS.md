@@ -96,7 +96,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn sử dụng, ghi chú. Mã vạch gán tại màn hình chi tiết sản phẩm. | P1 | MVP | Partial |
 | F16 | Sửa / Xóa lô hàng | Cập nhật số thùng, hạn, ghi chú. Xóa khi hết hàng. Truy cập từ màn hình chi tiết (F07). | P1 | MVP | Done |
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
-| F18 | Thông báo trong app | Tab Thông báo riêng. Cảnh báo: hết hạn, sắp hết hạn (≤ warning_days), sắp hết hàng (≤ low_warning_boxes), còn rất ít (≤ 1 thùng). | P2 | MVP+ | Partial |
+| F18 | Thông báo trong app | Tab Thông báo có 2 tab con **Có vấn đề / Để sau**. Card theo sản phẩm: dòng tổng thùng + dòng thùng sắp hết hạn; pill tồn theo tổng thùng sản phẩm, pill hạn theo lô xấu nhất. Đánh dấu Để sau theo sản phẩm. | P2 | MVP+ | Partial |
 | F19 | Chuyển hàng giữa khu vực | Chuyển hàng từ kho lên siêu thị hoặc giữa các kho: trừ thùng ở nguồn, cộng thùng ở đích. | P2 | Phase 2 | Not started |
 | F20 | Bản đồ nhiều khu vực | Nhiều kho/phòng dưới dạng tab riêng. Cần cho tính năng chuyển hàng (F19). | P2 | Phase 2 | Not started |
 | F21 | Chế độ offline | Lưu dữ liệu cục bộ, queue thay đổi khi mất mạng, tự đồng bộ khi có mạng trở lại. | P3 | Phase 2 | Not started |
@@ -140,8 +140,13 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 - 0–1 thùng: luôn đỏ, không configurable.
 
 ### 7.6 Thông báo
-- Hiển thị tất cả lô/sản phẩm đang có vấn đề (đỏ hoặc vàng).
-- Mỗi card thông báo hiện: tên sản phẩm + tổng thùng + số thùng có vấn đề.
+- Tab Thông báo có 2 tab con: **Có vấn đề** và **Để sau**.
+- Đánh dấu **Để sau** áp dụng theo sản phẩm, không theo từng lô.
+- Mỗi card thông báo hiện:
+  - Dòng 1: `Còn ... thùng` (tổng tất cả lô của sản phẩm).
+  - Dòng 2: `Số thùng sắp hết hạn: ... thùng` (tổng thùng của các lô vàng/đỏ theo hạn).
+  - Pill tồn kho: theo tổng thùng sản phẩm.
+  - Pill hạn sử dụng: theo lô xấu nhất.
 - Tap vào card → mở màn hình chi tiết sản phẩm.
 
 ---

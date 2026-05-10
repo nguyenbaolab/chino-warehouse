@@ -53,12 +53,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Kết quả:** Không đổi store/schema; lọc theo `getCombinedStatus` ≠ `ok`
 - **Docs đã cập nhật:** `docs/project/CONTEXT.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md` (KNOWN_ISSUES: không phát hiện bug mới)
 
-### UI — Thông báo (pill tồn/hạn) + Products (KI-006)
+### UI — Thông báo (pill tồn/hạn) + Products (KI-008, trước đây KI-006)
 
 - **Task:** Khôi phục pill **Sắp hết hàng** / **Hết hàng** và **Sắp hết hạn** / **Hết hạn** trên card Thông báo; màu chữ/viền pill `#EF4444` / `#FACC15`; sửa crash toggle **Có vấn đề** (thứ tự `useMemo`).
 - **Files thay đổi:** `screens/NotificationsScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`, `docs/project/CONTEXT.md`
-- **Kết quả:** Giữ dòng `Tổng X thùng | Y thùng có vấn đề`; `productIdsWithIssueLot` tính trước `filteredProducts` (KI-006 Resolved)
-- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (KI-006), `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`, `docs/project/CONTEXT.md`
+- **Kết quả:** Giữ dòng `Tổng X thùng | Y thùng có vấn đề`; `productIdsWithIssueLot` tính trước `filteredProducts` (Resolved — hiện ghi **KI-008** trong `KNOWN_ISSUES.md`)
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (KI-008), `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`, `docs/project/CONTEXT.md`
 
 ### UI — Thông báo (pill dưới tổng) + Sản phẩm (bỏ toggle Có vấn đề)
 
@@ -73,3 +73,24 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `App.tsx`, `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/MapScreen.tsx`, `screens/NotificationsScreen.tsx`, `screens/AddInventoryScreen.tsx`, `components/ZoneDetailSheet.tsx`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** `returnTab` cho luồng gán mã vạch sau quét; navigate lồng `Tabs` → tab → `MapMain` / `ProductDetail` / `AddInventory`
 - **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Docs — KI mới (0 thùng) + đổi mã KI cũ
+
+- **Task:** Ghi nhận **KI-006** (ProductDetail không cho sửa về 0 thùng), **KI-007** (lô 0 thùng biến mất khỏi app); đổi mã mục Resolved cũ ProductsScreen `.has` thành **KI-008**; cập nhật `HANDOFF.md`.
+- **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Truy vết KI-006/007 theo lỗi 0 thùng; lịch sử TypeError Products → KI-008
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Docs — Quyết định mới cho Notifications + tồn kho + lô 0 thùng
+
+- **Task:** Cập nhật quyết định mới: cảnh báo tồn kho theo tổng thùng sản phẩm; lô 0 thùng giữ lại, không tự xóa; format card Thông báo mới; thêm tab con **Có vấn đề / Để sau**; cập nhật F18 và blocker lưu trạng thái Để sau.
+- **Files thay đổi:** `docs/DECISIONS.md`, `docs/project/REQUIREMENTS.md`, `docs/BLOCKERS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Đồng bộ docs theo hướng triển khai mới cho tab Thông báo và business logic lô 0 thùng; bổ sung blocker dữ liệu cho tab Để sau.
+- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/project/REQUIREMENTS.md`, `docs/BLOCKERS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Docs — Đồng bộ CONTEXT §3 (navigation + Notifications)
+
+- **Task:** Cập nhật `docs/project/CONTEXT.md` theo cấu trúc navigation mới (mỗi tab là 1 native stack riêng; root chỉ có `Tabs` + `BarcodeScanner`) và format card `NotificationsScreen` mới (2 dòng nội dung + 2 pill cùng hàng + tab con **Có vấn đề / Để sau**).
+- **Files thay đổi:** `docs/project/CONTEXT.md`, `docs/WORKLOG.md`
+- **Kết quả:** CONTEXT khớp với quyết định mới trong docs và kiến trúc route hiện tại.
+- **Docs đã cập nhật:** `docs/project/CONTEXT.md`, `docs/WORKLOG.md`
