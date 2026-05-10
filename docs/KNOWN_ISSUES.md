@@ -43,3 +43,14 @@
 - **Cách tái hiện:** Tìm sản phẩm trên kho A → chuyển sang kho B — panel kết quả / highlight zone cũ vẫn có thể còn.
 - **Hướng fix:** Khi đổi `selectedLocationId`, gọi `clearSearch()` hoặc tương đương reset state tìm kiếm.
 - **Trạng thái:** Open
+
+---
+
+### [KI-005] Add sản phẩm / lô không refresh UI ngay
+
+- **Mức độ:** Medium
+- **File liên quan:** `screens/AddInventoryScreen.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** Sau khi thêm sản phẩm hoặc lô hàng mới, danh sách không tự cập nhật — phải chuyển sang màn hình khác rồi quay lại mới thấy.
+- **Cách tái hiện:** Thêm sản phẩm mới → ở lại màn hình Products → không thấy sản phẩm vừa thêm.
+- **Hướng fix:** Kiểm tra action `addProduct` / `addInventoryEntry` trong `warehouseStore` có trigger re-fetch hoặc cập nhật local state không.
+- **Trạng thái:** Open (chưa verify — cần test)

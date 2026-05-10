@@ -41,6 +41,33 @@ Tóm tắt:
 - Cần confirm: docs/project/REQUIREMENTS.md, docs/DECISIONS.md
 - Không bao giờ tự update: docs/project/USER_GUIDE.md, README.md, .cursorrules
 
+---
+
+## Nhắc nhở Project Knowledge
+
+Sau mỗi task hoàn thành, nếu có file tài liệu nào thay đổi
+quan trọng, luôn thêm dòng này vào cuối response:
+
+> 📌 Nhắc upload lại lên Claude Project Knowledge:
+> - [tên file] — [lý do cụ thể]
+
+Các file cần upload lại khi thay đổi:
+
+- docs/project/REQUIREMENTS.md
+- docs/project/CONTEXT.md
+- docs/project/WORKFLOW.md
+- docs/DECISIONS.md
+- docs/KNOWN_ISSUES.md
+
+Các file KHÔNG cần upload (thay đổi liên tục):
+
+- docs/WORKLOG.md
+- docs/BLOCKERS.md
+- docs/phases/phase-1/HANDOFF.md
+- docs/phases/phase-1/SUMMARY.md
+
+---
+
 ## Màu status (chuẩn — không được thay đổi nếu không có chỉ đạo)
 
 - 0–1 thùng    → Đỏ #EF4444 (CHƯA FIX — xem KI-001 trong docs/KNOWN_ISSUES.md)

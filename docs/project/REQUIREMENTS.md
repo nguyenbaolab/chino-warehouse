@@ -104,6 +104,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F23 | Trang tổng quan | Tổng số SKU, hàng sắp hết, lô sắp hết hạn. | P3 | Phase 3 | Not started |
 | F24 | Auth & Super app integration | Đăng nhập, tích hợp vào hệ thống app nội bộ lớn hơn (kho, chấm công, chia ca...). Phân quyền chủ/nhân viên. Chi tiết thiết kế khi có yêu cầu cụ thể. | P4 | Phase 3 | Not started |
 | F25 | Báo cáo / Xuất dữ liệu | Xuất dữ liệu tồn kho, lịch sử. | P4 | Phase 3 | Not started |
+| F26 | Kiểm kho | Cho phép nhân viên đối chiếu và cập nhật lại số lượng thực tế trong kho. Chọn zone → đi từng tầng → nhập số thùng đếm được → lưu lại. Có thể hiện diff so với số hiện tại trước khi confirm. | P2 | Phase 2 | Not started |
 
 ---
 
