@@ -2,13 +2,15 @@
 
 Ứng dụng React Native (Expo) quản lý tồn kho nội bộ — bản đồ zone, sản phẩm, lô, hạn dùng, barcode.
 
-**Tài liệu root** (cập nhật khi đổi code có ý nghĩa — xem `CONTEXT.md` **§12**):
+**Tài liệu** (cập nhật khi đổi code có ý nghĩa — xem `docs/project/WORKFLOW.md`):
 
 | File | Nội dung |
 |------|----------|
-| [CONTEXT.md](./CONTEXT.md) | Cấu trúc project, thực tế triển khai, màu chuẩn, backlog, dependency F20–F23, TODO sau docs, quy tắc cập nhật doc. |
-| [FEATURES.md](./FEATURES.md) | Ma trận **F01–F25**, bảng màu, dependency. |
-| [USER_GUIDE.md](./USER_GUIDE.md) | Hướng dẫn UI / flow người dùng. |
+| [docs/project/REQUIREMENTS.md](./docs/project/REQUIREMENTS.md) | PRD: F01–F25, quy tắc nghiệp vụ, màu §5, mô hình dữ liệu. |
+| [docs/project/CONTEXT.md](./docs/project/CONTEXT.md) | Ngữ cảnh kỹ thuật: cấu trúc repo, navigation, store, types, conventions. |
+| [docs/project/USER_GUIDE.md](./docs/project/USER_GUIDE.md) | Hướng dẫn UI / flow người dùng. |
+| [docs/project/WORKFLOW.md](./docs/project/WORKFLOW.md) | Quy trình DEV/TEST và cập nhật tài liệu. |
+| [docs/KNOWN_ISSUES.md](./docs/KNOWN_ISSUES.md) | Bug / sai lệch đã biết (KI-xxx). |
 
 ---
 
@@ -50,6 +52,7 @@ Dùng **Expo Go** trên điện thoại (khuyến nghị cho camera / barcode).
 ```
 assets/
 components/     # ZoneDetailSheet.tsx, …
+docs/           # REQUIREMENTS, CONTEXT, WORKFLOW, phases, …
 lib/            # supabase.ts
 screens/        # Map, Products, ProductDetail, AddInventory, BarcodeScanner, Notifications, Settings
 stores/         # warehouseStore.ts, themeStore.ts
@@ -58,16 +61,16 @@ types/          # index.ts
 App.tsx
 ```
 
-Chi tiết cây file: **`CONTEXT.md` §2**.
+Chi tiết cây file: **`docs/project/CONTEXT.md` §2**.
 
 ---
 
 ## Thực tế nhanh
 
-- **Một kho**; grid **6×6**; barcode scanner **3 mode**; `searchByBarcode` **local sync**.
-- **`AddInventoryScreen`**: chưa có field barcode.
-- **`low_warning_boxes`** default **3** + UI **ProductDetail**; **`low_critical_boxes`**: hướng **hardcode 1**, bỏ UI (TODO trong `CONTEXT.md` §13).
-- **Màu status:** đỏ `#EF4444` (hết / còn rất ít / hết hạn), vàng `#FDE047` (sắp hết hàng **hoặc** sắp hết hạn — gộp một màu), xanh `#22C55E` (ổn); light theme vàng nhạt hơn qua `themeStore` — chi tiết **`CONTEXT.md` §4**.
+- **Nhiều location** có thể có trong DB; tab Kho có **hàng nút chọn kho**. Lưới **6×6**; barcode scanner **3 mode**; `searchByBarcode` trên store local.
+- **`AddInventoryScreen`**: chưa có field barcode lô (xem PLAN / KNOWN_ISSUES).
+- **`low_warning_boxes`** default **3** + UI **ProductDetail**; **`low_critical_boxes`**: kế hoạch hardcode **1**, bỏ UI (xem `docs/phases/phase-1/PLAN.md`).
+- **Màu status:** theo **REQUIREMENTS §5**; lệch triển khai (0–1 thùng) → **KI-001** trong `docs/KNOWN_ISSUES.md`.
 
 ---
 

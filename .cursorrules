@@ -1,195 +1,69 @@
-# Chino's Warehouse — Cursor AI Rules
+# Chino's Warehouse — Cursor Rules
 
+## Bước đầu tiên — LUÔN LUÔN
 
+Trước khi làm bất cứ việc gì, đọc theo thứ tự:
+
+1. `docs/project/WORKFLOW.md`   ← quy trình làm việc
+2. `docs/project/REQUIREMENTS.md` ← business rules, features
+3. `docs/project/CONTEXT.md`   ← technical context
+4. `docs/BLOCKERS.md`          ← tránh lặp lỗi cũ
 
 ## Project
 
-Ứng dụng quản lý kho hàng nội bộ cho Chino's Boba Tea & Asian Market, Joensuu, Finland.
-
-React Native (Expo) + TypeScript + Supabase + Zustand. Chạy iOS & Android qua Expo Go.
-
-
+Ứng dụng quản lý kho hàng nội bộ — Chino's Boba Tea & Asian Market,
+Joensuu, Finland. React Native (Expo) + TypeScript + Supabase + Zustand.
 
 ## Tech Stack
 
 - Mobile: React Native (Expo SDK), TypeScript
-
 - State: Zustand (warehouseStore, themeStore)
-
 - Backend: Supabase (PostgreSQL + Realtime)
-
-- Navigation: React Navigation — **4** bottom tabs (Kho, Sản phẩm, Thông báo, Cài đặt) + Native Stack (chi tiết, thêm hàng, quét mã, …)
-
+- Navigation: React Navigation (Bottom Tabs + Native Stack)
 - Barcode: expo-camera (CameraView + onBarcodeScanned)
-
-
-
-## Cấu trúc thư mục
-
-chino-warehouse/
-
-├── screens/          # MapScreen, ProductsScreen, ProductDetailScreen, AddInventoryScreen,
-
-│                     # BarcodeScannerScreen, NotificationsScreen, SettingsScreen
-
-├── components/       # ZoneDetailSheet.tsx, …
-
-├── stores/           # warehouseStore.ts, themeStore.ts
-
-├── types/            # index.ts — types + helpers (getCombinedStatus, …)
-
-├── lib/              # supabase.ts
-
-├── supabase/migrations/
-
-├── assets/
-
-├── CONTEXT.md, FEATURES.md, USER_GUIDE.md, README.md
-
-└── __tests__/        # Jest tests cho logic functions (nếu có)
-
-
 
 ## Conventions
 
 - Comment code bằng tiếng Việt
-
 - Functional components + hooks, không dùng class components
-
-- Luôn dùng `useThemeStore()` để lấy colors — không hardcode màu sắc
-
-- Accent color mặc định: colors.accent (#22C55E dark / #16a34a light)
-
+- Luôn dùng useThemeStore() để lấy colors — không hardcode màu
 - Không tự thêm npm package mới khi chưa được yêu cầu
+- Khi bí → ghi vào docs/BLOCKERS.md, dừng lại hỏi người dùng
 
-- Không hỏi lại những gì đã rõ trong CONTEXT.md / FEATURES.md / types — cứ làm
+## Quy tắc cập nhật tài liệu
 
+Xem đầy đủ: docs/project/WORKFLOW.md
 
+Tóm tắt:
 
-## Data Model quan trọng
+- Tự update: docs/project/CONTEXT.md, docs/WORKLOG.md,
+  docs/KNOWN_ISSUES.md, docs/phases/phase-1/HANDOFF.md
+- Cần confirm: docs/project/REQUIREMENTS.md, docs/DECISIONS.md
+- Không bao giờ tự update: docs/project/USER_GUIDE.md, README.md, .cursorrules
 
-- Zone có `cells: ZoneCell[]` (mảng {row, col}, 1-indexed), `color: string`, `tier_count: number`
+## Màu status (chuẩn — không được thay đổi nếu không có chỉ đạo)
 
-- InventoryEntry: số lượng tính theo **thùng nguyên**, `quantity_boxes: number`
+- 0–1 thùng    → Đỏ #EF4444 (CHƯA FIX — xem KI-001 trong docs/KNOWN_ISSUES.md)
+- ≤ low_warning_boxes → Vàng #FACC15
+- Hết hạn      → Đỏ #EF4444
+- ≤ warning_days     → Vàng #FACC15
+- Bình thường  → Xanh #22C55E
 
-- Hạn sử dụng: `getExpiryStatus(expiry_date)` → 'expired' | 'warning' | 'ok' (và tương tự cho text)
+## Tính năng đã xong (Phase 1)
 
-- Chấm màu / trạng thái tổng hợp (tồn + hạn): `getCombinedStatus()` trong `types/index.ts` — **không màu cam status**; đỏ `#EF4444` | vàng `#FDE047` (sắp hết hàng **hoặc** sắp hết hạn; light `#FACC15` qua `themeStore`) | xanh `#22C55E` — chi tiết `CONTEXT.md` §4
+F01 Chọn kho (hàng nút), F02 Bản đồ 6×6, F03 Chấm màu zone,
+F04 Quản lý zone, F05 Zone nhiều tầng, F06 Danh sách SP trong zone,
+F07 Chi tiết sản phẩm, F09 Tìm kiếm, F10 Quét barcode 3 mode,
+F11 Tồn kho theo thùng, F12 Theo dõi hạn, F13 Ghi chú,
+F14 Thêm sản phẩm, F16 Sửa/xóa lô, F17 Realtime (cần verify)
 
-- `products`: `barcode` (optional), `warning_days`, `low_warning_boxes` (default 3, có UI ProductDetail), `low_critical_boxes` (DB có cột; backlog: hardcode = 1, bỏ UI — xem CONTEXT §13)
+## Còn phải làm (theo thứ tự)
 
-- Một kho trong vận hành hiện tại; chưa multi-location UI
-
-
-
-## UI Rules
-
-- Dark theme mặc định, support light theme qua themeStore
-
-- SafeAreaView + `Platform.OS === 'android'` topSpacer ở mọi screen
-
-- CELL_SIZE = 56, GRID = 6x6, bắt đầu từ hàng 1 cột 1
-
-- Modal dùng `animationType="slide"` cho form, `"fade"` cho action sheet
-
-- Không dùng external UI library — StyleSheet thuần
-
-- BarcodeScannerScreen fullscreen: không bottom tab; các màn stack khác: backlog bottom tab (CONTEXT §3)
-
-
-
-## Những gì đã xong (đồng bộ FEATURES.md — trạng thái **Done**)
-
-- **F01** — Vận hành một kho: baseline map + zone
-
-- **F02** — Bản đồ kho / lưới zone 6×6, tìm kiếm, highlight, CRUD zone
-
-- **F03** — Zone detail (`ZoneDetailSheet`)
-
-- **F04** — Danh sách sản phẩm + CRUD cơ bản (`ProductsScreen`)
-
-- **F05** — Chi tiết sản phẩm + lô (`ProductDetailScreen`); gán barcode + chỉnh `low_warning_boxes`
-
-- **F07** — Sửa / xóa / chuyển lô
-
-- **F09** — Realtime Supabase (`warehouseStore` subscriptions)
-
-- **F10** — Quét barcode: `BarcodeScannerScreen` 3 mode (`search` | `assign` | `locate`); `searchByBarcode` đồng bộ trên local store
-
-- **F12** — Theme sáng/tối (`SettingsScreen` + `themeStore`)
-
-- **F13** — Hạn sử dụng + cảnh báo theo ngày (kết hợp trong `getCombinedStatus` / UI)
-
-- **F14 (phần màu)** — Đơn giản hóa màu status: bỏ cam; sắp hết hàng + sắp hết hạn cùng vàng (`EXPIRY_COLORS` + `themeStore` — xem `CONTEXT.md` §4)
-
-
-
-## Bảng màu status (đồng bộ `CONTEXT.md` §4)
-
-| Mức | Hex |
-|-----|-----|
-| Hết hàng / còn rất ít (0–1 thùng), hết hạn | `#EF4444` |
-| Sắp hết hàng (≤ `low_warning_boxes`), sắp hết hạn | `#FDE047` (dark); `#FACC15` (light `themeStore`) |
-| Bình thường | `#22C55E` |
-
-
-
-## Còn phải làm (Partial / Not started — ưu tiên đầu theo CONTEXT.md §13)
-
-1. Bỏ UI `low_critical_boxes` khỏi `ProductDetailScreen`, hardcode = **1** trong logic (**F14**).
-
-2. Fix `NotificationsScreen`: hiện đủ cảnh báo sắp hết hàng (`quantity_boxes <= low_warning_boxes`) (**F11**).
-
-3. Thêm bottom tab bar cho các màn hình stack mới (**F17**).
-
-4. Thêm barcode field vào `AddInventoryScreen` (**F06**).
-
-
-
-**Khác (FEATURES — Partial / Not started, không trùng thứ tự §13):**
-
-- **F15** Settings: chủ yếu theme; chưa auth (**F23**).
-
-- **F16** Hiệu năng / **F18** Cấu hình mở rộng — Partial.
-
-- **F19** Báo cáo/xuất — Not started.
-
-- **F20** Chuyển hàng giữa kho — depends **F21**.
-
-- **F21** Multi-location / thêm & chọn kho — prerequisite **F23**.
-
-- **F22** Offline — ưu tiên thấp.
-
-- **F23** Auth/login — prerequisite cho **F21**.
-
-- **F24** Tích hợp ngoài, **F25** AI — Not started.
-
-- **F08** Ảnh sản phẩm — Not started.
-
-- Backlog: grid kho mở rộng (không chỉ 6×6 cứng) — xem `CONTEXT.md` §9.
-
-
-
-## Quy tắc cập nhật tài liệu (bắt buộc)
-
-
-
-Sau mỗi thay đổi code có ý nghĩa (tính năng, luồng, data model, màu, navigation, env, migration), bắt buộc cập nhật **TẤT CẢ 5 file** sau **nếu liên quan**:
-
-
-
-- **`.cursorrules`** → sync trạng thái done/todo, conventions, tech stack
-
-- **`CONTEXT.md`** → trạng thái tính năng, data model, business rules, backlog, TODO
-
-- **`FEATURES.md`** → trạng thái F01–F25
-
-- **`USER_GUIDE.md`** → khi có thay đổi UI hoặc flow người dùng
-
-- **`README.md`** → khi có thay đổi setup, env, plugin, cấu trúc project
-
-
-
-Không commit thay đổi tính năng mà không cập nhật doc khi thay đổi đó ảnh hưởng hành vi, dữ liệu, hoặc hướng dẫn sử dụng / cài đặt.
-
-
+1. Fix KI-001: critical → màu đỏ
+2. Bỏ UI low_critical_boxes, hardcode = 1
+3. Fix NotificationsScreen: format card (tổng thùng + thùng có vấn đề)
+4. Toggle lọc "có vấn đề" ở ProductsScreen
+5. Tổng thùng ở ProductsScreen
+6. Bottom tab bar cho stack screens
+7. Barcode field ở AddInventoryScreen
+8. Verify F17 Realtime

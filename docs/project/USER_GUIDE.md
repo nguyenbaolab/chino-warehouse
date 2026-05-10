@@ -1,6 +1,6 @@
 # Chino's Warehouse — USER GUIDE
 
-Hướng dẫn sử dụng cho chủ cửa hàng và nhân viên. Chi tiết kỹ thuật: `CONTEXT.md`, `FEATURES.md`.
+Hướng dẫn sử dụng cho chủ cửa hàng và nhân viên. Chi tiết kỹ thuật: [`CONTEXT.md`](./CONTEXT.md), [`REQUIREMENTS.md`](./REQUIREMENTS.md).
 
 ---
 
@@ -12,9 +12,9 @@ Màn **Quét mã vạch** mở **toàn màn hình** — **không thấy thanh ta
 
 ---
 
-## 2) Một kho
+## 2) Chọn kho (location)
 
-Hệ thống đang vận hành **một kho**; chưa có màn hình **thêm hay chọn nhiều kho**.
+Trên tab **Kho**, phía trên bản đồ có **hàng nút** chọn kho đang xem (theo dữ liệu `locations` trong Supabase). Có thể có một hoặc nhiều kho — bấm tên kho để đổi bản đồ zone tương ứng.
 
 ---
 
@@ -30,7 +30,7 @@ Hệ thống đang vận hành **một kho**; chưa có màn hình **thêm hay c
 
 - Danh sách sản phẩm; **chấm màu** theo trạng thái tổng hợp (tồn + hạn).
 - **Tìm kiếm** + **quét**: mode **`search`** — tìm theo barcode → mở chi tiết (hoặc hướng dẫn thêm thủ công nếu chưa có).
-- **Thêm sản phẩm / lô** (`AddInventoryScreen`): **không có ô mã vạch**; gán barcode sau tại **Chi tiết sản phẩm**.
+- **Thêm sản phẩm / lô** (`AddInventoryScreen`): **không có ô mã vạch** cho lô; gán barcode sản phẩm sau tại **Chi tiết sản phẩm** (theo quy tắc nghiệp vụ).
 
 ---
 
@@ -39,14 +39,14 @@ Hệ thống đang vận hành **một kho**; chưa có màn hình **thêm hay c
 - Xem lô, số thùng, hạn, zone/tầng.
 - **Mã vạch**: nhập tay hoặc bấm **📷** → camera mode **`assign`** → quay lại màn hình → **Lưu**.
 - **Ngưỡng sắp hết hàng** (`low_warning_boxes`): mặc định **3**, có thể chỉnh tại đây.
-- Mức **hết hàng / còn rất ít** (0–1 thùng): hiển thị theo rule chung; **không** có chỗ chỉnh ngưỡng “critical” riêng trên UI (theo hướng hardcode — xem `CONTEXT.md` TODO).
+- Mức **hết hàng / còn rất ít** (0–1 thùng): theo **REQUIREMENTS.md §5** phải là **đỏ**; nếu trên app vẫn thấy **vàng** cho 1 thùng → đó là bug đã ghi trong `docs/KNOWN_ISSUES.md` (KI-001). Kế hoạch: bỏ chỉnh `low_critical_boxes` trên UI, hardcode = 1.
 
 ---
 
 ## 6) Tab Thông báo
 
-- Danh sách cảnh báo (hết hạn, sắp hết hạn, tồn thấp, …).  
-- Đang có backlog để **hiện đủ** cảnh báo sắp hết hàng theo ngưỡng `low_warning_boxes`.
+- Danh sách cảnh báo (hết hạn, sắp hết hạn, tồn thấp theo ngưỡng, …).
+- Định dạng card đầy đủ theo **REQUIREMENTS.md §7.6** (tổng thùng + thùng có vấn đề) có thể chưa khớp — xem backlog trong `docs/phases/phase-1/PLAN.md` và `docs/KNOWN_ISSUES.md`.
 
 ---
 
@@ -60,12 +60,14 @@ Hệ thống đang vận hành **một kho**; chưa có màn hình **thêm hay c
 
 **Vàng** = có việc cần kiểm tra: **sắp hết hàng** (tồn ≤ `low_warning_boxes`) **hoặc sắp hết hạn** (trong khoảng cảnh báo ngày) — **cùng một màu**, không còn tách riêng màu cam.
 
-| Mức | Điều kiện | Màu | Hex |
-|-----|-----------|-----|-----|
+Tham chiếu chính xác bảng hex: **REQUIREMENTS.md §5**. Tóm tắt:
+
+| Mức | Điều kiện | Màu | Hex (tham chiếu) |
+|-----|-----------|-----|------------------|
 | Hết hàng / Còn rất ít | 0–1 thùng | Đỏ | `#EF4444` |
-| Sắp hết hàng | ≤ `low_warning_boxes` | Vàng | `#FDE047` |
+| Sắp hết hàng | ≤ `low_warning_boxes` | Vàng | `#FACC15` |
 | Hết hạn | đã hết hạn | Đỏ | `#EF4444` |
-| Sắp hết hạn | trong khoảng cảnh báo ngày | Vàng | `#FDE047` |
+| Sắp hết hạn | ≤ `warning_days` | Vàng | `#FACC15` |
 | Bình thường | không thuộc các mức trên | Xanh | `#22C55E` |
 
 ---
@@ -74,4 +76,4 @@ Hệ thống đang vận hành **một kho**; chưa có màn hình **thêm hay c
 
 - **Camera**: cấp quyền camera trong cài đặt máy.
 - **Quét không ra**: kiểm tra sản phẩm đã có barcode trong hệ thống (gán ở chi tiết sản phẩm).
-- **Dữ liệu**: cần mạng để đồng bộ realtime.
+- **Dữ liệu**: cần mạng; đồng bộ tức thì giữa thiết bị phụ thuộc Supabase Realtime (xem KI-002 trong `docs/KNOWN_ISSUES.md`).
