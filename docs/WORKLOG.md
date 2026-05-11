@@ -121,3 +121,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
 - **Kết quả:** Không đổi code; chỉ đồng bộ tài liệu theo QA / backlog.
 - **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+
+### Docs — Barcode Phase 1 + BLK-001 ghi chú
+
+- **Task:** `DECISIONS.md`: thêm quyết định Barcode Phase 1 (1 SP = 1 barcode, `products.barcode`), giới hạn và kế hoạch Phase 2 / BLK-001. `BLOCKERS.md`: bổ sung ghi chú Phase 1 và reopen khi Phase 2.
+- **Files thay đổi:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`
+- **Kết quả:** Không đổi code.
+- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`

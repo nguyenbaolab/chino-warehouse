@@ -121,3 +121,12 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quyết định:** Lưu cờ **Để sau** bằng cột **`is_deferred BOOLEAN NOT NULL DEFAULT false`** trên bảng **`products`** (migration `20260511_add_product_is_deferred.sql`). App cập nhật qua Supabase và `warehouseStore.toggleDeferred`.
 - **Lý do:** Đồng bộ đa thiết bị, không phụ thuộc state cục bộ Zustand; một sản phẩm — một cờ.
 - **Thay thế đã xem xét:** Chỉ lưu local Zustand — từ chối cho Phase 1+ thông báo.
+
+---
+
+### Barcode — Phase 1: 1 sản phẩm 1 barcode
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Phase 1 giữ nguyên **một barcode trên mỗi sản phẩm**, lưu trong cột **`products.barcode`**.
+- **Giới hạn đã biết:** Chưa xử lý trường hợp cùng một sản phẩm có **nhiều barcode khác nhau** (hàng nhập nhiều đợt, barcode per lô, v.v.).
+- **Kế hoạch:** Thiết kế lại logic barcode trong **Phase 2** khi có thêm thông tin từ chủ cửa hàng (xem **BLK-001** trong `docs/BLOCKERS.md`).

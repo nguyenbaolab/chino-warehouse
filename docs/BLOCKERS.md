@@ -26,3 +26,4 @@ Khi gặp blocker mới: **ghi vào đây**, **dừng lại**, **hỏi người 
   3. Có barcode nào map với 2 sản phẩm khác nhau không?
 - **Trạng thái:** Blocked — chờ xác nhận từ chủ cửa hàng
 - **Hành động:** Không làm gì liên quan đến barcode per lô cho đến khi blocker này được giải quyết.
+- **Ghi chú (Phase 1):** Tạm thời giữ **1 barcode per sản phẩm** (`products.barcode`) theo `docs/DECISIONS.md` (mục Barcode — Phase 1). **Reopen** BLK-001 / thiết kế mở rộng khi **bắt đầu Phase 2** và có input từ chủ cửa hàng.
