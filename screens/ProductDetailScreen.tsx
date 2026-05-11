@@ -36,6 +36,21 @@ function isValidIsoDate(raw: string): boolean {
   return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
 }
 
+function isExpiredBeforeToday(expiryDate?: string): boolean {
+  if (!expiryDate) return false
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(expiryDate.trim())
+  if (!match) return false
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const expiry = new Date(year, month - 1, day)
+  if (Number.isNaN(expiry.getTime())) return false
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  expiry.setHours(0, 0, 0, 0)
+  return expiry.getTime() < today.getTime()
+}
+
 export default function ProductDetailScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
@@ -353,6 +368,7 @@ export default function ProductDetailScreen() {
           <Text style={{ color: colors.sub }}>Không có lô đỏ/vàng (đang bật lọc Có vấn đề).</Text>
         ) : (
           displayedLots.map((lot) => {
+            const isExpiredLot = isExpiredBeforeToday(lot.expiry_date)
             const status = getCombinedStatus(
               lot.quantity_boxes,
               lot.expiry_date,
@@ -373,6 +389,14 @@ export default function ProductDetailScreen() {
                 {lot.quantity_boxes === 0 && (
                   <View style={[styles.depletedRow, { borderBottomColor: colors.border }]}>
                     <Text style={[styles.depletedLabel, { color: colors.sub }]}>Lô này đã hết hàng</Text>
+                    <TouchableOpacity onPress={() => handleDeleteLot(lot)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text style={[styles.deleteLotLink, { color: colors.statusCritical }]}>Xóa lô</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {isExpiredLot && (
+                  <View style={[styles.depletedRow, { borderBottomColor: colors.border }]}>
+                    <Text style={[styles.depletedLabel, { color: colors.sub }]}>Lô này đã hết hạn</Text>
                     <TouchableOpacity onPress={() => handleDeleteLot(lot)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                       <Text style={[styles.deleteLotLink, { color: colors.statusCritical }]}>Xóa lô</Text>
                     </TouchableOpacity>

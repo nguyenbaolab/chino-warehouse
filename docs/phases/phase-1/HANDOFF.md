@@ -80,6 +80,19 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 
 **Test QA cho đợt này:** Không có test runtime vì đây là cập nhật docs/định hướng, chưa có thay đổi code.
 
+## Task mới — ProductDetail: banner lô hết hạn
+
+- `ProductDetailScreen`: thêm banner `Lô này đã hết hạn [Xóa lô]` cho lô có `expiry_date` đã qua ngày hiện tại.
+- Nút `Xóa lô` dùng cùng hành vi với lô hết hàng: xóa record lô khỏi DB.
+- Nếu lô đồng thời `quantity_boxes = 0` và đã quá hạn thì hiển thị cả 2 banner.
+
+**Test QA:**
+
+1. Tạo/chọn lô có hạn nhỏ hơn hôm nay (ví dụ hôm qua) và `quantity_boxes > 0`: mở `ProductDetailScreen` -> thấy banner `Lô này đã hết hạn` + `Xóa lô`.
+2. Bấm `Xóa lô` trên banner hết hạn -> xác nhận -> lô biến mất khỏi danh sách và DB.
+3. Với lô `quantity_boxes = 0` và hạn đã qua: card hiển thị cả banner `Lô này đã hết hàng` và `Lô này đã hết hạn`.
+4. Với lô chưa hết hạn: không xuất hiện banner hết hạn.
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng

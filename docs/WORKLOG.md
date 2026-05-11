@@ -212,3 +212,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Tài liệu đã đồng bộ theo scope mới; chưa thay đổi code implement (trạng thái các feature mới: planned/not started).
 - **Docs đã cập nhật:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### ProductDetail — Banner lô hết hạn + Xóa lô
+
+- **Task:** `ProductDetailScreen`: thêm banner `Lô này đã hết hạn [Xóa lô]` cho lô có `expiry_date` đã qua ngày hiện tại; giữ hành vi xóa DB giống banner lô hết hàng; nếu lô vừa hết hàng vừa hết hạn thì hiển thị cả 2 banner.
+- **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** UX lô hết hạn đồng nhất với lô hết hàng, thao tác dọn lô hết hạn ngay tại card lô.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
