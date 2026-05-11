@@ -1,6 +1,6 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 1.2 | Tháng 5/2026
+-- Phiên bản: 1.3 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
 
@@ -33,6 +33,7 @@ CREATE TABLE zones (
 -- 3. Products (sản phẩm)
 -- barcode đã chuyển sang inventory_entries (per lô)
 -- is_deferred: không còn dùng trong UI (bỏ tab Để sau), giữ trong DB
+-- is_price_reduced đã chuyển sang inventory_entries (per lô)
 CREATE TABLE products (
   id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   name                TEXT        NOT NULL,
@@ -40,7 +41,6 @@ CREATE TABLE products (
   notes               TEXT,
   is_archived         BOOLEAN     NOT NULL DEFAULT false,
   is_deferred         BOOLEAN     NOT NULL DEFAULT false,
-  is_price_reduced    BOOLEAN     NOT NULL DEFAULT false,
   is_discontinued     BOOLEAN     NOT NULL DEFAULT false,
   warning_days        INTEGER     NOT NULL DEFAULT 30,
   low_warning_boxes   INTEGER     NOT NULL DEFAULT 3,
@@ -50,15 +50,16 @@ CREATE TABLE products (
 
 -- 4. Inventory entries (lô hàng)
 CREATE TABLE inventory_entries (
-  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id     UUID        REFERENCES products(id) ON DELETE CASCADE,
-  zone_id        UUID        REFERENCES zones(id) ON DELETE CASCADE,
-  tier           INTEGER     DEFAULT 1,
-  quantity_boxes INTEGER     NOT NULL DEFAULT 0,
-  barcode        TEXT,
-  expiry_date    DATE,
-  notes          TEXT,
-  updated_at     TIMESTAMPTZ DEFAULT now()
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id       UUID        REFERENCES products(id) ON DELETE CASCADE,
+  zone_id          UUID        REFERENCES zones(id) ON DELETE CASCADE,
+  tier             INTEGER     DEFAULT 1,
+  quantity_boxes   INTEGER     NOT NULL DEFAULT 0,
+  barcode          TEXT,
+  expiry_date      DATE,
+  is_price_reduced BOOLEAN     NOT NULL DEFAULT false,
+  notes            TEXT,
+  updated_at       TIMESTAMPTZ DEFAULT now()
 );
 
 

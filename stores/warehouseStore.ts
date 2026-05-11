@@ -35,7 +35,7 @@ type WarehouseStore = {
   updateZone: (id: string, data: Partial<Zone>) => Promise<void>
   deleteZone: (id: string) => Promise<boolean>
   toggleDeferred: (productId: string) => Promise<void>
-  togglePriceReduced: (productId: string) => Promise<void>
+  togglePriceReduced: (entryId: string) => Promise<void>
   toggleDiscontinued: (productId: string) => Promise<void>
 }
 
@@ -273,29 +273,26 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }))
   },
 
-  togglePriceReduced: async (productId) => {
-    const { products, inventoryEntries } = get()
-    const fromProduct = products.find((p) => p.id === productId)
-    const fromEntry = inventoryEntries.find((e) => e.product_id === productId)?.product
-    const current = fromProduct?.is_price_reduced ?? fromEntry?.is_price_reduced ?? false
+  togglePriceReduced: async (entryId) => {
+    const { inventoryEntries } = get()
+    const entry = inventoryEntries.find((e) => e.id === entryId)
+    if (!entry) return
+    const current = entry.is_price_reduced ?? false
     const next = !current
 
     const { data: updated } = await supabase
-      .from('products')
+      .from('inventory_entries')
       .update({ is_price_reduced: next })
-      .eq('id', productId)
-      .select('*')
+      .eq('id', entryId)
+      .select('*, product:products(*), zone:zones(*)')
       .single()
 
     if (!updated) return
 
     set((s) => ({
-      products: s.products.some((p) => p.id === productId)
-        ? s.products.map((p) => (p.id === productId ? updated : p))
-        : [...s.products, updated].sort((a, b) => a.name.localeCompare(b.name)),
       inventoryEntries: s.inventoryEntries.map((entry) => (
-        entry.product_id === productId
-          ? { ...entry, product: entry.product ? { ...entry.product, ...updated } : updated }
+        entry.id === entryId
+          ? { ...entry, ...updated }
           : entry
       )),
     }))

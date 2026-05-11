@@ -3,14 +3,22 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
-import { getExpiryStatus, InventoryEntry, Product } from '../types'
+import { formatExpiryDate, getExpiryStatus, InventoryEntry, Product } from '../types'
+
+type ExpiryLotRow = {
+  entryId: string
+  quantityBoxes: number
+  expiryDate?: string
+  isPriceReduced: boolean
+  status: 'expired' | 'warning'
+}
 
 type ExpiryCard = {
   productId: string
   productName: string
   totalBoxes: number
-  isExpired: boolean
-  isPriceReduced: boolean
+  lots: ExpiryLotRow[]
+  hasExpiredLot: boolean
 }
 
 type LowStockCard = {
@@ -34,6 +42,9 @@ export default function NotificationsScreen() {
   } = useWarehouseStore()
 
   const [activeTab, setActiveTab] = useState<'expiry' | 'lowStock'>('expiry')
+  const [showExpiredFilter, setShowExpiredFilter] = useState(false)
+  const [showWarningFilter, setShowWarningFilter] = useState(false)
+  const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     fetchLocations()
@@ -65,23 +76,42 @@ export default function NotificationsScreen() {
       let totalBoxes = 0
       let hasExpired = false
       let hasWarning = false
+      const lots: ExpiryLotRow[] = []
       for (const entry of entries) {
         totalBoxes += entry.quantity_boxes
         const status = getExpiryStatus(entry.expiry_date, product.warning_days ?? 30)
-        if (status === 'expired') hasExpired = true
-        if (status === 'warning') hasWarning = true
+        if (status === 'expired') {
+          hasExpired = true
+          lots.push({
+            entryId: entry.id,
+            quantityBoxes: entry.quantity_boxes,
+            expiryDate: entry.expiry_date,
+            isPriceReduced: entry.is_price_reduced === true,
+            status: 'expired',
+          })
+        }
+        if (status === 'warning') {
+          hasWarning = true
+          lots.push({
+            entryId: entry.id,
+            quantityBoxes: entry.quantity_boxes,
+            expiryDate: entry.expiry_date,
+            isPriceReduced: entry.is_price_reduced === true,
+            status: 'warning',
+          })
+        }
       }
       if (!hasExpired && !hasWarning) continue
       cards.push({
         productId,
         productName: product.name,
         totalBoxes,
-        isExpired: hasExpired,
-        isPriceReduced: product.is_price_reduced === true,
+        lots,
+        hasExpiredLot: hasExpired,
       })
     }
     return cards.sort((a, b) => {
-      if (a.isExpired !== b.isExpired) return a.isExpired ? -1 : 1
+      if (a.hasExpiredLot !== b.hasExpiredLot) return a.hasExpiredLot ? -1 : 1
       return a.productName.localeCompare(b.productName)
     })
   }, [productIdToEntries, products])
@@ -106,7 +136,30 @@ export default function NotificationsScreen() {
     return cards.sort((a, b) => a.productName.localeCompare(b.productName))
   }, [productIdToEntries, products])
 
-  const listEmpty = activeTab === 'expiry' ? expiryCards.length === 0 : lowStockCards.length === 0
+  const expiryCardsFiltered = useMemo(() => {
+    return expiryCards
+      .map((card) => {
+        const filteredLots = card.lots.filter((lot) => {
+          if (!showExpiredFilter && !showWarningFilter) return true
+          if (showExpiredFilter && showWarningFilter) return true
+          if (showExpiredFilter) return lot.status === 'expired'
+          if (showWarningFilter) return lot.status === 'warning'
+          return true
+        })
+        return {
+          ...card,
+          lots: filteredLots,
+          hasExpiredLot: filteredLots.some((lot) => lot.status === 'expired'),
+        }
+      })
+      .filter((card) => card.lots.length > 0)
+  }, [expiryCards, showExpiredFilter, showWarningFilter])
+
+  const listEmpty = activeTab === 'expiry' ? expiryCardsFiltered.length === 0 : lowStockCards.length === 0
+
+  function toggleExpanded(productId: string) {
+    setExpandedProducts((prev) => ({ ...prev, [productId]: !prev[productId] }))
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -143,6 +196,31 @@ export default function NotificationsScreen() {
         </TouchableOpacity>
       </View>
 
+      {activeTab === 'expiry' && (
+        <View style={[styles.filterBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={styles.filterItem}
+            onPress={() => setShowExpiredFilter((v) => !v)}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.tickBox, { borderColor: colors.border, backgroundColor: showExpiredFilter ? colors.accent : colors.bg }]}>
+              {showExpiredFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
+            </View>
+            <Text style={[styles.filterText, { color: colors.text }]}>Hết hạn</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.filterItem}
+            onPress={() => setShowWarningFilter((v) => !v)}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.tickBox, { borderColor: colors.border, backgroundColor: showWarningFilter ? colors.accent : colors.bg }]}>
+              {showWarningFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
+            </View>
+            <Text style={[styles.filterText, { color: colors.text }]}>Sắp hết hạn</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {listEmpty ? (
         <View style={styles.emptyWrap}>
           <Text style={{ color: colors.sub }}>
@@ -152,42 +230,62 @@ export default function NotificationsScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.list}>
           {activeTab === 'expiry'
-            ? expiryCards.map((item) => {
-                const bgColor = item.isExpired ? colors.badgeExpiredBg : colors.card
-                const borderColor = item.isExpired ? colors.statusExpired : colors.border
+            ? expiryCardsFiltered.map((item) => {
+                const isExpanded = expandedProducts[item.productId] === true
+                const bgColor = item.hasExpiredLot ? colors.badgeExpiredBg : colors.card
+                const borderColor = item.hasExpiredLot ? colors.statusExpired : colors.border
                 return (
-                  <TouchableOpacity
+                  <View
                     key={item.productId}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      if (item.isExpired) {
-                        navigation.navigate('ProductDetail', { productId: item.productId })
-                      }
-                    }}
                     style={[styles.item, { backgroundColor: bgColor, borderColor }]}
                   >
-                    <View style={styles.headerRow}>
-                      <View style={styles.leftWrap}>
-                        <View style={[styles.titleDot, { backgroundColor: item.isExpired ? colors.statusExpired : colors.statusWarning }]} />
-                        <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-                          {item.productName}
-                        </Text>
+                    <TouchableOpacity activeOpacity={0.8} onPress={() => toggleExpanded(item.productId)}>
+                      <View style={styles.headerRow}>
+                        <View style={styles.leftWrap}>
+                          <View style={[styles.titleDot, { backgroundColor: item.hasExpiredLot ? colors.statusExpired : colors.statusWarning }]} />
+                          <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
+                            {item.productName}
+                          </Text>
+                        </View>
+                        <Text style={[styles.expandHint, { color: colors.sub }]}>{isExpanded ? 'Thu gọn ▴' : 'Chi tiết ▾'}</Text>
                       </View>
-                    </View>
-                    <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} thùng</Text>
-                    {item.isExpired ? (
-                      <Text style={[styles.expiredLabel, { color: colors.statusExpired }]}>Hết hạn rồi</Text>
-                    ) : (
-                      <TouchableOpacity
-                        style={[styles.actionBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                        onPress={() => void togglePriceReduced(item.productId)}
-                      >
-                        <Text style={[styles.actionBtnText, { color: colors.text }]}>
-                          {item.isPriceReduced ? 'Đã giảm giá' : 'Chưa giảm giá'}
-                        </Text>
-                      </TouchableOpacity>
+                      <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} thùng</Text>
+                    </TouchableOpacity>
+
+                    {isExpanded && (
+                      <View style={styles.lotList}>
+                        {item.lots.map((lot) => {
+                          const lotBg = lot.status === 'expired' ? colors.badgeExpiredBg : colors.badgeWarningBg
+                          const lotBorder = lot.status === 'expired' ? colors.statusExpired : colors.statusWarning
+                          return (
+                            <View key={lot.entryId} style={[styles.lotRow, { backgroundColor: lotBg, borderColor: lotBorder }]}>
+                              <View style={styles.lotInfo}>
+                                <Text style={[styles.lotText, { color: colors.text }]}>
+                                  {lot.quantityBoxes} thùng · Hạn: {formatExpiryDate(lot.expiryDate)}
+                                </Text>
+                              </View>
+                              <TouchableOpacity
+                                style={[styles.lotToggleBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                                onPress={() => void togglePriceReduced(lot.entryId)}
+                              >
+                                <Text style={[styles.lotToggleText, { color: colors.text }]}>
+                                  {lot.isPriceReduced ? 'Đã giảm giá' : 'Chưa giảm giá'}
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          )
+                        })}
+                        {item.lots.some((lot) => lot.status === 'expired') && (
+                          <TouchableOpacity
+                            style={[styles.expiredNavigateBtn, { borderColor: colors.statusExpired, backgroundColor: colors.bg }]}
+                            onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
+                          >
+                            <Text style={[styles.expiredNavigateText, { color: colors.statusExpired }]}>Hết hạn rồi — mở chi tiết sản phẩm</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
                     )}
-                  </TouchableOpacity>
+                  </View>
                 )
               })
             : lowStockCards.map((item) => (
@@ -245,23 +343,64 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabBtnText: { fontSize: 14, fontWeight: '700' },
+  filterBar: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    gap: 16,
+  },
+  filterItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  tickBox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1,
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tickText: { fontSize: 12, fontWeight: '800' },
+  filterText: { fontSize: 13, fontWeight: '600' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 32 },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
-  headerRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   leftWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 },
   line1: { fontSize: 14, fontWeight: '600', marginTop: 10 },
-  expiredLabel: { fontSize: 13, fontWeight: '700', marginTop: 6 },
+  expandHint: { fontSize: 12, fontWeight: '600' },
   titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'flex-start', marginTop: 2 },
   name: { fontSize: 15, fontWeight: '700', flex: 1, minWidth: 0 },
-  actionBtn: {
-    marginTop: 10,
+  lotList: { marginTop: 10, gap: 8 },
+  lotRow: {
     borderWidth: 1,
     borderRadius: 10,
-    paddingVertical: 10,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  lotInfo: { flex: 1 },
+  lotText: { fontSize: 13, fontWeight: '600' },
+  lotToggleBtn: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  lotToggleText: { fontSize: 12, fontWeight: '700' },
+  expiredNavigateBtn: {
+    marginTop: 2,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
     alignItems: 'center',
   },
-  actionBtnText: { fontSize: 14, fontWeight: '700' },
+  expiredNavigateText: { fontSize: 12, fontWeight: '700' },
   actionsRow: {
     flexDirection: 'row',
     gap: 8,

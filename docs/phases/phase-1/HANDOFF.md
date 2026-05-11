@@ -123,6 +123,37 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
    - Bấm `Thêm vào danh sách nhập` thấy log placeholder trong console.
    - Bấm `Không nhập nữa` thì card biến mất khỏi tab; reload app vẫn không hiện.
 
+## Task mới — Sắp hết hạn theo từng lô + filter hạn
+
+- Migration mới:
+  - `20260511_move_is_price_reduced_to_inventory_entries.sql`
+  - Drop `products.is_price_reduced`
+  - Add `inventory_entries.is_price_reduced BOOLEAN NOT NULL DEFAULT false`
+- `NotificationsScreen` tab **Sắp hết hạn**:
+  - Card sản phẩm có thể expand để thấy danh sách từng lô.
+  - Mỗi lô 1 dòng: `số thùng + hạn DD/MM/YYYY + toggle Đã/Chưa giảm giá` ở bên phải.
+  - Lô hết hạn: nền đỏ nhạt; lô sắp hết hạn: nền vàng nhạt.
+  - Filter bar ngay dưới tab: tick `Hết hạn` / `Sắp hết hạn` (tick 1 lọc 1 loại; không tick hoặc tick cả 2 hiện toàn bộ).
+- `warehouseStore.togglePriceReduced` đổi sang cập nhật theo `inventory_entries.id` thay vì `products`.
+
+**Test QA:**
+
+1. Chạy migration `20260511_move_is_price_reduced_to_inventory_entries.sql`.
+2. Vào tab `Sắp hết hạn`, bấm mở 1 card sản phẩm:
+   - thấy từng lô theo dòng riêng,
+   - hạn hiển thị `DD/MM/YYYY`,
+   - mỗi dòng có nút `Đã giảm giá / Chưa giảm giá`.
+3. Bấm toggle ở 1 lô:
+   - chỉ đổi đúng lô đó,
+   - reload app vẫn giữ trạng thái.
+4. Kiểm tra màu nền dòng lô:
+   - lô hết hạn: đỏ nhạt,
+   - lô sắp hết hạn: vàng nhạt.
+5. Filter bar:
+   - không tick hoặc tick cả 2: hiện tất cả lô đủ điều kiện,
+   - tick `Hết hạn` chỉ hiện lô hết hạn,
+   - tick `Sắp hết hạn` chỉ hiện lô sắp hết hạn.
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng

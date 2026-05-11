@@ -226,3 +226,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/NotificationsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `supabase/migrations/20260511_add_product_is_price_reduced.sql`, `supabase/migrations/20260511_add_product_is_discontinued.sql`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Notifications chuyển sang luồng xử lý trực tiếp theo hạn/tồn; thêm 2 action store `togglePriceReduced` và `toggleDiscontinued`; sản phẩm đánh dấu không nhập nữa được ẩn khỏi tab sắp hết hàng.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Notifications — chuyển `is_price_reduced` từ Product sang InventoryEntry
+
+- **Task:** Tạo migration chuyển cột `is_price_reduced` từ `products` sang `inventory_entries`; cập nhật tab Sắp hết hạn hiển thị theo từng lô có thể expand, mỗi lô có toggle Đã/Chưa giảm giá riêng; thêm filter bar `Hết hạn / Sắp hết hạn`; cập nhật `warehouseStore.togglePriceReduced` thao tác theo `inventory_entries`.
+- **Files thay đổi:** `supabase/migrations/20260511_move_is_price_reduced_to_inventory_entries.sql`, `screens/NotificationsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Trạng thái giảm giá chuyển về cấp lô; UI tab Sắp hết hạn cho xem/toggle từng lô (màu đỏ nhạt/vàng nhạt theo loại hạn) và lọc nhanh theo loại lô.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
