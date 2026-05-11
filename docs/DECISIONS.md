@@ -218,3 +218,19 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quyết định:** Dùng màn hình Layout Editor riêng biệt thay vì drag trực tiếp trên map chính. Mỗi zone hiển thị dưới dạng tile nhỏ cố định (không phụ thuộc kích thước thật) kèm badge kích thước. Kéo tile vào grid → collision check theo tọa độ thật, không phải theo tile. Có nút Preview trước khi Confirm.
 - **Lý do:** Map chính khi kho đầy không còn chỗ trống để kéo thả zone kích thước thật — gây khó thao tác.
 - **Thay thế đã xem xét:** Drag zone kích thước thật trên map (Option A) — từ chối vì cramped; Swap 2 zone (Option C) — từ chối vì không đủ linh hoạt khi zone kích thước khác nhau; Zoom out + drag (Option E) — từ chối vì touch target quá nhỏ.
+
+---
+
+### Tab Đặt hàng: không filter theo kho
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Tab Đặt hàng không có dropdown lọc theo kho. Chỉ Products và Notifications có filter theo kho.
+- **Lý do:** Order list không gắn trực tiếp với kho cụ thể — một đơn nhập có thể gồm hàng từ nhiều kho.
+
+---
+
+### Location card trong Settings: hiển thị số sản phẩm
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Card location trong LocationManagementScreen hiển thị: tên kho, grid size (ví dụ "6 × 6"), và số sản phẩm (distinct product_id từ inventory_entries → zones thuộc location đó, kể cả lô 0 thùng chưa xóa).
+- **Lý do:** Giúp nhân viên biết kho nào đang chứa bao nhiêu SKU trước khi thao tác xóa hay sửa.

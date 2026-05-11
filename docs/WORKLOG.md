@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Task 1/4: Migration grid_rows/grid_cols + docs
+
+- Tạo migration: thêm grid_rows, grid_cols (default 6) vào bảng locations.
+- DECISIONS.md: thêm 2 quyết định — Tab Đặt hàng không filter theo kho, Location card hiện số sản phẩm.
+- Chuẩn bị cho Task 2: update types + store.
+
+---
+
 ## [tháng 5/2026] — Cập nhật tài liệu Phase 2: multi-kho + zone editor
 
 **Task:** Update docs trước khi implement Phase 2 features mới.

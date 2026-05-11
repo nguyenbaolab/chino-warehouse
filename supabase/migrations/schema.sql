@@ -1,7 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 1.4 | Tháng 5/2026
+-- Phiên bản: 2.0 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
+-- ============================================================
+-- Thay đổi so với v1.4:
+--   - locations: thêm grid_rows, grid_cols (Phase 2 — multi-kho)
 -- ============================================================
 
 
@@ -14,6 +17,8 @@ CREATE TABLE locations (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   name        TEXT        NOT NULL,
   description TEXT,
+  grid_rows   INTEGER     NOT NULL DEFAULT 6,
+  grid_cols   INTEGER     NOT NULL DEFAULT 6,
   created_at  TIMESTAMPTZ DEFAULT now()
 );
 
@@ -62,7 +67,6 @@ CREATE TABLE inventory_entries (
   updated_at       TIMESTAMPTZ DEFAULT now()
 );
 
-
 -- 5. Order lists (danh sách đặt hàng)
 CREATE TABLE order_lists (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -74,17 +78,17 @@ CREATE TABLE order_lists (
 );
 
 -- 6. Order items (sản phẩm trong danh sách đặt hàng)
--- is_manual = true → ⭐ sản phẩm chị tự thêm tay
+-- is_manual = true → ⭐ sản phẩm tự thêm tay
 CREATE TABLE order_items (
-  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_list_id UUID        NOT NULL REFERENCES order_lists(id) ON DELETE CASCADE,
-  product_id    UUID        REFERENCES products(id) ON DELETE SET NULL,
-  product_name  TEXT        NOT NULL,
-  quantity_boxes INTEGER    NOT NULL DEFAULT 1,
-  notes         TEXT,
-  is_manual     BOOLEAN     NOT NULL DEFAULT false,
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_list_id  UUID        NOT NULL REFERENCES order_lists(id) ON DELETE CASCADE,
+  product_id     UUID        REFERENCES products(id) ON DELETE SET NULL,
+  product_name   TEXT        NOT NULL,
+  quantity_boxes INTEGER     NOT NULL DEFAULT 1,
+  notes          TEXT,
+  is_manual      BOOLEAN     NOT NULL DEFAULT false,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 
