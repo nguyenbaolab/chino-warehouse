@@ -1,6 +1,6 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 1.3 | Tháng 5/2026
+-- Phiên bản: 1.4 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
 
@@ -63,6 +63,31 @@ CREATE TABLE inventory_entries (
 );
 
 
+-- 5. Order lists (danh sách đặt hàng)
+CREATE TABLE order_lists (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  title      TEXT        NOT NULL,
+  status     TEXT        NOT NULL DEFAULT 'draft'
+               CHECK (status IN ('draft', 'confirmed', 'placed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 6. Order items (sản phẩm trong danh sách đặt hàng)
+-- is_manual = true → ⭐ sản phẩm chị tự thêm tay
+CREATE TABLE order_items (
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_list_id UUID        NOT NULL REFERENCES order_lists(id) ON DELETE CASCADE,
+  product_id    UUID        REFERENCES products(id) ON DELETE SET NULL,
+  product_name  TEXT        NOT NULL,
+  quantity_boxes INTEGER    NOT NULL DEFAULT 1,
+  notes         TEXT,
+  is_manual     BOOLEAN     NOT NULL DEFAULT false,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+
 -- ============================================================
 -- INDEXES
 -- ============================================================
@@ -71,6 +96,8 @@ CREATE INDEX ON products(name);
 CREATE INDEX ON inventory_entries(zone_id);
 CREATE INDEX ON inventory_entries(product_id);
 CREATE INDEX ON inventory_entries(barcode);
+CREATE INDEX ON order_items(order_list_id);
+CREATE INDEX ON order_items(product_id);
 
 
 -- ============================================================
@@ -81,6 +108,8 @@ ALTER TABLE locations         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE zones             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_lists       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items       ENABLE ROW LEVEL SECURITY;
 
 -- Phase 1: không có auth — cho phép tất cả
 -- Phase 3: thay bằng policy kiểm tra user role
@@ -88,6 +117,8 @@ CREATE POLICY "allow_all" ON locations         FOR ALL TO anon USING (true) WITH
 CREATE POLICY "allow_all" ON zones             FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON products          FOR ALL TO anon USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON inventory_entries FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON order_lists       FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON order_items       FOR ALL TO anon USING (true) WITH CHECK (true);
 
 
 -- ============================================================

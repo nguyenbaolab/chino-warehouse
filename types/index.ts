@@ -38,6 +38,28 @@ export type Product = {
   created_at: string
 }
 
+export type OrderListStatus = 'draft' | 'confirmed' | 'placed'
+
+export type OrderList = {
+  id: string
+  title: string
+  status: OrderListStatus
+  created_at: string
+  updated_at: string
+}
+
+export type OrderItem = {
+  id: string
+  order_list_id: string
+  product_id?: string | null
+  product_name: string
+  quantity_boxes: number
+  notes?: string | null
+  is_manual: boolean
+  created_at: string
+  updated_at: string
+}
+
 export type InventoryEntry = {
   id: string
   product_id: string

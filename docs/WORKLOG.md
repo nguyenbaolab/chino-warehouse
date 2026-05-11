@@ -254,3 +254,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/NotificationsScreen.tsx`, `docs/WORKLOG.md`
 - **Kết quả:** Hành vi card lô đồng nhất, không còn phân biệt điều hướng giữa 2 loại lô theo hạn.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`
+
+### Navigation + tab Đặt hàng + order list workflow
+
+- **Task:** `App.tsx` thêm tab **Đặt hàng** (giữa Sản phẩm và Thông báo), thêm stack riêng `OrderListMain` / `OrderDetail`, và bật hành vi `tabPress` popToTop khi bấm lại tab đang mở từ màn con; tạo `OrderListScreen` + `OrderDetailScreen`; bổ sung store actions cho `order_lists`/`order_items`; thêm migration tạo 2 bảng mới.
+- **Files thay đổi:** `App.tsx`, `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `supabase/migrations/20260511_add_order_lists_and_items.sql`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Có luồng đặt hàng cơ bản theo list với 3 trạng thái (draft/confirmed/placed), CRUD item/list, cộng dồn sản phẩm trùng trong list đang soạn, và nút placeholder xuất PDF.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

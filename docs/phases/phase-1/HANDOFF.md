@@ -154,6 +154,48 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
    - tick `Hết hạn` chỉ hiện lô hết hạn,
    - tick `Sắp hết hạn` chỉ hiện lô sắp hết hạn.
 
+## Task mới — Tab Đặt hàng + popToTop tab bar
+
+- `App.tsx`:
+  - Thêm tab **Đặt hàng** giữa `Sản phẩm` và `Thông báo` (icon 📋, label Đặt hàng).
+  - Thêm `OrdersStack` gồm:
+    - `OrderListMain` (`OrderListScreen`)
+    - `OrderDetail` (`OrderDetailScreen`)
+  - Tab bar `tabPress` trên các tab stack: nếu đang ở màn con thì `popToTop()` về màn chính của tab.
+- `OrderListScreen`:
+  - Danh sách card các list đặt hàng (tiêu đề, ngày tạo, số sản phẩm, trạng thái).
+  - Nút tạo list mới; bấm card mở `OrderDetail`.
+- `OrderDetailScreen`:
+  - Hiển thị item: tên + ⭐ nếu tự thêm + số thùng + ghi chú.
+  - Thêm sản phẩm theo tên trong kho; nếu không có thì confirm thêm manual (⭐).
+  - Cộng dồn khi trùng sản phẩm/tên trong list đang soạn.
+  - Edit field item + xóa item (khi list chưa khóa).
+  - Nút `Xuất PDF` placeholder log.
+  - Trạng thái list:
+    - `Confirm` -> khóa tạm (confirmed), có nút `Mở lại`.
+    - `Đã đặt hàng` -> khóa (placed), có nút `Mở lại` với confirm đặc biệt.
+- Store + DB:
+  - Migration `20260511_add_order_lists_and_items.sql` tạo bảng `order_lists`, `order_items` + RLS policy.
+  - Actions mới: `fetchOrderLists`, `createOrderList`, `updateOrderList`, `deleteOrderList`, `addOrderItem`, `updateOrderItem`, `deleteOrderItem`, `confirmOrderList`, `markOrderPlaced`.
+
+**Test QA:**
+
+1. Chạy migration `20260511_add_order_lists_and_items.sql`.
+2. Tab bar:
+   - Vào màn con trong tab `Kho`/`Sản phẩm`/`Đặt hàng`/`Thông báo`, bấm lại icon tab hiện tại -> quay về màn chính tab đó.
+3. Tab `Đặt hàng`:
+   - Tạo list mới -> xuất hiện card với trạng thái `Đang soạn`.
+   - Bấm card -> vào `OrderDetail`.
+4. `OrderDetail`:
+   - Thêm sản phẩm có sẵn trong kho -> item thêm bình thường.
+   - Nhập tên không có trong kho -> hiện cảnh báo confirm; đồng ý -> thêm item có ⭐.
+   - Thêm trùng sản phẩm/tên khi list draft -> số thùng cộng dồn.
+   - Sửa số thùng/ghi chú item và kiểm tra lưu.
+5. Trạng thái:
+   - Bấm `Confirm` -> list khóa tạm, có `Mở lại`.
+   - Bấm `Đã đặt hàng` -> list khóa, có `Mở lại` (confirm đặc biệt).
+   - Bấm `Mở lại` -> về `Đang soạn`, có thể chỉnh sửa tiếp.
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import { Location, Zone, ZoneCell, Product, InventoryEntry } from '../types'
+import { Location, Zone, ZoneCell, Product, InventoryEntry, OrderItem, OrderList, OrderListStatus } from '../types'
 
 type WarehouseStore = {
   locations: Location[]
@@ -8,6 +8,8 @@ type WarehouseStore = {
   zones: Zone[]
   products: Product[]
   inventoryEntries: InventoryEntry[]
+  orderLists: OrderList[]
+  orderItems: OrderItem[]
   isLoading: boolean
 
   setSelectedLocation: (id: string) => void
@@ -37,6 +39,15 @@ type WarehouseStore = {
   toggleDeferred: (productId: string) => Promise<void>
   togglePriceReduced: (entryId: string) => Promise<void>
   toggleDiscontinued: (productId: string) => Promise<void>
+  fetchOrderLists: () => Promise<void>
+  createOrderList: (title: string) => Promise<OrderList | null>
+  updateOrderList: (id: string, data: Partial<OrderList>) => Promise<void>
+  deleteOrderList: (id: string) => Promise<void>
+  addOrderItem: (data: Partial<OrderItem>) => Promise<OrderItem | null>
+  updateOrderItem: (id: string, data: Partial<OrderItem>) => Promise<void>
+  deleteOrderItem: (id: string) => Promise<void>
+  confirmOrderList: (id: string) => Promise<void>
+  markOrderPlaced: (id: string) => Promise<void>
 }
 
 export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
@@ -45,6 +56,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   zones: [],
   products: [],
   inventoryEntries: [],
+  orderLists: [],
+  orderItems: [],
   isLoading: false,
 
   setSelectedLocation: (id) => {
@@ -323,6 +336,105 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
           ? { ...entry, product: entry.product ? { ...entry.product, ...updated } : updated }
           : entry
       )),
+    }))
+  },
+
+  fetchOrderLists: async () => {
+    const [{ data: lists }, { data: items }] = await Promise.all([
+      supabase.from('order_lists').select('*').order('created_at', { ascending: false }),
+      supabase.from('order_items').select('*').order('created_at', { ascending: true }),
+    ])
+    set({
+      orderLists: (lists as OrderList[]) ?? [],
+      orderItems: (items as OrderItem[]) ?? [],
+    })
+  },
+
+  createOrderList: async (title) => {
+    const payload = {
+      title: title.trim() || `List ${new Date().toLocaleDateString('vi-VN')}`,
+      status: 'draft' as OrderListStatus,
+    }
+    const { data } = await supabase.from('order_lists').insert(payload).select('*').single()
+    const created = data as OrderList | null
+    if (created) {
+      set((s) => ({ orderLists: [created, ...s.orderLists] }))
+    }
+    return created
+  },
+
+  updateOrderList: async (id, data) => {
+    const { data: updated } = await supabase.from('order_lists').update(data).eq('id', id).select('*').single()
+    if (!updated) return
+    set((s) => ({
+      orderLists: s.orderLists.map((list) => (list.id === id ? (updated as OrderList) : list)),
+    }))
+  },
+
+  deleteOrderList: async (id) => {
+    await supabase.from('order_items').delete().eq('order_list_id', id)
+    await supabase.from('order_lists').delete().eq('id', id)
+    set((s) => ({
+      orderLists: s.orderLists.filter((list) => list.id !== id),
+      orderItems: s.orderItems.filter((item) => item.order_list_id !== id),
+    }))
+  },
+
+  addOrderItem: async (data) => {
+    const payload = {
+      order_list_id: data.order_list_id,
+      product_id: data.product_id ?? null,
+      product_name: data.product_name?.trim() ?? '',
+      quantity_boxes: data.quantity_boxes ?? 1,
+      notes: data.notes ?? null,
+      is_manual: data.is_manual ?? false,
+    }
+    const { data: created } = await supabase.from('order_items').insert(payload).select('*').single()
+    const item = created as OrderItem | null
+    if (item) {
+      set((s) => ({ orderItems: [...s.orderItems, item] }))
+    }
+    return item
+  },
+
+  updateOrderItem: async (id, data) => {
+    const { data: updated } = await supabase.from('order_items').update(data).eq('id', id).select('*').single()
+    if (!updated) return
+    set((s) => ({
+      orderItems: s.orderItems.map((item) => (item.id === id ? (updated as OrderItem) : item)),
+    }))
+  },
+
+  deleteOrderItem: async (id) => {
+    await supabase.from('order_items').delete().eq('id', id)
+    set((s) => ({
+      orderItems: s.orderItems.filter((item) => item.id !== id),
+    }))
+  },
+
+  confirmOrderList: async (id) => {
+    const { data: updated } = await supabase
+      .from('order_lists')
+      .update({ status: 'confirmed' })
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (!updated) return
+    set((s) => ({
+      orderLists: s.orderLists.map((list) => (list.id === id ? (updated as OrderList) : list)),
+    }))
+  },
+
+  markOrderPlaced: async (id) => {
+    const { data: updated } = await supabase
+      .from('order_lists')
+      .update({ status: 'placed' })
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (!updated) return
+    set((s) => ({
+      orderLists: s.orderLists.map((list) => (list.id === id ? (updated as OrderList) : list)),
     }))
   },
 }))

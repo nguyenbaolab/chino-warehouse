@@ -1,4 +1,5 @@
 import { NavigationContainer } from '@react-navigation/native'
+import { StackActions } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { StatusBar } from 'expo-status-bar'
@@ -11,12 +12,15 @@ import AddInventoryScreen from './screens/AddInventoryScreen'
 import ProductDetailScreen from './screens/ProductDetailScreen'
 import NotificationsScreen from './screens/NotificationsScreen'
 import BarcodeScannerScreen from './screens/BarcodeScannerScreen'
+import OrderListScreen from './screens/OrderListScreen'
+import OrderDetailScreen from './screens/OrderDetailScreen'
 
 const Tab = createBottomTabNavigator()
 const RootStack = createNativeStackNavigator()
 const MapStack = createNativeStackNavigator()
 const ProductsStack = createNativeStackNavigator()
 const NotificationsStack = createNativeStackNavigator()
+const OrdersStack = createNativeStackNavigator()
 const SettingsStack = createNativeStackNavigator()
 
 function MapStackNavigator() {
@@ -49,6 +53,15 @@ function NotificationsStackNavigator() {
   )
 }
 
+function OrdersStackNavigator() {
+  return (
+    <OrdersStack.Navigator screenOptions={{ headerShown: false }}>
+      <OrdersStack.Screen name="OrderListMain" component={OrderListScreen} />
+      <OrdersStack.Screen name="OrderDetail" component={OrderDetailScreen} />
+    </OrdersStack.Navigator>
+  )
+}
+
 function SettingsStackNavigator() {
   return (
     <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
@@ -58,6 +71,21 @@ function SettingsStackNavigator() {
 }
 
 function TabNavigator() {
+  const stackTabPressListener = ({ navigation, route }: any) => ({
+    tabPress: (e: any) => {
+      const state = navigation.getState()
+      const focused = state.routes[state.index]?.key === route.key
+      const nestedState = route.state as any
+      if (focused && nestedState?.index > 0) {
+        e.preventDefault()
+        navigation.dispatch({
+          ...StackActions.popToTop(),
+          target: route.key,
+        })
+      }
+    },
+  })
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -70,16 +98,25 @@ function TabNavigator() {
       <Tab.Screen
         name="Map"
         component={MapStackNavigator}
+        listeners={stackTabPressListener}
         options={{ tabBarLabel: 'Kho', tabBarIcon: () => <Text>🗺️</Text> }}
       />
       <Tab.Screen
         name="Products"
         component={ProductsStackNavigator}
+        listeners={stackTabPressListener}
         options={{ tabBarLabel: 'Sản phẩm', tabBarIcon: () => <Text>📦</Text> }}
+      />
+      <Tab.Screen
+        name="Orders"
+        component={OrdersStackNavigator}
+        listeners={stackTabPressListener}
+        options={{ tabBarLabel: 'Đặt hàng', tabBarIcon: () => <Text>📋</Text> }}
       />
       <Tab.Screen
         name="Notifications"
         component={NotificationsStackNavigator}
+        listeners={stackTabPressListener}
         options={{ tabBarLabel: 'Thông báo', tabBarIcon: () => <Text>🔔</Text> }}
       />
       <Tab.Screen
