@@ -114,3 +114,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `supabase/migrations/20260511_add_product_is_deferred.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `screens/NotificationsScreen.tsx`, `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Pill tồn theo tổng thùng SP; pill hạn theo lô xấu nhất; dòng sắp hết hạn = tổng thùng các lô có hạn warning/expired; BLK-002 đóng bằng cột DB.
 - **Docs đã cập nhật:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Docs — KNOWN_ISSUES: KI-002 Resolved, KI-009 mới
+
+- **Task:** Cập nhật `KNOWN_ISSUES.md`: KI-002 (F17 Realtime) → Resolved với mô tả đã fix; thêm KI-009 (ZoneDetailSheet stale sau khi sửa lô từ ProductDetailScreen, Open).
+- **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+- **Kết quả:** Không đổi code; chỉ đồng bộ tài liệu theo QA / backlog.
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
