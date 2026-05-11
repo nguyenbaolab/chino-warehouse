@@ -2,9 +2,10 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3 | Tháng 5/2026
+**Phiên bản:** 1.3.1 | Tháng 5/2026
 
 > **v1.3** — Cập nhật từ PRD v1.2: sync với các quyết định thiết kế thực tế sau quá trình phát triển Phase 1.
+> **v1.3.1** — Đồng bộ cột **Trạng thái** §6 theo closeout Phase 1 (F15/F18/F27/F28).
 > Xem §11 để biết những thay đổi so với v1.2.
 
 ---
@@ -93,10 +94,10 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F12 | Theo dõi hạn sử dụng | Mỗi lô có hạn riêng. Màu sắc theo §5. Hiển thị xuyên suốt toàn app. | P1 | MVP | Done |
 | F13 | Ghi chú sản phẩm & lô hàng | Ghi chú tự do cho sản phẩm (nhà cung cấp, bảo quản...) và cho từng lô (ngày nhập, tình trạng...). | P1 | MVP | Done |
 | F14 | Thêm sản phẩm mới | Thêm sản phẩm: tên (bắt buộc), mã vạch (tuỳ chọn), ghi chú. | P1 | MVP | Done |
-| F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn sử dụng, ghi chú, **barcode theo lô (optional)** ngay tại AddInventoryScreen. | P1 | MVP | Partial |
+| F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn sử dụng, ghi chú, **barcode theo lô (optional)** ngay tại AddInventoryScreen. | P1 | MVP | Done |
 | F16 | Sửa / Xóa lô hàng | Cập nhật số thùng, hạn, ghi chú. Xóa khi hết hàng. Truy cập từ màn hình chi tiết (F07). | P1 | MVP | Done |
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
-| F18 | Thông báo trong app | Tab Thông báo tách thành 2 tab con **Sắp hết hạn / Sắp hết hàng**. Tab Sắp hết hạn có toggle **Đã giảm giá** theo sản phẩm sắp hết hạn; sản phẩm hết hạn hiển thị đỏ nhạt + nhãn `Hết hạn rồi`, tap mở `ProductDetailScreen`. Tab Sắp hết hàng có nút **Thêm vào danh sách nhập** và **Không nhập nữa**. | P2 | MVP+ | Planned |
+| F18 | Thông báo trong app | Tab Thông báo tách thành 2 tab con **Sắp hết hạn / Sắp hết hàng**. Tab Sắp hết hạn có toggle **Đã giảm giá** theo sản phẩm sắp hết hạn; sản phẩm hết hạn hiển thị đỏ nhạt + nhãn `Hết hạn rồi`, tap mở `ProductDetailScreen`. Tab Sắp hết hàng có nút **Thêm vào danh sách nhập** và **Không nhập nữa**. | P2 | MVP+ | Partial |
 | F19 | Chuyển hàng giữa khu vực | Chuyển hàng từ kho lên siêu thị hoặc giữa các kho: trừ thùng ở nguồn, cộng thùng ở đích. | P2 | Phase 2 | Not started |
 | F20 | Bản đồ nhiều khu vực | Nhiều kho/phòng dưới dạng tab riêng. Cần cho tính năng chuyển hàng (F19). | P2 | Phase 2 | Not started |
 | F21 | Chế độ offline | Lưu dữ liệu cục bộ, queue thay đổi khi mất mạng, tự đồng bộ khi có mạng trở lại. | P3 | Phase 2 | Not started |
@@ -105,8 +106,8 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F24 | Auth & Super app integration | Đăng nhập, tích hợp vào hệ thống app nội bộ lớn hơn (kho, chấm công, chia ca...). Phân quyền chủ/nhân viên. Chi tiết thiết kế khi có yêu cầu cụ thể. | P4 | Phase 3 | Not started |
 | F25 | Báo cáo / Xuất dữ liệu | Xuất dữ liệu tồn kho, lịch sử. | P4 | Phase 3 | Not started |
 | F26 | Kiểm kho | Cho phép nhân viên đối chiếu và cập nhật lại số lượng thực tế trong kho. Chọn zone → đi từng tầng → nhập số thùng đếm được → lưu lại. Có thể hiện diff so với số hiện tại trước khi confirm. | P2 | Phase 2 | Not started |
-| F27 | Tab Đặt hàng | Quản lý danh sách đặt hàng; tự động nhận sản phẩm từ tab Sắp hết hàng; xuất PDF và lưu lịch sử theo từng list. | P1 | Phase 1+ | Not started |
-| F28 | Danh sách không nhập nữa | Mục trong Settings, hiện số lượng sản phẩm không nhập nữa; mở chi tiết gồm tên, tồn kho realtime, lý do (optional); có thể chuyển lại tab Sắp hết hàng. | P1 | Phase 1+ | Not started |
+| F27 | Tab Đặt hàng | Quản lý danh sách đặt hàng; tự động nhận sản phẩm từ tab Sắp hết hàng; xuất PDF và lưu lịch sử theo từng list. | P1 | Phase 1+ | Done |
+| F28 | Danh sách không nhập nữa | Mục trong Settings, hiện số lượng sản phẩm không nhập nữa; mở chi tiết gồm tên, tồn kho realtime, lý do (optional); có thể chuyển lại tab Sắp hết hàng. | P1 | Phase 1+ | Done |
 
 ---
 
@@ -241,8 +242,8 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 
 | Giai đoạn | Phạm vi | Mục tiêu |
 |-----------|---------|----------|
-| **Phase 1 – MVP** | F01–F07, F09–F17 | App dùng được ngay: tìm hàng, quét mã, cập nhật tồn kho |
-| **Phase 1+ – Hoàn thiện** | F18: Thông báo đầy đủ. Fix lỗi. UX polish. | Ổn định để dùng hàng ngày |
+| **Phase 1 – MVP** | F01–F07, F09–F17, F27–F28 (MVP); F18 partial | App dùng được ngay: tìm hàng, quét mã, cập nhật tồn kho; thông báo + đặt hàng + discontinued |
+| **Phase 1+ → Phase 2** | Hoàn thiện F18, PDF & nối list đặt hàng, field lý do discontinued | Ổn định và khép kín nghiệp vụ đã mở |
 | **Phase 2** | F08: Ảnh. F19–F21: Chuyển hàng, nhiều kho, offline. | Hỗ trợ đầy đủ luồng kho → siêu thị |
 | **Phase 3** | F22–F25: Lịch sử, tổng quan, super app + auth, báo cáo. | Quản lý toàn diện |
 

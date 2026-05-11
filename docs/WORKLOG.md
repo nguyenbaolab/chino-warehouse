@@ -275,3 +275,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/SettingsScreen.tsx`, `screens/DiscontinuedProductsScreen.tsx`, `stores/warehouseStore.ts`, `App.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Luồng F28 khép kín từ Cài đặt; đồng bộ `products` + `inventory_entries` qua Realtime (khi Supabase bật replication cho 2 bảng).
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Docs — Tổng kết Phase 1 & chuẩn bị Phase 2
+
+- **Task:** Viết lại `docs/phases/phase-1/PLAN.md` theo trạng thái thực tế (Done / Partial F18 / Deferred F08,F19–F21,F26 / Out of scope F22–F25); tạo `docs/phases/phase-1/SUMMARY.md` (tổng quan, danh sách done & nợ, quyết định, KI, chuyển Phase 2); tạo `docs/phases/phase-2/PLAN.md`, `HANDOFF.md`, `TESTCASES.md` (placeholder); cập nhật `REQUIREMENTS.md` §6 (F15/F18/F27/F28); bump ghi chú phiên bản PRD 1.3.1.
+- **Files thay đổi:** `docs/phases/phase-1/PLAN.md`, `docs/phases/phase-1/SUMMARY.md`, `docs/phases/phase-2/PLAN.md`, `docs/phases/phase-2/HANDOFF.md`, `docs/phases/phase-2/TESTCASES.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`
+- **Kết quả:** Phase 1 được đóng gói tài liệu; Phase 2 có skeleton plan và file handoff/test chờ điền.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`
+
+### Docs — Phase 1 TESTCASES: F10 per lô + F17/F18/F27/F28
+
+- **Task:** Sửa **TC-F10-01/02** theo barcode **per lô** (`inventory_entries.barcode`): quét đúng → highlight zone + thông tin lô; quét sai → dialog thêm thủ công / quét lại. Bổ sung test cases **F17** (Realtime hai thiết bị), **F18** (tab Sắp hết hạn/hết hàng, toggle giảm giá per lô, filter, Không nhập nữa), **F27** (đặt hàng list lifecycle), **F28** (Settings discontinued + Nhập lại). Cập nhật phần mở đầu file test.
+- **Files thay đổi:** `docs/phases/phase-1/TESTCASES.md`, `docs/WORKLOG.md`
+- **Kết quả:** QA có checklist thủ công khớp implementation hiện tại.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`

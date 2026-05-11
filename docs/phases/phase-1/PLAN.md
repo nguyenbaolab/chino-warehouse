@@ -1,30 +1,46 @@
 # Phase 1 — MVP Plan
 
-## Mục tiêu
+## Mục tiêu (đã đạt)
 
-App dùng được ngay trong kho: tìm hàng, quét mã, cập nhật tồn kho.
+App dùng được trong kho: tìm hàng, quét mã (theo lô), cập nhật tồn kho, thông báo cơ bản, đặt hàng dạng list, quản lý “không nhập nữa”.
 
-## Scope
+## Scope theo mã tính năng (REQUIREMENTS §6)
 
-F01–F17 (theo `docs/project/REQUIREMENTS.md`)
+### Done (Phase 1 — hoàn thành thực tế)
 
-## Trạng thái hiện tại
+F01, F02, F03, F04, F05, F06, F07, F09, F10, F11, F12, F13, F14, F15, F16, F17, F27, F28.
 
-- **Done:** F01, F02, F03, F04, F05, F06, F07, F09, F10, F11, F12, F13, F14, F16, F17*
-- **Partial:** F15 (thiếu barcode field ở AddInventory)
-- **Cần verify:** F17 Realtime (xem KI-002 trong `docs/KNOWN_ISSUES.md`)
+### Partial (Phase 1 — còn việc sang Phase 2)
 
-## Phase 1+ (sau MVP)
+- **F18** — `NotificationsScreen`: đã có 2 tab **Sắp hết hạn / Sắp hết hàng**, toggle giảm giá theo lô, discontinued, v.v.; **chưa polish hoàn toàn**, logic hiển thị còn một số edge case (tiếp tục Phase 2).
 
-F18: Tab Thông báo đầy đủ (cảnh báo tồn + hạn)
+### Deferred sang Phase 2 (không giao trong Phase 1)
 
-## TODO còn lại (theo thứ tự ưu tiên)
+- **F08** — Hình ảnh sản phẩm (Storage).
+- **F19** — Chuyển hàng giữa khu vực.
+- **F20** — Bản đồ / nhiều khu vực (multi-kho).
+- **F21** — Chế độ offline.
+- **F26** — Kiểm kho.
 
-1. Bỏ UI `low_critical_boxes`, hardcode = 1
-2. Bottom tab bar cho màn hình stack
-3. Barcode field ở `AddInventoryScreen`
-4. Verify F17 Realtime
-5. Fix KI-003: tab bar theo themeStore
-6. Fix KI-004: đổi kho xóa search (Deferred — xem `docs/KNOWN_ISSUES.md` KI-004)
+### Out of scope Phase 1 (theo lộ trình PRD)
 
-**Đã làm (UI, tháng 5/2026):** `NotificationsScreen` card §7.6 (tổng + thùng có vấn đề); `ProductsScreen` + `ProductDetailScreen` tổng thùng + toggle **Có vấn đề**.
+- **F22–F25** — Lịch sử, dashboard, auth/super app, báo cáo xuất dữ liệu (Phase 3+).
+
+---
+
+## Việc chưa hoàn thiện trong Phase 1 → tiếp tục Phase 2
+
+| Hạng mục | Mô tả ngắn |
+|----------|------------|
+| **NotificationsScreen (F18)** | Chưa polish hoàn toàn; một số edge case trong logic hiển thị / lọc card. |
+| **Tab Đặt hàng (F27)** | Chưa **xuất PDF** (nút placeholder). Nút **Thêm vào danh sách nhập** từ tab **Sắp hết hàng** chưa kết nối với list đặt hàng. |
+| **Không nhập nữa (F28)** | Chưa có **field lý do riêng** trên DB/UI; đang dùng tạm `products.notes` cho dòng lý do trên màn discontinued. |
+| **Barcode (BLK-001 / edge cases)** | Barcode **per lô** đã triển khai; **chờ xác nhận từ chủ cửa hàng** về edge cases vận hành (quét trùng, đổi mã, v.v.) trước khi coi là “đóng hẳn” mọi kịch bản. |
+
+Chi tiết test và handoff kỹ thuật: `docs/phases/phase-1/HANDOFF.md`, `docs/phases/phase-1/TESTCASES.md`.
+
+---
+
+## Tổng kết giai đoạn
+
+Phase 1 coi như **đóng scope MVP**: luồng kho chính, thông báo 2 tab, đặt hàng list, discontinued + Settings. Bản tổng hợp kết quả và quyết định: **`docs/phases/phase-1/SUMMARY.md`**. Kế hoạch tiếp theo: **`docs/phases/phase-2/PLAN.md`**.
