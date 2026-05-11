@@ -303,3 +303,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/phases/phase-1/USER_GUIDE.md`, `docs/WORKLOG.md`
 - **Kết quả:** Người đọc không kỳ vọng sai về nút placeholder.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`
+
+### Docs — BLK-001 Closed hoàn toàn
+
+- **Task:** Cập nhật `docs/BLOCKERS.md`: BLK-001 đóng hẳn — ghi nhận trùng barcode 2 lô (hiện cả 2 zone), đổi nhãn lô = 2 lô khác nhau, lô không barcode (nhập tay), và kết luận không còn edge case cần xử lý thêm trong phạm vi blocker.
+- **Files thay đổi:** `docs/BLOCKERS.md`, `docs/WORKLOG.md`
+- **Kết quả:** Tài liệu blocker đồng bộ với xác nhận nghiệp vụ; tách rõ optional Phase 2 (multi-barcode) khỏi BLK-001.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`
