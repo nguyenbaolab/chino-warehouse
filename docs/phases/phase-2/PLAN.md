@@ -19,7 +19,8 @@
 |----|----------|
 | **F08** | Hình ảnh sản phẩm (chụp/chọn, Supabase Storage). |
 | **F19** | Chuyển hàng giữa khu vực (trừ nguồn, cộng đích). |
-| **F20** | Bản đồ nhiều khu vực / multi-kho (kèm điều kiện cho F19). |
+| **F20** | Multi-kho: dropdown selector trên MapScreen, tạo/sửa/xóa kho, grid size per location (configurable), dropdown lọc theo kho trên Products/Notifications/Orders, fix KI-004. |
+| **F29** | Zone Layout Editor: compact tile editor, footprint preview, collision check theo tọa độ thật, confirm → lưu. |
 | **F21** | Chế độ offline (cache, queue, đồng bộ lại). |
 | **F26** | Kiểm kho (đối chiếu thực tế theo zone/tầng, diff, confirm). |
 

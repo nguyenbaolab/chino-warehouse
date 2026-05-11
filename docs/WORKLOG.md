@@ -4,6 +4,19 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Cập nhật tài liệu Phase 2: multi-kho + zone editor
+
+**Task:** Update docs trước khi implement Phase 2 features mới.
+
+**Thay đổi:**
+- REQUIREMENTS.md: mở rộng mô tả F20 (multi-kho + grid size configurable), thêm F29 (Zone Layout Editor), thêm grid_rows/grid_cols vào data model §8.1, cập nhật §9 màn hình.
+- DECISIONS.md: thêm 4 quyết định mới — multi-kho products global, grid size per location, xóa kho block nếu còn hàng, zone move dùng Compact Layout Editor (F29).
+- PLAN.md: cập nhật scope F20, thêm F29 vào danh sách tính năng Phase 2.
+
+**Trạng thái:** Done — chờ implement.
+
+---
+
 ## Tháng 5/2026 — Hệ thống tài liệu & màu sắc
 
 ### Màu sắc (TODO #1 — Done)

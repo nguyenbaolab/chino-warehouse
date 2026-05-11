@@ -182,3 +182,39 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
   - Gõ tên: tìm theo **sản phẩm**, highlight tất cả zone có sản phẩm đó.
   - Quét barcode: tìm theo **lô**, highlight zone chứa đúng lô đó và hiện thông tin lô tương ứng.
 - **UI liên quan:** `ProductDetailScreen` thêm field barcode trên card lô; `AddInventoryScreen` dùng barcode per lô; `BarcodeScanner` bỏ `assign` mode.
+
+---
+
+### Multi-kho: products global, filter per screen
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Tab Sản phẩm, Thông báo, Đặt hàng hiện toàn bộ sản phẩm của tất cả kho. Thêm dropdown lọc theo kho trên từng màn hình — không chọn = hiện full. MapScreen chỉ hiện zones của kho đang được chọn trong selector.
+- **Lý do:** Sản phẩm là global (cùng SKU có thể ở nhiều kho); chỉ inventory mới gắn với kho cụ thể. Lọc theo kho là optional, không bắt buộc.
+- **Thay thế đã xem xét:** Mỗi tab lọc cứng theo kho đang chọn trên Map — từ chối, gây mất thông tin tổng quan.
+
+---
+
+### Grid size: per location, configurable
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Lưu `grid_rows` và `grid_cols` trên bảng `locations` (default 6×6). Hỏi khi tạo kho mới, cho đổi lại sau. Tăng kích thước: thoải mái. Giảm kích thước: block nếu có zone nào bị cắt ra ngoài (tọa độ cells vượt quá grid mới).
+- **Lý do:** Mỗi kho có layout vật lý khác nhau, không nên dùng chung một kích thước cố định.
+- **Thay thế đã xem xét:** Grid size global toàn app — từ chối.
+
+---
+
+### Xóa kho: block nếu còn hàng
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Trước khi xóa một location, kiểm tra toàn bộ inventory_entries trong tất cả zones thuộc location đó. Nếu có bất kỳ lô nào còn tồn tại trong DB (kể cả quantity_boxes = 0 chưa được xóa thủ công) → block xóa và hiện thông báo rõ lý do.
+- **Lý do:** Tránh mất dữ liệu tồn kho, nhất quán với quy tắc xóa zone (§7.1 REQUIREMENTS).
+- **Thay thế đã xem xét:** Xóa cascade toàn bộ — từ chối.
+
+---
+
+### Zone move: Compact Layout Editor (F29)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Dùng màn hình Layout Editor riêng biệt thay vì drag trực tiếp trên map chính. Mỗi zone hiển thị dưới dạng tile nhỏ cố định (không phụ thuộc kích thước thật) kèm badge kích thước. Kéo tile vào grid → collision check theo tọa độ thật, không phải theo tile. Có nút Preview trước khi Confirm.
+- **Lý do:** Map chính khi kho đầy không còn chỗ trống để kéo thả zone kích thước thật — gây khó thao tác.
+- **Thay thế đã xem xét:** Drag zone kích thước thật trên map (Option A) — từ chối vì cramped; Swap 2 zone (Option C) — từ chối vì không đủ linh hoạt khi zone kích thước khác nhau; Zoom out + drag (Option E) — từ chối vì touch target quá nhỏ.
