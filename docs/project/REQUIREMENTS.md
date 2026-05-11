@@ -96,7 +96,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn sử dụng, ghi chú, **barcode theo lô (optional)** ngay tại AddInventoryScreen. | P1 | MVP | Partial |
 | F16 | Sửa / Xóa lô hàng | Cập nhật số thùng, hạn, ghi chú. Xóa khi hết hàng. Truy cập từ màn hình chi tiết (F07). | P1 | MVP | Done |
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
-| F18 | Thông báo trong app | Tab Thông báo có 2 tab con **Có vấn đề / Để sau**. Card theo sản phẩm: dòng tổng thùng + dòng thùng sắp hết hạn; pill tồn theo tổng thùng sản phẩm, pill hạn theo lô xấu nhất. Đánh dấu Để sau theo sản phẩm (`products.is_deferred`). | P2 | MVP+ | Done |
+| F18 | Thông báo trong app | Tab Thông báo tách thành 2 tab con **Sắp hết hạn / Sắp hết hàng**. Tab Sắp hết hạn có toggle **Đã giảm giá** theo sản phẩm sắp hết hạn; sản phẩm hết hạn hiển thị đỏ nhạt + nhãn `Hết hạn rồi`, tap mở `ProductDetailScreen`. Tab Sắp hết hàng có nút **Thêm vào danh sách nhập** và **Không nhập nữa**. | P2 | MVP+ | Planned |
 | F19 | Chuyển hàng giữa khu vực | Chuyển hàng từ kho lên siêu thị hoặc giữa các kho: trừ thùng ở nguồn, cộng thùng ở đích. | P2 | Phase 2 | Not started |
 | F20 | Bản đồ nhiều khu vực | Nhiều kho/phòng dưới dạng tab riêng. Cần cho tính năng chuyển hàng (F19). | P2 | Phase 2 | Not started |
 | F21 | Chế độ offline | Lưu dữ liệu cục bộ, queue thay đổi khi mất mạng, tự đồng bộ khi có mạng trở lại. | P3 | Phase 2 | Not started |
@@ -105,6 +105,8 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F24 | Auth & Super app integration | Đăng nhập, tích hợp vào hệ thống app nội bộ lớn hơn (kho, chấm công, chia ca...). Phân quyền chủ/nhân viên. Chi tiết thiết kế khi có yêu cầu cụ thể. | P4 | Phase 3 | Not started |
 | F25 | Báo cáo / Xuất dữ liệu | Xuất dữ liệu tồn kho, lịch sử. | P4 | Phase 3 | Not started |
 | F26 | Kiểm kho | Cho phép nhân viên đối chiếu và cập nhật lại số lượng thực tế trong kho. Chọn zone → đi từng tầng → nhập số thùng đếm được → lưu lại. Có thể hiện diff so với số hiện tại trước khi confirm. | P2 | Phase 2 | Not started |
+| F27 | Tab Đặt hàng | Quản lý danh sách đặt hàng; tự động nhận sản phẩm từ tab Sắp hết hàng; xuất PDF và lưu lịch sử theo từng list. | P1 | Phase 1+ | Not started |
+| F28 | Danh sách không nhập nữa | Mục trong Settings, hiện số lượng sản phẩm không nhập nữa; mở chi tiết gồm tên, tồn kho realtime, lý do (optional); có thể chuyển lại tab Sắp hết hàng. | P1 | Phase 1+ | Not started |
 
 ---
 
@@ -141,14 +143,15 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 - 0–1 thùng: luôn đỏ, không configurable.
 
 ### 7.6 Thông báo
-- Tab Thông báo có 2 tab con: **Có vấn đề** và **Để sau**.
-- Đánh dấu **Để sau** áp dụng theo sản phẩm, không theo từng lô.
-- Mỗi card thông báo hiện:
-  - Dòng 1: `Còn ... thùng` (tổng tất cả lô của sản phẩm).
-  - Dòng 2: `Số thùng sắp hết hạn: ... thùng` (tổng thùng của các lô vàng/đỏ theo hạn).
-  - Pill tồn kho: theo tổng thùng sản phẩm.
-  - Pill hạn sử dụng: theo lô xấu nhất.
-- Tap vào card → mở màn hình chi tiết sản phẩm.
+- Tab Thông báo tách thành 2 tab: **Sắp hết hạn** và **Sắp hết hàng**.
+- Tab **Sắp hết hạn**:
+  - Sản phẩm sắp hết hạn có toggle **Đã giảm giá**.
+  - Sản phẩm đã hết hạn hiển thị nền đỏ nhạt + nhãn `Hết hạn rồi`.
+  - Tap card mở `ProductDetailScreen`.
+- Tab **Sắp hết hàng**:
+  - Card sản phẩm có nút **Thêm vào danh sách nhập**.
+  - Có nút **Không nhập nữa** để chuyển sang danh sách không nhập nữa trong Settings.
+- Không còn tab **Để sau** trong UI.
 
 ---
 
@@ -196,6 +199,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | quantity_boxes | Integer | Số thùng nguyên |
 | barcode | String | Mã vạch của lô (optional) |
 | expiry_date | Date | Hạn sử dụng của lô này |
+| is_expired_acknowledged | Boolean | Đã đánh dấu giảm giá cho lô/sản phẩm hết hạn hay chưa |
 | notes | String | Ghi chú lô hàng |
 | updated_at | Timestamp | Tự cập nhật |
 
@@ -209,10 +213,11 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng (nếu có) · Danh sách sản phẩm + số thùng + chấm màu |
 | Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Mã vạch · Ảnh (Phase 2) · Tất cả zone+tầng · Số thùng · Hạn (màu) · Ghi chú · Nút sửa/xóa · Ngưỡng cảnh báo |
 | Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Danh sách tất cả sản phẩm · Tổng thùng · Chấm màu · Tìm kiếm · Toggle lọc có vấn đề · Thêm mới |
+| Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách tất cả list (đang soạn / đã confirm / đã đặt hàng) · card từng list · sản phẩm tự động từ Sắp hết hàng + sản phẩm thêm tay (⭐) · cảnh báo khi thêm tên chưa có trong kho · cộng dồn nếu trùng sản phẩm trong list đang soạn · nút Confirm (khóa tạm) · nút Đã đặt hàng (khóa hẳn, có mở lại) · nút Xuất PDF riêng |
 | Thêm hàng (Stack) | Thêm lô hàng | Chọn sản phẩm · Zone · Tầng · Số thùng · Hạn · Ghi chú |
-| Thông báo (Tab) | Cảnh báo tồn kho & hạn | Card mỗi sản phẩm có vấn đề: tên + tổng thùng + thùng có vấn đề |
+| Thông báo (Tab) | Cảnh báo tồn kho & hạn | 2 tab con Sắp hết hạn / Sắp hết hàng · Sắp hết hạn: toggle Đã giảm giá, thẻ hết hạn nền đỏ nhạt + nhãn Hết hạn rồi · Sắp hết hàng: nút Thêm vào danh sách nhập + Không nhập nữa |
 | Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả quét · Nút thêm thủ công nếu không nhận ra |
-| Cài đặt (Tab) | Tuỳ chỉnh app | Theme sáng/tối |
+| Cài đặt (Tab) | Tuỳ chỉnh app | Theme sáng/tối · card vào danh sách Không nhập nữa (F28) |
 
 ---
 

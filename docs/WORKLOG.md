@@ -205,3 +205,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
 - **Kết quả:** Đánh dấu KI-009 không còn liên quan do đã bỏ nút `i` điều hướng từ `ZoneDetailSheet` sang `ProductDetailScreen`; stale data không còn ảnh hưởng UX theo phạm vi hiện tại.
 - **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+
+### Docs lớn — định hướng mới Notifications + Tab Đặt hàng + Không nhập nữa
+
+- **Task:** Cập nhật tài liệu yêu cầu/thiết kế cho thay đổi lớn nhiều màn hình: thêm tab Đặt hàng (F27), thêm danh sách Không nhập nữa trong Settings (F28), restructure F18 (Sắp hết hạn / Sắp hết hàng, bỏ Để sau), bổ sung trường dữ liệu `is_expired_acknowledged`, và cập nhật quyết định `is_deferred` không còn dùng trong UI.
+- **Files thay đổi:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Tài liệu đã đồng bộ theo scope mới; chưa thay đổi code implement (trạng thái các feature mới: planned/not started).
+- **Docs đã cập nhật:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

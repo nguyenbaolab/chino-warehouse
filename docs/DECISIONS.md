@@ -112,6 +112,7 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Luồng:** Tab Có vấn đề hiển thị danh sách sản phẩm có vấn đề; mỗi card có nút **Để sau**. Tab Để sau hiển thị sản phẩm đã đánh dấu và cho phép chuyển lại Có vấn đề.
 - **Phạm vi đánh dấu:** Đánh dấu **theo sản phẩm**, không theo lô.
 - **Lý do:** Giảm nhiễu thông báo và cho phép xử lý theo thứ tự ưu tiên.
+- **Cập nhật sau này:** Quyết định này không còn dùng trong UI hiện tại do Notifications được restructure thành **Sắp hết hạn / Sắp hết hàng**.
 
 ---
 
@@ -121,6 +122,46 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quyết định:** Lưu cờ **Để sau** bằng cột **`is_deferred BOOLEAN NOT NULL DEFAULT false`** trên bảng **`products`** (migration `20260511_add_product_is_deferred.sql`). App cập nhật qua Supabase và `warehouseStore.toggleDeferred`.
 - **Lý do:** Đồng bộ đa thiết bị, không phụ thuộc state cục bộ Zustand; một sản phẩm — một cờ.
 - **Thay thế đã xem xét:** Chỉ lưu local Zustand — từ chối cho Phase 1+ thông báo.
+- **Cập nhật sau này:** Sau khi bỏ tab **Để sau**, cột `is_deferred` vẫn giữ trong DB để tương thích dữ liệu cũ, nhưng **không còn dùng trong UI**.
+
+---
+
+### Restructure NotificationsScreen
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Tách Notifications thành 2 tab: **Sắp hết hạn** và **Sắp hết hàng**.
+- **Quyết định bổ sung:** Bỏ tab **Để sau** và thay bằng luồng xử lý trực tiếp trên từng card.
+- **Sắp hết hạn:** Card sản phẩm sắp hết hạn có toggle **Đã giảm giá** theo sản phẩm/lô; card đã hết hạn hiển thị đỏ nhạt, nhãn `Hết hạn rồi`, bấm vào mở `ProductDetailScreen`.
+- **Sắp hết hàng:** Card sản phẩm có 2 hành động chính: thêm vào danh sách đặt hàng hoặc đánh dấu không nhập nữa.
+- **Lý do:** Luồng thao tác ngắn hơn, bám đúng nghiệp vụ vận hành hàng ngày.
+
+---
+
+### Tab Đặt hàng — danh sách nhập hàng
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Thêm tab **Đặt hàng** giữa tab Sản phẩm và Thông báo.
+- **Luồng:** Một tab quản lý nhiều list độc lập, mỗi list có 3 trạng thái: **Đang soạn → Đã confirm → Đã đặt hàng**.
+- **Quy tắc list:** Sản phẩm thêm tay được đánh dấu ⭐; sản phẩm tự động từ kho không đánh dấu; cùng sản phẩm trong list đang soạn thì cộng dồn.
+- **Hành động:** Mỗi list có nút Confirm (khóa tạm), nút Đã đặt hàng (khóa hẳn, có mở lại), và nút xuất PDF riêng.
+- **Lý do:** Tách rõ luồng chuẩn bị đơn nhập, xác nhận nội bộ, và xác nhận đã đặt nhà cung cấp.
+
+---
+
+### Sản phẩm không nhập nữa
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Lưu sản phẩm không nhập nữa bằng cờ DB `is_discontinued`.
+- **UI:** Hiển thị trong Settings với card tổng số lượng; màn chi tiết hiển thị tên, tồn kho thực tế realtime, lý do (optional); cho phép chuyển lại luồng Sắp hết hàng.
+- **Lý do:** Giảm nhiễu cảnh báo sắp hết hàng cho các mặt hàng không còn kế hoạch nhập.
+
+---
+
+### ProductDetailScreen — lô hết hạn
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Lô hết hạn hiển thị banner `Lô này đã hết hạn [Xóa lô]`, cùng pattern với lô hết hàng nhưng đổi text theo ngữ nghĩa hạn sử dụng.
+- **Lý do:** Đồng nhất UX thao tác dọn lô không còn giá trị kinh doanh.
 
 ---
 

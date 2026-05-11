@@ -64,6 +64,22 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 3. `ProductsScreen`: nhập text bất kỳ rồi bấm `✕` -> text mất ngay, danh sách quay về trạng thái lọc ban đầu (theo zone/filter hiện tại).
 4. `ProductsScreen`: sau scan barcode theo lô, bấm `✕` -> bỏ trạng thái highlight “kết quả quét barcode theo lô”.
 
+## Cập nhật docs lớn — chuẩn bị scope tiếp theo (chưa implement code)
+
+- `REQUIREMENTS.md` đã bổ sung định hướng mới:
+  - Thêm tab **Đặt hàng** (F27) giữa Sản phẩm và Thông báo.
+  - Thêm luồng **Không nhập nữa** trong Settings (F28).
+  - Cập nhật F18: Notifications tách **Sắp hết hạn / Sắp hết hàng**, bỏ **Để sau**.
+  - Bổ sung trường dữ liệu `inventory_entries.is_expired_acknowledged`.
+- `DECISIONS.md` đã ghi nhận các quyết định mới:
+  - Restructure Notifications theo 2 tab mới.
+  - Quyết định tab Đặt hàng (3 trạng thái list, xuất PDF, đánh dấu ⭐ sản phẩm thêm tay).
+  - Quyết định sản phẩm không nhập nữa (`is_discontinued`, tồn kho realtime trong Settings).
+  - Quyết định hiển thị lô hết hạn: `Lô này đã hết hạn [Xóa lô]`.
+  - Cập nhật `is_deferred`: giữ DB nhưng không dùng trong UI mới.
+
+**Test QA cho đợt này:** Không có test runtime vì đây là cập nhật docs/định hướng, chưa có thay đổi code.
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng
