@@ -255,6 +255,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Kết quả:** Hành vi card lô đồng nhất, không còn phân biệt điều hướng giữa 2 loại lô theo hạn.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`
 
+### OrderDetail / OrderList — đổi tên list, xóa list, card item 2 dòng + inline edit
+
+- **Task:** `OrderDetailScreen`: list **draft** — bấm tiêu đề → `TextInput`, lưu khi blur / Done; nút **Xóa list** + `Alert` xác nhận (2 dòng copy theo spec), confirm gọi `deleteOrderList` rồi `navigate('OrderListMain')`; card item 2 dòng (⭐ + tên | dòng 2: số thùng | ghi chú | Xóa), bấm dòng mở chỉnh sửa inline (lưu blur / Done / bấm lại dòng). `OrderListScreen`: `useFocusEffect` refetch `fetchOrderLists` khi màn focus.
+- **Files thay đổi:** `screens/OrderDetailScreen.tsx`, `screens/OrderListScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Không đổi schema/store API; xóa list vẫn dùng `deleteOrderList` (đã xóa items + list trên DB và store).
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
 ### Navigation + tab Đặt hàng + order list workflow
 
 - **Task:** `App.tsx` thêm tab **Đặt hàng** (giữa Sản phẩm và Thông báo), thêm stack riêng `OrderListMain` / `OrderDetail`, và bật hành vi `tabPress` popToTop khi bấm lại tab đang mở từ màn con; tạo `OrderListScreen` + `OrderDetailScreen`; bổ sung store actions cho `order_lists`/`order_items`; thêm migration tạo 2 bảng mới.

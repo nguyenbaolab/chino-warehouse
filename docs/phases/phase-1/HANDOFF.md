@@ -154,6 +154,23 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
    - tick `Hết hạn` chỉ hiện lô hết hạn,
    - tick `Sắp hết hạn` chỉ hiện lô sắp hết hạn.
 
+## Task mới — OrderDetail: đổi tên / xóa list (draft) + card item 2 dòng
+
+- `OrderDetailScreen` (list **draft**):
+  - Bấm **tiêu đề** → nhập tên trong field; **blur** hoặc phím **Done** → lưu `updateOrderList` (tên rỗng thì giữ tên cũ).
+  - Nút **Xóa list** (chỉ draft): `Alert` title `Bạn có chắc muốn xóa danh sách này không?`, message `Hành động này không thể hoàn tác.` → **Xóa** gọi `deleteOrderList` → `navigation.navigate('OrderListMain')`.
+  - Card item: dòng 1 `⭐` (nếu `is_manual`) + tên; dòng 2 `số thùng | ghi chú | Xóa`. Bấm vùng dòng 1 hoặc khối số/ghi chú (không bấm **Xóa**) → mở chỉnh inline; blur field (hoặc Done trên ghi chú, hoặc bấm lại cùng card) → lưu `updateOrderItem`.
+- `OrderListScreen`: `useFocusEffect` gọi `fetchOrderLists` mỗi khi màn danh sách được focus (ví dụ sau khi xóa list từ detail).
+
+**Test QA:**
+
+1. Tạo list draft → vào detail: bấm tiêu đề → đổi tên → blur / Done → quay list thấy tên mới (hoặc pull focus list).
+2. List **confirmed/placed**: tiêu đề không mở input; không có nút **Xóa list**.
+3. Draft: **Xóa list** → đọc đúng 2 dòng confirm → **Huỷ** không đổi DB; **Xóa** → về `OrderListMain`, card list biến mất, items không còn.
+4. Card item: manual có ⭐ trước tên; dòng 2 đúng format `N | ghi chú | Xóa`; bấm dòng → nhập số/ghi chú → blur → reload/đi chỗ khác vẫn giữ.
+5. Bấm **Xóa** trên dòng item (không mở edit) → item mất ngay.
+6. Tab Đặt hàng: rời detail về list (back hoặc sau xóa) → danh sách refetch (kiểm tra nhanh bằng thay đổi từ thiết bị khác nếu có).
+
 ## Task mới — Tab Đặt hàng + popToTop tab bar
 
 - `App.tsx`:

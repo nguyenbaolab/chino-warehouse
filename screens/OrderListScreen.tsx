@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useCallback } from 'react'
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { OrderListStatus } from '../types'
@@ -16,9 +16,11 @@ export default function OrderListScreen() {
   const { colors } = useThemeStore()
   const { orderLists, orderItems, fetchOrderLists, createOrderList } = useWarehouseStore()
 
-  useEffect(() => {
-    void fetchOrderLists()
-  }, [fetchOrderLists])
+  useFocusEffect(
+    useCallback(() => {
+      void fetchOrderLists()
+    }, [fetchOrderLists])
+  )
 
   async function handleCreateList() {
     const created = await createOrderList(`List ${new Date().toLocaleDateString('vi-VN')}`)
