@@ -60,6 +60,7 @@ export default function NotificationsScreen() {
 
       let totalBoxes = 0
       let issueBoxes = 0
+      let hasIssueEntry = false
       let worstStatus: CombinedStatus = 'ok'
       let worstRank = 99
 
@@ -78,11 +79,12 @@ export default function NotificationsScreen() {
           worstStatus = status
         }
         if (lotHasIssueStatus(status)) {
+          hasIssueEntry = true
           issueBoxes += entry.quantity_boxes
         }
       }
 
-      if (issueBoxes === 0) continue
+      if (!hasIssueEntry) continue
 
       let stockRedKind: 'het_hang' | 'con_rat_it' | null = null
       let hasStockYellow = false

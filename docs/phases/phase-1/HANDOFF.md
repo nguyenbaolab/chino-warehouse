@@ -70,19 +70,20 @@ Xem `docs/KNOWN_ISSUES.md` (KI-005 Resolved): race `fetchProducts` trên `AddInv
 
 ---
 
-## Known issues mở (0 thùng) — xem `docs/KNOWN_ISSUES.md`
+## Đã fix — KI-006 / KI-007 (lô 0 thùng)
 
-### [KI-006] ProductDetail — không sửa số thùng về 0
+**Thay đổi code:** `stores/warehouseStore.ts` — bỏ `.gt('quantity_boxes', 0)` trên `fetchInventoryByZone` và `searchProducts`. `screens/ProductDetailScreen.tsx` — tải mọi lô; validation lưu số thùng ≥ 0; lô 0 thùng: một hàng **Lô này đã hết hàng** + **Xóa lô** (gọi `deleteInventoryEntry`); giữ zone / hạn / ghi chú; ẩn nút 🗑️ cạnh lô khi 0 thùng (chỉ dùng **Xóa lô**). `screens/NotificationsScreen.tsx` — vẫn hiện card khi có lô combined ≠ ok dù tổng “thùng có vấn đề” = 0. `ZoneDetailSheet` không có lọc ẩn cục bộ — danh sách đồng bộ theo store sau fix.
 
-- **Test / tái hiện:** Từ chi tiết SP, sửa lô inline, nhập **0** thùng — vẫn bị validation chặn (trong khi sheet zone đã cho nhập 0).
-- **Hướng QA:** Sau khi DEV sửa, xác nhận lưu 0 từ chi tiết và chấm màu / thông báo vẫn nhất quán.
+**Test QA:**
 
-### [KI-007] Lô 0 thùng biến mất khỏi app
+1. **ZoneDetailSheet:** Mở một zone có lô, sửa số thùng về **0**, Lưu — lô vẫn hiện trong danh sách tầng (0 thùng, hạn như cũ).
+2. **ProductDetailScreen:** Mở cùng sản phẩm — thấy lô 0 thùng; trên cùng thẻ lô có dòng **Lô này đã hết hàng** và **Xóa lô**; zone / tầng / hạn / ghi chú vẫn đúng.
+3. **ProductDetailScreen:** Sửa lô inline, nhập **0**, Lưu — thành công; banner hết hàng xuất hiện.
+4. **Map / tìm kiếm:** Tìm tên SP chỉ còn lô 0 thùng — vẫn có kết quả và highlight zone (nếu có).
+5. **Xóa lô:** Bấm **Xóa lô** trên lô 0 thùng — xác nhận — record biến mất khỏi DB và UI.
+6. **Thông báo:** Sản phẩm chỉ còn các lô 0 thùng (combined ≠ ok) — card vẫn xuất hiện, pill **Hết hàng** (tổng 0 thùng | 0 thùng có vấn đề vẫn hợp lệ).
 
-- **Test / tái hiện:** Trong `ZoneDetailSheet`, đổi lô về **0** thùng và lưu — lô không còn trong danh sách / map (cần quyết định business: giữ dòng lô 0 vs xóa record vs trigger xóa ở store).
-- **Hướng QA:** Thống nhất PRD với DEV (giữ lô “hết hàng” hay coi như xóa lô); retest Thông báo / bản đồ sau fix.
-
-**Ghi chú:** Mục Resolved cũ về TypeError `.has` trên ProductsScreen hiện mang mã **KI-008** trong `KNOWN_ISSUES.md` (trước đây ghi KI-006).
+**Ghi chú:** KI-006 (validation 0 thùng ở chi tiết SP) và KI-007 được đóng trong cùng lượt — xem `docs/KNOWN_ISSUES.md`. Mục Resolved cũ TypeError `.has` trên ProductsScreen là **KI-008**.
 
 ---
 

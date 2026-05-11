@@ -94,3 +94,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/project/CONTEXT.md`, `docs/WORKLOG.md`
 - **Kết quả:** CONTEXT khớp với quyết định mới trong docs và kiến trúc route hiện tại.
 - **Docs đã cập nhật:** `docs/project/CONTEXT.md`, `docs/WORKLOG.md`
+
+### KI-007 (+ KI-006) — Giữ lô 0 thùng trong app và DB; chi tiết SP
+
+- **Task:** Fix KI-007: lô `quantity_boxes = 0` không còn “biến mất” khỏi danh sách; fix KI-006: cho phép lưu 0 thùng từ `ProductDetailScreen`.
+- **Files thay đổi:** `stores/warehouseStore.ts` (`fetchInventoryByZone`, `searchProducts`), `screens/ProductDetailScreen.tsx`, `screens/NotificationsScreen.tsx` (bỏ điều kiện `issueBoxes === 0` khi vẫn có lô combined ≠ ok), `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Không còn lọc `quantity_boxes > 0` trên các truy vấn đó; lô 0 thùng có banner **Lô này đã hết hàng** + **Xóa lô** (xóa record); `deleteZone` vẫn chỉ chặn khi còn lô có `quantity_boxes > 0`. Không đổi schema — không migration mới.
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

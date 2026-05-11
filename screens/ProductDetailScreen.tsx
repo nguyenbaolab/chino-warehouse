@@ -89,8 +89,7 @@ export default function ProductDetailScreen() {
       supabase
         .from('inventory_entries')
         .select('*, zone:zones(*)')
-        .eq('product_id', productId)
-        .gt('quantity_boxes', 0),
+        .eq('product_id', productId),
     ])
     setProduct(productData ?? null)
     setLots((lotData as InventoryEntry[]) ?? [])
@@ -126,8 +125,8 @@ export default function ProductDetailScreen() {
 
   async function handleSaveLot(lot: InventoryEntry) {
     const quantity = Number(editQuantity)
-    if (!Number.isFinite(quantity) || quantity < 1) {
-      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải lớn hơn hoặc bằng 1.')
+    if (!Number.isFinite(quantity) || quantity < 0 || quantity !== Math.floor(quantity)) {
+      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn hoặc bằng 0.')
       return
     }
     if (!isValidIsoDate(editExpiryDate)) {
@@ -382,6 +381,14 @@ export default function ProductDetailScreen() {
             const zone = lot.zone as Zone | undefined
             return (
               <View key={lot.id} style={[styles.lotWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {lot.quantity_boxes === 0 && (
+                  <View style={[styles.depletedRow, { borderBottomColor: colors.border }]}>
+                    <Text style={[styles.depletedLabel, { color: colors.sub }]}>Lô này đã hết hàng</Text>
+                    <TouchableOpacity onPress={() => handleDeleteLot(lot)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Text style={[styles.deleteLotLink, { color: colors.statusCritical }]}>Xóa lô</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
                 <View style={styles.lotRow}>
                   <View style={styles.lotMain}>
                     <Text style={[styles.lotTitle, { color: colors.text }]}>
@@ -406,12 +413,14 @@ export default function ProductDetailScreen() {
                     >
                       <Text style={styles.deleteBtnText}>→</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.deleteBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                      onPress={() => handleDeleteLot(lot)}
-                    >
-                      <Text style={styles.deleteBtnText}>🗑️</Text>
-                    </TouchableOpacity>
+                    {lot.quantity_boxes > 0 && (
+                      <TouchableOpacity
+                        style={[styles.deleteBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                        onPress={() => handleDeleteLot(lot)}
+                      >
+                        <Text style={styles.deleteBtnText}>🗑️</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
 
@@ -599,6 +608,16 @@ const styles = StyleSheet.create({
   addLotBtn: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginBottom: 14 },
   addLotBtnText: { fontWeight: '700' },
   lotWrap: { borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 10 },
+  depletedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  depletedLabel: { flex: 1, fontSize: 13, marginRight: 8 },
+  deleteLotLink: { fontSize: 13, fontWeight: '700' },
   lotRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   lotMain: { flex: 1, marginRight: 8 },
   lotTitle: { fontSize: 14, fontWeight: '700' },

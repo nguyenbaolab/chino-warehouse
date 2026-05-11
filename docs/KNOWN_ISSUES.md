@@ -65,17 +65,19 @@
 - **Mức độ:** Medium
 - **File liên quan:** `screens/ProductDetailScreen.tsx`
 - **Mô tả:** Đã fix được nhập 0 ở `ZoneDetailSheet` nhưng `ProductDetailScreen` vẫn chặn giá trị 0.
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** `handleSaveLot` chấp nhận số nguyên `quantity_boxes >= 0` (đồng bộ với `ZoneDetailSheet`); `loadData` không còn lọc `.gt('quantity_boxes', 0)` (xem KI-007).
 
 ---
 
 ### [KI-007] Lô 0 thùng bị xóa khỏi app thay vì giữ lại
 
 - **Mức độ:** High
-- **File liên quan:** `components/ZoneDetailSheet.tsx`, `stores/warehouseStore.ts`
-- **Mô tả:** Khi cập nhật lô về 0 thùng, lô bị xóa hoàn toàn khỏi app — không còn hiện trong danh sách, không báo hết hàng được.
-- **Hướng fix:** Bỏ logic tự xóa khi `quantity_boxes = 0`, giữ lại lô và hiển thị label hết hàng trong `ProductDetailScreen`.
-- **Trạng thái:** Open — cần bàn thêm về business logic
+- **File liên quan:** `stores/warehouseStore.ts`, `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx` (dữ liệu qua `fetchInventoryByZone`)
+- **Mô tả:** Khi cập nhật lô về 0 thùng, lô biến mất khỏi UI do truy vấn Supabase lọc `quantity_boxes > 0`, không phải do xóa record trong DB.
+- **Hướng fix:** Bỏ `.gt('quantity_boxes', 0)` trên `fetchInventoryByZone` và `searchProducts`; `ProductDetailScreen.loadData` tải mọi lô; lô 0 thùng hiển thị dòng `Lô này đã hết hàng` + nút **Xóa lô** (xóa DB).
+- **Trạng thái:** Resolved
+- **Đã fix:** Bỏ lọc `quantity_boxes > 0` ở store và `ProductDetailScreen`; banner hết hàng + **Xóa lô** trên lô 0 thùng; ẩn nút 🗑️ hàng loạt khi 0 thùng để tránh trùng với **Xóa lô**. `NotificationsScreen`: dùng cờ “có lô có vấn đề” thay vì `issueBoxes === 0` để không bỏ sót SP chỉ còn lô 0 thùng.
 
 ---
 

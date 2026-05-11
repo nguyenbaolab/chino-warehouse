@@ -84,7 +84,6 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .from('inventory_entries')
       .select('*, product:products(*), zone:zones(*)')
       .eq('zone_id', zoneId)
-      .gt('quantity_boxes', 0)
     const entries = data || []
     set((s) => {
       const next = s.inventoryEntries.filter((entry) => entry.zone_id !== zoneId)
@@ -105,7 +104,6 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .from('inventory_entries')
       .select('*, product:products(*), zone:zones(*)')
       .in('product_id', productIds)
-      .gt('quantity_boxes', 0)
     return data || []
   },
 
