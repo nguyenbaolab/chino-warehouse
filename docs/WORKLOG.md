@@ -101,3 +101,9 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `stores/warehouseStore.ts` (`fetchInventoryByZone`, `searchProducts`), `screens/ProductDetailScreen.tsx`, `screens/NotificationsScreen.tsx` (bỏ điều kiện `issueBoxes === 0` khi vẫn có lô combined ≠ ok), `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Không còn lọc `quantity_boxes > 0` trên các truy vấn đó; lô 0 thùng có banner **Lô này đã hết hàng** + **Xóa lô** (xóa record); `deleteZone` vẫn chỉ chặn khi còn lô có `quantity_boxes > 0`. Không đổi schema — không migration mới.
 - **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### KI-006 — Xác minh lại validation số thùng (ProductDetailScreen)
+
+- **Task:** Đọc lại `ProductDetailScreen.tsx` — có còn chặn nhập `quantity_boxes = 0` khi sửa lô inline không?
+- **Kết quả:** Không chặn. `handleSaveLot` chỉ báo lỗi khi `quantity < 0` hoặc không phải số nguyên hữu hạn; giá trị **0** đi qua validation và được gửi lên `updateInventoryEntry`. Không thay đổi code ứng dụng.
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (bổ sung dòng “Xác minh code” dưới KI-006), `docs/WORKLOG.md`

@@ -67,6 +67,7 @@
 - **Mô tả:** Đã fix được nhập 0 ở `ZoneDetailSheet` nhưng `ProductDetailScreen` vẫn chặn giá trị 0.
 - **Trạng thái:** Resolved
 - **Đã fix:** `handleSaveLot` chấp nhận số nguyên `quantity_boxes >= 0` (đồng bộ với `ZoneDetailSheet`); `loadData` không còn lọc `.gt('quantity_boxes', 0)` (xem KI-007).
+- **Xác minh code (inline sửa lô):** Trong `handleSaveLot`, điều kiện từ chối là `quantity < 0` hoặc không phải số nguyên (`quantity !== Math.floor(quantity)`), không còn `quantity < 1` — nhập **0** hợp lệ. Tham chiếu: `screens/ProductDetailScreen.tsx` (hàm `handleSaveLot`, validation ngay trước `updateInventoryEntry`).
 
 ---
 
