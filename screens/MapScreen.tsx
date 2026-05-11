@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable,
   TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform
 } from 'react-native'
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
@@ -9,9 +9,8 @@ import { useThemeStore } from '../stores/themeStore'
 import { Zone, ZoneCell, InventoryEntry, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
 import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
-const GRID_ROWS = 6
-const GRID_COLS = 6
 const CELL_SIZE = 56
+const DEFAULT_GRID = 6
 
 // Tìm ô trung tâm của zone để hiện tên
 function getCenterCell(cells: ZoneCell[]): ZoneCell {
@@ -68,6 +67,7 @@ export default function MapScreen() {
   const [actionModal, setActionModal] = useState(false)
   const [zoneDetailVisible, setZoneDetailVisible] = useState(false)
   const [tappedZone, setTappedZone] = useState<Zone | null>(null)
+  const [locationSheetOpen, setLocationSheetOpen] = useState(false)
   const [zoneName, setZoneName] = useState('')
   const [tierCount, setTierCount] = useState('1')
   const [selectedColor, setSelectedColor] = useState(ZONE_COLORS[0])
@@ -78,6 +78,27 @@ export default function MapScreen() {
   const scannedZoneLotId: string | undefined = route.params?.scannedZoneLotId
   const scannedZoneLotBarcodeAt: number | undefined = route.params?.scannedZoneLotBarcodeAt
   const locateScannedAt: number | undefined = route.params?.locateScannedAt
+
+  const activeLocation = useMemo(
+    () => locations.find((l) => l.id === selectedLocationId),
+    [locations, selectedLocationId]
+  )
+  const gridRows = activeLocation?.grid_rows ?? DEFAULT_GRID
+  const gridCols = activeLocation?.grid_cols ?? DEFAULT_GRID
+
+  function pickLocation(id: string) {
+    clearSearch()
+    setSelectedLocation(id)
+    setLocationSheetOpen(false)
+  }
+
+  function openAddWarehouseFromMap() {
+    setLocationSheetOpen(false)
+    navigation.navigate('Settings', {
+      screen: 'LocationManagement',
+      params: { openCreateModal: true },
+    })
+  }
 
   useEffect(() => {
     loadTheme()
@@ -364,9 +385,9 @@ export default function MapScreen() {
 
   function renderGrid() {
     const rows = []
-    for (let r = 1; r <= GRID_ROWS; r++) {
+    for (let r = 1; r <= gridRows; r++) {
       const cols = []
-      for (let c = 1; c <= GRID_COLS; c++) {
+      for (let c = 1; c <= gridCols; c++) {
         const zone = getCellZone(r, c)
         const isSelected = isCellSelected(r, c)
         const isOtherZone = zone && editingZone && zone.id !== editingZone.id
@@ -463,20 +484,60 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Location selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.locationRow}>
-        {locations.map(loc => (
-          <TouchableOpacity
-            key={loc.id}
-            style={[styles.locBtn, { backgroundColor: selectedLocationId === loc.id ? colors.accent : colors.card }]}
-            onPress={() => setSelectedLocation(loc.id)}
-          >
-            <Text style={[styles.locText, { color: selectedLocationId === loc.id ? '#fff' : colors.sub }]}>
-              {loc.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      {/* Location selector — dropdown sheet (KI-004: clear search khi đổi kho) */}
+      <View style={styles.locationSelectorWrap}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.locationSelectorBtn,
+            { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+          ]}
+          onPress={() => setLocationSheetOpen(true)}
+        >
+          <Text style={[styles.locationSelectorTitle, { color: colors.text }]} numberOfLines={1}>
+            {activeLocation?.name ?? 'Chọn kho'}
+          </Text>
+          <Text style={[styles.locationSelectorChevron, { color: colors.sub }]}>▾</Text>
+        </Pressable>
+      </View>
+
+      <Modal
+        visible={locationSheetOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setLocationSheetOpen(false)}
+      >
+        <Pressable style={styles.locationSheetBackdrop} onPress={() => setLocationSheetOpen(false)}>
+          <Pressable style={[styles.locationSheetPanel, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.locationSheetTitle, { color: colors.text }]}>Chọn kho</Text>
+            <ScrollView style={styles.locationSheetList} keyboardShouldPersistTaps="handled">
+              {locations.map((loc) => {
+                const selected = loc.id === selectedLocationId
+                const gr = loc.grid_rows ?? DEFAULT_GRID
+                const gc = loc.grid_cols ?? DEFAULT_GRID
+                return (
+                  <TouchableOpacity
+                    key={loc.id}
+                    style={[styles.locationSheetRow, { borderColor: colors.border, backgroundColor: selected ? colors.bg : 'transparent' }]}
+                    onPress={() => pickLocation(loc.id)}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.locationSheetName, { color: colors.text }]}>{loc.name}</Text>
+                      <Text style={[styles.locationSheetGrid, { color: colors.sub }]}>{gr} × {gc}</Text>
+                    </View>
+                    {selected ? <Text style={{ color: colors.accent, fontSize: 18, fontWeight: '700' }}>✓</Text> : null}
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+            <TouchableOpacity
+              style={[styles.locationSheetAddBtn, { backgroundColor: colors.accent }]}
+              onPress={openAddWarehouseFromMap}
+            >
+              <Text style={[styles.locationSheetAddBtnText, { color: colors.card }]}>Thêm kho mới</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Search */}
       {mode === 'normal' && (
@@ -581,7 +642,7 @@ export default function MapScreen() {
             <View style={styles.grid}>
               <View style={styles.gridRow}>
                 <View style={styles.axisCorner} />
-                {Array.from({ length: GRID_COLS }, (_, i) => (
+                {Array.from({ length: gridCols }, (_, i) => (
                   <Text key={i} style={[styles.axisLabel, styles.colLabel, { color: colors.sub }]}>{i + 1}</Text>
                 ))}
               </View>
@@ -708,9 +769,41 @@ const styles = StyleSheet.create({
   addBtnText: { color: '#fff', fontWeight: 'bold' },
   cancelBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
   cancelBtnText: { fontWeight: 'bold' },
-  locationRow: { paddingHorizontal: 16, marginBottom: 8, flexGrow: 0 },
-  locBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginRight: 8 },
-  locText: { fontSize: 13 },
+  locationSelectorWrap: { paddingHorizontal: 16, marginBottom: 8 },
+  locationSelectorBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  locationSelectorTitle: { fontSize: 15, fontWeight: '600', flex: 1, marginRight: 8 },
+  locationSelectorChevron: { fontSize: 14, fontWeight: '700' },
+  locationSheetBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  locationSheetPanel: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 24,
+    maxHeight: '72%',
+  },
+  locationSheetTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10 },
+  locationSheetList: { maxHeight: 360 },
+  locationSheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  locationSheetName: { fontSize: 15, fontWeight: '600' },
+  locationSheetGrid: { fontSize: 13, marginTop: 4 },
+  locationSheetAddBtn: { marginTop: 6, borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  locationSheetAddBtnText: { fontSize: 15, fontWeight: '700' },
   searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 10 },
   searchInputWrap: { flex: 1, position: 'relative' },
   searchInput: { flex: 1, borderRadius: 10, borderWidth: 1, paddingLeft: 14, paddingRight: 40, paddingVertical: 10, fontSize: 14 },

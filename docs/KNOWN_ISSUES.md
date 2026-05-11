@@ -45,8 +45,8 @@
 - **Mô tả:** Khi bấm chọn kho khác (`setSelectedLocation`), không gọi `clearSearch` — vi phạm **REQUIREMENTS.md §7.1** (đổi kho → xóa kết quả tìm).
 - **Cách tái hiện:** Tìm sản phẩm trên kho A → chuyển sang kho B — panel kết quả / highlight zone cũ vẫn có thể còn.
 - **Hướng fix:** Khi đổi `selectedLocationId`, gọi `clearSearch()` hoặc tương đương reset state tìm kiếm.
-- **Trạng thái:** Deferred
-- **Ghi chú:** Phase 1 chỉ có 1 kho duy nhất, chưa có UI thêm/sửa/xóa kho (F20 — Phase 2). Không thể tái hiện lỗi này ở Phase 1. Reopen khi Phase 2 implement multi-kho.
+- **Trạng thái:** Resolved
+- **Đã fix:** clear search state khi đổi location tại `MapScreen.tsx`.
 
 ---
 

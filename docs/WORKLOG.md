@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Task 3/4: MapScreen selector + fix KI-004
+
+- MapScreen: thay pill bằng selector có dropdown sheet, hiện tên kho + grid size, nút Thêm kho mới.
+- Fix KI-004: clear search khi đổi location.
+- KNOWN_ISSUES.md: KI-004 → Resolved.
+
+---
+
 ## [tháng 5/2026] — Task 2/4: Update types + store cho multi-kho
 
 - types/index.ts: thêm grid_rows, grid_cols vào Location type.
