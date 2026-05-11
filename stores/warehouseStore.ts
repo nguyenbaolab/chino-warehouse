@@ -35,6 +35,8 @@ type WarehouseStore = {
   updateZone: (id: string, data: Partial<Zone>) => Promise<void>
   deleteZone: (id: string) => Promise<boolean>
   toggleDeferred: (productId: string) => Promise<void>
+  togglePriceReduced: (productId: string) => Promise<void>
+  toggleDiscontinued: (productId: string) => Promise<void>
 }
 
 export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
@@ -253,6 +255,62 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     const { data: updated } = await supabase
       .from('products')
       .update({ is_deferred: next })
+      .eq('id', productId)
+      .select('*')
+      .single()
+
+    if (!updated) return
+
+    set((s) => ({
+      products: s.products.some((p) => p.id === productId)
+        ? s.products.map((p) => (p.id === productId ? updated : p))
+        : [...s.products, updated].sort((a, b) => a.name.localeCompare(b.name)),
+      inventoryEntries: s.inventoryEntries.map((entry) => (
+        entry.product_id === productId
+          ? { ...entry, product: entry.product ? { ...entry.product, ...updated } : updated }
+          : entry
+      )),
+    }))
+  },
+
+  togglePriceReduced: async (productId) => {
+    const { products, inventoryEntries } = get()
+    const fromProduct = products.find((p) => p.id === productId)
+    const fromEntry = inventoryEntries.find((e) => e.product_id === productId)?.product
+    const current = fromProduct?.is_price_reduced ?? fromEntry?.is_price_reduced ?? false
+    const next = !current
+
+    const { data: updated } = await supabase
+      .from('products')
+      .update({ is_price_reduced: next })
+      .eq('id', productId)
+      .select('*')
+      .single()
+
+    if (!updated) return
+
+    set((s) => ({
+      products: s.products.some((p) => p.id === productId)
+        ? s.products.map((p) => (p.id === productId ? updated : p))
+        : [...s.products, updated].sort((a, b) => a.name.localeCompare(b.name)),
+      inventoryEntries: s.inventoryEntries.map((entry) => (
+        entry.product_id === productId
+          ? { ...entry, product: entry.product ? { ...entry.product, ...updated } : updated }
+          : entry
+      )),
+    }))
+  },
+
+  toggleDiscontinued: async (productId) => {
+    const { products, inventoryEntries } = get()
+    const fromProduct = products.find((p) => p.id === productId)
+    const fromEntry = inventoryEntries.find((e) => e.product_id === productId)?.product
+    const current = fromProduct?.is_discontinued ?? fromEntry?.is_discontinued ?? false
+    const next = !current
+
+    const { data: updated } = await supabase
+      .from('products')
+      .update({ is_discontinued: next })
       .eq('id', productId)
       .select('*')
       .single()

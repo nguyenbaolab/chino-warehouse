@@ -33,6 +33,10 @@ export type Product = {
   is_archived: boolean
   /** Tab Thông báo: đánh dấu Để sau (Supabase `products.is_deferred`). */
   is_deferred?: boolean
+  /** Tab Sắp hết hạn: đã giảm giá hay chưa. */
+  is_price_reduced?: boolean
+  /** Tab Sắp hết hàng: không nhập nữa. */
+  is_discontinued?: boolean
   created_at: string
 }
 

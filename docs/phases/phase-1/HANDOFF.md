@@ -93,6 +93,36 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 3. Với lô `quantity_boxes = 0` và hạn đã qua: card hiển thị cả banner `Lô này đã hết hàng` và `Lô này đã hết hạn`.
 4. Với lô chưa hết hạn: không xuất hiện banner hết hạn.
 
+## Task mới — Notifications: 2 tab Sắp hết hạn / Sắp hết hàng
+
+- Bỏ hoàn toàn tab cũ **Có vấn đề / Để sau**.
+- Tab **Sắp hết hạn**:
+  - Hiển thị sản phẩm có ít nhất 1 lô sắp hết hạn hoặc đã hết hạn.
+  - Card sắp hết hạn có toggle **Đã giảm giá / Chưa giảm giá** (lưu `products.is_price_reduced`).
+  - Card đã hết hạn hiển thị đỏ nhạt + nhãn `Hết hạn rồi`, bấm card mở `ProductDetailScreen`.
+- Tab **Sắp hết hàng**:
+  - Hiển thị sản phẩm có tổng thùng `<= low_warning_boxes` hoặc `= 0`.
+  - Nút **Thêm vào danh sách nhập** hiện placeholder (log console).
+  - Nút **Không nhập nữa** cập nhật `products.is_discontinued = true` và ẩn khỏi tab.
+- DB migration mới:
+  - `20260511_add_product_is_price_reduced.sql`
+  - `20260511_add_product_is_discontinued.sql`
+
+**Test QA:**
+
+1. Chạy 2 migration mới trên Supabase.
+2. Mở tab Thông báo:
+   - Có đúng 2 tab `Sắp hết hạn` và `Sắp hết hàng`.
+   - Không còn `Có vấn đề / Để sau`.
+3. Tab `Sắp hết hạn`:
+   - Sản phẩm sắp hết hạn có nút toggle `Đã giảm giá / Chưa giảm giá`, bấm đổi trạng thái và reload vẫn giữ.
+   - Sản phẩm hết hạn hiển thị nền đỏ nhạt + `Hết hạn rồi`, không có toggle.
+   - Bấm card hết hạn mở `ProductDetailScreen`.
+4. Tab `Sắp hết hàng`:
+   - Chỉ hiện sản phẩm tổng thùng thấp theo ngưỡng.
+   - Bấm `Thêm vào danh sách nhập` thấy log placeholder trong console.
+   - Bấm `Không nhập nữa` thì card biến mất khỏi tab; reload app vẫn không hiện.
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng

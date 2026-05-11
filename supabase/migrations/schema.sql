@@ -1,6 +1,6 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 1.1 | Tháng 5/2026
+-- Phiên bản: 1.2 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
 
@@ -32,17 +32,20 @@ CREATE TABLE zones (
 
 -- 3. Products (sản phẩm)
 -- barcode đã chuyển sang inventory_entries (per lô)
+-- is_deferred: không còn dùng trong UI (bỏ tab Để sau), giữ trong DB
 CREATE TABLE products (
-  id                 UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  name               TEXT        NOT NULL,
-  image_url          TEXT,
-  notes              TEXT,
-  is_archived        BOOLEAN     NOT NULL DEFAULT false,
-  is_deferred        BOOLEAN     NOT NULL DEFAULT false,
-  warning_days       INTEGER     NOT NULL DEFAULT 30,
-  low_warning_boxes  INTEGER     NOT NULL DEFAULT 3,
-  low_critical_boxes INTEGER     NOT NULL DEFAULT 1,
-  created_at         TIMESTAMPTZ DEFAULT now()
+  id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name                TEXT        NOT NULL,
+  image_url           TEXT,
+  notes               TEXT,
+  is_archived         BOOLEAN     NOT NULL DEFAULT false,
+  is_deferred         BOOLEAN     NOT NULL DEFAULT false,
+  is_price_reduced    BOOLEAN     NOT NULL DEFAULT false,
+  is_discontinued     BOOLEAN     NOT NULL DEFAULT false,
+  warning_days        INTEGER     NOT NULL DEFAULT 30,
+  low_warning_boxes   INTEGER     NOT NULL DEFAULT 3,
+  low_critical_boxes  INTEGER     NOT NULL DEFAULT 1,
+  created_at          TIMESTAMPTZ DEFAULT now()
 );
 
 -- 4. Inventory entries (lô hàng)

@@ -219,3 +219,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** UX lô hết hạn đồng nhất với lô hết hàng, thao tác dọn lô hết hạn ngay tại card lô.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Notifications restructure — Sắp hết hạn / Sắp hết hàng
+
+- **Task:** Refactor `NotificationsScreen` bỏ tab **Có vấn đề / Để sau**, thay bằng 2 tab **Sắp hết hạn** và **Sắp hết hàng**; thêm toggle **Đã giảm giá** (`products.is_price_reduced`) cho card sắp hết hạn; card đã hết hạn hiển thị đỏ nhạt + nhãn `Hết hạn rồi`; tab sắp hết hàng thêm 2 nút **Thêm vào danh sách nhập** (placeholder log) và **Không nhập nữa** (`products.is_discontinued`).
+- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `supabase/migrations/20260511_add_product_is_price_reduced.sql`, `supabase/migrations/20260511_add_product_is_discontinued.sql`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Notifications chuyển sang luồng xử lý trực tiếp theo hạn/tồn; thêm 2 action store `togglePriceReduced` và `toggleDiscontinued`; sản phẩm đánh dấu không nhập nữa được ẩn khỏi tab sắp hết hàng.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
