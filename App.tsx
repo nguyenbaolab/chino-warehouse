@@ -8,6 +8,7 @@ import { Text } from 'react-native'
 import MapScreen from './screens/MapScreen'
 import ProductsScreen from './screens/ProductsScreen'
 import SettingsScreen from './screens/SettingsScreen'
+import DiscontinuedProductsScreen from './screens/DiscontinuedProductsScreen'
 import AddInventoryScreen from './screens/AddInventoryScreen'
 import ProductDetailScreen from './screens/ProductDetailScreen'
 import NotificationsScreen from './screens/NotificationsScreen'
@@ -66,6 +67,7 @@ function SettingsStackNavigator() {
   return (
     <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
       <SettingsStack.Screen name="SettingsMain" component={SettingsScreen} />
+      <SettingsStack.Screen name="DiscontinuedProducts" component={DiscontinuedProductsScreen} />
     </SettingsStack.Navigator>
   )
 }
@@ -122,6 +124,7 @@ function TabNavigator() {
       <Tab.Screen
         name="Settings"
         component={SettingsStackNavigator}
+        listeners={stackTabPressListener}
         options={{ tabBarLabel: 'Cài đặt', tabBarIcon: () => <Text>⚙️</Text> }}
       />
     </Tab.Navigator>

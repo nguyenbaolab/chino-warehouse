@@ -268,3 +268,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `App.tsx`, `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `supabase/migrations/20260511_add_order_lists_and_items.sql`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Có luồng đặt hàng cơ bản theo list với 3 trạng thái (draft/confirmed/placed), CRUD item/list, cộng dồn sản phẩm trùng trong list đang soạn, và nút placeholder xuất PDF.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Settings F28 — Sản phẩm không nhập nữa + màn danh sách
+
+- **Task:** Card **Sản phẩm không nhập nữa** trong `SettingsScreen` (số lượng theo store + Supabase Realtime); stack `DiscontinuedProductsScreen` liệt kê `is_discontinued`, tồn tổng thùng (0 → `Hết hàng`), dòng lý do từ `products.notes` nếu có, nút **Nhập lại** (`setProductDiscontinued(..., false)`). Store: `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`, `setProductDiscontinued`, `toggleDiscontinued` dùng chung cập nhật một chiều.
+- **Files thay đổi:** `screens/SettingsScreen.tsx`, `screens/DiscontinuedProductsScreen.tsx`, `stores/warehouseStore.ts`, `App.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Luồng F28 khép kín từ Cài đặt; đồng bộ `products` + `inventory_entries` qua Realtime (khi Supabase bật replication cho 2 bảng).
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

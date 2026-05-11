@@ -38,7 +38,10 @@ type WarehouseStore = {
   deleteZone: (id: string) => Promise<boolean>
   toggleDeferred: (productId: string) => Promise<void>
   togglePriceReduced: (entryId: string) => Promise<void>
+  setProductDiscontinued: (productId: string, isDiscontinued: boolean) => Promise<void>
   toggleDiscontinued: (productId: string) => Promise<void>
+  fetchDiscontinuedProducts: () => Promise<void>
+  refreshDiscontinuedContext: () => Promise<void>
   fetchOrderLists: () => Promise<void>
   createOrderList: (title: string) => Promise<OrderList | null>
   updateOrderList: (id: string, data: Partial<OrderList>) => Promise<void>
@@ -311,16 +314,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }))
   },
 
-  toggleDiscontinued: async (productId) => {
-    const { products, inventoryEntries } = get()
-    const fromProduct = products.find((p) => p.id === productId)
-    const fromEntry = inventoryEntries.find((e) => e.product_id === productId)?.product
-    const current = fromProduct?.is_discontinued ?? fromEntry?.is_discontinued ?? false
-    const next = !current
-
+  setProductDiscontinued: async (productId, isDiscontinued) => {
     const { data: updated } = await supabase
       .from('products')
-      .update({ is_discontinued: next })
+      .update({ is_discontinued: isDiscontinued })
       .eq('id', productId)
       .select('*')
       .single()
@@ -337,6 +334,56 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
           : entry
       )),
     }))
+  },
+
+  toggleDiscontinued: async (productId) => {
+    const { products, inventoryEntries, setProductDiscontinued } = get()
+    const fromProduct = products.find((p) => p.id === productId)
+    const fromEntry = inventoryEntries.find((e) => e.product_id === productId)?.product
+    const current = fromProduct?.is_discontinued ?? fromEntry?.is_discontinued ?? false
+    await setProductDiscontinued(productId, !current)
+  },
+
+  fetchDiscontinuedProducts: async () => {
+    const { data: discontinuedList } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_discontinued', true)
+      .eq('is_archived', false)
+      .order('name')
+
+    const rows = discontinuedList ?? []
+    const serverDiscontinuedIds = new Set(rows.map((p) => p.id))
+
+    set((s) => {
+      let products = s.products.map((p) => {
+        const fresh = rows.find((r) => r.id === p.id)
+        if (fresh) return fresh
+        if (p.is_discontinued === true && !serverDiscontinuedIds.has(p.id)) {
+          return { ...p, is_discontinued: false }
+        }
+        return p
+      })
+      for (const p of rows) {
+        if (!products.some((x) => x.id === p.id)) {
+          products = [...products, p]
+        }
+      }
+      products = products.sort((a, b) => a.name.localeCompare(b.name))
+      const productById = new Map(products.map((p) => [p.id, p]))
+      const inventoryEntries = s.inventoryEntries.map((e) => {
+        const pr = productById.get(e.product_id)
+        if (!pr || !e.product) return e
+        return { ...e, product: { ...e.product, ...pr } }
+      })
+      return { products, inventoryEntries }
+    })
+  },
+
+  refreshDiscontinuedContext: async () => {
+    const { fetchDiscontinuedProducts, fetchInventoryByZone, zones } = get()
+    await fetchDiscontinuedProducts()
+    await Promise.all(zones.map((z) => fetchInventoryByZone(z.id)))
   },
 
   fetchOrderLists: async () => {

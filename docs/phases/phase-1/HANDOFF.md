@@ -4,6 +4,21 @@
 
 Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 
+## Task mới — F28: Không nhập nữa (Settings + danh sách + store)
+
+- **Settings (`SettingsScreen`):** Card **Sản phẩm không nhập nữa** hiển thị `X sản phẩm` (đếm `products` không archive và `is_discontinued === true`); bấm vào → `DiscontinuedProducts`. Khi màn focus + lắng nghe Realtime (`products`, `inventory_entries`) gọi `refreshDiscontinuedContext` để số và tồn cập nhật.
+- **`DiscontinuedProductsScreen`:** Danh sách discontinued; mỗi card: tên, **Tồn kho:** tổng `quantity_boxes` mọi lô trong store (0 → chữ **Hết hàng**); nếu `products.notes` khác rỗng → dòng **Lý do:** (dùng ghi chú sản phẩm, DB chưa có cột riêng); **Nhập lại** → `setProductDiscontinued(id, false)` → sản phẩm có thể hiện lại tab **Thông báo → Sắp hết hàng** theo tồn thực tế.
+- **`warehouseStore`:** `setProductDiscontinued`, `fetchDiscontinuedProducts` (đồng bộ danh sách discontinued với server + bỏ cờ local khi server đã tắt), `refreshDiscontinuedContext` (discontinued + `fetchInventoryByZone` mọi zone), `toggleDiscontinued` gọi `setProductDiscontinued`.
+- **`App.tsx`:** Stack tab Cài đặt thêm `DiscontinuedProducts`; bật `tabPress` popToTop giống tab stack khác.
+
+**Test QA:**
+
+1. Tab **Thông báo → Sắp hết hàng:** bấm **Không nhập nữa** trên một SP đủ điều kiện → quay **Cài đặt**, card hiện đúng `+1` sản phẩm (hoặc đúng tổng).
+2. Bấm card → màn **Sản phẩm không nhập nữa** có đúng SP; **Tồn kho** khớp tổng thùng thực tế; nếu tổng = 0 thì chữ **Hết hàng**; có `notes` trên SP thì thấy dòng **Lý do:**.
+3. **Nhập lại** → SP biến mất khỏi màn discontinued; về **Thông báo → Sắp hết hàng**, SP xuất hiện lại nếu tồn vẫn thấp theo ngưỡng.
+4. (Tuỳ chọn Realtime) Trên Supabase hoặc thiết bị khác đổi `quantity_boxes` / `is_discontinued` → không reload app, màn Settings / Discontinued cập nhật sau vài giây nếu Realtime đã bật cho `products` và `inventory_entries`.
+5. Tab **Cài đặt** đang ở màn discontinued, bấm lại icon tab **Cài đặt** → về `SettingsMain` (popToTop).
+
 ## Cập nhật docs mới — Barcode per lô (Phase 1)
 
 - **Quyết định:** Barcode chuyển từ `products.barcode` sang `inventory_entries.barcode` (per lô).
