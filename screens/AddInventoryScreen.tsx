@@ -23,6 +23,8 @@ type AddInventoryRouteParams = {
   zoneColor?: string
   tier?: number
   productId?: string
+  scannedBarcode?: string
+  barcodeScannedAt?: number
 }
 
 // Parse DD/MM/YYYY -> YYYY-MM-DD để lưu xuống Supabase
@@ -61,6 +63,8 @@ export default function AddInventoryScreen() {
     zoneColor,
     tier,
     productId,
+    scannedBarcode,
+    barcodeScannedAt,
   } = (route.params as AddInventoryRouteParams) || {}
   const { colors } = useThemeStore()
   const {
@@ -71,10 +75,12 @@ export default function AddInventoryScreen() {
     addProduct,
     addInventoryEntry,
     updateInventoryEntry,
+    updateBarcode,
   } = useWarehouseStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [barcodeField, setBarcodeField] = useState('')
   const [quantityBoxes, setQuantityBoxes] = useState('1')
   const [expiryDisplay, setExpiryDisplay] = useState('')
   const [batchNote, setBatchNote] = useState('')
@@ -112,6 +118,42 @@ export default function AddInventoryScreen() {
     const pref = products.find((p) => p.id === productId)
     if (pref) setSelectedProduct(pref)
   }, [productId, products, selectedProduct])
+
+  useEffect(() => {
+    if (selectedProduct) {
+      setBarcodeField((selectedProduct.barcode ?? '').trim())
+    } else {
+      setBarcodeField('')
+    }
+  }, [selectedProduct?.id, selectedProduct?.barcode])
+
+  useEffect(() => {
+    if (!scannedBarcode) return
+    setBarcodeField(scannedBarcode.trim())
+    navigation.setParams({ scannedBarcode: undefined, barcodeScannedAt: undefined })
+  }, [scannedBarcode, barcodeScannedAt, navigation])
+
+  function getHostTabName(): string {
+    const tabNav = navigation.getParent()?.getParent()
+    const st = tabNav?.getState()
+    if (!st?.routes || st.index === undefined) return 'Products'
+    return String(st.routes[st.index]?.name ?? 'Products')
+  }
+
+  async function persistBarcodeIfChanged(): Promise<boolean> {
+    if (!selectedProduct) return true
+    const fromStore = useWarehouseStore.getState().products.find((p) => p.id === selectedProduct.id)
+    const currentStored = (fromStore?.barcode ?? selectedProduct.barcode ?? '').trim()
+    const desired = barcodeField.trim()
+    if (desired === currentStored) return true
+    const updated = await updateBarcode(selectedProduct.id, desired || undefined)
+    if (!updated) {
+      Alert.alert('Lỗi', 'Không thể cập nhật mã vạch sản phẩm.')
+      return false
+    }
+    setSelectedProduct(updated)
+    return true
+  }
 
   const selectedZone = useMemo(
     () => zones.find((zone) => zone.id === selectedZoneId) ?? null,
@@ -195,6 +237,9 @@ export default function AddInventoryScreen() {
       Alert.alert('Ngày không hợp lệ', 'Hạn sử dụng cần đúng định dạng DD/MM/YYYY.')
       return
     }
+
+    const barcodeOk = await persistBarcodeIfChanged()
+    if (!barcodeOk) return
 
     setIsSaving(true)
 
@@ -353,11 +398,6 @@ export default function AddInventoryScreen() {
               <Text style={[styles.selectedProductName, { color: colors.text }]} numberOfLines={1}>
                 {selectedProduct.name}
               </Text>
-              {!!selectedProduct.barcode && (
-                <Text style={[styles.selectedProductBarcode, { color: colors.sub }]} numberOfLines={1}>
-                  {selectedProduct.barcode}
-                </Text>
-              )}
             </View>
             <TouchableOpacity
               style={[styles.clearSelectedBtn, { backgroundColor: colors.bg }]}
@@ -408,6 +448,45 @@ export default function AddInventoryScreen() {
               Nhập tên sản phẩm để hiện danh sách gợi ý.
             </Text>
           </View>
+        )}
+
+        {selectedProduct && (
+          <>
+            <Text style={[styles.label, { color: colors.sub }]}>Mã vạch sản phẩm</Text>
+            <View style={styles.barcodeRow}>
+              <TextInput
+                style={[
+                  styles.barcodeInput,
+                  { backgroundColor: colors.card, color: colors.text, borderColor: colors.border },
+                ]}
+                value={barcodeField}
+                onChangeText={setBarcodeField}
+                placeholder="Chưa có mã vạch"
+                placeholderTextColor={colors.sub}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <TouchableOpacity
+                style={[styles.barcodeScanBtn, { backgroundColor: colors.accent }]}
+                onPress={() =>
+                  navigation.navigate('BarcodeScanner', {
+                    mode: 'addInventory',
+                    returnTab: getHostTabName(),
+                    addInventoryParams: {
+                      zoneId: selectedZoneId ?? initialZoneId,
+                      tierId: initialTierId,
+                      zoneName,
+                      zoneColor,
+                      tier: selectedTier ?? tier,
+                      productId: selectedProduct.id,
+                    },
+                  })
+                }
+              >
+                <Text style={[styles.barcodeScanBtnText, { color: colors.card }]}>📷</Text>
+              </TouchableOpacity>
+            </View>
+          </>
         )}
 
         {showCreateProduct && (
@@ -616,9 +695,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  selectedProductBarcode: {
-    marginTop: 2,
-    fontSize: 12,
+  barcodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  barcodeInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  barcodeScanBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  barcodeScanBtnText: {
+    fontSize: 18,
   },
   clearSelectedBtn: {
     width: 30,

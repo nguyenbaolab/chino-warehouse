@@ -55,12 +55,13 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 
 ### 5) `AddInventoryScreen` + `ZoneDetailSheet`
 
-**Thay đổi:** Số thùng cho phép **0** (số nguyên ≥ 0), không còn bắt buộc ≥ 1.
+**Thay đổi:** Số thùng cho phép **0** (số nguyên ≥ 0), không còn bắt buộc ≥ 1. **Thêm hàng:** sau khi chọn SP, có field **Mã vạch sản phẩm** (điền sẵn từ `products.barcode`), nhập tay hoặc **📷** (`BarcodeScanner` mode `addInventory`); khi **Lưu**, nếu mã khác DB thì gọi `updateBarcode`.
 
 **Test:**
 
 1. Thêm lô với **0** thùng — lưu được (hoặc luồng cộng dồn trùng lô vẫn hợp lệ nếu backend cho).
 2. Sửa lô trong sheet zone — nhập **0** — lưu được.
+3. **Mã vạch Thêm hàng:** chọn SP có sẵn barcode — field khớp; sửa tay → Lưu — kiểm tra tab Sản phẩm / chi tiết SP barcode mới; quét 📷 → quay lại field đã điền; xóa hết mã → Lưu — barcode trên SP null (nếu backend cho).
 
 ---
 

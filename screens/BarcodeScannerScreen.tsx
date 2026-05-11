@@ -6,16 +6,23 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 
 type BarcodeScannerParams = {
-  mode?: 'search' | 'assign' | 'locate'
+  mode?: 'search' | 'assign' | 'locate' | 'addInventory'
   productId?: string
   /** Tab chứa stack (Map / Products / Notifications) — dùng khi `assign` để quay lại ProductDetail sau quét */
   returnTab?: string
+  /** Params merge vào `AddInventory` khi `mode === 'addInventory'` */
+  addInventoryParams?: Record<string, unknown>
 }
 
 export default function BarcodeScannerScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
-  const { mode = 'search', productId: assignProductId, returnTab } = (route.params || {}) as BarcodeScannerParams
+  const {
+    mode = 'search',
+    productId: assignProductId,
+    returnTab,
+    addInventoryParams,
+  } = (route.params || {}) as BarcodeScannerParams
   const { colors } = useThemeStore()
   const { searchByBarcode, products } = useWarehouseStore()
 
@@ -52,6 +59,24 @@ export default function BarcodeScannerScreen() {
           },
         })
       }
+      navigation.goBack()
+      return
+    }
+
+    if (mode === 'addInventory') {
+      setIsSearching(false)
+      const tab = returnTab || 'Products'
+      navigation.navigate('Tabs', {
+        screen: tab,
+        params: {
+          screen: 'AddInventory',
+          params: {
+            ...(addInventoryParams ?? {}),
+            scannedBarcode: barcode,
+            barcodeScannedAt: Date.now(),
+          },
+        },
+      })
       navigation.goBack()
       return
     }
@@ -176,7 +201,9 @@ export default function BarcodeScannerScreen() {
           <Text style={styles.scanHint}>
             {mode === 'assign'
               ? 'Quét mã vạch để gán cho sản phẩm'
-              : mode === 'locate'
+              : mode === 'addInventory'
+                ? 'Quét mã vạch để điền vào Thêm hàng'
+                : mode === 'locate'
                 ? 'Quét mã vạch để định vị trong kho'
                 : 'Đưa mã vạch vào khung'}
           </Text>

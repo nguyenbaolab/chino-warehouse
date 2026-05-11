@@ -142,3 +142,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
 - **Kết quả:** Không đổi code.
 - **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+
+### AddInventoryScreen — Field mã vạch + quét + cập nhật `products.barcode`
+
+- **Task:** Thêm field mã vạch dưới chọn SP: điền sẵn từ sản phẩm, nhập tay / quét camera (`BarcodeScanner` mode `addInventory`), khi Lưu nếu đổi thì `updateBarcode`.
+- **Files thay đổi:** `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Không phát hiện bug mới ghi trong KNOWN_ISSUES.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
