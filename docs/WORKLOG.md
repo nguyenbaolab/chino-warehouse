@@ -233,3 +233,24 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `supabase/migrations/20260511_move_is_price_reduced_to_inventory_entries.sql`, `screens/NotificationsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Trạng thái giảm giá chuyển về cấp lô; UI tab Sắp hết hạn cho xem/toggle từng lô (màu đỏ nhạt/vàng nhạt theo loại hạn) và lọc nhanh theo loại lô.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Notifications — màu nút toggle giảm giá theo trạng thái
+
+- **Task:** `NotificationsScreen` tab Sắp hết hạn: nút toggle `Đã/Chưa giảm giá` trong dòng lô đổi màu theo trạng thái.
+- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `docs/WORKLOG.md`
+- **Kết quả:** `Chưa giảm giá` dùng nền mặc định; `Đã giảm giá` dùng nền xanh `#22C55E` (text trắng) để nhận diện nhanh.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`
+
+### Notifications — điều hướng từ card lô hết hạn
+
+- **Task:** Bỏ nút `Hết hạn rồi — mở chi tiết sản phẩm`; thay bằng tương tác bấm trực tiếp lên dòng lô hết hạn để mở `ProductDetailScreen`.
+- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `docs/WORKLOG.md`
+- **Kết quả:** Card lô hết hạn gọn hơn, chạm vào bất kỳ vị trí trong dòng lô hết hạn đều điều hướng sang chi tiết sản phẩm.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`
+
+### Notifications — điều hướng từ mọi card lô hạn
+
+- **Task:** Mở rộng tương tác điều hướng cho toàn bộ card lô trong tab Sắp hết hạn (cả lô sắp hết hạn và lô đã hết hạn): bấm bất kỳ chỗ nào trên dòng lô đều mở `ProductDetailScreen`.
+- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `docs/WORKLOG.md`
+- **Kết quả:** Hành vi card lô đồng nhất, không còn phân biệt điều hướng giữa 2 loại lô theo hạn.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`

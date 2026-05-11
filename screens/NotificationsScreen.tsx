@@ -258,31 +258,34 @@ export default function NotificationsScreen() {
                           const lotBg = lot.status === 'expired' ? colors.badgeExpiredBg : colors.badgeWarningBg
                           const lotBorder = lot.status === 'expired' ? colors.statusExpired : colors.statusWarning
                           return (
-                            <View key={lot.entryId} style={[styles.lotRow, { backgroundColor: lotBg, borderColor: lotBorder }]}>
+                            <TouchableOpacity
+                              key={lot.entryId}
+                              activeOpacity={0.75}
+                              onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
+                              style={[styles.lotRow, { backgroundColor: lotBg, borderColor: lotBorder }]}
+                            >
                               <View style={styles.lotInfo}>
                                 <Text style={[styles.lotText, { color: colors.text }]}>
                                   {lot.quantityBoxes} thùng · Hạn: {formatExpiryDate(lot.expiryDate)}
                                 </Text>
                               </View>
                               <TouchableOpacity
-                                style={[styles.lotToggleBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                                style={[
+                                  styles.lotToggleBtn,
+                                  {
+                                    backgroundColor: lot.isPriceReduced ? '#22C55E' : colors.bg,
+                                    borderColor: lot.isPriceReduced ? '#22C55E' : colors.border,
+                                  },
+                                ]}
                                 onPress={() => void togglePriceReduced(lot.entryId)}
                               >
-                                <Text style={[styles.lotToggleText, { color: colors.text }]}>
+                                <Text style={[styles.lotToggleText, { color: lot.isPriceReduced ? '#FFFFFF' : colors.text }]}>
                                   {lot.isPriceReduced ? 'Đã giảm giá' : 'Chưa giảm giá'}
                                 </Text>
                               </TouchableOpacity>
-                            </View>
+                            </TouchableOpacity>
                           )
                         })}
-                        {item.lots.some((lot) => lot.status === 'expired') && (
-                          <TouchableOpacity
-                            style={[styles.expiredNavigateBtn, { borderColor: colors.statusExpired, backgroundColor: colors.bg }]}
-                            onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
-                          >
-                            <Text style={[styles.expiredNavigateText, { color: colors.statusExpired }]}>Hết hạn rồi — mở chi tiết sản phẩm</Text>
-                          </TouchableOpacity>
-                        )}
                       </View>
                     )}
                   </View>
@@ -392,15 +395,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   lotToggleText: { fontSize: 12, fontWeight: '700' },
-  expiredNavigateBtn: {
-    marginTop: 2,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-  },
-  expiredNavigateText: { fontSize: 12, fontWeight: '700' },
   actionsRow: {
     flexDirection: 'row',
     gap: 8,
