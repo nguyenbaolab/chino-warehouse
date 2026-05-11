@@ -6,7 +6,7 @@ import {
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
-import { Zone, ZoneCell, InventoryEntry, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
+import { Zone, ZoneCell, InventoryEntry, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
 import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
 const GRID_ROWS = 6
@@ -41,7 +41,7 @@ function getCellRadius(cells: ZoneCell[], row: number, col: number) {
 }
 
 function formatResultExpiry(expiryDate?: string): string {
-  return `Hạn: ${expiryDate ?? 'Không hạn'}`
+  return `Hạn: ${formatExpiryDate(expiryDate)}`
 }
 
 export default function MapScreen() {

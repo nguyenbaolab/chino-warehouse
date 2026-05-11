@@ -170,3 +170,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `supabase/migrations/20260511_drop_products_barcode.sql`, `supabase/migrations/20260511_add_inventory_entries_barcode.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `screens/ProductsScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Quét barcode tìm theo `inventory_entries.barcode` và trả về lô + zone chứa lô; AddInventory ghi barcode vào lô; ProductDetail cho xem/sửa barcode theo từng lô.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### UI — Barcode scan cho lô + format hạn DD/MM/YYYY
+
+- **Task:** `ProductDetailScreen`: thêm nút quét camera cạnh field barcode lô (inline edit) và tự điền barcode sau quét; `ZoneDetailSheet`: hiện barcode lô và bỏ nút `i`; đổi hiển thị hạn toàn app sang `DD/MM/YYYY` (không đổi format DB).
+- **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/BarcodeScannerScreen.tsx`, `types/index.ts`, `screens/MapScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Luồng quét từ ProductDetail quay lại đúng lô đang edit; hạn hiển thị đồng nhất `DD/MM/YYYY`; không đổi schema/business rule.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

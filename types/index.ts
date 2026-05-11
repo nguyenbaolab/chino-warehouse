@@ -118,7 +118,7 @@ export function formatExpiryDate(expiryDate?: string): string {
   const yyyy = parsed.getFullYear()
   const mm = String(parsed.getMonth() + 1).padStart(2, '0')
   const dd = String(parsed.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
+  return `${dd}/${mm}/${yyyy}`
 }
 
 export const EXPIRY_COLORS: Record<CombinedStatus, string> = {

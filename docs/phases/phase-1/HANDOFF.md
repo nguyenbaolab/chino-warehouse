@@ -18,6 +18,7 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 - **Type/store:** `Product` bỏ `barcode`; `InventoryEntry` thêm `barcode?`; `searchByBarcode` trả về **lô** thay vì sản phẩm.
 - **UI chính:** `AddInventoryScreen` nhập barcode theo lô; `ProductDetailScreen` hiện/sửa barcode theo lô; `BarcodeScanner` còn 2 mode `locate` + `search`.
 - **Locate/Search sau quét:** highlight và hiển thị theo **lô trúng barcode** (zone, tầng, số thùng, hạn, barcode).
+- **Bổ sung UI:** `ProductDetailScreen` inline edit có nút 📷 cạnh field barcode lô; `ZoneDetailSheet` hiện barcode lô và bỏ nút `i`; hạn hiển thị toàn app dùng `DD/MM/YYYY` (DB vẫn `YYYY-MM-DD`).
 
 ---
 
@@ -130,3 +131,6 @@ DEV hoàn thành TODO trong `PLAN.md` hoặc QA xác nhận xong lượt test tr
 3. ProductDetail: card lô hiển thị barcode của đúng lô.
 4. Quét barcode: chỉ highlight zone chứa đúng lô có barcode đó (không phải toàn bộ zone của sản phẩm).
 5. Tìm theo tên: vẫn highlight tất cả zone có sản phẩm.
+6. ProductDetail inline edit: bấm 📷 cạnh barcode lô, quét mã xong scanner đóng và input barcode được điền vào đúng lô đang sửa.
+7. ZoneDetailSheet: card lô có dòng barcode (nếu có), không còn nút `i`.
+8. Kiểm tra các màn Map/Products/ProductDetail/ZoneDetail: hạn hiển thị `DD/MM/YYYY`, không đổi format lưu DB.

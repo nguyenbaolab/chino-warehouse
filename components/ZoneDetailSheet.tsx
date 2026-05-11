@@ -383,15 +383,10 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                                 <View style={styles.lotInfo}>
                                   <Text style={[styles.lotText, { color: colors.text }]}>{lot.quantity_boxes} thùng</Text>
                                   <Text style={[styles.lotSubText, { color: colors.sub }]}>Hạn: {lotExpiry}</Text>
+                                  {!!lot.barcode && <Text style={[styles.lotSubText, { color: colors.sub }]}>Barcode: {lot.barcode}</Text>}
                                 </View>
                                 <View style={styles.lotRight}>
                                   <View style={[styles.expiryDot, { backgroundColor: lotColor }]} />
-                                  <TouchableOpacity
-                                    style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                                    onPress={() => navigation.navigate('ProductDetail', { productId: lot.product_id })}
-                                  >
-                                    <Text style={styles.deleteLotBtnText}>i</Text>
-                                  </TouchableOpacity>
                                   <TouchableOpacity
                                     style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                                     onPress={() => openMoveLot(lot)}

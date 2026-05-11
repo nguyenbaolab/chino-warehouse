@@ -10,6 +10,8 @@ type BarcodeScannerParams = {
   returnTab?: string
   /** Params merge vào `AddInventory` khi scanner mở từ màn này (vẫn dùng mode `search`). */
   addInventoryParams?: Record<string, unknown>
+  /** Params để quay về ProductDetail và điền barcode cho đúng lô. */
+  productDetailParams?: { productId: string; lotId: string }
 }
 
 type RootNav = {
@@ -33,6 +35,7 @@ export default function BarcodeScannerScreen() {
     mode = 'search',
     returnTab,
     addInventoryParams,
+    productDetailParams,
   } = (route.params || {}) as BarcodeScannerParams
   const { colors } = useThemeStore()
   const { searchByBarcode } = useWarehouseStore()
@@ -92,6 +95,23 @@ export default function BarcodeScannerScreen() {
             ...(addInventoryParams ?? {}),
             scannedBarcode: barcode,
             barcodeScannedAt: Date.now(),
+          },
+        },
+      })
+      return
+    }
+
+    if (mode === 'search' && productDetailParams) {
+      const tab = returnTab || 'Products'
+      navigateTabsThenCloseModal({
+        screen: tab,
+        params: {
+          screen: 'ProductDetail',
+          params: {
+            productId: productDetailParams.productId,
+            scannedLotBarcode: barcode,
+            scannedLotId: productDetailParams.lotId,
+            scannedLotBarcodeAt: Date.now(),
           },
         },
       })

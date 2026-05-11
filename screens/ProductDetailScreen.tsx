@@ -20,6 +20,9 @@ import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone } fr
 
 type ProductDetailRouteParams = {
   productId: string
+  scannedLotBarcode?: string
+  scannedLotId?: string
+  scannedLotBarcodeAt?: number
 }
 
 function isValidIsoDate(raw: string): boolean {
@@ -36,7 +39,7 @@ function isValidIsoDate(raw: string): boolean {
 export default function ProductDetailScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
-  const { productId } = route.params as ProductDetailRouteParams
+  const { productId, scannedLotBarcode, scannedLotId, scannedLotBarcodeAt } = route.params as ProductDetailRouteParams
   const { colors } = useThemeStore()
   const { zones, updateInventoryEntry, deleteInventoryEntry, updateProductStockThresholds } = useWarehouseStore()
 
@@ -102,6 +105,22 @@ export default function ProductDetailScreen() {
       void loadData()
     }, [loadData])
   )
+
+  useEffect(() => {
+    if (!scannedLotBarcode || !scannedLotId) return
+    const lot = lots.find((item) => item.id === scannedLotId)
+    if (!lot) return
+    setEditingLotId(lot.id)
+    setEditQuantity(String(lot.quantity_boxes))
+    setEditExpiryDate(lot.expiry_date ?? '')
+    setEditNotes(lot.notes ?? '')
+    setEditLotBarcode(scannedLotBarcode.trim())
+    navigation.setParams({
+      scannedLotBarcode: undefined,
+      scannedLotId: undefined,
+      scannedLotBarcodeAt: undefined,
+    })
+  }, [scannedLotBarcode, scannedLotId, scannedLotBarcodeAt, lots, navigation])
 
   function openInlineEdit(lot: InventoryEntry) {
     if (editingLotId === lot.id) {
@@ -239,6 +258,13 @@ export default function ProductDetailScreen() {
       zoneColor: fallbackLot.zone.color ?? colors.accent,
       tier: fallbackLot.tier,
     })
+  }
+
+  function getHostTabName(): string {
+    const tabNav = navigation.getParent()?.getParent()
+    const st = tabNav?.getState()
+    if (!st?.routes || st.index === undefined) return 'Products'
+    return String(st.routes[st.index]?.name ?? 'Products')
   }
 
   return (
@@ -419,15 +445,27 @@ export default function ProductDetailScreen() {
                     />
 
                     <Text style={[styles.editLabel, { color: colors.sub }]}>Barcode lô</Text>
-                    <TextInput
-                      style={[styles.editInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
-                      value={editLotBarcode}
-                      onChangeText={setEditLotBarcode}
-                      placeholder="Optional"
-                      placeholderTextColor={colors.sub}
-                      autoCapitalize="none"
-                      autoCorrect={false}
-                    />
+                    <View style={styles.lotBarcodeRow}>
+                      <TextInput
+                        style={[styles.lotBarcodeInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+                        value={editLotBarcode}
+                        onChangeText={setEditLotBarcode}
+                        placeholder="Optional"
+                        placeholderTextColor={colors.sub}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                      />
+                      <TouchableOpacity
+                        style={[styles.scanBarcodeBtn, { backgroundColor: colors.accent }]}
+                        onPress={() => navigation.navigate('BarcodeScanner', {
+                          mode: 'search',
+                          returnTab: getHostTabName(),
+                          productDetailParams: { productId, lotId: lot.id },
+                        })}
+                      >
+                        <Text style={[styles.scanBarcodeText, { color: colors.card }]}>📷</Text>
+                      </TouchableOpacity>
+                    </View>
 
                     <View style={styles.editActions}>
                       <TouchableOpacity
@@ -579,6 +617,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanBarcodeText: { fontSize: 16 },
+  lotBarcodeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  lotBarcodeInput: { flex: 1, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
   warningSaveBtn: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9 },
   addLotBtn: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginBottom: 14 },
   addLotBtnText: { fontWeight: '700' },
