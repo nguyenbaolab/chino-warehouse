@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Task 4/4: LocationManagementScreen + filter kho
+
+- Tạo LocationManagementScreen: danh sách kho, card có tên + grid size + số sản phẩm, tạo/sửa/xóa kho có validate.
+- SettingsScreen: thêm card Quản lý kho.
+- ProductsScreen + NotificationsScreen: thêm dropdown filter theo kho.
+- CONTEXT.md: cập nhật cấu trúc file + navigation + store actions.
+
+📌 Nhắc upload lại lên Claude Project Knowledge: `docs/project/CONTEXT.md` — màn hình mới, navigation, store actions; `docs/KNOWN_ISSUES.md` — KI-004 Resolved.
+
+---
+
 ## [tháng 5/2026] — Task 3/4: MapScreen selector + fix KI-004
 
 - MapScreen: thay pill bằng selector có dropdown sheet, hiện tên kho + grid size, nút Thêm kho mới.

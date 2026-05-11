@@ -7,8 +7,15 @@ import { supabase } from '../lib/supabase'
 
 export default function SettingsScreen() {
   const navigation = useNavigation<any>()
-  const { zones, selectedLocationId, fetchZones, fetchLocations, products, refreshDiscontinuedContext } =
-    useWarehouseStore()
+  const {
+    zones,
+    selectedLocationId,
+    fetchZones,
+    fetchLocations,
+    locations,
+    products,
+    refreshDiscontinuedContext,
+  } = useWarehouseStore()
   const { isDark, colors, loadTheme, toggleTheme } = useThemeStore()
 
   const discontinuedCount = useMemo(
@@ -61,6 +68,18 @@ export default function SettingsScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>⚙️ Cài đặt</Text>
       </View>
+
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('LocationManagement')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>Quản lý kho</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>{locations.length} kho</Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}

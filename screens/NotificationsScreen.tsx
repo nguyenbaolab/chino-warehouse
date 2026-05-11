@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
-import { formatExpiryDate, getExpiryStatus, InventoryEntry, Product } from '../types'
+import { formatExpiryDate, getExpiryStatus, InventoryEntry, Product, Zone } from '../types'
+import { supabase } from '../lib/supabase'
 
 type ExpiryLotRow = {
   entryId: string
@@ -32,6 +33,7 @@ export default function NotificationsScreen() {
   const { colors } = useThemeStore()
   const {
     zones,
+    locations,
     products,
     inventoryEntries,
     fetchLocations,
@@ -40,6 +42,10 @@ export default function NotificationsScreen() {
     togglePriceReduced,
     toggleDiscontinued,
   } = useWarehouseStore()
+
+  const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false)
+  const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
 
   const [activeTab, setActiveTab] = useState<'expiry' | 'lowStock'>('expiry')
   const [showExpiredFilter, setShowExpiredFilter] = useState(false)
@@ -53,18 +59,58 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     if (zones.length === 0) return
+    if (filterLocationId) return
     void Promise.all(zones.map((zone) => fetchInventoryByZone(zone.id)))
-  }, [zones, fetchInventoryByZone])
+  }, [zones, fetchInventoryByZone, filterLocationId])
+
+  useEffect(() => {
+    if (!filterLocationId) {
+      setZonesForFilterLoc([])
+      return
+    }
+    let cancelled = false
+    void supabase
+      .from('zones')
+      .select('*')
+      .eq('location_id', filterLocationId)
+      .order('name')
+      .then(({ data }) => {
+        if (!cancelled) setZonesForFilterLoc((data as Zone[]) ?? [])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [filterLocationId])
+
+  useEffect(() => {
+    if (!filterLocationId || zonesForFilterLoc.length === 0) return
+    void Promise.all(zonesForFilterLoc.map((z) => fetchInventoryByZone(z.id)))
+  }, [filterLocationId, zonesForFilterLoc, fetchInventoryByZone])
+
+  const locationZoneSet = useMemo(() => {
+    if (!filterLocationId) return null
+    return new Set(zonesForFilterLoc.map((z) => z.id))
+  }, [filterLocationId, zonesForFilterLoc])
+
+  const sortedLocations = useMemo(
+    () => [...locations].sort((a, b) => a.name.localeCompare(b.name)),
+    [locations]
+  )
+
+  const inventoryEntriesForNotify = useMemo(() => {
+    if (!locationZoneSet) return inventoryEntries
+    return inventoryEntries.filter((e) => locationZoneSet.has(e.zone_id))
+  }, [inventoryEntries, locationZoneSet])
 
   const productIdToEntries = useMemo(() => {
     const map = new Map<string, InventoryEntry[]>()
-    for (const entry of inventoryEntries) {
+    for (const entry of inventoryEntriesForNotify) {
       const list = map.get(entry.product_id)
       if (list) list.push(entry)
       else map.set(entry.product_id, [entry])
     }
     return map
-  }, [inventoryEntries])
+  }, [inventoryEntriesForNotify])
 
   const expiryCards = useMemo(() => {
     const cards: ExpiryCard[] = []
@@ -164,6 +210,66 @@ export default function NotificationsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <Text style={[styles.title, { color: colors.text }]}>🔔 Thông báo</Text>
+
+      <TouchableOpacity
+        style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => setLocationPickerOpen(true)}
+        activeOpacity={0.75}
+      >
+        <Text style={[styles.locationFilterLabel, { color: colors.sub }]}>Kho</Text>
+        <Text style={[styles.locationFilterValue, { color: colors.text }]} numberOfLines={1}>
+          {filterLocationId
+            ? locations.find((l) => l.id === filterLocationId)?.name ?? '…'
+            : 'Tất cả kho'}
+        </Text>
+        <Text style={[styles.locationFilterChevron, { color: colors.sub }]}>▾</Text>
+      </TouchableOpacity>
+
+      <Modal visible={locationPickerOpen} transparent animationType="fade" onRequestClose={() => setLocationPickerOpen(false)}>
+        <Pressable style={styles.locationModalOverlay} onPress={() => setLocationPickerOpen(false)}>
+          <Pressable style={[styles.locationModalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.locationModalTitle, { color: colors.text }]}>Chọn kho</Text>
+            <ScrollView style={styles.locationModalList} keyboardShouldPersistTaps="handled">
+              <TouchableOpacity
+                style={[
+                  styles.locationOption,
+                  { borderColor: colors.border, backgroundColor: filterLocationId ? colors.bg : colors.accent + '22' },
+                ]}
+                onPress={() => {
+                  setFilterLocationId(null)
+                  setLocationPickerOpen(false)
+                }}
+              >
+                <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: filterLocationId ? '500' : '700' }]}>
+                  Tất cả kho
+                </Text>
+                {!filterLocationId && <Text style={{ color: colors.accent }}>✓</Text>}
+              </TouchableOpacity>
+              {sortedLocations.map((loc) => {
+                const sel = filterLocationId === loc.id
+                return (
+                  <TouchableOpacity
+                    key={loc.id}
+                    style={[
+                      styles.locationOption,
+                      { borderColor: colors.border, backgroundColor: sel ? colors.accent + '22' : colors.bg },
+                    ]}
+                    onPress={() => {
+                      setFilterLocationId(loc.id)
+                      setLocationPickerOpen(false)
+                    }}
+                  >
+                    <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]} numberOfLines={2}>
+                      {loc.name}
+                    </Text>
+                    {sel && <Text style={{ color: colors.accent }}>✓</Text>}
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <View style={[styles.tabBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <TouchableOpacity
@@ -328,7 +434,45 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 16 },
-  title: { fontSize: 18, fontWeight: '700', paddingHorizontal: 16, marginBottom: 10 },
+  title: { fontSize: 18, fontWeight: '700', paddingHorizontal: 16, marginBottom: 8 },
+  locationFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  locationFilterLabel: { fontSize: 12, width: 36 },
+  locationFilterValue: { flex: 1, fontSize: 14, fontWeight: '600' },
+  locationFilterChevron: { fontSize: 12 },
+  locationModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  locationModalBox: {
+    borderRadius: 14,
+    padding: 16,
+    maxHeight: '70%',
+  },
+  locationModalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  locationModalList: { maxHeight: 360 },
+  locationOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+  },
+  locationOptionText: { flex: 1, marginRight: 8, fontSize: 14 },
   tabBar: {
     flexDirection: 'row',
     marginHorizontal: 16,

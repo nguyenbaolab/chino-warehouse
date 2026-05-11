@@ -41,8 +41,12 @@ lib/
 screens/
   AddInventoryScreen.tsx
   BarcodeScannerScreen.tsx
+  DiscontinuedProductsScreen.tsx
+  LocationManagementScreen.tsx
   MapScreen.tsx
   NotificationsScreen.tsx
+  OrderDetailScreen.tsx
+  OrderListScreen.tsx
   ProductDetailScreen.tsx
   ProductsScreen.tsx
   SettingsScreen.tsx
@@ -65,18 +69,20 @@ README.md
 
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar.
-- **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
+- **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
 - **Map tab:** `MapStack` (`MapMain` → `ProductDetail` → `AddInventory`).
 - **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory`).
+- **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail`).
 - **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory`).
-- **Settings tab:** `SettingsStack` chỉ có `SettingsMain`.
+- **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `DiscontinuedProducts`). `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount.
 - **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng.
 
 **Danh sách / lọc (UI):**
 
-- **NotificationsScreen:** có 2 tab con **Có vấn đề / Để sau**. Card theo SP có format: dòng 1 `Còn ... thùng` (tổng tất cả lô), dòng 2 `Số thùng sắp hết hạn: ... thùng`, dưới cùng là 2 pill cùng hàng (pill tồn + pill hạn). Tap card → `ProductDetail`.
-- **ProductsScreen:** mỗi card hiện **tổng thùng**; toggle **Có vấn đề** chỉ giữ SP có ít nhất một lô đỏ/vàng (`combined` ≠ `ok`).
-- **ProductDetailScreen:** thanh **Tổng … thùng** + toggle **Có vấn đề** lọc danh sách lô; refetch khi focus (`useFocusEffect` + `loadData`).
+- **NotificationsScreen:** dropdown **Kho** (đầu tiên **Tất cả kho**, sau đó từng `location`); lọc áp dụng cho cả hai tab **Sắp hết hạn** / **Sắp hết hàng** (chỉ tính `inventory_entries` trong zone thuộc kho đã chọn). Tab hết hạn có thêm lọc checkbox Hết hạn / Sắp hết hạn.
+- **ProductsScreen:** dropdown **Kho** (cùng quy ước); khi chọn một kho chỉ hiện SP có lô trong zone của kho đó; chip lọc zone theo zone của kho đang lọc (hoặc zone của kho đang chọn trên Map khi **Tất cả kho**). Mỗi card hiện **tổng thùng** theo bộ lọc.
+- **LocationManagementScreen:** danh sách kho (tên, grid X×Y, số SP distinct theo `inventory_entries` qua `zones`); FAB **+** tạo kho; sửa/xóa có modal / confirm và thông báo lỗi từ store.
+- **ProductDetailScreen:** thanh **Tổng … thùng** + lọc lô theo ngữ cảnh màn hình; refetch khi focus (`useFocusEffect` + `loadData`).
 
 ---
 
@@ -84,7 +90,7 @@ README.md
 
 **State:** `locations`, `selectedLocationId`, `zones`, `products`, `inventoryEntries`, `isLoading`.
 
-**Actions chính:** `setSelectedLocation`, `fetchLocations`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `searchProducts`, `searchByBarcode`, `addProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateBarcode`, `updateProductStockThresholds`, `addZone`, `updateZone`, `deleteZone`.
+**Actions chính:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `searchProducts`, `searchByBarcode`, `addProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateBarcode`, `updateProductStockThresholds`, `addZone`, `updateZone`, `deleteZone`.
 
 ---
 

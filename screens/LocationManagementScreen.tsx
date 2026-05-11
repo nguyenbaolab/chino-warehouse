@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   Pressable,
@@ -14,12 +15,35 @@ import {
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
+import { supabase } from '../lib/supabase'
+import { Location } from '../types'
+
+const DEFAULT_GRID = 6
+
+async function buildSkuCountByLocation(locationsList: Location[]): Promise<Map<string, number>> {
+  const map = new Map<string, number>()
+  for (const loc of locationsList) {
+    const { data: zoneRows } = await supabase.from('zones').select('id').eq('location_id', loc.id)
+    const zids = (zoneRows ?? []).map((z) => z.id)
+    if (zids.length === 0) {
+      map.set(loc.id, 0)
+      continue
+    }
+    const { data: inv } = await supabase.from('inventory_entries').select('product_id').in('zone_id', zids)
+    const distinct = new Set((inv ?? []).map((r) => r.product_id))
+    map.set(loc.id, distinct.size)
+  }
+  return map
+}
 
 export default function LocationManagementScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
   const { colors } = useThemeStore()
-  const { locations, fetchLocations, addLocation } = useWarehouseStore()
+  const { locations, fetchLocations, addLocation, updateLocation, deleteLocation } = useWarehouseStore()
+
+  const [skuCounts, setSkuCounts] = useState<Map<string, number>>(new Map())
+  const [countsLoading, setCountsLoading] = useState(false)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [newName, setNewName] = useState('')
@@ -27,11 +51,35 @@ export default function LocationManagementScreen() {
   const [newCols, setNewCols] = useState('6')
   const [saving, setSaving] = useState(false)
 
+  const [editing, setEditing] = useState<Location | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editRows, setEditRows] = useState('6')
+  const [editCols, setEditCols] = useState('6')
+  const [editSaving, setEditSaving] = useState(false)
+
+  async function refreshCounts() {
+    if (locations.length === 0) {
+      setSkuCounts(new Map())
+      return
+    }
+    setCountsLoading(true)
+    try {
+      const m = await buildSkuCountByLocation(locations)
+      setSkuCounts(m)
+    } finally {
+      setCountsLoading(false)
+    }
+  }
+
   useFocusEffect(
     useCallback(() => {
       void fetchLocations()
     }, [fetchLocations])
   )
+
+  useEffect(() => {
+    void refreshCounts()
+  }, [locations])
 
   useEffect(() => {
     if (route.params?.openCreateModal === true) {
@@ -43,12 +91,32 @@ export default function LocationManagementScreen() {
     }
   }, [route.params?.openCreateModal, navigation])
 
+  const sortedLocations = useMemo(
+    () => [...locations].sort((a, b) => a.name.localeCompare(b.name)),
+    [locations]
+  )
+
+  function openEdit(loc: Location) {
+    setEditing(loc)
+    setEditName(loc.name)
+    setEditRows(String(loc.grid_rows ?? DEFAULT_GRID))
+    setEditCols(String(loc.grid_cols ?? DEFAULT_GRID))
+  }
+
   async function handleCreateSave() {
+    if (!newName.trim()) {
+      Alert.alert('Thiếu thông tin', 'Tên kho không được để trống.')
+      return
+    }
     const rows = Number(newRows)
     const cols = Number(newCols)
+    if (!Number.isFinite(rows) || rows < 1 || !Number.isFinite(cols) || cols < 1) {
+      Alert.alert('Lưới không hợp lệ', 'Số hàng và số cột phải là số ≥ 1.')
+      return
+    }
     setSaving(true)
     try {
-      const { error } = await addLocation(newName, rows, cols)
+      const { error } = await addLocation(newName.trim(), rows, cols)
       if (error) {
         Alert.alert('Không tạo được', error)
         return
@@ -62,46 +130,127 @@ export default function LocationManagementScreen() {
     }
   }
 
+  async function handleEditSave() {
+    if (!editing) return
+    if (!editName.trim()) {
+      Alert.alert('Thiếu thông tin', 'Tên kho không được để trống.')
+      return
+    }
+    const rows = Number(editRows)
+    const cols = Number(editCols)
+    if (!Number.isFinite(rows) || rows < 1 || !Number.isFinite(cols) || cols < 1) {
+      Alert.alert('Lưới không hợp lệ', 'Số hàng và số cột phải là số ≥ 1.')
+      return
+    }
+    setEditSaving(true)
+    try {
+      const { error } = await updateLocation(editing.id, {
+        name: editName.trim(),
+        grid_rows: rows,
+        grid_cols: cols,
+      })
+      if (error) {
+        Alert.alert('Không cập nhật được', error)
+        return
+      }
+      setEditing(null)
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  function confirmDelete(loc: Location) {
+    Alert.alert('Xóa kho', `Xóa kho "${loc.name}"? Không thể hoàn tác.`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: async () => {
+          const { error } = await deleteLocation(loc.id)
+          if (error) {
+            const stockBlocked =
+              error.includes('lô hàng') || error.includes('Còn') || error.includes('còn')
+            Alert.alert('Không xóa được', stockBlocked ? 'Kho còn hàng, không thể xóa.' : error)
+          }
+        },
+      },
+    ])
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={[styles.backBtn, { backgroundColor: colors.card }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Quản lý kho</Text>
+        <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
           <Text style={{ color: colors.sub }}>Đóng</Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>Quản lý kho</Text>
-        <View style={{ width: 56 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.list}>
-        {locations.map((loc) => (
-          <View
-            key={loc.id}
-            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-          >
-            <Text style={[styles.cardName, { color: colors.text }]}>{loc.name}</Text>
-            <Text style={[styles.cardSub, { color: colors.sub }]}>
-              Lưới: {(loc.grid_rows ?? 6)} × {(loc.grid_cols ?? 6)}
-            </Text>
-          </View>
-        ))}
-        <TouchableOpacity
-          style={[styles.addBtn, { backgroundColor: colors.accent }]}
-          onPress={() => {
-            setNewName('')
-            setNewRows('6')
-            setNewCols('6')
-            setCreateOpen(true)
-          }}
-        >
-          <Text style={[styles.addBtnText, { color: colors.card }]}>+ Thêm kho mới</Text>
-        </TouchableOpacity>
-      </ScrollView>
+      {countsLoading && sortedLocations.length === 0 ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.list}>
+          {sortedLocations.map((loc) => {
+            const gr = loc.grid_rows ?? DEFAULT_GRID
+            const gc = loc.grid_cols ?? DEFAULT_GRID
+            const sku = skuCounts.get(loc.id) ?? 0
+            return (
+              <View key={loc.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.cardTop}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={2}>
+                      {loc.name}
+                    </Text>
+                    <Text style={[styles.cardLine, { color: colors.sub }]}>Grid size: {gr} × {gc}</Text>
+                    <Text style={[styles.cardLine, { color: colors.sub }]}>Số sản phẩm: {sku}</Text>
+                  </View>
+                  <View style={styles.cardActions}>
+                    <TouchableOpacity
+                      style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                      onPress={() => openEdit(loc)}
+                      hitSlop={8}
+                    >
+                      <Text style={{ fontSize: 16 }}>✏️</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                      onPress={() => confirmDelete(loc)}
+                      hitSlop={8}
+                    >
+                      <Text style={{ fontSize: 16 }}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+            )
+          })}
+          {sortedLocations.length === 0 && (
+            <Text style={[styles.empty, { color: colors.sub }]}>Chưa có kho nào.</Text>
+          )}
+        </ScrollView>
+      )}
 
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.accent }]}
+        activeOpacity={0.85}
+        onPress={() => {
+          setNewName('')
+          setNewRows('6')
+          setNewCols('6')
+          setCreateOpen(true)
+        }}
+      >
+        <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
+      </TouchableOpacity>
+
+      {/* Modal tạo kho */}
       <Modal visible={createOpen} transparent animationType="slide" onRequestClose={() => setCreateOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setCreateOpen(false)}>
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Thêm kho mới</Text>
-            <Text style={[styles.label, { color: colors.sub }]}>Tên kho</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Tạo kho mới</Text>
+            <Text style={[styles.label, { color: colors.sub }]}>Tên kho *</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
               value={newName}
@@ -109,14 +258,14 @@ export default function LocationManagementScreen() {
               placeholder="VD: Kho chính"
               placeholderTextColor={colors.sub}
             />
-            <Text style={[styles.label, { color: colors.sub }]}>Số hàng lưới</Text>
+            <Text style={[styles.label, { color: colors.sub }]}>Số hàng (rows)</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
               value={newRows}
               onChangeText={setNewRows}
               keyboardType="number-pad"
             />
-            <Text style={[styles.label, { color: colors.sub }]}>Số cột lưới</Text>
+            <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
               value={newCols}
@@ -131,6 +280,48 @@ export default function LocationManagementScreen() {
                 style={[styles.btnPrimary, { backgroundColor: colors.accent, opacity: saving ? 0.6 : 1 }]}
                 disabled={saving}
                 onPress={() => void handleCreateSave()}
+              >
+                <Text style={{ color: colors.card, fontWeight: '700' }}>Tạo</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Modal sửa kho */}
+      <Modal visible={editing !== null} transparent animationType="slide" onRequestClose={() => setEditing(null)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setEditing(null)}>
+          <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Sửa kho</Text>
+            <Text style={[styles.label, { color: colors.sub }]}>Tên kho *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+              value={editName}
+              onChangeText={setEditName}
+              placeholderTextColor={colors.sub}
+            />
+            <Text style={[styles.label, { color: colors.sub }]}>Số hàng (rows)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+              value={editRows}
+              onChangeText={setEditRows}
+              keyboardType="number-pad"
+            />
+            <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+              value={editCols}
+              onChangeText={setEditCols}
+              keyboardType="number-pad"
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setEditing(null)}>
+                <Text style={{ color: colors.text }}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btnPrimary, { backgroundColor: colors.accent, opacity: editSaving ? 0.6 : 1 }]}
+                disabled={editSaving}
+                onPress={() => void handleEditSave()}
               >
                 <Text style={{ color: colors.card, fontWeight: '700' }}>Lưu</Text>
               </TouchableOpacity>
@@ -151,14 +342,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
+  title: { fontSize: 17, fontWeight: 'bold', flex: 1 },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
-  title: { fontSize: 17, fontWeight: 'bold' },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { paddingHorizontal: 16, paddingBottom: 100 },
   card: { borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 10 },
+  cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
   cardName: { fontSize: 15, fontWeight: '700' },
-  cardSub: { fontSize: 13, marginTop: 6 },
-  addBtn: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 8 },
-  addBtnText: { fontSize: 15, fontWeight: '700' },
+  cardLine: { fontSize: 13, marginTop: 6 },
+  cardActions: { flexDirection: 'row', gap: 8 },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  empty: { textAlign: 'center', marginTop: 24 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 28,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  fabText: { fontSize: 28, fontWeight: '300', marginTop: -2 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   modalBox: { borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 20, paddingBottom: 28 },
   modalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 14 },
