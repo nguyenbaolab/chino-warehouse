@@ -379,7 +379,7 @@ export default function ProductDetailScreen() {
                   </View>
                 )}
                 <View style={styles.lotRow}>
-                  <View style={styles.lotMain}>
+                  <TouchableOpacity style={styles.lotMain} activeOpacity={0.75} onPress={() => openInlineEdit(lot)}>
                     <Text style={[styles.lotTitle, { color: colors.text }]}>
                       {zone?.name ?? 'Zone?'} · Tầng {lot.tier}
                     </Text>
@@ -388,7 +388,7 @@ export default function ProductDetailScreen() {
                     </Text>
                     {!!lot.barcode && <Text style={[styles.lotSub, { color: colors.sub }]}>Barcode: {lot.barcode}</Text>}
                     {!!lot.notes && <Text style={[styles.lotSub, { color: colors.sub }]}>{lot.notes}</Text>}
-                  </View>
+                  </TouchableOpacity>
                   <View style={styles.lotActions}>
                     <View style={[styles.expiryDot, { backgroundColor: dotColor }]} />
                     <TouchableOpacity
@@ -459,8 +459,10 @@ export default function ProductDetailScreen() {
                         style={[styles.scanBarcodeBtn, { backgroundColor: colors.accent }]}
                         onPress={() => navigation.navigate('BarcodeScanner', {
                           mode: 'search',
-                          returnTab: getHostTabName(),
-                          productDetailParams: { productId, lotId: lot.id },
+                          onScanFillBarcode: (barcode: string) => {
+                            setEditingLotId(lot.id)
+                            setEditLotBarcode(barcode.trim())
+                          },
                         })}
                       >
                         <Text style={[styles.scanBarcodeText, { color: colors.card }]}>📷</Text>

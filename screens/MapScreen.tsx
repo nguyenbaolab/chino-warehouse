@@ -73,6 +73,9 @@ export default function MapScreen() {
   const scannedProductName: string | undefined = route.params?.scannedProductName
   const scannedBarcode: string | undefined = route.params?.scannedBarcode
   const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
+  const scannedZoneLotBarcode: string | undefined = route.params?.scannedZoneLotBarcode
+  const scannedZoneLotId: string | undefined = route.params?.scannedZoneLotId
+  const scannedZoneLotBarcodeAt: number | undefined = route.params?.scannedZoneLotBarcodeAt
   const locateScannedAt: number | undefined = route.params?.locateScannedAt
 
   useEffect(() => {
@@ -113,6 +116,9 @@ export default function MapScreen() {
       navigation.setParams({
         scannedBarcode: undefined,
         scannedInventoryEntryId: undefined,
+        scannedZoneLotBarcode: undefined,
+        scannedZoneLotId: undefined,
+        scannedZoneLotBarcodeAt: undefined,
         scannedProductName: undefined,
         locateScannedAt: undefined,
       })
@@ -125,6 +131,9 @@ export default function MapScreen() {
       handleSearch(scannedProductName)
       navigation.setParams({
         scannedProductName: undefined,
+        scannedZoneLotBarcode: undefined,
+        scannedZoneLotId: undefined,
+        scannedZoneLotBarcodeAt: undefined,
         locateScannedAt: undefined,
       })
       return
@@ -467,24 +476,26 @@ export default function MapScreen() {
       {/* Search */}
       {mode === 'normal' && (
         <View style={styles.searchRow}>
-          <TextInput
-            style={[styles.searchInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
-            placeholder="Tìm sản phẩm..."
-            placeholderTextColor={colors.sub}
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
+          <View style={styles.searchInputWrap}>
+            <TextInput
+              style={[styles.searchInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+              placeholder="Tìm sản phẩm..."
+              placeholderTextColor={colors.sub}
+              value={searchQuery}
+              onChangeText={handleSearch}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={clearSearch} style={styles.searchClearInsideBtn}>
+                <Text style={{ color: colors.text }}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <TouchableOpacity
             onPress={() => navigation.navigate('BarcodeScanner', { mode: 'locate' })}
             style={[styles.scanBtn, { backgroundColor: colors.accent }]}
           >
             <Text style={styles.scanBtnText}>📷</Text>
           </TouchableOpacity>
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={clearSearch} style={[styles.clearBtn, { backgroundColor: colors.card }]}>
-              <Text style={{ color: colors.text }}>✕</Text>
-            </TouchableOpacity>
-          )}
         </View>
       )}
 
@@ -674,6 +685,9 @@ export default function MapScreen() {
         zone={tappedZone}
         onClose={() => setZoneDetailVisible(false)}
         navigation={navigation}
+        scannedLotBarcode={scannedZoneLotBarcode}
+        scannedLotId={scannedZoneLotId}
+        scannedLotBarcodeAt={scannedZoneLotBarcodeAt}
       />
     </SafeAreaView>
   )
@@ -693,7 +707,17 @@ const styles = StyleSheet.create({
   locBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, marginRight: 8 },
   locText: { fontSize: 13 },
   searchRow: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 10 },
-  searchInput: { flex: 1, borderRadius: 10, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14 },
+  searchInputWrap: { flex: 1, position: 'relative' },
+  searchInput: { flex: 1, borderRadius: 10, borderWidth: 1, paddingLeft: 14, paddingRight: 40, paddingVertical: 10, fontSize: 14 },
+  searchClearInsideBtn: {
+    position: 'absolute',
+    right: 10,
+    top: 8,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   scanBtn: {
     marginLeft: 8,
     width: 40,
@@ -703,7 +727,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanBtnText: { fontSize: 16 },
-  clearBtn: { marginLeft: 8, padding: 10, borderRadius: 10 },
   instructionBox: { marginHorizontal: 16, marginBottom: 10, borderRadius: 10, padding: 12 },
   instructionText: { fontWeight: 'bold', fontSize: 14 },
   instructionSub: { fontSize: 12, marginTop: 2 },

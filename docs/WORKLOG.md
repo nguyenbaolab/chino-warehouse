@@ -177,3 +177,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/BarcodeScannerScreen.tsx`, `types/index.ts`, `screens/MapScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Luồng quét từ ProductDetail quay lại đúng lô đang edit; hạn hiển thị đồng nhất `DD/MM/YYYY`; không đổi schema/business rule.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### UI — Expand card lô + scan barcode trả về đúng màn
+
+- **Task:** `MapScreen`: đưa nút `✕` vào trong ô tìm (giữ nguyên nút scan camera); `ZoneDetailSheet`: expand lô thêm field barcode + nút 📷; `ProductDetailScreen`: bấm card lô để mở inline edit luôn; `BarcodeScannerScreen`: trả barcode về đúng ngữ cảnh `ProductDetailScreen` và `ZoneDetailSheet` (không đổi các mode khác).
+- **Files thay đổi:** `screens/MapScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/ProductDetailScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Quét từ `ZoneDetailSheet`/`ProductDetailScreen` điền barcode vào đúng lô đang sửa và đóng scanner, không chuyển sang màn khác; thao tác mở edit lô nhanh hơn bằng cách bấm trực tiếp card.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Fix scanner callback + ô tìm Sản phẩm
+
+- **Task:** `BarcodeScannerScreen`: trả barcode đúng chỗ cho `ProductDetailScreen`, `AddInventoryScreen`, `ZoneDetailSheet` theo callback tại màn gọi scanner (điền field rồi đóng scanner, không điều hướng về `MapScreen`); `ProductsScreen`: thêm nút `✕` trong input tìm kiếm (giữ nguyên vị trí nút scan).
+- **Files thay đổi:** `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Luồng scan từ 3 màn nhập barcode trực tiếp vào field đang sửa và đóng scanner bằng `goBack`; locate/search flow hiện tại không thay đổi.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

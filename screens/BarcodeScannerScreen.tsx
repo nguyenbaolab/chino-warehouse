@@ -8,6 +8,8 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 type BarcodeScannerParams = {
   mode?: 'search' | 'locate'
   returnTab?: string
+  /** Callback điền barcode tại màn mở scanner rồi đóng scanner. */
+  onScanFillBarcode?: (barcode: string) => void
   /** Params merge vào `AddInventory` khi scanner mở từ màn này (vẫn dùng mode `search`). */
   addInventoryParams?: Record<string, unknown>
   /** Params để quay về ProductDetail và điền barcode cho đúng lô. */
@@ -34,6 +36,7 @@ export default function BarcodeScannerScreen() {
   const {
     mode = 'search',
     returnTab,
+    onScanFillBarcode,
     addInventoryParams,
     productDetailParams,
   } = (route.params || {}) as BarcodeScannerParams
@@ -83,6 +86,13 @@ export default function BarcodeScannerScreen() {
 
     const barcode = data.trim()
     console.log('[BarcodeScanner] scanned barcode:', barcode, 'mode:', mode)
+
+    if (mode === 'search' && typeof onScanFillBarcode === 'function') {
+      setIsSearching(false)
+      onScanFillBarcode(barcode)
+      navigation.goBack()
+      return
+    }
 
     if (mode === 'search' && addInventoryParams) {
       setIsSearching(false)

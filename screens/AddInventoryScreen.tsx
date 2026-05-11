@@ -442,14 +442,8 @@ export default function AddInventoryScreen() {
                 onPress={() =>
                   navigation.navigate('BarcodeScanner', {
                     mode: 'search',
-                    returnTab: getHostTabName(),
-                    addInventoryParams: {
-                      zoneId: selectedZoneId ?? initialZoneId,
-                      tierId: initialTierId,
-                      zoneName,
-                      zoneColor,
-                      tier: selectedTier ?? tier,
-                      productId: selectedProduct.id,
+                    onScanFillBarcode: (barcode: string) => {
+                      setLotBarcode(barcode.trim())
                     },
                   })
                 }

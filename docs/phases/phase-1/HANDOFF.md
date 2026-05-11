@@ -20,6 +20,37 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 - **Locate/Search sau quét:** highlight và hiển thị theo **lô trúng barcode** (zone, tầng, số thùng, hạn, barcode).
 - **Bổ sung UI:** `ProductDetailScreen` inline edit có nút 📷 cạnh field barcode lô; `ZoneDetailSheet` hiện barcode lô và bỏ nút `i`; hạn hiển thị toàn app dùng `DD/MM/YYYY` (DB vẫn `YYYY-MM-DD`).
 
+## Task mới — Expand lô + scan barcode tại chỗ
+
+- `MapScreen`: nút `✕` xóa text nằm trong ô tìm kiếm (sát phải), không thay đổi vị trí nút scan 📷.
+- `ZoneDetailSheet`: bấm card lô để expand form inline; form có thêm field barcode + nút 📷; quét xong điền barcode vào đúng lô đang mở và giữ nguyên ngữ cảnh màn (không điều hướng sang màn khác).
+- `ProductDetailScreen`: bấm card lô để mở form inline ngay (không cần bấm ✏️ mới thấy form), vẫn giữ nguyên nút ✏️.
+- `BarcodeScannerScreen`: bổ sung nhánh trả dữ liệu barcode về `ZoneDetailSheet` tương tự `ProductDetailScreen`; không đổi các mode scan khác.
+
+**Test QA:**
+
+1. `MapScreen`: nhập text tìm kiếm, nút `✕` xuất hiện trong input; bấm `✕` xoá text; vị trí nút scan 📷 không đổi.
+2. `ProductDetailScreen`: bấm vào phần nội dung card lô -> form inline mở ngay; bấm nút ✏️ vẫn mở như cũ.
+3. `ProductDetailScreen`: trong form inline bấm 📷, quét barcode -> scanner đóng, barcode điền vào field của đúng lô đang sửa.
+4. `ZoneDetailSheet`: bấm card lô -> form inline có field barcode + nút 📷; quét xong scanner đóng và barcode được điền vào đúng lô đang mở.
+5. Verify regression: locate/search/addInventory flows đang chạy ổn như trước (không thay đổi mode khác).
+
+## Task mới — Fix trả barcode đúng màn + ô tìm Sản phẩm
+
+- `BarcodeScannerScreen`: thêm nhánh callback `onScanFillBarcode` để trả mã trực tiếp cho màn gọi scanner rồi đóng modal bằng `goBack()`.
+- Áp dụng cho 3 màn: `ProductDetailScreen`, `AddInventoryScreen`, `ZoneDetailSheet`.
+- Không navigate vòng qua `MapScreen` cho 3 luồng này.
+- Không thay đổi `locate mode` và `search mode` chung đang hoạt động.
+- `ProductsScreen`: nút `✕` nằm trong ô tìm kiếm (sát phải input), vị trí nút scan 📷 giữ nguyên.
+
+**Test QA:**
+
+1. `ProductDetailScreen`: mở inline edit lô -> bấm 📷 -> quét mã -> scanner đóng, field barcode của lô đang edit được điền.
+2. `AddInventoryScreen`: bấm 📷 ở field barcode lô -> quét mã -> scanner đóng, field barcode được điền.
+3. `ZoneDetailSheet`: expand lô -> bấm 📷 -> quét mã -> scanner đóng, field barcode của lô đó được điền.
+4. `ProductsScreen`: nhập text, nút `✕` xuất hiện trong input; bấm `✕` xóa text; nút scan 📷 vẫn ở vị trí cũ.
+5. Regression nhanh: locate/search hiện có vẫn chạy như trước.
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng

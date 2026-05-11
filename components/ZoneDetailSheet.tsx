@@ -21,6 +21,9 @@ type ZoneDetailSheetProps = {
   zone: Zone | null
   onClose: () => void
   navigation: any
+  scannedLotBarcode?: string
+  scannedLotId?: string
+  scannedLotBarcodeAt?: number
 }
 
 // Chuyển HEX sang RGBA để làm lớp phủ trong suốt theo theme
@@ -33,7 +36,15 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: ZoneDetailSheetProps) {
+export default function ZoneDetailSheet({
+  visible,
+  zone,
+  onClose,
+  navigation,
+  scannedLotBarcode,
+  scannedLotId,
+  scannedLotBarcodeAt,
+}: ZoneDetailSheetProps) {
   const { colors } = useThemeStore()
   const { zones, fetchInventoryByZone, updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
 
@@ -45,6 +56,7 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
   const [editQuantity, setEditQuantity] = useState('')
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [editLotBarcode, setEditLotBarcode] = useState('')
   const [moveLot, setMoveLot] = useState<InventoryEntry | null>(null)
   const [targetZoneId, setTargetZoneId] = useState<string | null>(null)
   const [targetTier, setTargetTier] = useState<number | null>(null)
@@ -157,6 +169,7 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
     setEditQuantity(String(entry.quantity_boxes))
     setEditExpiryDate(entry.expiry_date ?? '')
     setEditNotes(entry.notes ?? '')
+    setEditLotBarcode(entry.barcode ?? '')
   }
 
   async function handleSaveLot(entry: InventoryEntry) {
@@ -175,6 +188,7 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
       quantity_boxes: quantity,
       expiry_date: editExpiryDate.trim() || undefined,
       notes: editNotes.trim() || undefined,
+      barcode: editLotBarcode.trim() || undefined,
     })
     setEditingLotId(null)
     await reloadCurrentZoneInventory()
@@ -218,6 +232,22 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
     setMoveLot(null)
     await reloadCurrentZoneInventory()
   }
+
+  useEffect(() => {
+    if (!visible || !scannedLotBarcodeAt || !scannedLotId) return
+    const target = entries.find((entry) => entry.id === scannedLotId)
+    if (!target) return
+    setEditingLotId(target.id)
+    setEditQuantity(String(target.quantity_boxes))
+    setEditExpiryDate(target.expiry_date ?? '')
+    setEditNotes(target.notes ?? '')
+    setEditLotBarcode(scannedLotBarcode ?? '')
+    navigation.setParams({
+      scannedZoneLotBarcode: undefined,
+      scannedZoneLotId: undefined,
+      scannedZoneLotBarcodeAt: undefined,
+    })
+  }, [visible, scannedLotBarcodeAt, scannedLotId, scannedLotBarcode, entries, navigation])
 
   function handlePressAddInventory() {
     if (!zone) return
@@ -431,6 +461,33 @@ export default function ZoneDetailSheet({ visible, zone, onClose, navigation }: 
                                     placeholder="Optional"
                                     placeholderTextColor={colors.sub}
                                   />
+
+                                  <Text style={[styles.editLabel, { color: colors.sub }]}>Barcode lô</Text>
+                                  <View style={styles.barcodeRow}>
+                                    <TextInput
+                                      style={[styles.barcodeInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                                      value={editLotBarcode}
+                                      onChangeText={setEditLotBarcode}
+                                      placeholder="Optional"
+                                      placeholderTextColor={colors.sub}
+                                      autoCapitalize="none"
+                                      autoCorrect={false}
+                                    />
+                                    <TouchableOpacity
+                                      style={[styles.barcodeScanBtn, { backgroundColor: colors.accent }]}
+                                      onPress={() =>
+                                        navigation.navigate('BarcodeScanner', {
+                                          mode: 'search',
+                                          onScanFillBarcode: (barcode: string) => {
+                                            setEditingLotId(lot.id)
+                                            setEditLotBarcode(barcode.trim())
+                                          },
+                                        })
+                                      }
+                                    >
+                                      <Text style={[styles.barcodeScanBtnText, { color: colors.card }]}>📷</Text>
+                                    </TouchableOpacity>
+                                  </View>
 
                                   <View style={styles.editActions}>
                                     <TouchableOpacity
@@ -717,6 +774,30 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 13,
     marginBottom: 8,
+  },
+  barcodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  barcodeInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 13,
+  },
+  barcodeScanBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  barcodeScanBtnText: {
+    fontSize: 18,
   },
   editActions: {
     flexDirection: 'row',

@@ -243,13 +243,20 @@ export default function ProductsScreen() {
 
       <View style={styles.searchWrap}>
         <View style={styles.searchRow}>
-          <TextInput
-            style={[styles.searchInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Tìm sản phẩm theo tên..."
-            placeholderTextColor={colors.sub}
-          />
+          <View style={styles.searchInputWrap}>
+            <TextInput
+              style={[styles.searchInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Tìm sản phẩm theo tên..."
+              placeholderTextColor={colors.sub}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity style={styles.searchClearInsideBtn} onPress={() => setSearchQuery('')}>
+                <Text style={{ color: colors.text }}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <TouchableOpacity
             style={[styles.scanBtn, { backgroundColor: colors.accent }]}
             onPress={() => navigation.navigate('BarcodeScanner')}
@@ -461,13 +468,24 @@ const styles = StyleSheet.create({
   },
   searchWrap: { paddingHorizontal: 16, marginBottom: 8 },
   searchRow: { flexDirection: 'row', alignItems: 'center' },
+  searchInputWrap: { flex: 1, position: 'relative' },
   searchInput: {
     flex: 1,
     borderWidth: 1,
     borderRadius: 10,
-    paddingHorizontal: 12,
+    paddingLeft: 12,
+    paddingRight: 38,
     paddingVertical: 10,
     fontSize: 14,
+  },
+  searchClearInsideBtn: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scanBtn: {
     marginLeft: 8,
