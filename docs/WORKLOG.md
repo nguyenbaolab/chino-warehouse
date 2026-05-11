@@ -198,3 +198,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/MapScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** `MapScreen` thêm cơ chế request id để bỏ qua response search cũ sau khi clear; clear trên `ProductsScreen` đồng thời bỏ cờ highlight từ scan theo lô.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Docs — KNOWN_ISSUES: KI-009 → Closed
+
+- **Task:** Cập nhật `KNOWN_ISSUES.md` cho KI-009: chuyển trạng thái sang **Closed**.
+- **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+- **Kết quả:** Đánh dấu KI-009 không còn liên quan do đã bỏ nút `i` điều hướng từ `ZoneDetailSheet` sang `ProductDetailScreen`; stale data không còn ảnh hưởng UX theo phạm vi hiện tại.
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`

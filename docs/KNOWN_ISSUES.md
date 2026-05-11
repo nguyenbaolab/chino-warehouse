@@ -101,7 +101,8 @@
 - **File liên quan:** `components/ZoneDetailSheet.tsx`, `screens/ProductDetailScreen.tsx`
 - **Mô tả:** Sau khi sửa thông tin lô (số thùng, hạn...) từ `ProductDetailScreen`, mở lại `ZoneDetailSheet` thì dữ liệu vẫn hiện cũ — phải tắt mở lại app hoặc chuyển màn hình mới thấy cập nhật.
 - **Hướng fix:** `ZoneDetailSheet` cần refetch hoặc lắng nghe store update khi được mở lại.
-- **Trạng thái:** Open
+- **Trạng thái:** Closed
+- **Ghi chú:** Không còn liên quan — nút `i` điều hướng sang `ProductDetailScreen` đã bị xóa khỏi `ZoneDetailSheet`. Stale data không ảnh hưởng UX nữa.
 
 ---
 
