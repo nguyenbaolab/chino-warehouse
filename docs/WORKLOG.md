@@ -128,3 +128,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`
 - **Kết quả:** Không đổi code.
 - **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`
+
+### Docs — KNOWN_ISSUES: KI-003 → Deferred
+
+- **Task:** Cập nhật `KNOWN_ISSUES.md` (KI-003): trạng thái **Deferred**; ghi chú chỉ ảnh hưởng light mode, team dùng dark mode, reopen khi Phase 2 cần light mode.
+- **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+- **Kết quả:** Không đổi code.
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+
+### Docs — KNOWN_ISSUES: KI-003 → Closed
+
+- **Task:** Cập nhật `KNOWN_ISSUES.md` (KI-003): trạng thái **Closed**; ghi chú không cần fix — chỉ dark mode, light mode ngoài scope Phase 1.
+- **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+- **Kết quả:** Không đổi code.
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`

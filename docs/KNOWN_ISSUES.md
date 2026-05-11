@@ -33,7 +33,8 @@
 - **Mô tả:** Tab bar `backgroundColor: '#1a1a1a'`, active `#22C55E`, inactive `#666` — hardcode, không dùng `colors` từ `themeStore`. Light mode sẽ lệch.
 - **Cách tái hiện:** Bật theme sáng trong Cài đặt — thanh tab vẫn tối / không đồng bộ palette.
 - **Hướng fix:** bọc navigator bằng provider theme hoặc đọc `useThemeStore` trong container tab và map màu động.
-- **Trạng thái:** Open
+- **Trạng thái:** Closed
+- **Ghi chú:** Không cần thiết — app chỉ dùng **dark mode**; **light mode** không nằm trong scope Phase 1.
 
 ---
 
