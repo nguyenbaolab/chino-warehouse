@@ -14,6 +14,16 @@ type WarehouseStore = {
 
   setSelectedLocation: (id: string) => void
   fetchLocations: () => Promise<void>
+  addLocation: (
+    name: string,
+    grid_rows: number,
+    grid_cols: number
+  ) => Promise<{ error: string | null; location?: Location }>
+  updateLocation: (
+    id: string,
+    data: { name?: string; grid_rows?: number; grid_cols?: number }
+  ) => Promise<{ error: string | null }>
+  deleteLocation: (id: string) => Promise<{ error: string | null }>
   fetchZones: (locationId: string) => Promise<void>
   fetchProducts: () => Promise<void>
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
@@ -76,6 +86,116 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         get().setSelectedLocation(data[0].id)
       }
     }
+  },
+
+  addLocation: async (name, grid_rows, grid_cols) => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      return { error: 'Tên kho không được để trống.' }
+    }
+    const rows = Math.floor(Number(grid_rows))
+    const cols = Math.floor(Number(grid_cols))
+    if (!Number.isFinite(rows) || !Number.isFinite(cols) || rows < 1 || cols < 1) {
+      return { error: 'Kích thước lưới phải là số nguyên ≥ 1 (số hàng × số cột).' }
+    }
+    const { data: created, error } = await supabase
+      .from('locations')
+      .insert({ name: trimmed, grid_rows: rows, grid_cols: cols })
+      .select('*')
+      .single()
+    if (error || !created) {
+      return { error: error?.message ?? 'Không tạo được kho.' }
+    }
+    const location = created as Location
+    await get().fetchLocations()
+    return { error: null, location }
+  },
+
+  updateLocation: async (id, data) => {
+    const { locations } = get()
+    const loc = locations.find((l) => l.id === id)
+    if (!loc) {
+      return { error: 'Không tìm thấy kho.' }
+    }
+    const nextRows = data.grid_rows !== undefined ? Math.floor(Number(data.grid_rows)) : loc.grid_rows
+    const nextCols = data.grid_cols !== undefined ? Math.floor(Number(data.grid_cols)) : loc.grid_cols
+    if (data.grid_rows !== undefined && (!Number.isFinite(nextRows) || nextRows < 1)) {
+      return { error: 'Số hàng lưới phải là số nguyên ≥ 1.' }
+    }
+    if (data.grid_cols !== undefined && (!Number.isFinite(nextCols) || nextCols < 1)) {
+      return { error: 'Số cột lưới phải là số nguyên ≥ 1.' }
+    }
+    const shrinkingRows = nextRows < loc.grid_rows
+    const shrinkingCols = nextCols < loc.grid_cols
+    if (shrinkingRows || shrinkingCols) {
+      const { data: zones } = await supabase.from('zones').select('id, cells').eq('location_id', id)
+      for (const z of zones ?? []) {
+        const cells = (z.cells as ZoneCell[]) ?? []
+        for (const c of cells) {
+          if (c.row > nextRows || c.col > nextCols) {
+            return {
+              error:
+                `Không thu nhỏ lưới được: có zone chứa ô (hàng ${c.row}, cột ${c.col}) vượt quá lưới mới (${nextRows}×${nextCols}). Hãy di chuyển hoặc xóa zone trước.`,
+            }
+          }
+        }
+      }
+    }
+    const payload: { name?: string; grid_rows?: number; grid_cols?: number } = {}
+    if (data.name !== undefined) {
+      const n = data.name.trim()
+      if (!n) return { error: 'Tên kho không được để trống.' }
+      payload.name = n
+    }
+    if (data.grid_rows !== undefined) payload.grid_rows = nextRows
+    if (data.grid_cols !== undefined) payload.grid_cols = nextCols
+    if (Object.keys(payload).length === 0) {
+      return { error: null }
+    }
+    const { error } = await supabase.from('locations').update(payload).eq('id', id)
+    if (error) {
+      return { error: error.message ?? 'Cập nhật kho thất bại.' }
+    }
+    await get().fetchLocations()
+    return { error: null }
+  },
+
+  deleteLocation: async (id) => {
+    const { data: zones, error: zErr } = await supabase.from('zones').select('id').eq('location_id', id)
+    if (zErr) {
+      return { error: zErr.message ?? 'Không đọc được danh sách zone.' }
+    }
+    const zoneIds = (zones ?? []).map((z) => z.id)
+    if (zoneIds.length > 0) {
+      const { count, error: cErr } = await supabase
+        .from('inventory_entries')
+        .select('id', { count: 'exact', head: true })
+        .in('zone_id', zoneIds)
+      if (cErr) {
+        return { error: cErr.message ?? 'Không kiểm tra được tồn kho.' }
+      }
+      if ((count ?? 0) > 0) {
+        return {
+          error:
+            'Không xóa được kho: vẫn còn ít nhất một lô hàng (kể cả 0 thùng) trong các zone của kho. Xóa hoặc chuyển hết lô trước.',
+        }
+      }
+    }
+    const wasSelected = get().selectedLocationId === id
+    const { error: delErr } = await supabase.from('locations').delete().eq('id', id)
+    if (delErr) {
+      return { error: delErr.message ?? 'Xóa kho thất bại.' }
+    }
+    await get().fetchLocations()
+    if (wasSelected) {
+      const locs = get().locations
+      if (locs.length > 0) {
+        get().setSelectedLocation(locs[0].id)
+      } else {
+        set({ selectedLocationId: null, zones: [] })
+      }
+    }
+    return { error: null }
   },
 
   fetchZones: async (locationId) => {

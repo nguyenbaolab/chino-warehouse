@@ -3,6 +3,8 @@ export type Location = {
   name: string
   description?: string
   created_at: string
+  grid_rows: number
+  grid_cols: number
 }
 
 export type ZoneCell = {

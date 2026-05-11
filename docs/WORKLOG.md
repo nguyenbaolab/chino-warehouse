@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Task 2/4: Update types + store cho multi-kho
+
+- types/index.ts: thêm grid_rows, grid_cols vào Location type.
+- warehouseStore: thêm addLocation, updateLocation (có validate grid shrink), deleteLocation (có validate còn hàng).
+
+---
+
 ## [tháng 5/2026] — Task 1/4: Migration grid_rows/grid_cols + docs
 
 - Tạo migration: thêm grid_rows, grid_cols (default 6) vào bảng locations.
