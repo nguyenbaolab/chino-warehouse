@@ -7,7 +7,10 @@ Khi gặp blocker mới: **ghi vào đây**, **dừng lại**, **hỏi người 
 
 ## Đã giải quyết
 
-(trống — chưa có blocker nào)
+### [BLK-002] Để sau cần bảng lưu trữ mới → Resolved
+
+- **Đã chốt:** Cột `products.is_deferred` (boolean, default false); migration `supabase/migrations/20260511_add_product_is_deferred.sql`; `toggleDeferred` trong `warehouseStore`.
+- **Tham chiếu:** `docs/DECISIONS.md` (mục BLK-002 Resolved), F18 trong `docs/project/REQUIREMENTS.md`.
 
 ---
 
@@ -23,10 +26,3 @@ Khi gặp blocker mới: **ghi vào đây**, **dừng lại**, **hỏi người 
   3. Có barcode nào map với 2 sản phẩm khác nhau không?
 - **Trạng thái:** Blocked — chờ xác nhận từ chủ cửa hàng
 - **Hành động:** Không làm gì liên quan đến barcode per lô cho đến khi blocker này được giải quyết.
-
-### [BLK-002] Để sau cần bảng lưu trữ mới
-
-- **Vấn đề:** Tính năng Để sau cần lưu trạng thái theo sản phẩm (đã đánh dấu hay chưa).
-- **Ảnh hưởng:** Cần thêm cột hoặc bảng mới trong Supabase, hoặc lưu local trong Zustand.
-- **Cần quyết định:** Chốt nơi lưu dữ liệu trước khi implement.
-- **Trạng thái:** Open

@@ -35,6 +35,7 @@ type WarehouseStore = {
   }) => Promise<void>
   updateZone: (id: string, data: Partial<Zone>) => Promise<void>
   deleteZone: (id: string) => Promise<boolean>
+  toggleDeferred: (productId: string) => Promise<void>
 }
 
 export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
@@ -236,5 +237,33 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     await supabase.from('zones').delete().eq('id', id)
     set((s) => ({ zones: s.zones.filter((z) => z.id !== id) }))
     return true
+  },
+
+  toggleDeferred: async (productId) => {
+    const { products, inventoryEntries } = get()
+    const fromProduct = products.find((p) => p.id === productId)
+    const fromEntry = inventoryEntries.find((e) => e.product_id === productId)?.product
+    const current = fromProduct?.is_deferred ?? fromEntry?.is_deferred ?? false
+    const next = !current
+
+    const { data: updated } = await supabase
+      .from('products')
+      .update({ is_deferred: next })
+      .eq('id', productId)
+      .select('*')
+      .single()
+
+    if (!updated) return
+
+    set((s) => ({
+      products: s.products.some((p) => p.id === productId)
+        ? s.products.map((p) => (p.id === productId ? updated : p))
+        : [...s.products, updated].sort((a, b) => a.name.localeCompare(b.name)),
+      inventoryEntries: s.inventoryEntries.map((entry) => (
+        entry.product_id === productId
+          ? { ...entry, product: entry.product ? { ...entry.product, ...updated } : updated }
+          : entry
+      )),
+    }))
   },
 }))

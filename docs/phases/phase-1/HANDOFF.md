@@ -45,11 +45,11 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 
 ---
 
-### 4) `NotificationsScreen` — Pill tồn
+### 4) `NotificationsScreen` — F18 (tab + format card + Để sau)
 
-**Thay đổi:** **0 thùng** → pill đỏ **Hết hàng**; **1 thùng** → pill đỏ **Còn rất ít**; ngưỡng vàng “sắp hết” theo `low_warning_boxes` (như trước). Hạn giữ **Hết hạn** / **Sắp hết hạn**.
+**Thay đổi:** Hai tab **Có vấn đề / Để sau**; card: dòng **Còn … thùng**, **Số thùng sắp hết hạn: …**; pill tồn theo **tổng thùng** SP, pill hạn theo **lô xấu nhất** (chỉ render khi đỏ/vàng); nút **Để sau** / **Có vấn đề** gọi `toggleDeferred`. DB: `products.is_deferred` (migration `20260511_add_product_is_deferred.sql`).
 
-**Test:** Card có lô 0 thùng / 1 thùng / chỉ vàng — nhãn pill tồn khớp.
+**Test:** Xem mục **F18 — Thông báo** bên dưới.
 
 ---
 
@@ -87,31 +87,17 @@ Xem `docs/KNOWN_ISSUES.md` (KI-005 Resolved): race `fetchProducts` trên `AddInv
 
 ---
 
-## Cập nhật docs mới (chưa implement code)
+## F18 — Thông báo (đã implement)
 
-### Quyết định đã chốt (tham chiếu `docs/DECISIONS.md`)
+**Chuẩn bị:** Chạy migration Supabase `20260511_add_product_is_deferred.sql` (cột `products.is_deferred`). `fetchProducts` / `fetchInventoryByZone` tự nhận cột mới qua `select *`.
 
-1. Cảnh báo tồn kho xét theo **tổng thùng per sản phẩm**, không theo từng lô; logic hạn vẫn theo từng lô.
-2. Lô `quantity_boxes = 0` **giữ lại**, không tự xóa; tại `ProductDetailScreen` sẽ hiển thị `Lô này đã hết hàng [Xóa lô]`.
-3. `NotificationsScreen` giữ 2 pill nhưng đổi format card:
-   - Dòng 1: `Còn ... thùng` (tổng tất cả lô).
-   - Dòng 2: `Số thùng sắp hết hạn: ... thùng`.
-   - Pill tồn theo tổng thùng; pill hạn theo lô xấu nhất.
-4. Tab Thông báo có 2 tab con: **Có vấn đề / Để sau**; thao tác Để sau theo **sản phẩm**.
+**Test QA:**
 
-### Cần quyết định trước khi code
-
-- `docs/BLOCKERS.md` đã thêm **[BLK-002]**: cần chốt nơi lưu trạng thái **Để sau** (Supabase cột/bảng mới hoặc local Zustand).
-
-### Hướng dẫn test sau khi implement
-
-1. Với sản phẩm có nhiều lô, thay đổi 1 lô nhưng tổng không đổi ngưỡng: pill tồn không đổi theo tổng.
-2. Với sản phẩm tổng thùng vượt/ngang/dưới ngưỡng: pill tồn đổi đúng theo tổng thùng sản phẩm.
-3. Đổi lô về 0 thùng: lô vẫn còn trong danh sách, hiện label hết hàng, không tự mất.
-4. Tab Thông báo:
-   - Tab **Có vấn đề** hiển thị đúng card format mới.
-   - Bấm **Để sau** chuyển card sang tab Để sau.
-   - Chuyển ngược từ Để sau về Có vấn đề hoạt động đúng.
+1. Tab **Có vấn đề:** chỉ SP `is_deferred = false` và có ít nhất một lô combined ≠ `ok`; card có dòng **Còn X thùng**, **Số thùng sắp hết hạn: Y thùng** (Y = tổng thùng các lô có hạn cảnh báo/hết); pill tồn theo **tổng** thùng SP; pill hạn theo **xấu nhất** (Hết hạn ưu tiên trên Sắp hết hạn); pill chỉ hiện khi đỏ/vàng.
+2. Bấm **Để sau** trên card — SP chuyển sang tab **Để sau**, biến mất khỏi Có vấn đề; reload app — trạng thái giữ (Supabase).
+3. Tab **Để sau:** liệt kê mọi SP `is_deferred = true`; bấm **Có vấn đề** — cờ tắt, SP quay lại Có vấn đề nếu vẫn còn lỗi combined.
+4. Tap tên / vùng card (không phải nút tab) — mở **Chi tiết SP** như cũ.
+5. SP chỉ có lô ổn (không combined issue) — không có trong Có vấn đề; nếu đánh dấu Để sau rồi sửa hết lỗi, vẫn thấy trong Để sau cho đến khi bấm **Có vấn đề**.
 
 ## Sẽ cập nhật khi
 

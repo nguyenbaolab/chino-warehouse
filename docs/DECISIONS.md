@@ -112,3 +112,12 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Luồng:** Tab Có vấn đề hiển thị danh sách sản phẩm có vấn đề; mỗi card có nút **Để sau**. Tab Để sau hiển thị sản phẩm đã đánh dấu và cho phép chuyển lại Có vấn đề.
 - **Phạm vi đánh dấu:** Đánh dấu **theo sản phẩm**, không theo lô.
 - **Lý do:** Giảm nhiễu thông báo và cho phép xử lý theo thứ tự ưu tiên.
+
+---
+
+### Lưu trạng thái Để sau — `products.is_deferred` (BLK-002 Resolved)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Lưu cờ **Để sau** bằng cột **`is_deferred BOOLEAN NOT NULL DEFAULT false`** trên bảng **`products`** (migration `20260511_add_product_is_deferred.sql`). App cập nhật qua Supabase và `warehouseStore.toggleDeferred`.
+- **Lý do:** Đồng bộ đa thiết bị, không phụ thuộc state cục bộ Zustand; một sản phẩm — một cờ.
+- **Thay thế đã xem xét:** Chỉ lưu local Zustand — từ chối cho Phase 1+ thông báo.

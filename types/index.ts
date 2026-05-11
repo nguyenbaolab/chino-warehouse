@@ -32,6 +32,8 @@ export type Product = {
   low_warning_boxes: number
   low_critical_boxes: number
   is_archived: boolean
+  /** Tab Thông báo: đánh dấu Để sau (Supabase `products.is_deferred`). */
+  is_deferred?: boolean
   created_at: string
 }
 

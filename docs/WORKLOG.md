@@ -107,3 +107,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Task:** Đọc lại `ProductDetailScreen.tsx` — có còn chặn nhập `quantity_boxes = 0` khi sửa lô inline không?
 - **Kết quả:** Không chặn. `handleSaveLot` chỉ báo lỗi khi `quantity < 0` hoặc không phải số nguyên hữu hạn; giá trị **0** đi qua validation và được gửi lên `updateInventoryEntry`. Không thay đổi code ứng dụng.
 - **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (bổ sung dòng “Xác minh code” dưới KI-006), `docs/WORKLOG.md`
+
+### F18 — Thông báo: tab Có vấn đề / Để sau + format card + `is_deferred`
+
+- **Task:** Implement F18: migration `products.is_deferred`, `toggleDeferred` trong store, `NotificationsScreen` hai tab + card mới + nút chuyển tab; cập nhật REQUIREMENTS F18 Done, DECISIONS / BLOCKERS BLK-002 Resolved, HANDOFF.
+- **Files thay đổi:** `supabase/migrations/20260511_add_product_is_deferred.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `screens/NotificationsScreen.tsx`, `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Pill tồn theo tổng thùng SP; pill hạn theo lô xấu nhất; dòng sắp hết hạn = tổng thùng các lô có hạn warning/expired; BLK-002 đóng bằng cột DB.
+- **Docs đã cập nhật:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

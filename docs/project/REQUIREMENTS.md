@@ -96,7 +96,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn sử dụng, ghi chú. Mã vạch gán tại màn hình chi tiết sản phẩm. | P1 | MVP | Partial |
 | F16 | Sửa / Xóa lô hàng | Cập nhật số thùng, hạn, ghi chú. Xóa khi hết hàng. Truy cập từ màn hình chi tiết (F07). | P1 | MVP | Done |
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
-| F18 | Thông báo trong app | Tab Thông báo có 2 tab con **Có vấn đề / Để sau**. Card theo sản phẩm: dòng tổng thùng + dòng thùng sắp hết hạn; pill tồn theo tổng thùng sản phẩm, pill hạn theo lô xấu nhất. Đánh dấu Để sau theo sản phẩm. | P2 | MVP+ | Partial |
+| F18 | Thông báo trong app | Tab Thông báo có 2 tab con **Có vấn đề / Để sau**. Card theo sản phẩm: dòng tổng thùng + dòng thùng sắp hết hạn; pill tồn theo tổng thùng sản phẩm, pill hạn theo lô xấu nhất. Đánh dấu Để sau theo sản phẩm (`products.is_deferred`). | P2 | MVP+ | Done |
 | F19 | Chuyển hàng giữa khu vực | Chuyển hàng từ kho lên siêu thị hoặc giữa các kho: trừ thùng ở nguồn, cộng thùng ở đích. | P2 | Phase 2 | Not started |
 | F20 | Bản đồ nhiều khu vực | Nhiều kho/phòng dưới dạng tab riêng. Cần cho tính năng chuyển hàng (F19). | P2 | Phase 2 | Not started |
 | F21 | Chế độ offline | Lưu dữ liệu cục bộ, queue thay đổi khi mất mạng, tự đồng bộ khi có mạng trở lại. | P3 | Phase 2 | Not started |
