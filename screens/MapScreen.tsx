@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform
@@ -58,6 +58,7 @@ export default function MapScreen() {
   const [searchResults, setSearchResults] = useState<InventoryEntry[]>([])
   const [highlightedZones, setHighlightedZones] = useState<Map<string, string>>(new Map())
   const [isSearchPanelExpanded, setIsSearchPanelExpanded] = useState(false)
+  const searchRequestRef = useRef(0)
 
   const [mode, setMode] = useState<'normal' | 'selecting'>('normal')
   const [selectedCells, setSelectedCells] = useState<ZoneCell[]>([])
@@ -147,13 +148,16 @@ export default function MapScreen() {
   }, [selectedLocationId, zones, fetchInventoryByZone])
 
   async function handleSearch(text: string) {
+    const requestId = ++searchRequestRef.current
     setSearchQuery(text)
     if (text.trim().length < 2) {
       setSearchResults([])
       setHighlightedZones(new Map())
+      setIsSearchPanelExpanded(false)
       return
     }
     const results = await searchProducts(text)
+    if (requestId !== searchRequestRef.current) return
     setSearchResults(results)
     setIsSearchPanelExpanded(false)
     const map = new Map<string, string>()
@@ -179,10 +183,11 @@ export default function MapScreen() {
   }
 
   function clearSearch() {
+    searchRequestRef.current += 1
     setSearchQuery('')
     setSearchResults([])
     setHighlightedZones(new Map())
-    setIsSearchPanelExpanded(true)
+    setIsSearchPanelExpanded(false)
   }
 
   const collapsedSearchSummaries = useMemo(() => {

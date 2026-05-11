@@ -51,6 +51,19 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 4. `ProductsScreen`: nhập text, nút `✕` xuất hiện trong input; bấm `✕` xóa text; nút scan 📷 vẫn ở vị trí cũ.
 5. Regression nhanh: locate/search hiện có vẫn chạy như trước.
 
+## Task mới — Fix nút `✕` trong tìm kiếm (Map + Products)
+
+- `MapScreen`: clear search phải có hiệu lực tức thì kể cả khi request search cũ chưa trả về.
+- `ProductsScreen`: clear search reset danh sách về trạng thái ban đầu ngay khi bấm `✕`.
+- Nút `✕` active theo text nhập ngay, không phụ thuộc kết quả search.
+
+**Test QA:**
+
+1. `MapScreen`: nhập từ khóa >= 2 ký tự rồi bấm `✕` ngay -> text mất ngay, panel kết quả biến mất, zone highlight reset.
+2. `MapScreen`: thử bấm `✕` khi search đang chờ response -> không bị “nhảy lại” kết quả cũ.
+3. `ProductsScreen`: nhập text bất kỳ rồi bấm `✕` -> text mất ngay, danh sách quay về trạng thái lọc ban đầu (theo zone/filter hiện tại).
+4. `ProductsScreen`: sau scan barcode theo lô, bấm `✕` -> bỏ trạng thái highlight “kết quả quét barcode theo lô”.
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng

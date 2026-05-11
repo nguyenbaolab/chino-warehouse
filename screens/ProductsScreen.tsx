@@ -84,6 +84,11 @@ export default function ProductsScreen() {
     ))
   }
 
+  function clearSearch() {
+    setSearchQuery('')
+    setScannedLotId(null)
+  }
+
   function openEditProduct(productId: string) {
     const product = products.find((p) => p.id === productId)
     if (!product) return
@@ -252,7 +257,7 @@ export default function ProductsScreen() {
               placeholderTextColor={colors.sub}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity style={styles.searchClearInsideBtn} onPress={() => setSearchQuery('')}>
+              <TouchableOpacity style={styles.searchClearInsideBtn} onPress={clearSearch}>
                 <Text style={{ color: colors.text }}>✕</Text>
               </TouchableOpacity>
             )}

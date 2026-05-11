@@ -191,3 +191,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Luồng scan từ 3 màn nhập barcode trực tiếp vào field đang sửa và đóng scanner bằng `goBack`; locate/search flow hiện tại không thay đổi.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Fix nút X tìm kiếm — Map + Products
+
+- **Task:** `MapScreen` + `ProductsScreen`: nút `✕` active ngay khi có text; bấm `✕` xóa text tức thì, hủy kết quả tìm đang chờ và reset về trạng thái ban đầu.
+- **Files thay đổi:** `screens/MapScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** `MapScreen` thêm cơ chế request id để bỏ qua response search cũ sau khi clear; clear trên `ProductsScreen` đồng thời bỏ cờ highlight từ scan theo lô.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
