@@ -10,6 +10,15 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 - **Logic tìm kiếm:** Gõ tên → theo sản phẩm; quét barcode → theo lô.
 - **Blocker:** `BLK-001` đã đóng (Resolved), không còn pending.
 
+## Task mới — Barcode per lô (đã implement)
+
+- **Migration:**
+  - `20260511_drop_products_barcode.sql` (drop `products.barcode`)
+  - `20260511_add_inventory_entries_barcode.sql` (add `inventory_entries.barcode`)
+- **Type/store:** `Product` bỏ `barcode`; `InventoryEntry` thêm `barcode?`; `searchByBarcode` trả về **lô** thay vì sản phẩm.
+- **UI chính:** `AddInventoryScreen` nhập barcode theo lô; `ProductDetailScreen` hiện/sửa barcode theo lô; `BarcodeScanner` còn 2 mode `locate` + `search`.
+- **Locate/Search sau quét:** highlight và hiển thị theo **lô trúng barcode** (zone, tầng, số thùng, hạn, barcode).
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng
@@ -24,9 +33,9 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 2. Từ chi tiết mở **Thêm hàng** — tab bar **vẫn hiện**; Hủy/ lưu xong quay lại hợp lý.
 3. Mở **BarcodeScanner** (từ Kho / Sản phẩm / Chi tiết) — **fullscreen**, **không** tab bar; đóng scanner về đúng ngữ cảnh.
 4. **Locate** từ Kho: quét SP có trong hệ thống — scanner **tự đóng** trong ~1 giây; về tab Kho, ô tìm kiếm + highlight zone (params `MapMain`).
-5. **Assign** mã vạch từ Chi tiết: sau quét — scanner **tự đóng**; về chi tiết đúng SP, field mã vạch đã điền (tham số `returnTab`).
-6. **Thêm hàng** (`addInventory`): quét từ field mã vạch — scanner đóng, quay lại **Thêm hàng** với mã điền sẵn.
-7. **Tìm SP** (tab Sản phẩm, mode search mặc định): quét mã đã có — scanner đóng, mở **Chi tiết SP** đúng sản phẩm.
+5. **Search** từ tab Sản phẩm: quét barcode lô — scanner **tự đóng**; lọc/hiển thị theo đúng lô quét.
+6. **Thêm hàng** (vẫn dùng `mode: 'search'` + `addInventoryParams`): quét từ field barcode lô — scanner đóng, quay lại **Thêm hàng** với mã đã điền.
+7. **Không còn assign mode**: barcode không gắn per sản phẩm, chỉ theo lô.
 
 *(KI-010 Resolved — `BarcodeScannerScreen`: hoãn `goBack` sau `navigate('Tabs')`.)*
 

@@ -163,3 +163,10 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Đồng bộ tài liệu theo hướng triển khai barcode per lô trong Phase 1.
 - **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Barcode per lô — implement code + migration
+
+- **Task:** Chuyển barcode từ per sản phẩm sang per lô: migration drop `products.barcode`, add `inventory_entries.barcode`; cập nhật store/type/search; cập nhật `MapScreen`, `ProductsScreen`, `ProductDetailScreen`, `AddInventoryScreen`, `BarcodeScannerScreen` (bỏ assign mode).
+- **Files thay đổi:** `supabase/migrations/20260511_drop_products_barcode.sql`, `supabase/migrations/20260511_add_inventory_entries_barcode.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `screens/ProductsScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Quét barcode tìm theo `inventory_entries.barcode` và trả về lô + zone chứa lô; AddInventory ghi barcode vào lô; ProductDetail cho xem/sửa barcode theo từng lô.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`

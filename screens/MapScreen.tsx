@@ -40,6 +40,10 @@ function getCellRadius(cells: ZoneCell[], row: number, col: number) {
   }
 }
 
+function formatResultExpiry(expiryDate?: string): string {
+  return `Hạn: ${expiryDate ?? 'Không hạn'}`
+}
+
 export default function MapScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
@@ -67,6 +71,8 @@ export default function MapScreen() {
   const [tierCount, setTierCount] = useState('1')
   const [selectedColor, setSelectedColor] = useState(ZONE_COLORS[0])
   const scannedProductName: string | undefined = route.params?.scannedProductName
+  const scannedBarcode: string | undefined = route.params?.scannedBarcode
+  const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
   const locateScannedAt: number | undefined = route.params?.locateScannedAt
 
   useEffect(() => {
@@ -81,6 +87,38 @@ export default function MapScreen() {
       scannedProductName,
       locateScannedAt,
     })
+    if (scannedBarcode && scannedInventoryEntryId) {
+      const matchedEntry = inventoryEntries.find((e) => e.id === scannedInventoryEntryId)
+      if (matchedEntry) {
+        const product = matchedEntry.product ?? products.find((p) => p.id === matchedEntry.product_id)
+        const status = getCombinedStatus(
+          matchedEntry.quantity_boxes,
+          matchedEntry.expiry_date,
+          product?.low_warning_boxes ?? 3,
+          product?.low_critical_boxes ?? 1,
+          product?.warning_days ?? 30
+        )
+        const color = status === 'expired'
+          ? colors.statusExpired
+          : status === 'critical'
+            ? colors.statusCritical
+            : status === 'warning'
+              ? colors.statusWarning
+              : colors.statusOk
+        setSearchQuery(scannedBarcode)
+        setSearchResults([matchedEntry])
+        setIsSearchPanelExpanded(false)
+        setHighlightedZones(new Map([[matchedEntry.zone_id, color]]))
+      }
+      navigation.setParams({
+        scannedBarcode: undefined,
+        scannedInventoryEntryId: undefined,
+        scannedProductName: undefined,
+        locateScannedAt: undefined,
+      })
+      return
+    }
+
     if (scannedProductName) {
       console.log('[MapScreen][locate] triggering search for:', scannedProductName)
       setSearchQuery(scannedProductName)
@@ -91,7 +129,7 @@ export default function MapScreen() {
       })
       return
     }
-  }, [isFocused, scannedProductName, locateScannedAt])
+  }, [isFocused, scannedProductName, scannedBarcode, scannedInventoryEntryId, locateScannedAt, inventoryEntries, products, colors.statusCritical, colors.statusExpired, colors.statusOk, colors.statusWarning])
 
   useEffect(() => {
     if (!selectedLocationId || zones.length === 0) return
@@ -504,7 +542,7 @@ export default function MapScreen() {
                   ]}
                 />
                 <Text style={[styles.resultText, { color: colors.text }]} numberOfLines={1}>
-                  {r.product?.name} — {r.zone?.name} T{r.tier} — {r.quantity_boxes} thùng
+                  {r.product?.name} — {r.zone?.name} T{r.tier} — {r.quantity_boxes} thùng · {formatResultExpiry(r.expiry_date)}{r.barcode ? ` · BC: ${r.barcode}` : ''}
                 </Text>
               </View>
             ))

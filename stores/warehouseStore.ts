@@ -16,12 +16,11 @@ type WarehouseStore = {
   fetchProducts: () => Promise<void>
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
-  searchByBarcode: (barcode: string) => Product | null
+  searchByBarcode: (barcode: string) => Promise<InventoryEntry | null>
   addProduct: (data: Partial<Product>) => Promise<Product | null>
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
   updateInventoryEntry: (id: string, data: Partial<InventoryEntry>) => Promise<void>
   deleteInventoryEntry: (id: string) => Promise<void>
-  updateBarcode: (productId: string, barcode?: string) => Promise<Product | null>
   updateProductStockThresholds: (
     productId: string,
     data: { low_warning_boxes?: number; low_critical_boxes?: number }
@@ -108,11 +107,36 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return data || []
   },
 
-  searchByBarcode: (barcode) => {
+  searchByBarcode: async (barcode) => {
     const normalized = barcode.trim().toLowerCase()
     if (!normalized) return null
-    const { products } = get()
-    return products.find((p) => p.barcode?.toLowerCase() === normalized) ?? null
+
+    const inStore = get().inventoryEntries.find((entry) => entry.barcode?.trim().toLowerCase() === normalized)
+    if (inStore) return inStore
+
+    const { data } = await supabase
+      .from('inventory_entries')
+      .select('*, product:products(*), zone:zones(*)')
+      .eq('barcode', normalized)
+      .limit(1)
+      .maybeSingle()
+
+    if (data) {
+      const entry = data as InventoryEntry
+      set((s) => {
+        const nextEntries = s.inventoryEntries.filter((item) => item.id !== entry.id)
+        return {
+          inventoryEntries: [...nextEntries, entry],
+          products: entry.product
+            ? s.products.some((p) => p.id === entry.product!.id)
+              ? s.products.map((p) => (p.id === entry.product!.id ? entry.product! : p))
+              : [...s.products, entry.product!].sort((a, b) => a.name.localeCompare(b.name))
+            : s.products,
+        }
+      })
+      return entry
+    }
+    return null
   },
 
   addProduct: async (data) => {
@@ -156,26 +180,6 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     set((s) => ({
       inventoryEntries: s.inventoryEntries.filter((entry) => entry.id !== id),
     }))
-  },
-
-  updateBarcode: async (productId, barcode) => {
-    const { data: updated } = await supabase
-      .from('products')
-      .update({ barcode: barcode?.trim() ? barcode.trim() : null })
-      .eq('id', productId)
-      .select('*')
-      .single()
-
-    if (updated) {
-      set((s) => ({
-        products: s.products.map((p) => (p.id === updated.id ? updated : p)),
-        inventoryEntries: s.inventoryEntries.map((entry) => (
-          entry.product_id === updated.id ? { ...entry, product: updated } : entry
-        )),
-      }))
-      return updated
-    }
-    return null
   },
 
   updateProductStockThresholds: async (productId, data) => {

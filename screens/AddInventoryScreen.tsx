@@ -75,12 +75,11 @@ export default function AddInventoryScreen() {
     addProduct,
     addInventoryEntry,
     updateInventoryEntry,
-    updateBarcode,
   } = useWarehouseStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [barcodeField, setBarcodeField] = useState('')
+  const [lotBarcode, setLotBarcode] = useState('')
   const [quantityBoxes, setQuantityBoxes] = useState('1')
   const [expiryDisplay, setExpiryDisplay] = useState('')
   const [batchNote, setBatchNote] = useState('')
@@ -88,7 +87,6 @@ export default function AddInventoryScreen() {
 
   const [showCreateProduct, setShowCreateProduct] = useState(false)
   const [newProductName, setNewProductName] = useState('')
-  const [newProductBarcode, setNewProductBarcode] = useState('')
   const [newProductNote, setNewProductNote] = useState('')
   const [isCreatingProduct, setIsCreatingProduct] = useState(false)
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(initialZoneId ?? null)
@@ -120,16 +118,8 @@ export default function AddInventoryScreen() {
   }, [productId, products, selectedProduct])
 
   useEffect(() => {
-    if (selectedProduct) {
-      setBarcodeField((selectedProduct.barcode ?? '').trim())
-    } else {
-      setBarcodeField('')
-    }
-  }, [selectedProduct?.id, selectedProduct?.barcode])
-
-  useEffect(() => {
     if (!scannedBarcode) return
-    setBarcodeField(scannedBarcode.trim())
+    setLotBarcode(scannedBarcode.trim())
     navigation.setParams({ scannedBarcode: undefined, barcodeScannedAt: undefined })
   }, [scannedBarcode, barcodeScannedAt, navigation])
 
@@ -138,21 +128,6 @@ export default function AddInventoryScreen() {
     const st = tabNav?.getState()
     if (!st?.routes || st.index === undefined) return 'Products'
     return String(st.routes[st.index]?.name ?? 'Products')
-  }
-
-  async function persistBarcodeIfChanged(): Promise<boolean> {
-    if (!selectedProduct) return true
-    const fromStore = useWarehouseStore.getState().products.find((p) => p.id === selectedProduct.id)
-    const currentStored = (fromStore?.barcode ?? selectedProduct.barcode ?? '').trim()
-    const desired = barcodeField.trim()
-    if (desired === currentStored) return true
-    const updated = await updateBarcode(selectedProduct.id, desired || undefined)
-    if (!updated) {
-      Alert.alert('Lỗi', 'Không thể cập nhật mã vạch sản phẩm.')
-      return false
-    }
-    setSelectedProduct(updated)
-    return true
   }
 
   const selectedZone = useMemo(
@@ -190,7 +165,6 @@ export default function AddInventoryScreen() {
     setIsCreatingProduct(true)
     const created = await addProduct({
       name: newProductName.trim(),
-      barcode: newProductBarcode.trim() || undefined,
       notes: newProductNote.trim() || undefined,
       warning_days: 30,
       is_archived: false,
@@ -207,7 +181,6 @@ export default function AddInventoryScreen() {
     setSearchQuery('')
     setShowCreateProduct(false)
     setNewProductName('')
-    setNewProductBarcode('')
     setNewProductNote('')
   }
 
@@ -238,9 +211,6 @@ export default function AddInventoryScreen() {
       return
     }
 
-    const barcodeOk = await persistBarcodeIfChanged()
-    if (!barcodeOk) return
-
     setIsSaving(true)
 
     // Kiểm tra trùng lot theo product + zone + tier + expiry trước khi insert
@@ -255,6 +225,9 @@ export default function AddInventoryScreen() {
     duplicateQuery = expiryDateIso
       ? duplicateQuery.eq('expiry_date', expiryDateIso)
       : duplicateQuery.is('expiry_date', null)
+    duplicateQuery = lotBarcode.trim()
+      ? duplicateQuery.eq('barcode', lotBarcode.trim())
+      : duplicateQuery.is('barcode', null)
 
     const { data: duplicatedLots } = await duplicateQuery
     const duplicatedLot = duplicatedLots?.[0]
@@ -294,6 +267,7 @@ export default function AddInventoryScreen() {
       zone_id: selectedZoneId,
       tier: selectedTier,
       quantity_boxes: quantity,
+      barcode: lotBarcode.trim() || undefined,
       expiry_date: expiryDateIso ?? undefined,
       notes: batchNote.trim() || undefined,
     })
@@ -404,6 +378,7 @@ export default function AddInventoryScreen() {
               onPress={() => {
                 setSelectedProduct(null)
                 setSearchQuery('')
+                setLotBarcode('')
               }}
             >
               <Text style={[styles.clearSelectedText, { color: colors.sub }]}>✕</Text>
@@ -418,16 +393,12 @@ export default function AddInventoryScreen() {
                 onPress={() => {
                   setSelectedProduct(product)
                   setSearchQuery('')
+                  setLotBarcode('')
                 }}
               >
                 <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
                   {product.name}
                 </Text>
-                {!!product.barcode && (
-                  <Text style={[styles.productBarcode, { color: colors.sub }]} numberOfLines={1}>
-                    {product.barcode}
-                  </Text>
-                )}
               </TouchableOpacity>
             ))}
             {filteredProducts.length === 0 && (
@@ -452,15 +423,15 @@ export default function AddInventoryScreen() {
 
         {selectedProduct && (
           <>
-            <Text style={[styles.label, { color: colors.sub }]}>Mã vạch sản phẩm</Text>
+            <Text style={[styles.label, { color: colors.sub }]}>Barcode lô hàng</Text>
             <View style={styles.barcodeRow}>
               <TextInput
                 style={[
                   styles.barcodeInput,
                   { backgroundColor: colors.card, color: colors.text, borderColor: colors.border },
                 ]}
-                value={barcodeField}
-                onChangeText={setBarcodeField}
+                value={lotBarcode}
+                onChangeText={setLotBarcode}
                 placeholder="Chưa có mã vạch"
                 placeholderTextColor={colors.sub}
                 autoCapitalize="none"
@@ -470,7 +441,7 @@ export default function AddInventoryScreen() {
                 style={[styles.barcodeScanBtn, { backgroundColor: colors.accent }]}
                 onPress={() =>
                   navigation.navigate('BarcodeScanner', {
-                    mode: 'addInventory',
+                    mode: 'search',
                     returnTab: getHostTabName(),
                     addInventoryParams: {
                       zoneId: selectedZoneId ?? initialZoneId,
@@ -497,15 +468,6 @@ export default function AddInventoryScreen() {
               value={newProductName}
               onChangeText={setNewProductName}
               placeholder="VD: Chino Milk Tea"
-              placeholderTextColor={colors.sub}
-            />
-
-            <Text style={[styles.label, { color: colors.sub }]}>Mã vạch</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={newProductBarcode}
-              onChangeText={setNewProductBarcode}
-              placeholder="Optional"
               placeholderTextColor={colors.sub}
             />
 
@@ -738,10 +700,6 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  productBarcode: {
-    marginTop: 2,
-    fontSize: 12,
   },
   emptyProductWrap: {
     padding: 12,

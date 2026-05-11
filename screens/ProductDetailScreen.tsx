@@ -20,8 +20,6 @@ import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone } fr
 
 type ProductDetailRouteParams = {
   productId: string
-  scannedBarcode?: string
-  barcodeAssignedAt?: number
 }
 
 function isValidIsoDate(raw: string): boolean {
@@ -38,9 +36,9 @@ function isValidIsoDate(raw: string): boolean {
 export default function ProductDetailScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
-  const { productId, scannedBarcode, barcodeAssignedAt } = route.params as ProductDetailRouteParams
+  const { productId } = route.params as ProductDetailRouteParams
   const { colors } = useThemeStore()
-  const { zones, updateInventoryEntry, deleteInventoryEntry, updateProductStockThresholds, updateBarcode } = useWarehouseStore()
+  const { zones, updateInventoryEntry, deleteInventoryEntry, updateProductStockThresholds } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [lots, setLots] = useState<InventoryEntry[]>([])
@@ -50,7 +48,7 @@ export default function ProductDetailScreen() {
   const [editQuantity, setEditQuantity] = useState('')
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
-  const [editBarcode, setEditBarcode] = useState('')
+  const [editLotBarcode, setEditLotBarcode] = useState('')
   const [editWarningDays, setEditWarningDays] = useState('30')
   const [editLowWarningBoxes, setEditLowWarningBoxes] = useState('3')
   const [isSavingProduct, setIsSavingProduct] = useState(false)
@@ -93,7 +91,6 @@ export default function ProductDetailScreen() {
     ])
     setProduct(productData ?? null)
     setLots((lotData as InventoryEntry[]) ?? [])
-    setEditBarcode(productData?.barcode ?? '')
     setEditWarningDays(String(productData?.warning_days ?? 30))
     setEditLowWarningBoxes(String(productData?.low_warning_boxes ?? 3))
     setIsLoading(false)
@@ -106,12 +103,6 @@ export default function ProductDetailScreen() {
     }, [loadData])
   )
 
-  useEffect(() => {
-    if (!scannedBarcode) return
-    setEditBarcode(scannedBarcode)
-    navigation.setParams({ scannedBarcode: undefined, barcodeAssignedAt: undefined })
-  }, [scannedBarcode, barcodeAssignedAt])
-
   function openInlineEdit(lot: InventoryEntry) {
     if (editingLotId === lot.id) {
       setEditingLotId(null)
@@ -121,6 +112,7 @@ export default function ProductDetailScreen() {
     setEditQuantity(String(lot.quantity_boxes))
     setEditExpiryDate(lot.expiry_date ?? '')
     setEditNotes(lot.notes ?? '')
+    setEditLotBarcode(lot.barcode ?? '')
   }
 
   async function handleSaveLot(lot: InventoryEntry) {
@@ -139,8 +131,19 @@ export default function ProductDetailScreen() {
       quantity_boxes: quantity,
       expiry_date: editExpiryDate.trim() || undefined,
       notes: editNotes.trim() || undefined,
+      barcode: editLotBarcode.trim() || undefined,
     })
-    setLots((prev) => prev.map((item) => (item.id === lot.id ? { ...item, quantity_boxes: quantity, expiry_date: editExpiryDate.trim() || undefined, notes: editNotes.trim() || undefined } : item)))
+    setLots((prev) => prev.map((item) => (
+      item.id === lot.id
+        ? {
+            ...item,
+            quantity_boxes: quantity,
+            expiry_date: editExpiryDate.trim() || undefined,
+            notes: editNotes.trim() || undefined,
+            barcode: editLotBarcode.trim() || undefined,
+          }
+        : item
+    )))
     setEditingLotId(null)
   }
 
@@ -178,16 +181,6 @@ export default function ProductDetailScreen() {
       useWarehouseStore.setState((s) => ({
         products: s.products.map((p) => (p.id === updated.id ? updated : p)),
       }))
-    }
-    setIsSavingProduct(false)
-  }
-
-  async function handleSaveBarcode() {
-    if (!product) return
-    setIsSavingProduct(true)
-    const updated = await updateBarcode(product.id, editBarcode)
-    if (updated) {
-      setProduct(updated)
     }
     setIsSavingProduct(false)
   }
@@ -248,13 +241,6 @@ export default function ProductDetailScreen() {
     })
   }
 
-  function getHostTabName(): string {
-    const tabNav = navigation.getParent()?.getParent()
-    const st = tabNav?.getState()
-    if (!st?.routes || st.index === undefined) return 'Products'
-    return String(st.routes[st.index]?.name ?? 'Products')
-  }
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
@@ -280,29 +266,6 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
           {detailsExpanded && (
             <>
-              <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>Mã vạch</Text>
-              <View style={styles.warningEditRow}>
-                <TextInput
-                  style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-                  value={editBarcode}
-                  onChangeText={setEditBarcode}
-                  placeholder="Chưa có mã vạch"
-                  placeholderTextColor={colors.sub}
-                />
-                <TouchableOpacity
-                  style={[styles.scanBarcodeBtn, { backgroundColor: colors.accent }]}
-                  onPress={() => navigation.navigate('BarcodeScanner', {
-                    mode: 'assign',
-                    productId,
-                    returnTab: getHostTabName(),
-                  })}
-                >
-                  <Text style={[styles.scanBarcodeText, { color: colors.card }]}>📷</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveBarcode}>
-                  <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
-                </TouchableOpacity>
-              </View>
               <Text style={[styles.infoText, { color: colors.sub }]}>
                 Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
               </Text>
@@ -397,6 +360,7 @@ export default function ProductDetailScreen() {
                     <Text style={[styles.lotSub, { color: colors.sub }]}>
                       {lot.quantity_boxes} thùng · Hạn: {formatExpiryDate(lot.expiry_date)}
                     </Text>
+                    {!!lot.barcode && <Text style={[styles.lotSub, { color: colors.sub }]}>Barcode: {lot.barcode}</Text>}
                     {!!lot.notes && <Text style={[styles.lotSub, { color: colors.sub }]}>{lot.notes}</Text>}
                   </View>
                   <View style={styles.lotActions}>
@@ -452,6 +416,17 @@ export default function ProductDetailScreen() {
                       onChangeText={setEditNotes}
                       placeholder="Optional"
                       placeholderTextColor={colors.sub}
+                    />
+
+                    <Text style={[styles.editLabel, { color: colors.sub }]}>Barcode lô</Text>
+                    <TextInput
+                      style={[styles.editInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+                      value={editLotBarcode}
+                      onChangeText={setEditLotBarcode}
+                      placeholder="Optional"
+                      placeholderTextColor={colors.sub}
+                      autoCapitalize="none"
+                      autoCorrect={false}
                     />
 
                     <View style={styles.editActions}>

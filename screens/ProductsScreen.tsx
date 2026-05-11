@@ -10,7 +10,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { CombinedStatus, formatExpiryDate, getCombinedStatus, getCombinedStatusRank } from '../types'
@@ -18,6 +18,7 @@ import { supabase } from '../lib/supabase'
 
 export default function ProductsScreen() {
   const navigation = useNavigation<any>()
+  const route = useRoute<any>()
   const {
     products,
     zones,
@@ -34,10 +35,10 @@ export default function ProductsScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
-  const [editBarcode, setEditBarcode] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editWarningDays, setEditWarningDays] = useState('30')
   const [isEditingArchived, setIsEditingArchived] = useState(false)
+  const [scannedLotId, setScannedLotId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchLocations()
@@ -61,6 +62,22 @@ export default function ProductsScreen() {
     Promise.all(zones.map((zone) => fetchInventoryByZone(zone.id)))
   }, [zones, fetchInventoryByZone])
 
+  useEffect(() => {
+    const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
+    if (!scannedInventoryEntryId) return
+    const lot = inventoryEntries.find((entry) => entry.id === scannedInventoryEntryId)
+    if (lot) {
+      setScannedLotId(lot.id)
+      setSelectedZoneIds([lot.zone_id])
+      setSearchQuery(lot.product?.name ?? '')
+    }
+    navigation.setParams({
+      scannedInventoryEntryId: undefined,
+      scannedBarcode: undefined,
+      scannedAt: undefined,
+    })
+  }, [route.params?.scannedInventoryEntryId, route.params?.scannedBarcode, route.params?.scannedAt, inventoryEntries, navigation])
+
   function toggleZone(zoneId: string) {
     setSelectedZoneIds((prev) => (
       prev.includes(zoneId) ? prev.filter((id) => id !== zoneId) : [...prev, zoneId]
@@ -72,7 +89,6 @@ export default function ProductsScreen() {
     if (!product) return
     setEditingProductId(productId)
     setEditName(product.name)
-    setEditBarcode(product.barcode ?? '')
     setEditNotes(product.notes ?? '')
     setEditWarningDays(String(product.warning_days ?? 30))
     setIsEditingArchived(product.is_archived)
@@ -93,7 +109,6 @@ export default function ProductsScreen() {
 
     const payload = {
       name: editName.trim(),
-      barcode: editBarcode.trim() || null,
       notes: editNotes.trim() || null,
       warning_days: Math.floor(warningDays),
     }
@@ -180,18 +195,7 @@ export default function ProductsScreen() {
       (!hasZoneFilter || selectedZoneSet.has(entry.zone_id))
     ))
 
-    const map = new Map<string, { expiry_date?: string; quantity_boxes: number }>()
-    for (const entry of relevantEntries) {
-      const key = entry.expiry_date ?? '__NO_EXPIRY__'
-      const current = map.get(key)
-      if (current) {
-        current.quantity_boxes += entry.quantity_boxes
-      } else {
-        map.set(key, { expiry_date: entry.expiry_date, quantity_boxes: entry.quantity_boxes })
-      }
-    }
-
-    return Array.from(map.values()).sort((a, b) => {
+    return [...relevantEntries].sort((a, b) => {
       const aTime = a.expiry_date ? new Date(`${a.expiry_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
       const bTime = b.expiry_date ? new Date(`${b.expiry_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
       return aTime - bTime
@@ -334,9 +338,9 @@ export default function ProductsScreen() {
                 {product.is_archived && (
                   <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
                 )}
-                {!!product.barcode && (
-                  <Text style={[styles.itemSub, { color: colors.sub }]} numberOfLines={1}>
-                    Barcode: {product.barcode}
+                {scannedLotId && inventoryEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
+                  <Text style={[styles.itemSub, { color: colors.accent }]} numberOfLines={1}>
+                    Kết quả quét barcode theo lô
                   </Text>
                 )}
 
@@ -364,6 +368,7 @@ export default function ProductsScreen() {
                           <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
                           <Text style={[styles.lotText, { color: colors.sub }]}>
                             Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng
+                            {lot.barcode ? ` · BC: ${lot.barcode}` : ''} · Zone {lot.zone?.name ?? '?'} T{lot.tier}
                           </Text>
                         </View>
                       )
@@ -389,15 +394,6 @@ export default function ProductsScreen() {
                   value={editName}
                   onChangeText={setEditName}
                   placeholder="Tên sản phẩm"
-                  placeholderTextColor={colors.sub}
-                />
-
-                <Text style={[styles.modalLabel, { color: colors.sub }]}>Barcode</Text>
-                <TextInput
-                  style={[styles.modalInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-                  value={editBarcode}
-                  onChangeText={setEditBarcode}
-                  placeholder="Optional"
                   placeholderTextColor={colors.sub}
                 />
 

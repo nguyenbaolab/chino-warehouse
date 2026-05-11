@@ -25,7 +25,6 @@ export type Zone = {
 export type Product = {
   id: string
   name: string
-  barcode?: string
   image_url?: string
   notes?: string
   warning_days: number
@@ -43,6 +42,7 @@ export type InventoryEntry = {
   zone_id: string
   tier: number
   quantity_boxes: number
+  barcode?: string
   expiry_date?: string
   notes?: string
   updated_at: string
