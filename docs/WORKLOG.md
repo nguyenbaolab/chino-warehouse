@@ -289,3 +289,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `docs/phases/phase-1/TESTCASES.md`, `docs/WORKLOG.md`
 - **Kết quả:** QA có checklist thủ công khớp implementation hiện tại.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`
+
+### Docs — Phase 1 USER_GUIDE (chủ + nhân viên)
+
+- **Task:** Tạo `docs/phases/phase-1/USER_GUIDE.md` — hướng dẫn tiếng Việt ngắn gọn cho chủ cửa hàng và nhân viên: giới thiệu, Expo Go/WiFi, các tab, tác vụ (tìm hàng, zone, thêm SP/lô, cập nhật, xóa lô, thông báo hai tab, đặt hàng, không nhập nữa), màu sắc, lưu ý Realtime/đăng nhập/thùng; ví dụ Chino's Boba Tea & Asian Market.
+- **Files thay đổi:** `docs/phases/phase-1/USER_GUIDE.md`, `docs/WORKLOG.md`
+- **Kết quả:** Tài liệu vận hành cho người không chuyên kỹ thuật.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`
+
+### Docs — USER_GUIDE: nút Thêm vào danh sách nhập (Phase 1 vs 2)
+
+- **Task:** Sửa một đoạn trong `docs/phases/phase-1/USER_GUIDE.md` (mục Sắp hết hàng): ghi rõ nút **Thêm vào danh sách nhập** chưa hoạt động trong Phase 1; Phase 2 sẽ kết nối với tab Đặt hàng.
+- **Files thay đổi:** `docs/phases/phase-1/USER_GUIDE.md`, `docs/WORKLOG.md`
+- **Kết quả:** Người đọc không kỳ vọng sai về nút placeholder.
+- **Docs đã cập nhật:** `docs/WORKLOG.md`
