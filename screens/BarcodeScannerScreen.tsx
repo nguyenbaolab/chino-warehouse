@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ActivityIndicator, Alert, Linking, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { CameraView, Camera } from 'expo-camera'
-import { useNavigation, useRoute } from '@react-navigation/native'
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 
@@ -12,6 +12,20 @@ type BarcodeScannerParams = {
   returnTab?: string
   /** Params merge vào `AddInventory` khi `mode === 'addInventory'` */
   addInventoryParams?: Record<string, unknown>
+}
+
+type RootNav = {
+  navigate: (name: string, params?: object) => void
+  goBack: () => void
+  canGoBack?: () => boolean
+}
+
+/** Đóng modal scanner sau khi nested `navigate('Tabs', …)` đã được xử lý (tránh goBack() cùng frame làm mất params / không đóng modal). */
+function scheduleDismissModal(navigation: RootNav) {
+  setTimeout(() => {
+    if (typeof navigation.canGoBack === 'function' && !navigation.canGoBack()) return
+    navigation.goBack()
+  }, 160)
 }
 
 export default function BarcodeScannerScreen() {
@@ -29,6 +43,8 @@ export default function BarcodeScannerScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [isScanLocked, setIsScanLocked] = useState(false)
+  const processingRef = useRef(false)
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     Camera.requestCameraPermissionsAsync().then(({ status }) => {
@@ -36,8 +52,32 @@ export default function BarcodeScannerScreen() {
     })
   }, [])
 
-  async function handleScanned({ data }: { data: string }) {
-    if (isSearching || isScanLocked) return
+  useFocusEffect(
+    useCallback(() => {
+      processingRef.current = false
+      setIsScanLocked(false)
+      setIsSearching(false)
+      return () => {
+        if (dismissTimerRef.current) {
+          clearTimeout(dismissTimerRef.current)
+          dismissTimerRef.current = null
+        }
+      }
+    }, [])
+  )
+
+  function navigateTabsThenCloseModal(tabsParams: Record<string, unknown>) {
+    navigation.navigate('Tabs', tabsParams)
+    if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current)
+    dismissTimerRef.current = setTimeout(() => {
+      dismissTimerRef.current = null
+      scheduleDismissModal(navigation)
+    }, 160)
+  }
+
+  function handleScanned({ data }: { data: string }) {
+    if (processingRef.current) return
+    processingRef.current = true
     setIsScanLocked(true)
     setIsSearching(true)
 
@@ -47,7 +87,7 @@ export default function BarcodeScannerScreen() {
     if (mode === 'assign') {
       setIsSearching(false)
       if (returnTab && assignProductId) {
-        navigation.navigate('Tabs', {
+        navigateTabsThenCloseModal({
           screen: returnTab,
           params: {
             screen: 'ProductDetail',
@@ -58,15 +98,16 @@ export default function BarcodeScannerScreen() {
             },
           },
         })
+      } else {
+        scheduleDismissModal(navigation)
       }
-      navigation.goBack()
       return
     }
 
     if (mode === 'addInventory') {
       setIsSearching(false)
       const tab = returnTab || 'Products'
-      navigation.navigate('Tabs', {
+      navigateTabsThenCloseModal({
         screen: tab,
         params: {
           screen: 'AddInventory',
@@ -77,7 +118,6 @@ export default function BarcodeScannerScreen() {
           },
         },
       })
-      navigation.goBack()
       return
     }
 
@@ -92,16 +132,16 @@ export default function BarcodeScannerScreen() {
           locateScannedAt: Date.now(),
         }
         console.log('[BarcodeScanner][locate] product found, navigating params:', params)
-        navigation.navigate('Tabs', {
+        navigateTabsThenCloseModal({
           screen: 'Map',
           params: {
             screen: 'MapMain',
             params,
           },
         })
-        navigation.goBack()
       } else {
         console.log('[BarcodeScanner][locate] product not found for barcode')
+        processingRef.current = false
         Alert.alert('Không tìm thấy sản phẩm với mã vạch này', '', [
           {
             text: 'Quét lại',
@@ -110,7 +150,10 @@ export default function BarcodeScannerScreen() {
           },
           {
             text: 'Đóng',
-            onPress: () => navigation.goBack(),
+            onPress: () => {
+              setIsScanLocked(false)
+              navigation.goBack()
+            },
           },
         ])
       }
@@ -119,17 +162,17 @@ export default function BarcodeScannerScreen() {
 
     if (product) {
       const productId = product.id
-      navigation.navigate('Tabs', {
+      navigateTabsThenCloseModal({
         screen: 'Products',
         params: {
           screen: 'ProductDetail',
           params: { productId },
         },
       })
-      navigation.goBack()
       return
     }
 
+    processingRef.current = false
     Alert.alert(
       'Không tìm thấy mã vạch',
       'Mã vạch này chưa có trong hệ thống. Bạn muốn thêm thủ công?',
@@ -137,11 +180,10 @@ export default function BarcodeScannerScreen() {
         {
           text: 'Thêm thủ công',
           onPress: () => {
-            navigation.navigate('Tabs', {
+            navigateTabsThenCloseModal({
               screen: 'Products',
               params: { screen: 'AddInventory', params: {} },
             })
-            navigation.goBack()
           },
         },
         {
@@ -204,8 +246,8 @@ export default function BarcodeScannerScreen() {
               : mode === 'addInventory'
                 ? 'Quét mã vạch để điền vào Thêm hàng'
                 : mode === 'locate'
-                ? 'Quét mã vạch để định vị trong kho'
-                : 'Đưa mã vạch vào khung'}
+                  ? 'Quét mã vạch để định vị trong kho'
+                  : 'Đưa mã vạch vào khung'}
           </Text>
           <View style={[styles.scanFrame, { borderColor: colors.accent }]} />
           {mode === 'locate' && products.length === 0 && (

@@ -93,7 +93,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F12 | Theo dõi hạn sử dụng | Mỗi lô có hạn riêng. Màu sắc theo §5. Hiển thị xuyên suốt toàn app. | P1 | MVP | Done |
 | F13 | Ghi chú sản phẩm & lô hàng | Ghi chú tự do cho sản phẩm (nhà cung cấp, bảo quản...) và cho từng lô (ngày nhập, tình trạng...). | P1 | MVP | Done |
 | F14 | Thêm sản phẩm mới | Thêm sản phẩm: tên (bắt buộc), mã vạch (tuỳ chọn), ghi chú. | P1 | MVP | Done |
-| F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn sử dụng, ghi chú. Mã vạch gán tại màn hình chi tiết sản phẩm. | P1 | MVP | Partial |
+| F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn sử dụng, ghi chú, **barcode theo lô (optional)** ngay tại AddInventoryScreen. | P1 | MVP | Partial |
 | F16 | Sửa / Xóa lô hàng | Cập nhật số thùng, hạn, ghi chú. Xóa khi hết hàng. Truy cập từ màn hình chi tiết (F07). | P1 | MVP | Done |
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
 | F18 | Thông báo trong app | Tab Thông báo có 2 tab con **Có vấn đề / Để sau**. Card theo sản phẩm: dòng tổng thùng + dòng thùng sắp hết hạn; pill tồn theo tổng thùng sản phẩm, pill hạn theo lô xấu nhất. Đánh dấu Để sau theo sản phẩm (`products.is_deferred`). | P2 | MVP+ | Done |
@@ -129,10 +129,11 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 - Một sản phẩm có thể có nhiều lô ở nhiều zone/tầng cùng lúc.
 
 ### 7.4 Mã vạch
-- Hàng có mã vạch: quét → tra cứu ngay.
+- Hàng có mã vạch: quét → tra cứu theo **lô hàng**.
 - Hàng không có mã vạch: tìm tên thủ công. Không bắt buộc phải có mã vạch.
 - Quét không nhận ra → hiện nút 'Thêm thủ công'.
-- Gán mã vạch cho sản phẩm: thực hiện tại màn hình chi tiết sản phẩm.
+- Gõ tên: tìm theo **sản phẩm**, highlight tất cả zone có sản phẩm đó.
+- Quét barcode: tìm theo **lô**, highlight zone chứa đúng lô và hiện thông tin lô đó.
 
 ### 7.5 Ngưỡng cảnh báo
 - `low_warning_boxes`: mặc định 3, configurable per sản phẩm tại màn hình chi tiết.
@@ -178,7 +179,6 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 |--------|------|-------|
 | id | UUID | Khoá chính |
 | name | String | Tên sản phẩm |
-| barcode | String | Mã vạch (tuỳ chọn) |
 | image_url | String | URL ảnh (Phase 2, Supabase Storage) |
 | notes | String | Ghi chú chung |
 | warning_days | Integer | Ngưỡng cảnh báo hạn (mặc định 30) |
@@ -194,6 +194,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | zone_id | UUID | Khoá ngoại → Zone |
 | tier | Integer | Tầng kệ (1 = thấp nhất) |
 | quantity_boxes | Integer | Số thùng nguyên |
+| barcode | String | Mã vạch của lô (optional) |
 | expiry_date | Date | Hạn sử dụng của lô này |
 | notes | String | Ghi chú lô hàng |
 | updated_at | Timestamp | Tự cập nhật |

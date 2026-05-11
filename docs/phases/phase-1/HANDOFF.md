@@ -4,6 +4,12 @@
 
 Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 
+## Cập nhật docs mới — Barcode per lô (Phase 1)
+
+- **Quyết định:** Barcode chuyển từ `products.barcode` sang `inventory_entries.barcode` (per lô).
+- **Logic tìm kiếm:** Gõ tên → theo sản phẩm; quét barcode → theo lô.
+- **Blocker:** `BLK-001` đã đóng (Resolved), không còn pending.
+
 ---
 
 ## Task gần nhất — Navigation, chi tiết SP, bản đồ, thông báo, số thùng
@@ -17,8 +23,12 @@ Chưa sẵn sàng test toàn bộ phase — còn TODO trong `PLAN.md`.
 1. Từ **Kho** / **Sản phẩm** / **Thông báo** mở **Chi tiết SP** — thanh tab dưới **vẫn hiện**; **Đóng** quay về đúng tab.
 2. Từ chi tiết mở **Thêm hàng** — tab bar **vẫn hiện**; Hủy/ lưu xong quay lại hợp lý.
 3. Mở **BarcodeScanner** (từ Kho / Sản phẩm / Chi tiết) — **fullscreen**, **không** tab bar; đóng scanner về đúng ngữ cảnh.
-4. **Locate** từ Kho: quét SP có trong hệ thống — về tab Kho, ô tìm kiếm + highlight zone (params `MapMain`).
-5. **Assign** mã vạch từ Chi tiết: sau quét, về lại chi tiết đúng SP với mã đã điền (tham số `returnTab`).
+4. **Locate** từ Kho: quét SP có trong hệ thống — scanner **tự đóng** trong ~1 giây; về tab Kho, ô tìm kiếm + highlight zone (params `MapMain`).
+5. **Assign** mã vạch từ Chi tiết: sau quét — scanner **tự đóng**; về chi tiết đúng SP, field mã vạch đã điền (tham số `returnTab`).
+6. **Thêm hàng** (`addInventory`): quét từ field mã vạch — scanner đóng, quay lại **Thêm hàng** với mã điền sẵn.
+7. **Tìm SP** (tab Sản phẩm, mode search mặc định): quét mã đã có — scanner đóng, mở **Chi tiết SP** đúng sản phẩm.
+
+*(KI-010 Resolved — `BarcodeScannerScreen`: hoãn `goBack` sau `navigate('Tabs')`.)*
 
 ---
 
@@ -103,3 +113,11 @@ Xem `docs/KNOWN_ISSUES.md` (KI-005 Resolved): race `fetchProducts` trên `AddInv
 ## Sẽ cập nhật khi
 
 DEV hoàn thành TODO trong `PLAN.md` hoặc QA xác nhận xong lượt test trên.
+
+## Hướng dẫn test docs (sau khi implement code)
+
+1. Chạy migration: drop `products.barcode`, add `inventory_entries.barcode`.
+2. AddInventory: nhập barcode per lô và lưu được theo từng lô khác nhau cho cùng sản phẩm.
+3. ProductDetail: card lô hiển thị barcode của đúng lô.
+4. Quét barcode: chỉ highlight zone chứa đúng lô có barcode đó (không phải toàn bộ zone của sản phẩm).
+5. Tìm theo tên: vẫn highlight tất cả zone có sản phẩm.

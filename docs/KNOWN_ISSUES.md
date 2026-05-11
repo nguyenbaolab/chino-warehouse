@@ -104,3 +104,14 @@
 - **Trạng thái:** Open
 
 ---
+
+### [KI-010] BarcodeScanner: sau quét không đóng modal / không chạy navigate
+
+- **Mức độ:** High
+- **File liên quan:** `screens/BarcodeScannerScreen.tsx`
+- **Mô tả:** Sau khi quét mã, màn scanner đôi khi không tự đóng và luồng `navigate('Tabs', …)` (locate / assign / thêm hàng / tìm SP) không hoàn tất đúng — thường do `goBack()` gọi quá sớm trong cùng tick với nested navigation (root stack: Tabs + BarcodeScanner modal).
+- **Hướng fix:** Hoãn `goBack()` sau `navigate('Tabs', …)`; reset lock khi màn focus; tránh `useCallback` phụ thuộc state lock gây stale handler.
+- **Trạng thái:** Resolved
+- **Đã fix:** `navigateTabsThenCloseModal` + `scheduleDismissModal` (delay ~160ms); `useFocusEffect` reset `processingRef` / UI lock; xử lý thất bại locate / search reset ref để quét lại.
+
+---

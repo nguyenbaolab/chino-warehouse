@@ -124,9 +124,20 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
-### Barcode — Phase 1: 1 sản phẩm 1 barcode
+### Barcode chuyển sang per lô (`inventory_entries`)
 
 - **Ngày:** tháng 5/2026
-- **Quyết định:** Phase 1 giữ nguyên **một barcode trên mỗi sản phẩm**, lưu trong cột **`products.barcode`**.
-- **Giới hạn đã biết:** Chưa xử lý trường hợp cùng một sản phẩm có **nhiều barcode khác nhau** (hàng nhập nhiều đợt, barcode per lô, v.v.).
-- **Kế hoạch:** Thiết kế lại logic barcode trong **Phase 2** khi có thêm thông tin từ chủ cửa hàng (xem **BLK-001** trong `docs/BLOCKERS.md`).
+- **Quyết định:** Barcode gắn với **từng lô hàng** (`inventory_entries.barcode`), không còn per sản phẩm.
+- **DB migration:** Xóa `products.barcode` (drop column), thêm `inventory_entries.barcode` (add column, optional).
+- **Lý do:** Cùng một sản phẩm có thể có nhiều lô với barcode khác nhau.
+- **Thay thế đã xem xét:** 1 sản phẩm 1 barcode — từ chối.
+
+---
+
+### Logic tìm kiếm theo barcode vs tên
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:**
+  - Gõ tên: tìm theo **sản phẩm**, highlight tất cả zone có sản phẩm đó.
+  - Quét barcode: tìm theo **lô**, highlight zone chứa đúng lô đó và hiện thông tin lô tương ứng.
+- **UI liên quan:** `ProductDetailScreen` thêm field barcode trên card lô; `AddInventoryScreen` dùng barcode per lô; `BarcodeScanner` bỏ `assign` mode.

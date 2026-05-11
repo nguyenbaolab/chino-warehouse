@@ -149,3 +149,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **Files thay đổi:** `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
 - **Kết quả:** Không phát hiện bug mới ghi trong KNOWN_ISSUES.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### KI-010 — BarcodeScanner: đóng modal + nested navigate ổn định
+
+- **Task:** Sau quét, modal scanner phải đóng và Tabs nhận params (locate / assign / addInventory / search mặc định).
+- **Files thay đổi:** `screens/BarcodeScannerScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** `navigate('Tabs', …)` rồi hoãn `goBack()` (~160ms); `useFocusEffect` reset lock; ref `processingRef` chống double-scan; reset ref khi alert “không tìm thấy”.
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (KI-010 Resolved), `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+
+### Docs — Quyết định barcode per lô + đóng BLK-001
+
+- **Task:** Cập nhật docs theo quyết định mới: barcode per lô (`inventory_entries.barcode`), bỏ `products.barcode`; cập nhật logic tìm kiếm barcode vs tên; BLK-001 chuyển Resolved.
+- **Files thay đổi:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Kết quả:** Đồng bộ tài liệu theo hướng triển khai barcode per lô trong Phase 1.
+- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
