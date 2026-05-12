@@ -22,7 +22,6 @@ export default function ProductsScreen() {
   const route = useRoute<any>()
   const {
     products,
-    zones,
     locations,
     inventoryEntries,
     productCategoriesL1,
@@ -30,6 +29,7 @@ export default function ProductsScreen() {
     fetchProducts,
     fetchLocations,
     fetchInventoryByZone,
+    fetchAllInventoryEntries,
     fetchCategories,
   } = useWarehouseStore()
   const { colors } = useThemeStore()
@@ -74,11 +74,9 @@ export default function ProductsScreen() {
   }, [fetchLocations, fetchProducts, showArchived])
 
   useEffect(() => {
-    if (zones.length === 0) return
     if (filterLocationId) return
-    // Đồng bộ inventory entries từ zone của kho đang chọn trên bản đồ (khi không lọc theo kho ở đây)
-    void Promise.all(zones.map((zone) => fetchInventoryByZone(zone.id)))
-  }, [zones, fetchInventoryByZone, filterLocationId])
+    void fetchAllInventoryEntries()
+  }, [filterLocationId, fetchAllInventoryEntries])
 
   useEffect(() => {
     if (!filterLocationId) {
@@ -463,8 +461,7 @@ export default function ProductsScreen() {
                         <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
                           <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
                           <Text style={[styles.lotText, { color: colors.sub }]}>
-                            Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng
-                            {lot.barcode ? ` · BC: ${lot.barcode}` : ''} · Zone {lot.zone?.name ?? '?'} T{lot.tier}
+                            Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng · {lot.barcode?.trim() || '—'}
                           </Text>
                         </View>
                       )

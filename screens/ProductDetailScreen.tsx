@@ -58,6 +58,8 @@ export default function ProductDetailScreen() {
   const { colors } = useThemeStore()
   const {
     zones,
+    locations,
+    fetchLocations,
     updateInventoryEntry,
     deleteInventoryEntry,
     updateProductStockThresholds,
@@ -101,6 +103,12 @@ export default function ProductDetailScreen() {
       void fetchCategories()
     }
   }, [fetchCategories])
+
+  useEffect(() => {
+    if (useWarehouseStore.getState().locations.length === 0) {
+      void fetchLocations()
+    }
+  }, [fetchLocations])
 
   const categoryL2Options = useMemo(() => {
     const l1 = product?.category_level1_id
@@ -523,7 +531,11 @@ export default function ProductDetailScreen() {
                 : status === 'warning'
                   ? colors.statusWarning
                   : colors.statusOk
-            const zone = lot.zone as Zone | undefined
+            const zoneResolved = (lot.zone as Zone | undefined) ?? zones.find((z) => z.id === lot.zone_id)
+            const locationName = zoneResolved?.location_id
+              ? locations.find((l) => l.id === zoneResolved.location_id)?.name
+              : undefined
+            const lotPlaceTitle = `${locationName ?? '—'} · ${zoneResolved?.name ?? '—'} · Tầng ${lot.tier}`
             return (
               <View key={lot.id} style={[styles.lotWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 {lot.quantity_boxes === 0 && (
@@ -544,9 +556,7 @@ export default function ProductDetailScreen() {
                 )}
                 <View style={styles.lotRow}>
                   <TouchableOpacity style={styles.lotMain} activeOpacity={0.75} onPress={() => openInlineEdit(lot)}>
-                    <Text style={[styles.lotTitle, { color: colors.text }]}>
-                      {zone?.name ?? 'Zone?'} · Tầng {lot.tier}
-                    </Text>
+                    <Text style={[styles.lotTitle, { color: colors.text }]}>{lotPlaceTitle}</Text>
                     <Text style={[styles.lotSub, { color: colors.sub }]}>
                       {lot.quantity_boxes} thùng · Hạn: {formatExpiryDate(lot.expiry_date)}
                     </Text>

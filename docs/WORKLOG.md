@@ -4,6 +4,21 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — ProductsScreen «Tất cả kho»: `fetchAllInventoryEntries` thay vì fetch theo `store.zones`
+
+- **Vấn đề:** `filterLocationId === null` cũ dùng `Promise.all(zones.map(fetchInventoryByZone))` — `zones` chỉ là zone của **kho đang chọn trên Map**, dễ trộn / thiếu lô của kho khác khi xem **Tất cả kho**.
+- **Fix:** Giống `NotificationsScreen`: `useEffect` khi `!filterLocationId` → `void fetchAllInventoryEntries()`; chọn kho cụ thể vẫn fetch theo `zonesForFilterLoc` + `fetchInventoryByZone`.
+- **File:** `screens/ProductsScreen.tsx`, `docs/project/CONTEXT.md` §3, `docs/WORKLOG.md`.
+
+---
+
+## [tháng 5/2026] — Card sản phẩm / card lô: bỏ zone+tầng trên Products; ProductDetail hiện kho · zone · tầng
+
+- **`ProductsScreen`:** Dòng lô trên thẻ SP chỉ còn **Hạn · số thùng · barcode** (barcode trống → `—`); bỏ `Zone … T…`.
+- **`ProductDetailScreen`:** Tiêu đề card lô: **`{tên kho} · {tên zone} · Tầng {n}`** — `locations` từ store + join `zone.location_id`; `zone` từ `lot.zone` hoặc `zones` trong store; `fetchLocations` khi store chưa có kho.
+
+---
+
 ## [tháng 5/2026] — Luồng quét + Huỷ: ProductsScreen `search`, Alert 3 nút, `returnTab` trên AddInventory + `lib/tabNavigation`
 
 - **`ProductsScreen`:** `{ mode: 'search', returnTab: 'Products' }` — tìm lô + kết quả về `ProductsMain` (params quét giữ nguyên); không dùng `locate` (tránh nhảy Map khi tìm thấy).
@@ -11,8 +26,6 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **`BarcodeScannerScreen`:** Không tìm thấy lô — locate & search — `Alert` 3 nút: **Thử lại** / **Thêm thủ công** (`AddInventory` + `returnTab` trong params) / **Huỷ** (`tabsParamsForReturnTabMain` + đóng modal). Nhánh `addInventoryParams` cũng gửi `returnTab`.
 - **`lib/tabNavigation.ts`:** `tabsParamsForReturnTabMain`, `navigateToTabMainFromNestedStack` (Hủy AddInventory từ stack con).
 - **`AddInventoryScreen`:** `returnTab?` + header **Huỷ** theo `returnTab`; bỏ `getHostTabName` không dùng.
-
----
 
 ---
 
