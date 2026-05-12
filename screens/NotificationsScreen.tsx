@@ -32,12 +32,12 @@ export default function NotificationsScreen() {
   const navigation = useNavigation<any>()
   const { colors } = useThemeStore()
   const {
-    zones,
     locations,
     products,
     inventoryEntries,
     fetchLocations,
     fetchProducts,
+    fetchAllInventoryEntries,
     fetchInventoryByZone,
     togglePriceReduced,
     toggleDiscontinued,
@@ -58,10 +58,9 @@ export default function NotificationsScreen() {
   }, [fetchLocations, fetchProducts])
 
   useEffect(() => {
-    if (zones.length === 0) return
     if (filterLocationId) return
-    void Promise.all(zones.map((zone) => fetchInventoryByZone(zone.id)))
-  }, [zones, fetchInventoryByZone, filterLocationId])
+    void fetchAllInventoryEntries()
+  }, [filterLocationId, fetchAllInventoryEntries])
 
   useEffect(() => {
     if (!filterLocationId) {

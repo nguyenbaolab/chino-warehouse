@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Fix NotificationsScreen filter Tất cả kho
+
+- Root cause: store.zones chỉ chứa zones của kho đang chọn trên Map nên fetch theo zones → thiếu inventory của các kho khác.
+- Fix: thêm fetchAllInventoryEntries (fetch toàn bộ, không lọc zone) vào store; NotificationsScreen gọi action này khi filterLocationId = null thay vì fetch theo store.zones.
+
+---
+
 ## [tháng 5/2026] — F29 Zone Layout Editor
 
 - Tạo ZoneLayoutEditorScreen: compact tile bottom panel, tap-to-place, footprint preview, collision detection, `batchUpdateZoneCells`.

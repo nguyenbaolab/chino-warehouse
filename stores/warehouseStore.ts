@@ -27,6 +27,7 @@ type WarehouseStore = {
   fetchZones: (locationId: string) => Promise<void>
   fetchProducts: () => Promise<void>
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
+  fetchAllInventoryEntries: () => Promise<{ error: string | null }>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
   searchByBarcode: (barcode: string) => Promise<InventoryEntry | null>
   addProduct: (data: Partial<Product>) => Promise<Product | null>
@@ -233,6 +234,17 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       return { inventoryEntries: [...next, ...entries] }
     })
     return entries
+  },
+
+  fetchAllInventoryEntries: async () => {
+    const { data, error } = await supabase
+      .from('inventory_entries')
+      .select('*, product:products(*), zone:zones(*)')
+    if (error) {
+      return { error: error.message ?? 'Không tải được tồn kho.' }
+    }
+    set({ inventoryEntries: data ?? [] })
+    return { error: null }
   },
 
   searchProducts: async (query) => {
