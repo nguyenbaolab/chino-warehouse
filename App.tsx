@@ -16,6 +16,7 @@ import NotificationsScreen from './screens/NotificationsScreen'
 import BarcodeScannerScreen from './screens/BarcodeScannerScreen'
 import OrderListScreen from './screens/OrderListScreen'
 import OrderDetailScreen from './screens/OrderDetailScreen'
+import ZoneLayoutEditorScreen from './screens/ZoneLayoutEditorScreen'
 
 const Tab = createBottomTabNavigator()
 const RootStack = createNativeStackNavigator()
@@ -29,6 +30,7 @@ function MapStackNavigator() {
   return (
     <MapStack.Navigator screenOptions={{ headerShown: false }}>
       <MapStack.Screen name="MapMain" component={MapScreen} />
+      <MapStack.Screen name="ZoneLayoutEditor" component={ZoneLayoutEditorScreen} />
       <MapStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <MapStack.Screen name="AddInventory" component={AddInventoryScreen} />
     </MapStack.Navigator>

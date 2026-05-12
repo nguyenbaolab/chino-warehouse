@@ -45,6 +45,11 @@ type WarehouseStore = {
     location_id: string
   }) => Promise<void>
   updateZone: (id: string, data: Partial<Zone>) => Promise<void>
+  /** Cập nhật cells nhiều zone; sau cùng gọi fetchZones(locationId). */
+  batchUpdateZoneCells: (
+    locationId: string,
+    updates: { id: string; cells: ZoneCell[] }[]
+  ) => Promise<{ error: string | null }>
   deleteZone: (id: string) => Promise<boolean>
   toggleDeferred: (productId: string) => Promise<void>
   togglePriceReduced: (entryId: string) => Promise<void>
@@ -366,6 +371,17 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     set((s) => ({
       zones: s.zones.map((z) => (z.id === id ? { ...z, ...data } : z)),
     }))
+  },
+
+  batchUpdateZoneCells: async (locationId, updates) => {
+    for (const u of updates) {
+      const { error } = await supabase.from('zones').update({ cells: u.cells }).eq('id', u.id)
+      if (error) {
+        return { error: error.message ?? 'Cập nhật zone thất bại.' }
+      }
+    }
+    await get().fetchZones(locationId)
+    return { error: null }
   },
 
   deleteZone: async (id) => {

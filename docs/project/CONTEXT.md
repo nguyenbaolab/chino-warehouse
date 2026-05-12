@@ -44,6 +44,7 @@ screens/
   DiscontinuedProductsScreen.tsx
   LocationManagementScreen.tsx
   MapScreen.tsx
+  ZoneLayoutEditorScreen.tsx
   NotificationsScreen.tsx
   OrderDetailScreen.tsx
   OrderListScreen.tsx
@@ -70,7 +71,7 @@ README.md
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar.
 - **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
-- **Map tab:** `MapStack` (`MapMain` → `ProductDetail` → `AddInventory`).
+- **Map tab:** `MapStack` (`MapMain` → `ZoneLayoutEditor` → `ProductDetail` → `AddInventory`).
 - **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory`).
 - **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail`).
 - **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory`).
@@ -90,7 +91,7 @@ README.md
 
 **State:** `locations`, `selectedLocationId`, `zones`, `products`, `inventoryEntries`, `isLoading`.
 
-**Actions chính:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `searchProducts`, `searchByBarcode`, `addProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateBarcode`, `updateProductStockThresholds`, `addZone`, `updateZone`, `deleteZone`.
+**Actions chính:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `searchProducts`, `searchByBarcode`, `addProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateBarcode`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
 
 ---
 

@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F29 Zone Layout Editor
+
+- Tạo ZoneLayoutEditorScreen: compact tile bottom panel, tap-to-place, footprint preview, collision detection, `batchUpdateZoneCells`.
+- MapScreen: thêm nút Sắp xếp (icon lưới) cạnh nút + Zone.
+- App.tsx: thêm route `ZoneLayoutEditor` vào MapStack.
+- CONTEXT.md: cập nhật §2 §3 §4.
+
+📌 Nhắc upload lại lên Claude Project Knowledge: `docs/project/CONTEXT.md`
+
+---
+
 ## [tháng 5/2026] — Task 4/4: LocationManagementScreen + filter kho
 
 - Tạo LocationManagementScreen: danh sách kho, card có tên + grid size + số sản phẩm, tạo/sửa/xóa kho có validate.

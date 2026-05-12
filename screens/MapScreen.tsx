@@ -474,9 +474,25 @@ export default function MapScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>🏪 Chino's Warehouse</Text>
         {mode === 'normal' ? (
-          <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.accent }]} onPress={startAddZone}>
-            <Text style={styles.addBtnText}>+ Zone</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={[
+                styles.layoutBtn,
+                { backgroundColor: colors.card, borderColor: colors.border },
+                !selectedLocationId ? { opacity: 0.35 } : null,
+              ]}
+              onPress={() => {
+                if (!selectedLocationId) return
+                navigation.navigate('ZoneLayoutEditor', { locationId: selectedLocationId })
+              }}
+              disabled={!selectedLocationId}
+            >
+              <Text style={[styles.layoutBtnIcon, { color: colors.text }]}>▦</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.accent }]} onPress={startAddZone}>
+              <Text style={styles.addBtnText}>+ Zone</Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.card }]} onPress={cancelSelect}>
             <Text style={[styles.cancelBtnText, { color: colors.text }]}>Hủy</Text>
@@ -766,6 +782,16 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   title: { fontSize: 17, fontWeight: 'bold' },
   addBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  layoutBtn: {
+    width: 40,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  layoutBtnIcon: { fontSize: 18, fontWeight: '700' },
   addBtnText: { color: '#fff', fontWeight: 'bold' },
   cancelBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
   cancelBtnText: { fontWeight: 'bold' },
