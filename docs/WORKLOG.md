@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F30 Task 2/3: CategoryManagementScreen + Settings card
+
+- `CategoryManagementScreen`: accordion Cấp 1 / Cấp 2, modal thêm/sửa tên, Alert xóa + hiện lỗi từ store, `fetchCategories` khi mount, nút **+ Thêm nhóm** / **+ Thêm loại**.
+- `SettingsScreen`: hai card ngang (Quản lý kho + Phân loại sản phẩm), tóm tắt nhóm/loại, `fetchCategories` khi focus nếu store category rỗng, điều hướng `CategoryManagement`.
+- `App.tsx`: route `CategoryManagement` trong `SettingsStack`.
+- `CONTEXT.md` §3 UI: Settings + CategoryManagement + sửa dòng MapScreen.
+
+---
+
 ## [tháng 5/2026] — F30 Task 1/3: migration + types + store
 
 - Migration: `20260512143000_create_product_categories.sql` (bảng `product_categories_l1` / `product_categories_l2` + RLS), `20260512143001_add_category_to_products.sql` (`products.category_level1_id`, `category_level2_id`, FK SET NULL).

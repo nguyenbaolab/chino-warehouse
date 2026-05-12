@@ -12,8 +12,11 @@ export default function SettingsScreen() {
     selectedLocationId,
     fetchZones,
     fetchLocations,
+    fetchCategories,
     locations,
     products,
+    productCategoriesL1,
+    productCategoriesL2,
     refreshDiscontinuedContext,
   } = useWarehouseStore()
   const { isDark, colors, loadTheme, toggleTheme } = useThemeStore()
@@ -21,6 +24,11 @@ export default function SettingsScreen() {
   const discontinuedCount = useMemo(
     () => products.filter((p) => !p.is_archived && p.is_discontinued === true).length,
     [products]
+  )
+
+  const categorySummary = useMemo(
+    () => `${productCategoriesL1.length} nhóm · ${productCategoriesL2.length} loại`,
+    [productCategoriesL1.length, productCategoriesL2.length]
   )
 
   useEffect(() => {
@@ -35,7 +43,15 @@ export default function SettingsScreen() {
   useFocusEffect(
     useCallback(() => {
       void refreshDiscontinuedContext()
-    }, [refreshDiscontinuedContext])
+      if (productCategoriesL1.length === 0 && productCategoriesL2.length === 0) {
+        void fetchCategories()
+      }
+    }, [
+      refreshDiscontinuedContext,
+      fetchCategories,
+      productCategoriesL1.length,
+      productCategoriesL2.length,
+    ])
   )
 
   useEffect(() => {
@@ -69,17 +85,36 @@ export default function SettingsScreen() {
         <Text style={[styles.title, { color: colors.text }]}>⚙️ Cài đặt</Text>
       </View>
 
-      <TouchableOpacity
-        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-        activeOpacity={0.75}
-        onPress={() => navigation.navigate('LocationManagement')}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.linkTitle, { color: colors.text }]}>Quản lý kho</Text>
-          <Text style={[styles.linkSub, { color: colors.sub }]}>{locations.length} kho</Text>
-        </View>
-        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
-      </TouchableOpacity>
+      <View style={styles.rowTwoCards}>
+        <TouchableOpacity
+          style={[styles.linkCard, styles.linkCardHalf, { backgroundColor: colors.card, borderColor: colors.border }]}
+          activeOpacity={0.75}
+          onPress={() => navigation.navigate('LocationManagement')}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.linkTitle, { color: colors.text }]} numberOfLines={2}>
+              Quản lý kho
+            </Text>
+            <Text style={[styles.linkSub, { color: colors.sub }]}>{locations.length} kho</Text>
+          </View>
+          <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.linkCard, styles.linkCardHalf, { backgroundColor: colors.card, borderColor: colors.border }]}
+          activeOpacity={0.75}
+          onPress={() => navigation.navigate('CategoryManagement')}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.linkTitle, { color: colors.text }]} numberOfLines={2}>
+              Phân loại sản phẩm
+            </Text>
+            <Text style={[styles.linkSub, { color: colors.sub }]} numberOfLines={2}>
+              {categorySummary}
+            </Text>
+          </View>
+          <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -135,6 +170,12 @@ const styles = StyleSheet.create({
   topSpacer: { height: Platform.OS === 'android' ? 16 : 0 },
   header: { paddingHorizontal: 16, paddingVertical: 12 },
   title: { fontSize: 17, fontWeight: 'bold' },
+  rowTwoCards: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    gap: 10,
+  },
   linkCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -144,6 +185,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
+  linkCardHalf: { flex: 1, marginHorizontal: 0, marginBottom: 0, minWidth: 0 },
   linkTitle: { fontSize: 15, fontWeight: '600' },
   linkSub: { fontSize: 13, marginTop: 4 },
   chevron: { fontSize: 22, fontWeight: '300', marginLeft: 8 },

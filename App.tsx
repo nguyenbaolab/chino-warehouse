@@ -10,6 +10,7 @@ import ProductsScreen from './screens/ProductsScreen'
 import SettingsScreen from './screens/SettingsScreen'
 import DiscontinuedProductsScreen from './screens/DiscontinuedProductsScreen'
 import LocationManagementScreen from './screens/LocationManagementScreen'
+import CategoryManagementScreen from './screens/CategoryManagementScreen'
 import AddInventoryScreen from './screens/AddInventoryScreen'
 import ProductDetailScreen from './screens/ProductDetailScreen'
 import NotificationsScreen from './screens/NotificationsScreen'
@@ -71,6 +72,7 @@ function SettingsStackNavigator() {
     <SettingsStack.Navigator screenOptions={{ headerShown: false }}>
       <SettingsStack.Screen name="SettingsMain" component={SettingsScreen} />
       <SettingsStack.Screen name="LocationManagement" component={LocationManagementScreen} />
+      <SettingsStack.Screen name="CategoryManagement" component={CategoryManagementScreen} />
       <SettingsStack.Screen name="DiscontinuedProducts" component={DiscontinuedProductsScreen} />
     </SettingsStack.Navigator>
   )
