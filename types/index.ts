@@ -24,6 +24,21 @@ export type Zone = {
   updated_at: string
 }
 
+/** F30 — phân loại cấp 1 (VD: Đồ khô). */
+export type ProductCategoryL1 = {
+  id: string
+  name: string
+  created_at: string
+}
+
+/** F30 — phân loại cấp 2 (VD: Mì), thuộc một cấp 1. */
+export type ProductCategoryL2 = {
+  id: string
+  level1_id: string
+  name: string
+  created_at: string
+}
+
 export type Product = {
   id: string
   name: string
@@ -38,6 +53,10 @@ export type Product = {
   /** Tab Sắp hết hàng: không nhập nữa. */
   is_discontinued?: boolean
   created_at: string
+  /** F30 — optional FK → product_categories_l1 */
+  category_level1_id?: string | null
+  /** F30 — optional FK → product_categories_l2 */
+  category_level2_id?: string | null
 }
 
 export type OrderListStatus = 'draft' | 'confirmed' | 'placed'

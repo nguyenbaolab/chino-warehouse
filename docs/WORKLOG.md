@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F30 Task 1/3: migration + types + store
+
+- Migration: `20260512143000_create_product_categories.sql` (bảng `product_categories_l1` / `product_categories_l2` + RLS), `20260512143001_add_category_to_products.sql` (`products.category_level1_id`, `category_level2_id`, FK SET NULL).
+- `types/index.ts`: `ProductCategoryL1`, `ProductCategoryL2`; `Product` thêm `category_level1_id`, `category_level2_id`.
+- `warehouseStore`: state `productCategoriesL1` / `productCategoriesL2`; actions `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1` (chặn còn L2 con hoặc SP dùng cấp 1), `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2` (chặn SP dùng cấp 2); sau xóa L1/L2 gọi `fetchProducts()` để đồng bộ FK SET NULL.
+- `CONTEXT.md` §4: state/actions F30 đã implement (bỏ nhãn design-only).
+
+---
+
 ## [tháng 5/2026] — Chốt design F30 category (v1.3.4, docs only)
 
 - **F30:** Category 2 cấp — card Settings **X nhóm · Y loại**, màn **Quản lý phân loại** (accordion); `ProductDetail` / `AddInventory` theo luồng dropdown; schema §8; **DECISIONS** (gắn SP không lô, optional 2 cấp, AddInventory chỉ SP mới, CRUD trong Settings).

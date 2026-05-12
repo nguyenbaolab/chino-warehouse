@@ -91,11 +91,11 @@ README.md
 
 ## §4 Store — `warehouseStore.ts`
 
-**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `inventoryEntries`, `orderLists`, `orderItems`, `isLoading`. **F30 (design — khi implement):** `productCategoriesL1`, `productCategoriesL2` (hoặc tên state tương đương).
+**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, `orderLists`, `orderItems`, `isLoading`.
 
 **Actions — kho & zone:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `fetchAllInventoryEntries`, `searchProducts`, `searchByBarcode`, `addProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
 
-**Actions — category (F30 — design, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`.
+**Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`.
 
 **Actions — sản phẩm / cờ:** `toggleDeferred`, `togglePriceReduced`, `setProductDiscontinued`, `toggleDiscontinued`, `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`.
 

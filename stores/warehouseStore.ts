@@ -1,12 +1,14 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import { Location, Zone, ZoneCell, Product, InventoryEntry, OrderItem, OrderList, OrderListStatus } from '../types'
+import { Location, Zone, ZoneCell, Product, ProductCategoryL1, ProductCategoryL2, InventoryEntry, OrderItem, OrderList, OrderListStatus } from '../types'
 
 type WarehouseStore = {
   locations: Location[]
   selectedLocationId: string | null
   zones: Zone[]
   products: Product[]
+  productCategoriesL1: ProductCategoryL1[]
+  productCategoriesL2: ProductCategoryL2[]
   inventoryEntries: InventoryEntry[]
   orderLists: OrderList[]
   orderItems: OrderItem[]
@@ -38,6 +40,13 @@ type WarehouseStore = {
     productId: string,
     data: { low_warning_boxes?: number; low_critical_boxes?: number }
   ) => Promise<Product | null>
+  fetchCategories: () => Promise<{ error: string | null }>
+  addCategoryL1: (name: string) => Promise<{ error: string | null; category?: ProductCategoryL1 }>
+  updateCategoryL1: (id: string, data: { name: string }) => Promise<{ error: string | null }>
+  deleteCategoryL1: (id: string) => Promise<{ error: string | null }>
+  addCategoryL2: (level1Id: string, name: string) => Promise<{ error: string | null; category?: ProductCategoryL2 }>
+  updateCategoryL2: (id: string, data: { name: string }) => Promise<{ error: string | null }>
+  deleteCategoryL2: (id: string) => Promise<{ error: string | null }>
   addZone: (data: {
     name: string
     cells: ZoneCell[]
@@ -74,6 +83,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   selectedLocationId: null,
   zones: [],
   products: [],
+  productCategoriesL1: [],
+  productCategoriesL2: [],
   inventoryEntries: [],
   orderLists: [],
   orderItems: [],
@@ -221,6 +232,153 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .eq('is_archived', false)
       .order('name')
     if (data) set({ products: data })
+  },
+
+  fetchCategories: async () => {
+    const [{ data: l1, error: e1 }, { data: l2, error: e2 }] = await Promise.all([
+      supabase.from('product_categories_l1').select('*').order('name'),
+      supabase.from('product_categories_l2').select('*').order('name'),
+    ])
+    const err = e1 ?? e2
+    if (err) {
+      return { error: err.message ?? 'Không tải được phân loại.' }
+    }
+    set({
+      productCategoriesL1: (l1 as ProductCategoryL1[]) ?? [],
+      productCategoriesL2: (l2 as ProductCategoryL2[]) ?? [],
+    })
+    return { error: null }
+  },
+
+  addCategoryL1: async (name) => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      return { error: 'Tên nhóm không được để trống.' }
+    }
+    const { data: created, error } = await supabase
+      .from('product_categories_l1')
+      .insert({ name: trimmed })
+      .select('*')
+      .single()
+    if (error || !created) {
+      return { error: error?.message ?? 'Không tạo được nhóm.' }
+    }
+    const row = created as ProductCategoryL1
+    set((s) => ({
+      productCategoriesL1: [...s.productCategoriesL1.filter((c) => c.id !== row.id), row].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      ),
+    }))
+    return { error: null, category: row }
+  },
+
+  updateCategoryL1: async (id, data) => {
+    const trimmed = data.name.trim()
+    if (!trimmed) {
+      return { error: 'Tên nhóm không được để trống.' }
+    }
+    const { error } = await supabase.from('product_categories_l1').update({ name: trimmed }).eq('id', id)
+    if (error) {
+      return { error: error.message ?? 'Cập nhật nhóm thất bại.' }
+    }
+    set((s) => ({
+      productCategoriesL1: s.productCategoriesL1
+        .map((c) => (c.id === id ? { ...c, name: trimmed } : c))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    return { error: null }
+  },
+
+  deleteCategoryL1: async (id) => {
+    const { data: children } = await supabase
+      .from('product_categories_l2')
+      .select('id')
+      .eq('level1_id', id)
+      .limit(1)
+    if (children && children.length > 0) {
+      return { error: 'Không xóa được: còn loại (cấp 2) thuộc nhóm này.' }
+    }
+    const { count: c1 } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_level1_id', id)
+    if ((c1 ?? 0) > 0) {
+      return { error: 'Không xóa được: còn sản phẩm đang gán nhóm này (cấp 1).' }
+    }
+    const { error } = await supabase.from('product_categories_l1').delete().eq('id', id)
+    if (error) {
+      return { error: error.message ?? 'Xóa nhóm thất bại.' }
+    }
+    set((s) => ({
+      productCategoriesL1: s.productCategoriesL1.filter((c) => c.id !== id),
+      productCategoriesL2: s.productCategoriesL2.filter((c) => c.level1_id !== id),
+    }))
+    await get().fetchProducts()
+    return { error: null }
+  },
+
+  addCategoryL2: async (level1Id, name) => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      return { error: 'Tên loại không được để trống.' }
+    }
+    if (!get().productCategoriesL1.some((c) => c.id === level1Id)) {
+      const { data: exists } = await supabase.from('product_categories_l1').select('id').eq('id', level1Id).maybeSingle()
+      if (!exists) {
+        return { error: 'Không tìm thấy nhóm cấp 1.' }
+      }
+    }
+    const { data: created, error } = await supabase
+      .from('product_categories_l2')
+      .insert({ level1_id: level1Id, name: trimmed })
+      .select('*')
+      .single()
+    if (error || !created) {
+      return { error: error?.message ?? 'Không tạo được loại.' }
+    }
+    const row = created as ProductCategoryL2
+    set((s) => ({
+      productCategoriesL2: [...s.productCategoriesL2.filter((c) => c.id !== row.id), row].sort((a, b) =>
+        a.name.localeCompare(b.name)
+      ),
+    }))
+    return { error: null, category: row }
+  },
+
+  updateCategoryL2: async (id, data) => {
+    const trimmed = data.name.trim()
+    if (!trimmed) {
+      return { error: 'Tên loại không được để trống.' }
+    }
+    const { error } = await supabase.from('product_categories_l2').update({ name: trimmed }).eq('id', id)
+    if (error) {
+      return { error: error.message ?? 'Cập nhật loại thất bại.' }
+    }
+    set((s) => ({
+      productCategoriesL2: s.productCategoriesL2
+        .map((c) => (c.id === id ? { ...c, name: trimmed } : c))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }))
+    return { error: null }
+  },
+
+  deleteCategoryL2: async (id) => {
+    const { count } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .eq('category_level2_id', id)
+    if ((count ?? 0) > 0) {
+      return { error: 'Không xóa được: còn sản phẩm đang gán loại này.' }
+    }
+    const { error } = await supabase.from('product_categories_l2').delete().eq('id', id)
+    if (error) {
+      return { error: error.message ?? 'Xóa loại thất bại.' }
+    }
+    set((s) => ({
+      productCategoriesL2: s.productCategoriesL2.filter((c) => c.id !== id),
+    }))
+    await get().fetchProducts()
+    return { error: null }
   },
 
   fetchInventoryByZone: async (zoneId) => {
