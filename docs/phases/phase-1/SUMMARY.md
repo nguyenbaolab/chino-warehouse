@@ -13,7 +13,7 @@
 ### Kết quả
 
 - MVP kho **đạt**: nhân viên có thể làm việc hàng ngày trên một kho (location) với bản đồ zone, chi tiết sản phẩm, và scanner.
-- **F18** còn **Partial** (polish + edge case). Một số hạng mục mở rộng của **F27** (PDF, nối từ Sắp hết hàng) và **F28** (field lý do riêng) được **kế hoạch hóa sang Phase 2** dù mã tính năng gốc đã coi là đạt MVP — xem `docs/phases/phase-2/PLAN.md` và mục 3 dưới đây.
+- **F18** (`NotificationsScreen`) đã **Done** sau test thực tế (tháng 5/2026); trước đó từng ghi **Partial** trong closeout Phase 1. Một số hạng mục mở rộng của **F27** (PDF, nối từ Sắp hết hàng) và **F28** (field lý do riêng) vẫn **kế hoạch hóa sang Phase 2** — xem `docs/phases/phase-2/PLAN.md` và mục 3 dưới đây.
 - Các tính năng **F08, F19–F21, F26** không thuộc cam kết Phase 1 — đã lên kế hoạch Phase 2 từ đầu.
 
 ---
@@ -40,10 +40,9 @@ Theo đánh giá closeout và bảng `REQUIREMENTS.md` §6:
 | F15 | Thêm lô (zone/tầng/thùng/hạn/ghi chú/**barcode lô**) |
 | F16 | Sửa/xóa lô |
 | F17 | Đồng bộ cloud + Realtime (theo các màn đã gắn subscription / refetch) |
+| F18 | Tab Thông báo: Sắp hết hạn / Sắp hết hàng, toggle Đã giảm giá, card hết hạn, nút Thêm vào danh sách nhập + Không nhập nữa (xác nhận Done sau test thực tế) |
 | F27 | Tab Đặt hàng: danh sách list, chi tiết list, CRUD item, trạng thái draft/confirmed/placed, cộng dồn khi trùng trong draft |
 | F28 | Cài đặt: card + màn “Không nhập nữa”, tồn tổng thùng, **Nhập lại** (`is_discontinued`) |
-
-**F18** có mặt trên app nhưng trạng thái **Partial** (không xếp vào danh sách “hoàn thành hoàn toàn” ở trên).
 
 ---
 
@@ -51,7 +50,6 @@ Theo đánh giá closeout và bảng `REQUIREMENTS.md` §6:
 
 | Hạng mục | Lý do / trạng thái |
 |----------|-------------------|
-| **F18 Notifications** | UI và luồng chính đã có; còn polish và edge case hiển thị/lọc. |
 | **F27 — PDF** | Nút xuất PDF còn placeholder, chưa implement generator + lưu file. |
 | **F27 — “Thêm vào danh sách nhập”** | Từ tab Sắp hết hàng chỉ log/placeholder, chưa tạo/ghi item vào `order_lists`. |
 | **F28 — Lý do discontinued** | Chưa có cột/field riêng; UI hiển thị “Lý do” từ `products.notes` — dễ trùng mục đích ghi chú chung. |
@@ -95,7 +93,7 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 
 ## 7. Chuyển sang Phase 2
 
-- Hoàn thiện **F18**, nối **Sắp hết hàng → Đặt hàng**, **xuất PDF**, field **lý do discontinued** riêng.
+- Nối **Sắp hết hàng → Đặt hàng**, **xuất PDF**, field **lý do discontinued** riêng.
 - **F08, F19, F20, F21, F26** theo scope đã hoãn.
 - **Barcode:** edge cases + tùy chọn **multi-barcode per sản phẩm** nếu nghiệp vụ yêu cầu.
 

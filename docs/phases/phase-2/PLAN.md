@@ -6,7 +6,7 @@
 
 ## 1. Tiếp tục từ Phase 1 (nợ kỹ thuật / polish)
 
-- **F18 — `NotificationsScreen`:** polish UI/UX; rà soát và xử lý edge case trong logic hiển thị / lọc card (Sắp hết hạn, Sắp hết hàng).
+- ~~**F18 — `NotificationsScreen`:** polish UI/UX; rà soát và xử lý edge case trong logic hiển thị / lọc card (Sắp hết hạn, Sắp hết hàng).~~ **Đã hoàn thành** — test thực tế không phát hiện lỗi UI/UX; `REQUIREMENTS.md` §6: F18 → **Done** (tháng 5/2026).
 - **Tab Đặt hàng + tab Sắp hết hàng:** kết nối nút **Thêm vào danh sách nhập** với tạo/ghi nhận item trong list đặt hàng (thay placeholder).
 - **Xuất PDF:** triển khai nút xuất PDF trên list đặt hàng (và/hoặc lưu “bản in” theo từng list — theo spec cuối).
 - **Sản phẩm không nhập nữa:** thêm **field lý do riêng** (migration + type + UI); không dùng `products.notes` làm proxy dài hạn.

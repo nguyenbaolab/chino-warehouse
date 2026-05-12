@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F18 NotificationsScreen: Partial → Done
+
+- **F18** `NotificationsScreen`: xác nhận **Done** sau test thực tế; không phát hiện lỗi UI/UX.
+- Cập nhật `REQUIREMENTS.md` §6, `docs/phases/phase-2/PLAN.md` §1, `docs/phases/phase-1/SUMMARY.md`.
+
+---
+
 ## [tháng 5/2026] — Audit và sync toàn bộ docs Phase 2
 
 - Đối chiếu code thực tế với CONTEXT.md, REQUIREMENTS.md, KNOWN_ISSUES.md, DECISIONS.md sau khi hoàn thành F20, F29, fix NotificationsScreen filter.
