@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Chốt design F30 category (v1.3.4, docs only)
+
+- **F30:** Category 2 cấp — card Settings **X nhóm · Y loại**, màn **Quản lý phân loại** (accordion); `ProductDetail` / `AddInventory` theo luồng dropdown; schema §8; **DECISIONS** (gắn SP không lô, optional 2 cấp, AddInventory chỉ SP mới, CRUD trong Settings).
+- **CONTEXT:** §2 `CategoryManagementScreen`, §3 `CategoryManagement` route, §4 store category actions, §5 types `ProductCategoryL1` / `ProductCategoryL2`.
+- **Chưa implement code.**
+
+---
+
 ## [tháng 5/2026] — Chốt design F27 mở rộng + F30 (docs only)
 
 - **F27:** 2 tab trong list (Hàng trong kho / Hàng mới), list active + list tự tạo, số thùng để trống đến Confirm, nhóm theo category, PDF tổng hợp cả 2 tab, luồng Draft → Confirm → Xuất PDF → Đã đặt.

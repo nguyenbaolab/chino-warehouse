@@ -250,12 +250,37 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
-### Category system optional (F30)
+### Category gắn sản phẩm, không gắn lô (F30)
 
 - **Ngày:** tháng 5/2026
-- **Quyết định:** Phân loại sản phẩm **2 cấp** (`product_categories_l1` / `product_categories_l2`), gắn optional qua `products.category_level1_id` / `category_level2_id`. **Không bắt buộc** gán category khi tạo sản phẩm. Sản phẩm chưa gán (hoặc không đủ cấp) hiển thị trong list đặt hàng dưới nhóm **Chưa phân loại**.
-- **Lý do:** Cho phép nhập hàng và đặt hàng trước khi kịp chuẩn hóa danh mục; vẫn có chỗ nhóm rõ trên list.
-- **Thay thế đã xem xét:** Bắt buộc chọn category khi tạo SP — từ chối (quá nặng thao tác).
+- **Quyết định:** Phân loại (`category_level1_id` / `category_level2_id`) gắn trên **`products`**, **không** gắn trên `inventory_entries` / lô hàng.
+- **Lý do:** Một SKU một phân loại nghiệp vụ; lô chỉ là tồn theo thời điểm.
+- **Tham chiếu:** `REQUIREMENTS.md` §8.
+
+---
+
+### Phân loại 2 cấp — cả hai cấp đều optional (F30)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Cấp 1 và Cấp 2 **đều optional**; không bắt buộc phân loại khi tạo hoặc sửa sản phẩm. Chọn Cấp 1 **không** bắt buộc phải chọn Cấp 2. Sản phẩm chưa gán đủ thông tin hiển thị trong list đặt hàng dưới nhóm **Chưa phân loại** (F27).
+- **Lý do:** Linh hoạt vận hành; tránh chặn nhập hàng khi chưa kịp chuẩn hóa danh mục.
+
+---
+
+### AddInventoryScreen — category chỉ khi thêm sản phẩm mới (F30)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Khi **chọn sản phẩm có sẵn**, hiển thị category **read-only** (điền từ SP), **không** cho chỉnh category trên màn thêm lô. Khi **thêm sản phẩm mới**, hiện dropdown Cấp 1 + Cấp 2 ngay dưới field tên sản phẩm (cả hai optional theo quyết định trên).
+- **Lý do:** Tránh đổi taxonomy nhầm khi chỉ đang nhập lô cho SKU đã có; tạo SP mới là điểm hợp lý để gán category lần đầu.
+
+---
+
+### Quản lý category trong Settings (F30)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** CRUD category 2 cấp đặt trong **Settings** (card tóm tắt + màn **Quản lý phân loại**), **không** đặt luồng quản lý category trong màn **danh sách sản phẩm** (Products list).
+- **Lý do:** Tách cấu hình danh mục khỏi thao tác tra cứu hàng ngày; gán SP vẫn ở chi tiết SP / AddInventory theo `REQUIREMENTS.md` §9.
+- **Tham chiếu:** `REQUIREMENTS.md` §6 F30, §9.
 
 ---
 
