@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F30 Task 3/3 hoàn thành — F30 Done
+
+- `warehouseStore`: action `updateProductCategory` (Supabase `products` + đồng bộ `products` / `inventoryEntries`).
+- `ProductDetailScreen`: `fetchCategories` khi mount nếu `productCategoriesL1` rỗng; section **Chi tiết**: dropdown **Nhóm (Cấp 1)** / **Loại (Cấp 2)** (L2 chỉ khi đã chọn L1; đổi L1 → reset L2); lưu ngay qua store.
+- `AddInventoryScreen`: `fetchCategories` khi store category rỗng; SP có sẵn → dòng **Phân loại** read-only (`Tên L1 · Tên L2` / **Chưa phân loại**); tạo SP mới → dropdown Cấp 1/2 dưới field tên, lưu cùng `addProduct`.
+- `REQUIREMENTS.md` §6 F30 **Done**, v1.3.5; `CONTEXT.md` §3 §4.
+
+---
+
 ## [tháng 5/2026] — F30 Task 2/3: CategoryManagementScreen + Settings card
 
 - `CategoryManagementScreen`: accordion Cấp 1 / Cấp 2, modal thêm/sửa tên, Alert xóa + hiện lỗi từ store, `fetchCategories` khi mount, nút **+ Thêm nhóm** / **+ Thêm loại**.

@@ -72,6 +72,9 @@ export default function AddInventoryScreen() {
     zones,
     fetchProducts,
     fetchLocations,
+    fetchCategories,
+    productCategoriesL1,
+    productCategoriesL2,
     addProduct,
     addInventoryEntry,
     updateInventoryEntry,
@@ -94,6 +97,17 @@ export default function AddInventoryScreen() {
   const [showZoneOptions, setShowZoneOptions] = useState(false)
   const [showTierOptions, setShowTierOptions] = useState(false)
 
+  const [newCategoryL1Id, setNewCategoryL1Id] = useState<string | null>(null)
+  const [newCategoryL2Id, setNewCategoryL2Id] = useState<string | null>(null)
+  const [showNewCatL1, setShowNewCatL1] = useState(false)
+  const [showNewCatL2, setShowNewCatL2] = useState(false)
+
+  useEffect(() => {
+    if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
+      void fetchCategories()
+    }
+  }, [fetchCategories])
+
   useEffect(() => {
     fetchLocations()
     // Không gọi fetchProducts() mỗi lần mount: request async có thể hoàn thành
@@ -110,6 +124,24 @@ export default function AddInventoryScreen() {
     return products.filter((p) => p.name.toLowerCase().includes(query))
   }, [products, searchQuery])
   const isSearching = searchQuery.trim().length > 0
+
+  const newCategoryL2Options = useMemo(() => {
+    if (!newCategoryL1Id) return []
+    return productCategoriesL2.filter((c) => c.level1_id === newCategoryL1Id)
+  }, [newCategoryL1Id, productCategoriesL2])
+
+  const selectedCategoryReadonly = useMemo(() => {
+    if (!selectedProduct || showCreateProduct) return null
+    const pFull = products.find((p) => p.id === selectedProduct.id) ?? selectedProduct
+    const l1id = pFull.category_level1_id ?? null
+    const l2id = pFull.category_level2_id ?? null
+    if (!l1id && !l2id) return 'Chưa phân loại'
+    const l1n = l1id ? productCategoriesL1.find((c) => c.id === l1id)?.name : null
+    const l2n = l2id ? productCategoriesL2.find((c) => c.id === l2id)?.name : null
+    const left = l1n ?? '—'
+    const right = l2id ? (l2n ?? '—') : '—'
+    return `${left} · ${right}`
+  }, [selectedProduct, showCreateProduct, products, productCategoriesL1, productCategoriesL2])
 
   useEffect(() => {
     if (!productId || selectedProduct) return
@@ -168,6 +200,8 @@ export default function AddInventoryScreen() {
       notes: newProductNote.trim() || undefined,
       warning_days: 30,
       is_archived: false,
+      category_level1_id: newCategoryL1Id ?? null,
+      category_level2_id: newCategoryL1Id ? (newCategoryL2Id ?? null) : null,
     })
     setIsCreatingProduct(false)
 
@@ -182,6 +216,10 @@ export default function AddInventoryScreen() {
     setShowCreateProduct(false)
     setNewProductName('')
     setNewProductNote('')
+    setNewCategoryL1Id(null)
+    setNewCategoryL2Id(null)
+    setShowNewCatL1(false)
+    setShowNewCatL2(false)
   }
 
   async function handleSaveInventory() {
@@ -379,6 +417,10 @@ export default function AddInventoryScreen() {
                 setSelectedProduct(null)
                 setSearchQuery('')
                 setLotBarcode('')
+                setNewCategoryL1Id(null)
+                setNewCategoryL2Id(null)
+                setShowNewCatL1(false)
+                setShowNewCatL2(false)
               }}
             >
               <Text style={[styles.clearSelectedText, { color: colors.sub }]}>✕</Text>
@@ -406,7 +448,18 @@ export default function AddInventoryScreen() {
                 <Text style={[styles.emptyProductText, { color: colors.sub }]}>Không tìm thấy sản phẩm phù hợp.</Text>
                 <TouchableOpacity
                   style={[styles.createBtn, { backgroundColor: colors.accent }]}
-                  onPress={() => setShowCreateProduct((v) => !v)}
+                  onPress={() => {
+                    setShowCreateProduct((v) => {
+                      const next = !v
+                      if (next) {
+                        setNewCategoryL1Id(null)
+                        setNewCategoryL2Id(null)
+                        setShowNewCatL1(false)
+                        setShowNewCatL2(false)
+                      }
+                      return next
+                    })
+                  }}
                 >
                   <Text style={[styles.createBtnText, { color: colors.card }]}>Tạo sản phẩm mới</Text>
                 </TouchableOpacity>
@@ -418,6 +471,13 @@ export default function AddInventoryScreen() {
             <Text style={[styles.searchHintText, { color: colors.sub }]}>
               Nhập tên sản phẩm để hiện danh sách gợi ý.
             </Text>
+          </View>
+        )}
+
+        {selectedProduct && !showCreateProduct && selectedCategoryReadonly && (
+          <View style={[styles.readonlyBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.label, { color: colors.sub, marginBottom: 4 }]}>Phân loại</Text>
+            <Text style={[styles.readonlyText, { color: colors.text }]}>{selectedCategoryReadonly}</Text>
           </View>
         )}
 
@@ -464,6 +524,92 @@ export default function AddInventoryScreen() {
               placeholder="VD: Chino Milk Tea"
               placeholderTextColor={colors.sub}
             />
+
+            <Text style={[styles.label, { color: colors.sub }]}>Nhóm (Cấp 1)</Text>
+            <Pressable
+              style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+              onPress={() => {
+                setShowNewCatL1((v) => !v)
+                setShowNewCatL2(false)
+              }}
+            >
+              <Text style={{ color: newCategoryL1Id ? colors.text : colors.sub }}>
+                {!newCategoryL1Id
+                  ? 'Không phân loại'
+                  : productCategoriesL1.find((c) => c.id === newCategoryL1Id)?.name ?? 'Không phân loại'}
+              </Text>
+            </Pressable>
+            {showNewCatL1 && (
+              <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                <TouchableOpacity
+                  style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                  onPress={() => {
+                    setNewCategoryL1Id(null)
+                    setNewCategoryL2Id(null)
+                    setShowNewCatL1(false)
+                  }}
+                >
+                  <Text style={{ color: colors.text }}>Không phân loại</Text>
+                </TouchableOpacity>
+                {productCategoriesL1.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.id}
+                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                    onPress={() => {
+                      setNewCategoryL1Id(cat.id)
+                      setNewCategoryL2Id(null)
+                      setShowNewCatL1(false)
+                    }}
+                  >
+                    <Text style={{ color: colors.text }}>{cat.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {!!newCategoryL1Id && (
+              <>
+                <Text style={[styles.label, { color: colors.sub }]}>Loại (Cấp 2)</Text>
+                <Pressable
+                  style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                  onPress={() => {
+                    setShowNewCatL2((v) => !v)
+                    setShowNewCatL1(false)
+                  }}
+                >
+                  <Text style={{ color: newCategoryL2Id ? colors.text : colors.sub }}>
+                    {!newCategoryL2Id
+                      ? 'Không phân loại'
+                      : productCategoriesL2.find((c) => c.id === newCategoryL2Id)?.name ?? 'Không phân loại'}
+                  </Text>
+                </Pressable>
+                {showNewCatL2 && (
+                  <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                    <TouchableOpacity
+                      style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                      onPress={() => {
+                        setNewCategoryL2Id(null)
+                        setShowNewCatL2(false)
+                      }}
+                    >
+                      <Text style={{ color: colors.text }}>Không phân loại</Text>
+                    </TouchableOpacity>
+                    {newCategoryL2Options.map((cat) => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                        onPress={() => {
+                          setNewCategoryL2Id(cat.id)
+                          setShowNewCatL2(false)
+                        }}
+                      >
+                        <Text style={{ color: colors.text }}>{cat.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </>
+            )}
 
             <Text style={[styles.label, { color: colors.sub }]}>Ghi chú sản phẩm</Text>
             <TextInput

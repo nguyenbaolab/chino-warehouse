@@ -56,7 +56,16 @@ export default function ProductDetailScreen() {
   const route = useRoute()
   const { productId, scannedLotBarcode, scannedLotId, scannedLotBarcodeAt } = route.params as ProductDetailRouteParams
   const { colors } = useThemeStore()
-  const { zones, updateInventoryEntry, deleteInventoryEntry, updateProductStockThresholds } = useWarehouseStore()
+  const {
+    zones,
+    updateInventoryEntry,
+    deleteInventoryEntry,
+    updateProductStockThresholds,
+    productCategoriesL1,
+    productCategoriesL2,
+    fetchCategories,
+    updateProductCategory,
+  } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [lots, setLots] = useState<InventoryEntry[]>([])
@@ -78,11 +87,26 @@ export default function ProductDetailScreen() {
   const [showZoneOptions, setShowZoneOptions] = useState(false)
   const [showTierOptions, setShowTierOptions] = useState(false)
   const [showIssuesOnly, setShowIssuesOnly] = useState(false)
+  const [showCategoryL1Picker, setShowCategoryL1Picker] = useState(false)
+  const [showCategoryL2Picker, setShowCategoryL2Picker] = useState(false)
+  const [categorySaving, setCategorySaving] = useState(false)
 
   const totalLotBoxes = useMemo(
     () => lots.reduce((sum, lot) => sum + lot.quantity_boxes, 0),
     [lots]
   )
+
+  useEffect(() => {
+    if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
+      void fetchCategories()
+    }
+  }, [fetchCategories])
+
+  const categoryL2Options = useMemo(() => {
+    const l1 = product?.category_level1_id
+    if (!l1) return []
+    return productCategoriesL2.filter((c) => c.level1_id === l1)
+  }, [product?.category_level1_id, productCategoriesL2])
 
   const displayedLots = useMemo(() => {
     if (!showIssuesOnly) return lots
@@ -234,6 +258,46 @@ export default function ProductDetailScreen() {
     setIsSavingProduct(false)
   }
 
+  async function applyCategoryL1(level1Id: string | null) {
+    if (!product) return
+    setShowCategoryL1Picker(false)
+    const prevL1 = product.category_level1_id ?? null
+    const nextL1 = level1Id
+    const nextL2 = nextL1 === prevL1 ? (product.category_level2_id ?? null) : null
+    if (nextL1 === prevL1 && (product.category_level2_id ?? null) === (nextL2 ?? null)) {
+      return
+    }
+    setCategorySaving(true)
+    const res = await updateProductCategory(product.id, {
+      category_level1_id: nextL1,
+      category_level2_id: nextL2,
+    })
+    setCategorySaving(false)
+    if (res.error) {
+      Alert.alert('Lỗi', res.error)
+      return
+    }
+    if (res.product) setProduct(res.product)
+  }
+
+  async function applyCategoryL2(level2Id: string | null) {
+    if (!product?.category_level1_id) return
+    setShowCategoryL2Picker(false)
+    const prevL2 = product.category_level2_id ?? null
+    if ((level2Id ?? null) === (prevL2 ?? null)) return
+    setCategorySaving(true)
+    const res = await updateProductCategory(product.id, {
+      category_level1_id: product.category_level1_id,
+      category_level2_id: level2Id,
+    })
+    setCategorySaving(false)
+    if (res.error) {
+      Alert.alert('Lỗi', res.error)
+      return
+    }
+    if (res.product) setProduct(res.product)
+  }
+
   function openMoveLot(lot: InventoryEntry) {
     setMoveLot(lot)
     setTargetZoneId(null)
@@ -339,6 +403,82 @@ export default function ProductDetailScreen() {
                   <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
                 </TouchableOpacity>
               </View>
+
+              <Text style={[styles.infoText, { color: colors.sub, marginTop: 12 }]}>Nhóm (Cấp 1)</Text>
+              <Pressable
+                style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, marginTop: 6 }]}
+                onPress={() => {
+                  setShowCategoryL1Picker((v) => !v)
+                  setShowCategoryL2Picker(false)
+                }}
+              >
+                <Text style={{ color: colors.text }}>
+                  {categorySaving
+                    ? '...'
+                    : !product?.category_level1_id
+                      ? 'Không phân loại'
+                      : productCategoriesL1.find((c) => c.id === product.category_level1_id)?.name ?? 'Không phân loại'}
+                </Text>
+              </Pressable>
+              {showCategoryL1Picker && (
+                <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                  <TouchableOpacity
+                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                    onPress={() => void applyCategoryL1(null)}
+                  >
+                    <Text style={{ color: colors.text }}>Không phân loại</Text>
+                  </TouchableOpacity>
+                  {productCategoriesL1.map((cat) => (
+                    <TouchableOpacity
+                      key={cat.id}
+                      style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                      onPress={() => void applyCategoryL1(cat.id)}
+                    >
+                      <Text style={{ color: colors.text }}>{cat.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {!!product?.category_level1_id && (
+                <>
+                  <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>Loại (Cấp 2)</Text>
+                  <Pressable
+                    style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, marginTop: 6 }]}
+                    onPress={() => {
+                      setShowCategoryL2Picker((v) => !v)
+                      setShowCategoryL1Picker(false)
+                    }}
+                  >
+                    <Text style={{ color: colors.text }}>
+                      {categorySaving
+                        ? '...'
+                        : !product?.category_level2_id
+                          ? 'Không phân loại'
+                          : productCategoriesL2.find((c) => c.id === product.category_level2_id)?.name ?? 'Không phân loại'}
+                    </Text>
+                  </Pressable>
+                  {showCategoryL2Picker && (
+                    <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                      <TouchableOpacity
+                        style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                        onPress={() => void applyCategoryL2(null)}
+                      >
+                        <Text style={{ color: colors.text }}>Không phân loại</Text>
+                      </TouchableOpacity>
+                      {categoryL2Options.map((cat) => (
+                        <TouchableOpacity
+                          key={cat.id}
+                          style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                          onPress={() => void applyCategoryL2(cat.id)}
+                        >
+                          <Text style={{ color: colors.text }}>{cat.name}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
             </>
           )}
         </View>

@@ -40,6 +40,10 @@ type WarehouseStore = {
     productId: string,
     data: { low_warning_boxes?: number; low_critical_boxes?: number }
   ) => Promise<Product | null>
+  updateProductCategory: (
+    productId: string,
+    data: { category_level1_id: string | null; category_level2_id: string | null }
+  ) => Promise<{ error: string | null; product: Product | null }>
   fetchCategories: () => Promise<{ error: string | null }>
   addCategoryL1: (name: string) => Promise<{ error: string | null; category?: ProductCategoryL1 }>
   updateCategoryL1: (id: string, data: { name: string }) => Promise<{ error: string | null }>
@@ -517,6 +521,40 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       return updated
     }
     return null
+  },
+
+  updateProductCategory: async (productId, data) => {
+    let l1 = data.category_level1_id
+    let l2 = data.category_level2_id
+    if (!l1) {
+      l2 = null
+    } else if (l2) {
+      const row = get().productCategoriesL2.find((c) => c.id === l2)
+      if (!row || row.level1_id !== l1) {
+        return { error: 'Loại không thuộc nhóm đã chọn.', product: null }
+      }
+    }
+
+    const { data: updated, error } = await supabase
+      .from('products')
+      .update({ category_level1_id: l1, category_level2_id: l2 })
+      .eq('id', productId)
+      .select('*')
+      .single()
+
+    if (error) {
+      return { error: error.message, product: null }
+    }
+    if (updated) {
+      set((s) => ({
+        products: s.products.map((p) => (p.id === updated.id ? updated : p)),
+        inventoryEntries: s.inventoryEntries.map((entry) => (
+          entry.product_id === updated.id ? { ...entry, product: updated } : entry
+        )),
+      }))
+      return { error: null, product: updated }
+    }
+    return { error: 'Không cập nhật được.', product: null }
   },
 
   addZone: async (data) => {
