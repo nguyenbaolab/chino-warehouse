@@ -4,6 +4,20 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Tab 1 lần bấm (từ tab khác) + Huỷ scanner về main theo `returnTab`
+
+- **`App.tsx` — `stackTabPressListener`:** Stack sâu (`index > 0`) + đang **focus** tab đó → `preventDefault` + `popToTop` (target `route.state.key`). Stack sâu + **chưa** focus → `preventDefault` + `navigation.navigate(route.name)` + `popToTop` để vừa chuyển tab vừa reset stack một lần. `index === 0` → không `preventDefault`, để navigation mặc định.
+- **`BarcodeScannerScreen.tsx`:** Nút **Huỷ** trong alert không tìm thấy mã: thay `goBack()` bằng `navigateTabsThenCloseModal(tabsParamsForReturnTabMain(returnTab))` — map `Map`→`MapMain`, `Products`→`ProductsMain`, `Orders`→`OrderListMain`, `Notifications`→`NotificationsMain`, `Settings`→`SettingsMain` (mặc định `Products`).
+
+---
+
+## [tháng 5/2026] — Tab bar: reset stack khi bấm tab (bỏ điều kiện focused) + kiểm tra luồng Fix 4
+
+- **`App.tsx` — `stackTabPressListener`:** Bỏ kiểm tra tab đang focus; mỗi lần `tabPress` trên một tab, nếu `route.state` của stack con có `index > 0` và có `stackKey` thì `preventDefault` + `StackActions.popToTop({ target: stackKey })`. Kết quả: chuyển từ tab khác (ví dụ **Kho**) sang tab có stack đang sâu (ví dụ **Sản phẩm** đang ở `AddInventory`) vẫn pop về màn gốc của tab đó.
+- **Fix 4 (kiểm tra sau Fix 3):** Luồng *Sản phẩm → quét → không thấy → **Huỷ** → sang **Kho** → bấm lại tab **Sản phẩm***: với listener mới, nếu stack Sản phẩm vẫn còn sâu (`AddInventory` / `ProductDetail`) thì lần bấm tab sẽ pop về `ProductsMain`. Trường hợp **Huỷ** chỉ `goBack()` scanner, không mở `AddInventory` → stack thường vẫn ở `ProductsMain` (không cần pop). **Chưa chạy thiết bị thật trong môi trường này** — nên xác nhận tay trên Expo; nếu vẫn kẹt `AddInventory` thì ghi lại để xử lý tiếp.
+
+---
+
 ## [tháng 5/2026] — ProductsScreen UI (zone dropdown + category), tab bar popToTop, BarcodeScanner Huỷ
 
 - **ProductsScreen:** Bỏ chip zone ngang; thêm hàng chọn **Zone** (cùng style hàng **Kho**) ngay dưới dropdown kho. **Tất cả kho:** hiện cảnh báo *Vui lòng chọn kho trước*, không mở danh sách. Đã chọn kho: modal **Tất cả zone** + từng zone; đổi kho → reset về **Tất cả zone**. Thẻ SP: dòng phân loại `L1 · L2` / chỉ L1 (ẩn nếu chưa gán L1); `fetchCategories` khi store category rỗng. Quét mã: truyền `returnTab: 'Products'`.

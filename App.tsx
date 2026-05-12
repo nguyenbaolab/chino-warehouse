@@ -79,15 +79,30 @@ function SettingsStackNavigator() {
 }
 
 function TabNavigator() {
-  /** Bấm lại tab đang focus → pop stack con về màn gốc (target phải là key của stack lồng, không phải key route tab). */
+  /**
+   * Bấm tab: nếu stack con không sâu (index === 0) → không can thiệp.
+   * Đang focus tab đó và stack sâu → preventDefault + popToTop.
+   * Chưa focus (đang ở tab khác) và stack sâu → preventDefault + navigate sang tab + popToTop (một lần bấm về màn gốc).
+   */
   const stackTabPressListener = ({ navigation, route }: any) => ({
     tabPress: (e: any) => {
       const state = navigation.getState()
       const focused = state.routes[state.index]?.key === route.key
       const nestedState = route.state as { key?: string; index?: number } | undefined
       const stackKey = nestedState?.key
-      if (focused && nestedState && (nestedState.index ?? 0) > 0 && stackKey) {
-        e.preventDefault()
+      const hasDeepStack = !!(nestedState && (nestedState.index ?? 0) > 0 && stackKey)
+
+      if (!hasDeepStack) return
+
+      e.preventDefault()
+
+      if (focused) {
+        navigation.dispatch({
+          ...StackActions.popToTop(),
+          target: stackKey,
+        })
+      } else {
+        navigation.navigate(route.name)
         navigation.dispatch({
           ...StackActions.popToTop(),
           target: stackKey,

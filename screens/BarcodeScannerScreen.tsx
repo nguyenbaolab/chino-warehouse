@@ -30,6 +30,24 @@ function scheduleDismissModal(navigation: RootNav) {
   }, 160)
 }
 
+/** `navigate('Tabs', …)` về màn gốc của từng tab (Huỷ scanner / không thêm thủ công). */
+function tabsParamsForReturnTabMain(returnTab: string | undefined): Record<string, unknown> {
+  switch (returnTab || 'Products') {
+    case 'Map':
+      return { screen: 'Map', params: { screen: 'MapMain' } }
+    case 'Products':
+      return { screen: 'Products', params: { screen: 'ProductsMain' } }
+    case 'Orders':
+      return { screen: 'Orders', params: { screen: 'OrderListMain' } }
+    case 'Notifications':
+      return { screen: 'Notifications', params: { screen: 'NotificationsMain' } }
+    case 'Settings':
+      return { screen: 'Settings', params: { screen: 'SettingsMain' } }
+    default:
+      return { screen: 'Products', params: { screen: 'ProductsMain' } }
+  }
+}
+
 export default function BarcodeScannerScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
@@ -212,7 +230,7 @@ export default function BarcodeScannerScreen() {
           onPress: () => {
             processingRef.current = false
             setIsScanLocked(false)
-            navigation.goBack()
+            navigateTabsThenCloseModal(tabsParamsForReturnTabMain(returnTab))
           },
         },
       ],
