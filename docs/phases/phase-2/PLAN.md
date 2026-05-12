@@ -7,8 +7,8 @@
 ## 1. Tiếp tục từ Phase 1 (nợ kỹ thuật / polish)
 
 - ~~**F18 — `NotificationsScreen`:** polish UI/UX; rà soát và xử lý edge case trong logic hiển thị / lọc card (Sắp hết hạn, Sắp hết hàng).~~ **Đã hoàn thành** — test thực tế không phát hiện lỗi UI/UX; `REQUIREMENTS.md` §6: F18 → **Done** (tháng 5/2026).
-- **Tab Đặt hàng + tab Sắp hết hàng:** kết nối nút **Thêm vào danh sách nhập** với tạo/ghi nhận item trong list đặt hàng (thay placeholder).
-- **Xuất PDF:** triển khai nút xuất PDF trên list đặt hàng (và/hoặc lưu “bản in” theo từng list — theo spec cuối).
+- **Tab Đặt hàng + tab Sắp hết hàng:** implement theo `REQUIREMENTS.md` §6 **F27 mở rộng** (design v1.3.3): list **active** (hàng trong kho, auto từ Sắp hết hàng) + list **tự tạo**; trong mỗi list 2 tab **Hàng trong kho** (trái) / **Hàng mới** (phải); chỉ một active; auto tạo + popup đặt tên nếu chưa có; số thùng **để trống** đến khi Confirm; nhóm theo category + **Chưa phân loại**; nối nút **Thêm vào danh sách nhập**.
+- **Xuất PDF:** một file **PDF tổng hợp** cả hai tab (Hàng trong kho + Hàng mới), trong luồng Draft → Confirm → **Xuất PDF** → Đã đặt (`REQUIREMENTS.md` §6 F27).
 - **Sản phẩm không nhập nữa:** thêm **field lý do riêng** (migration + type + UI); không dùng `products.notes` làm proxy dài hạn.
 
 ---
@@ -20,9 +20,11 @@
 | **F08** | Hình ảnh sản phẩm (chụp/chọn, Supabase Storage). |
 | **F19** | Chuyển hàng giữa khu vực (trừ nguồn, cộng đích). |
 | **F20** | Multi-kho: dropdown selector trên MapScreen, tạo/sửa/xóa kho, grid size per location (configurable), dropdown lọc theo kho trên Products/Notifications/Orders, fix KI-004. |
-| **F29** | Zone Layout Editor: compact tile editor, footprint preview, collision check theo tọa độ thật, confirm → lưu. |
 | **F21** | Chế độ offline (cache, queue, đồng bộ lại). |
 | **F26** | Kiểm kho (đối chiếu thực tế theo zone/tầng, diff, confirm). |
+| **F27** | **Mở rộng đặt hàng** (chưa code, chốt design v1.3.3): 2 tab trong một list (Hàng trong kho / Hàng mới); list active duy nhất + popup đặt tên; SP từ Sắp hết hàng nhảy vào với số thùng trống, bắt buộc điền trước Confirm; nhóm theo category (F30) + nhóm **Chưa phân loại**; PDF gộp 2 tab; flow Draft → Confirm → Xuất PDF → Đã đặt; tab Hàng mới: tên SP, phân loại, số thùng, ghi chú. |
+| **F29** | Zone Layout Editor: compact tile editor, footprint preview, collision check theo tọa độ thật, confirm → lưu. |
+| **F30** | **Phân loại sản phẩm** 2 cấp: `product_categories_l1` / `product_categories_l2`, FK optional trên `products`; CRUD trong Settings; gán SP trên tab Sản phẩm (optional); list đặt hàng cập nhật nhóm khi đổi phân loại sau. |
 
 ---
 

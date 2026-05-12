@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Chốt design F27 mở rộng + F30 (docs only)
+
+- **F27:** 2 tab trong list (Hàng trong kho / Hàng mới), list active + list tự tạo, số thùng để trống đến Confirm, nhóm theo category, PDF tổng hợp cả 2 tab, luồng Draft → Confirm → Xuất PDF → Đã đặt.
+- **F30:** Category 2 cấp, quản lý trong Settings, optional trên sản phẩm; `REQUIREMENTS.md` §6 §8 §9, `DECISIONS.md`, `docs/phases/phase-2/PLAN.md`.
+- **Chưa implement code** — chỉ cập nhật tài liệu (v1.3.3).
+
+---
+
 ## [tháng 5/2026] — F18 NotificationsScreen: Partial → Done
 
 - **F18** `NotificationsScreen`: xác nhận **Done** sau test thực tế; không phát hiện lỗi UI/UX.

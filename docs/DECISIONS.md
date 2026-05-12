@@ -247,3 +247,39 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Ngày:** tháng 5/2026
 - **Quyết định:** Card location trong LocationManagementScreen hiển thị: tên kho, grid size (ví dụ "6 × 6"), và số sản phẩm (distinct product_id từ inventory_entries → zones thuộc location đó, kể cả lô 0 thùng chưa xóa).
 - **Lý do:** Giúp nhân viên biết kho nào đang chứa bao nhiêu SKU trước khi thao tác xóa hay sửa.
+
+---
+
+### Category system optional (F30)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Phân loại sản phẩm **2 cấp** (`product_categories_l1` / `product_categories_l2`), gắn optional qua `products.category_level1_id` / `category_level2_id`. **Không bắt buộc** gán category khi tạo sản phẩm. Sản phẩm chưa gán (hoặc không đủ cấp) hiển thị trong list đặt hàng dưới nhóm **Chưa phân loại**.
+- **Lý do:** Cho phép nhập hàng và đặt hàng trước khi kịp chuẩn hóa danh mục; vẫn có chỗ nhóm rõ trên list.
+- **Thay thế đã xem xét:** Bắt buộc chọn category khi tạo SP — từ chối (quá nặng thao tác).
+
+---
+
+### List đặt hàng — 2 tab trong một list (F27 mở rộng)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Mỗi list có hai tab: **Hàng trong kho** (trái — auto từ Sắp hết hàng) và **Hàng mới** (phải — nhập tay: tên, phân loại, số thùng, ghi chú). Hai loại list: **active** (nhận hàng từ kho) và **tự tạo** (hàng mới); chỉ **một list active** tại một thời điểm, app tự tạo + popup đặt tên nếu chưa có.
+- **Lý do:** Tách rõ hàng đã có SKU trong kho vs hàng mới cần nhập tên; một luồng list thống nhất.
+- **Tham chiếu:** `REQUIREMENTS.md` §6 F27, §9.
+
+---
+
+### Số thùng trong list để trống đến khi Confirm (F27 mở rộng)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Sản phẩm **nhảy** vào list (từ Sắp hết hàng) **không** điền sẵn số thùng; ô số thùng để trống — **bắt buộc điền đủ** trước khi **Confirm** list.
+- **Lý do:** Số thùng đặt thực tế do chị quyết định khi soạn đơn, không suy từ tồn kho tự động.
+- **Thay thế đã xem xét:** Prefill từ gợi ý tồn — không chốt trong design hiện tại.
+
+---
+
+### Xuất PDF tổng hợp (F27 mở rộng)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Một file **PDF gộp** cả nội dung tab **Hàng trong kho** và tab **Hàng mới** sau bước phù hợp trong luồng (Draft → Confirm → **Xuất PDF** → Đã đặt — xem `REQUIREMENTS.md` §6 F27).
+- **Lý do:** Một đơn nhập một bản in, đủ thông tin cả hai nguồn dòng hàng.
+- **Thay thế đã xem xét:** Hai file PDF riêng — từ chối cho luồng chốt hiện tại.
