@@ -1,8 +1,11 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 2.0 | Tháng 5/2026
+-- Phiên bản: 2.1 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v2.0:
+--   - product_categories_l1, product_categories_l2: thêm mới (F30)
+--   - products: thêm category_level1_id, category_level2_id (F30)
 -- Thay đổi so với v1.4:
 --   - locations: thêm grid_rows, grid_cols (Phase 2 — multi-kho)
 -- ============================================================
@@ -35,7 +38,21 @@ CREATE TABLE zones (
   updated_at  TIMESTAMPTZ DEFAULT now()
 );
 
--- 3. Products (sản phẩm)
+-- 3. Product categories (phân loại sản phẩm — F30)
+CREATE TABLE product_categories_l1 (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       TEXT        NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE product_categories_l2 (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  level1_id  UUID        NOT NULL REFERENCES product_categories_l1(id) ON DELETE CASCADE,
+  name       TEXT        NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 4. Products (sản phẩm)
 -- barcode đã chuyển sang inventory_entries (per lô)
 -- is_deferred: không còn dùng trong UI (bỏ tab Để sau), giữ trong DB
 -- is_price_reduced đã chuyển sang inventory_entries (per lô)
@@ -50,10 +67,12 @@ CREATE TABLE products (
   warning_days        INTEGER     NOT NULL DEFAULT 30,
   low_warning_boxes   INTEGER     NOT NULL DEFAULT 3,
   low_critical_boxes  INTEGER     NOT NULL DEFAULT 1,
+  category_level1_id  UUID        REFERENCES product_categories_l1(id) ON DELETE SET NULL,
+  category_level2_id  UUID        REFERENCES product_categories_l2(id) ON DELETE SET NULL,
   created_at          TIMESTAMPTZ DEFAULT now()
 );
 
--- 4. Inventory entries (lô hàng)
+-- 5. Inventory entries (lô hàng)
 CREATE TABLE inventory_entries (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id       UUID        REFERENCES products(id) ON DELETE CASCADE,
@@ -67,7 +86,7 @@ CREATE TABLE inventory_entries (
   updated_at       TIMESTAMPTZ DEFAULT now()
 );
 
--- 5. Order lists (danh sách đặt hàng)
+-- 6. Order lists (danh sách đặt hàng)
 CREATE TABLE order_lists (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   title      TEXT        NOT NULL,
@@ -77,7 +96,7 @@ CREATE TABLE order_lists (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 6. Order items (sản phẩm trong danh sách đặt hàng)
+-- 7. Order items (sản phẩm trong danh sách đặt hàng)
 -- is_manual = true → ⭐ sản phẩm tự thêm tay
 CREATE TABLE order_items (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -102,27 +121,32 @@ CREATE INDEX ON inventory_entries(product_id);
 CREATE INDEX ON inventory_entries(barcode);
 CREATE INDEX ON order_items(order_list_id);
 CREATE INDEX ON order_items(product_id);
+CREATE INDEX idx_product_categories_l2_level1 ON product_categories_l2(level1_id);
 
 
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
 
-ALTER TABLE locations         ENABLE ROW LEVEL SECURITY;
-ALTER TABLE zones             ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products          ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inventory_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE order_lists       ENABLE ROW LEVEL SECURITY;
-ALTER TABLE order_items       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE locations             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE zones                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_categories_l1 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_categories_l2 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE products              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inventory_entries     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
 
 -- Phase 1: không có auth — cho phép tất cả
 -- Phase 3: thay bằng policy kiểm tra user role
-CREATE POLICY "allow_all" ON locations         FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON zones             FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON products          FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON inventory_entries FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON order_lists       FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON order_items       FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON locations             FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON zones                 FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON product_categories_l1 FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON product_categories_l2 FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON products              FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON inventory_entries     FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON order_lists           FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON order_items           FOR ALL TO anon USING (true) WITH CHECK (true);
 
 
 -- ============================================================
