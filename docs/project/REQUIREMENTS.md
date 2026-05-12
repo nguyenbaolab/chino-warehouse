@@ -2,10 +2,11 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.1 | Tháng 5/2026
+**Phiên bản:** 1.3.2 | Tháng 5/2026
 
 > **v1.3** — Cập nhật từ PRD v1.2: sync với các quyết định thiết kế thực tế sau quá trình phát triển Phase 1.
 > **v1.3.1** — Đồng bộ cột **Trạng thái** §6 theo closeout Phase 1 (F15/F18/F27/F28).
+> **v1.3.2** — Đồng bộ docs sau Phase 2 (F20, F29, fix Thông báo): CONTEXT, REQUIREMENTS §6/§9/§11, KNOWN_ISSUES, DECISIONS.
 > Xem §11 để biết những thay đổi so với v1.2.
 
 ---
@@ -80,7 +81,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 
 | Mã | Tính năng | Mô tả | Ưu tiên | Phase | Trạng thái |
 |----|-----------|-------|---------|-------|------------|
-| F01 | Dropdown chọn kho | Thanh dropdown đầu màn hình chọn kho đang xem. Phase 1 chỉ có 1 kho nhưng UI sẵn sàng cho nhiều kho. | P1 | MVP | Done |
+| F01 | Dropdown chọn kho | Chọn kho đang xem trên bản đồ: Phase 1 một kho; Phase 2+ **bottom sheet** (tên + kích thước lưới, Thêm kho mới) thay pill cố định. | P1 | MVP | Done |
 | F02 | Bản đồ 2D kho hàng | Lưới 2D hiển thị các zone. Tap vào zone để xem danh sách sản phẩm. Mặc định 6×6. | P1 | MVP | Done |
 | F03 | Chấm màu trên zone | Khi tìm kiếm/quét mã, zone chứa sản phẩm hiện chấm màu theo combined status của lô xấu nhất. Biến mất khi đóng kết quả. | P1 | MVP | Done |
 | F04 | Quản lý zone linh hoạt | Thêm zone, đổi tên, đổi số tầng, di chuyển vị trí. Xóa zone chỉ được khi không còn hàng. | P1 | MVP | Done |
@@ -99,7 +100,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
 | F18 | Thông báo trong app | Tab Thông báo tách thành 2 tab con **Sắp hết hạn / Sắp hết hàng**. Tab Sắp hết hạn có toggle **Đã giảm giá** theo sản phẩm sắp hết hạn; sản phẩm hết hạn hiển thị đỏ nhạt + nhãn `Hết hạn rồi`, tap mở `ProductDetailScreen`. Tab Sắp hết hàng có nút **Thêm vào danh sách nhập** và **Không nhập nữa**. | P2 | MVP+ | Partial |
 | F19 | Chuyển hàng giữa khu vực | Chuyển hàng từ kho lên siêu thị hoặc giữa các kho: trừ thùng ở nguồn, cộng thùng ở đích. | P2 | Phase 2 | Not started |
-| F20 | Bản đồ nhiều khu vực | Dropdown selector thay thế pill "Kho" trên MapScreen để chuyển đổi giữa các kho. Tạo kho mới: nhập tên + grid size (rows × cols, không giới hạn max). Sau khi tạo vẫn cho đổi grid size — tăng thoải mái, giảm chỉ được nếu không có zone nào bị cắt ra ngoài. Xóa kho: block nếu còn lô hàng (inventory_entries có quantity_boxes > 0 trong zones của kho đó). Tab Sản phẩm / Thông báo / Đặt hàng vẫn hiện toàn bộ sản phẩm, thêm dropdown lọc theo kho (không chọn = hiện full). Quản lý kho (đổi tên, xóa) đặt trong Settings tab. Fix KI-004 (đổi kho → clear search). | P2 | Phase 2 | In Progress |
+| F20 | Bản đồ nhiều khu vực | Dropdown selector thay thế pill "Kho" trên MapScreen để chuyển đổi giữa các kho (bottom sheet: tên + grid size, ✓ kho đang chọn, nút Thêm kho mới → Cài đặt). Tạo kho mới: nhập tên + grid size (rows × cols, không giới hạn max). Sau khi tạo vẫn cho đổi grid size — tăng thoải mái, giảm chỉ được nếu không có zone nào bị cắt ra ngoài. Xóa kho: block nếu còn **bất kỳ** bản ghi `inventory_entries` nào trong zones của kho đó (kể cả lô 0 thùng chưa xóa thủ công). Tab Sản phẩm / Thông báo: dropdown lọc theo kho (không chọn = logic riêng từng màn — xem CONTEXT §3). Tab Đặt hàng không có dropdown kho. Quản lý kho (đổi tên, xóa) trong Settings → Quản lý kho. Fix KI-004 (đổi kho → clear search). | P2 | Phase 2 | Done |
 | F21 | Chế độ offline | Lưu dữ liệu cục bộ, queue thay đổi khi mất mạng, tự đồng bộ khi có mạng trở lại. | P3 | Phase 2 | Not started |
 | F22 | Lịch sử cập nhật | Log: ai cập nhật gì, lúc nào. | P3 | Phase 3 | Not started |
 | F23 | Trang tổng quan | Tổng số SKU, hàng sắp hết, lô sắp hết hạn. | P3 | Phase 3 | Not started |
@@ -108,7 +109,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F26 | Kiểm kho | Cho phép nhân viên đối chiếu và cập nhật lại số lượng thực tế trong kho. Chọn zone → đi từng tầng → nhập số thùng đếm được → lưu lại. Có thể hiện diff so với số hiện tại trước khi confirm. | P2 | Phase 2 | Not started |
 | F27 | Tab Đặt hàng | Quản lý danh sách đặt hàng; tự động nhận sản phẩm từ tab Sắp hết hàng; xuất PDF và lưu lịch sử theo từng list. | P1 | Phase 1+ | Done |
 | F28 | Danh sách không nhập nữa | Mục trong Settings, hiện số lượng sản phẩm không nhập nữa; mở chi tiết gồm tên, tồn kho realtime, lý do (optional); có thể chuyển lại tab Sắp hết hàng. | P1 | Phase 1+ | Done |
-| F29 | Zone Layout Editor | Màn hình riêng để sắp xếp lại vị trí zone trên lưới. Zone hiển thị dưới dạng tile nhỏ cố định (tên + màu + badge kích thước thật, ví dụ "2×1"). Kéo tile vào grid → đặt zone vào vị trí mới, bóng mờ hiện footprint thật của zone. Collision check theo tọa độ thật, báo đỏ nếu chồng chéo. Nút Preview xem map thật trước khi lưu. Confirm → lưu toàn bộ vị trí mới. Truy cập từ MapScreen khi đang xem một kho. | P2 | Phase 2 | Planned |
+| F29 | Zone Layout Editor | Màn hình riêng để sắp xếp lại vị trí zone trên lưới. Zone hiển thị dưới dạng tile nhỏ cố định (tên + màu + badge kích thước thật, ví dụ "2×1"). Kéo tile vào grid → đặt zone vào vị trí mới, bóng mờ hiện footprint thật của zone. Collision check theo tọa độ thật, báo đỏ nếu chồng chéo. Nút Preview xem map thật trước khi lưu. Confirm → lưu toàn bộ vị trí mới (`batchUpdateZoneCells`). Truy cập từ MapScreen (nút ▦) khi đang xem một kho. | P2 | Phase 2 | Done |
 
 ---
 
@@ -118,7 +119,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 - Lưới mặc định 6×6. Có thể cuộn ngang/dọc nếu cần nhiều hơn.
 - Tap vào zone → danh sách sản phẩm trong zone đó (theo từng tầng nếu có).
 - Xóa zone chỉ được khi zone đó không còn lô hàng nào (`quantity_boxes > 0`).
-- Đổi kho (dropdown F01) → bản đồ tải lại, kết quả tìm kiếm bị xoá.
+- Đổi kho (selector / sheet F01) → bản đồ tải lại, kết quả tìm kiếm bị xoá.
 
 ### 7.2 Chấm màu trên zone
 - Chỉ xuất hiện khi có kết quả tìm kiếm hoặc quét mã đang active.
@@ -213,15 +214,15 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 
 | Màn hình | Mô tả | Thành phần chính |
 |----------|-------|-----------------|
-| Bản đồ kho (Tab) | Màn hình chính | Dropdown selector chọn kho · Lưới 2D zone · Thanh tìm kiếm · Nút quét mã · Chấm màu khi có kết quả |
+| Bản đồ kho (Tab) | Màn hình chính | Sheet chọn kho (tên + kích thước lưới, Thêm kho mới) · nút ▦ mở Zone Layout Editor · Lưới 2D zone · + Zone · Thanh tìm kiếm · Nút quét mã · Chấm màu khi có kết quả |
 | Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng (nếu có) · Danh sách sản phẩm + số thùng + chấm màu |
 | Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Mã vạch · Ảnh (Phase 2) · Tất cả zone+tầng · Số thùng · Hạn (màu) · Ghi chú · Nút sửa/xóa · Ngưỡng cảnh báo |
-| Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Danh sách tất cả sản phẩm · Dropdown lọc theo kho (optional) · Tổng thùng · Chấm màu · Tìm kiếm · Toggle lọc có vấn đề · Thêm mới |
+| Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Dropdown lọc theo kho (Tất cả kho / từng kho) · Danh sách sản phẩm · Tổng thùng · Chấm màu · Tìm kiếm · Toggle lọc có vấn đề · Thêm mới |
 | Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách tất cả list (đang soạn / đã confirm / đã đặt hàng) · card từng list · sản phẩm tự động từ Sắp hết hàng + sản phẩm thêm tay (⭐) · cảnh báo khi thêm tên chưa có trong kho · cộng dồn nếu trùng sản phẩm trong list đang soạn · nút Confirm (khóa tạm) · nút Đã đặt hàng (khóa hẳn, có mở lại) · nút Xuất PDF riêng |
 | Thêm hàng (Stack) | Thêm lô hàng | Chọn sản phẩm · Zone · Tầng · Số thùng · Hạn · Ghi chú |
-| Thông báo (Tab) | Cảnh báo tồn kho & hạn | 2 tab con Sắp hết hạn / Sắp hết hàng · Sắp hết hạn: toggle Đã giảm giá, thẻ hết hạn nền đỏ nhạt + nhãn Hết hạn rồi · Sắp hết hàng: nút Thêm vào danh sách nhập + Không nhập nữa |
+| Thông báo (Tab) | Cảnh báo tồn kho & hạn | Dropdown kho (Tất cả kho / từng kho) · 2 tab con Sắp hết hạn / Sắp hết hàng · Sắp hết hạn: toggle Đã giảm giá, thẻ hết hạn nền đỏ nhạt + nhãn Hết hạn rồi · Sắp hết hàng: nút Thêm vào danh sách nhập + Không nhập nữa |
 | Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả quét · Nút thêm thủ công nếu không nhận ra |
-| Cài đặt (Tab) | Tuỳ chỉnh app | Theme sáng/tối · card vào danh sách Không nhập nữa (F28) |
+| Cài đặt (Tab) | Tuỳ chỉnh app | Theme sáng/tối · card **Quản lý kho** (F20) · card vào danh sách Không nhập nữa (F28) |
 | Zone Layout Editor | Sắp xếp lại vị trí zone trên lưới | Tile compact per zone · Badge kích thước · Drag onto grid · Footprint preview · Collision highlight · Nút Preview + Confirm |
 
 ---
@@ -237,7 +238,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | Lưu trữ ảnh | Supabase Storage | Tích hợp sẵn (Phase 2) |
 | Auth | Không (Phase 1) | Mở app dùng luôn |
 | Barcode | expo-camera (CameraView) | Camera native, hỗ trợ hầu hết định dạng |
-| Navigation | React Navigation (Bottom Tabs + Stack) | 4 tab chính + stack screens |
+| Navigation | React Navigation (Bottom Tabs + Stack) | 5 tab (Kho, Sản phẩm, Đặt hàng, Thông báo, Cài đặt) + stack screens + modal BarcodeScanner |
 | Offline | Zustand persist (Phase 2) | Cache cục bộ, sync khi có mạng |
 
 ---
@@ -248,7 +249,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 |-----------|---------|----------|
 | **Phase 1 – MVP** | F01–F07, F09–F17, F27–F28 (MVP); F18 partial | App dùng được ngay: tìm hàng, quét mã, cập nhật tồn kho; thông báo + đặt hàng + discontinued |
 | **Phase 1+ → Phase 2** | Hoàn thiện F18, PDF & nối list đặt hàng, field lý do discontinued | Ổn định và khép kín nghiệp vụ đã mở |
-| **Phase 2** | F08: Ảnh. F19–F21: Chuyển hàng, nhiều kho, offline. | Hỗ trợ đầy đủ luồng kho → siêu thị |
+| **Phase 2** | Đã giao: **F20** (multi-kho, LocationManagement, filter Products/Notifications), **F29** (Zone Layout Editor), fix filter Thông báo. Còn lại: F08 ảnh, F19 chuyển hàng, F21 offline, F26 kiểm kho, … | Mở rộng vận hành đa kho & layout |
 | **Phase 3** | F22–F25: Lịch sử, tổng quan, super app + auth, báo cáo. | Quản lý toàn diện |
 
 ---
@@ -276,5 +277,6 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | Màu zone | Chỉ theo hạn | Combined status | Nhất quán với hệ thống màu |
 | Tab Thông báo | Phase 2, chỉ hạn sử dụng | Phase 1+, cả tồn + hạn | Đã implement, giữ lại |
 | F numbering | F01–F25 theo PRD | Giữ nguyên theo PRD | PRD là gốc chuẩn |
+| Phase 2 docs | — | F20/F29 Done; mô tả xóa kho / filter Thông báo khớp code & DECISIONS (v1.3.2) | Đồng bộ sau implement |
 | Auth | F25 độc lập | F24 — gắn với super app integration | Định hướng hệ sinh thái rõ hơn |
 | Super app | Không đề cập | Ghi nhận trong §1 và F24 | Thông tin mới từ chủ cửa hàng |

@@ -188,9 +188,22 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 ### Multi-kho: products global, filter per screen
 
 - **Ngày:** tháng 5/2026
-- **Quyết định:** Tab Sản phẩm, Thông báo, Đặt hàng hiện toàn bộ sản phẩm của tất cả kho. Thêm dropdown lọc theo kho trên từng màn hình — không chọn = hiện full. MapScreen chỉ hiện zones của kho đang được chọn trong selector.
-- **Lý do:** Sản phẩm là global (cùng SKU có thể ở nhiều kho); chỉ inventory mới gắn với kho cụ thể. Lọc theo kho là optional, không bắt buộc.
+- **Quyết định:** Tab Sản phẩm và Thông báo có dropdown lọc theo kho. MapScreen chỉ hiện zones của kho đang được chọn trong selector. Tab Đặt hàng không có dropdown kho (xem quyết định riêng).
+- **Lý do:** Sản phẩm là global (cùng SKU có thể ở nhiều kho); chỉ inventory mới gắn với kho cụ thể. Lọc theo kho là optional.
 - **Thay thế đã xem xét:** Mỗi tab lọc cứng theo kho đang chọn trên Map — từ chối, gây mất thông tin tổng quan.
+- **Cập nhật implementation (đối chiếu code):**
+  - **Thông báo — lọc theo kho:** xem mục **Thông báo — Tất cả kho** (`fetchAllInventoryEntries`) bên dưới.
+  - **Sản phẩm — Tất cả kho:** `inventoryEntries` được merge qua `fetchInventoryByZone` theo **`store.zones`** (zones của kho đang chọn trên Map), không tải full mọi kho trong một query.
+  - **Sản phẩm — một kho:** fetch zone theo `filterLocationId` rồi `fetchInventoryByZone` như trên.
+
+---
+
+### Thông báo — Tất cả kho: `fetchAllInventoryEntries`
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Khi dropdown **Tất cả kho** (`filterLocationId === null`), `NotificationsScreen` gọi `warehouseStore.fetchAllInventoryEntries()` thay vì `Promise.all(zones.map(fetchInventoryByZone))`. Khi chọn **một kho**, fetch zone theo `filterLocationId` (Supabase) rồi `fetchInventoryByZone` từng zone; lọc UI theo tập zone đó.
+- **Lý do:** `store.zones` chỉ chứa zone của kho đang chọn trên Map; fetch theo zones sẽ **thiếu** inventory các kho khác → sai cảnh báo toàn cửa hàng.
+- **Thay thế đã xem xét:** Giữ fetch theo `store.zones` — từ chối sau khi phát hiện lỗi hiển thị.
 
 ---
 

@@ -78,26 +78,31 @@ README.md
 - **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `DiscontinuedProducts`). `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount.
 - **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng.
 
-**Danh sách / lọc (UI):**
+**UI bản đồ & lọc (đối chiếu code):**
 
-- **NotificationsScreen:** dropdown **Kho** (đầu tiên **Tất cả kho**, sau đó từng `location`); lọc áp dụng cho cả hai tab **Sắp hết hạn** / **Sắp hết hàng** (chỉ tính `inventory_entries` trong zone thuộc kho đã chọn). Tab hết hạn có thêm lọc checkbox Hết hạn / Sắp hết hạn.
-- **ProductsScreen:** dropdown **Kho** (cùng quy ước); khi chọn một kho chỉ hiện SP có lô trong zone của kho đó; chip lọc zone theo zone của kho đang lọc (hoặc zone của kho đang chọn trên Map khi **Tất cả kho**). Mỗi card hiện **tổng thùng** theo bộ lọc.
-- **LocationManagementScreen:** danh sách kho (tên, grid X×Y, số SP distinct theo `inventory_entries` qua `zones`); FAB **+** tạo kho; sửa/xóa có modal / confirm và thông báo lỗi từ store.
+- **MapScreen:** thanh header có nút **▦** (Sắp xếp / mở `ZoneLayoutEditor` cho `locationId` đang chọn) và **+ Zone**. **Chọn kho:** `Pressable` mở bottom sheet modal — danh sách kho kèm kích thước lưới (`grid_rows × grid_cols`), dòng đang chọn có ✓; nút **Thêm kho mới** điều hướng sang tab Cài đặt → `LocationManagement` với `openCreateModal: true`. Đổi kho (`pickLocation`) gọi `clearSearch` trước `setSelectedLocation` (KI-004).
+- **ProductsScreen:** dropdown **Kho** (đầu **Tất cả kho**, sau đó từng `location`); khi chọn một kho chỉ hiện SP có lô trong zone của kho đó; chip lọc zone theo zone của kho đang lọc; khi **Tất cả kho** đồng bộ `inventoryEntries` theo các zone của kho đang chọn trên Map (`fetchInventoryByZone` theo `store.zones`). Mỗi card hiện **tổng thùng** theo bộ lọc.
+- **NotificationsScreen:** dropdown **Kho** (cùng quy ước); khi **Tất cả kho** gọi `fetchAllInventoryEntries()` (một query toàn bộ `inventory_entries`, ghi đè store — không phụ thuộc `store.zones`). Khi chọn một kho: fetch theo zone của kho đó (`zonesForFilterLoc` + `fetchInventoryByZone`); lọc áp dụng cho cả hai tab **Sắp hết hạn** / **Sắp hết hàng**. Tab hết hạn có thêm lọc checkbox Hết hạn / Sắp hết hạn.
+- **LocationManagementScreen:** danh sách kho (tên, grid X×Y, số SKU distinct theo `inventory_entries` qua `zones` của từng kho); FAB **+** tạo kho; sửa/xóa có modal / confirm và thông báo lỗi từ store.
 - **ProductDetailScreen:** thanh **Tổng … thùng** + lọc lô theo ngữ cảnh màn hình; refetch khi focus (`useFocusEffect` + `loadData`).
 
 ---
 
 ## §4 Store — `warehouseStore.ts`
 
-**State:** `locations`, `selectedLocationId`, `zones`, `products`, `inventoryEntries`, `isLoading`.
+**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `inventoryEntries`, `orderLists`, `orderItems`, `isLoading`.
 
-**Actions chính:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `searchProducts`, `searchByBarcode`, `addProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateBarcode`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
+**Actions — kho & zone:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `fetchAllInventoryEntries`, `searchProducts`, `searchByBarcode`, `addProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
+
+**Actions — sản phẩm / cờ:** `toggleDeferred`, `togglePriceReduced`, `setProductDiscontinued`, `toggleDiscontinued`, `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`.
+
+**Actions — đặt hàng:** `fetchOrderLists`, `createOrderList`, `updateOrderList`, `deleteOrderList`, `addOrderItem`, `updateOrderItem`, `deleteOrderItem`, `confirmOrderList`, `markOrderPlaced`.
 
 ---
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location`, `ZoneCell`, `Zone`, `Product`, `InventoryEntry`, `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, `InventoryEntry`, `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 

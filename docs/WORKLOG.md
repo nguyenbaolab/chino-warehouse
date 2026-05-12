@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Audit và sync toàn bộ docs Phase 2
+
+- Đối chiếu code thực tế với CONTEXT.md, REQUIREMENTS.md, KNOWN_ISSUES.md, DECISIONS.md sau khi hoàn thành F20, F29, fix NotificationsScreen filter.
+- Cập nhật các chỗ còn thiếu hoặc chưa khớp.
+
+📌 Nhắc upload lại lên Claude Project Knowledge: `docs/project/CONTEXT.md`, `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/KNOWN_ISSUES.md`
+
+---
+
 ## [tháng 5/2026] — Fix NotificationsScreen filter Tất cả kho
 
 - Root cause: store.zones chỉ chứa zones của kho đang chọn trên Map nên fetch theo zones → thiếu inventory của các kho khác.

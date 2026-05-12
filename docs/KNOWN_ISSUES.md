@@ -46,7 +46,7 @@
 - **Cách tái hiện:** Tìm sản phẩm trên kho A → chuyển sang kho B — panel kết quả / highlight zone cũ vẫn có thể còn.
 - **Hướng fix:** Khi đổi `selectedLocationId`, gọi `clearSearch()` hoặc tương đương reset state tìm kiếm.
 - **Trạng thái:** Resolved
-- **Đã fix:** clear search state khi đổi location tại `MapScreen.tsx`.
+- **Đã fix:** `pickLocation` (sheet chọn kho) gọi `clearSearch()` rồi mới `setSelectedLocation(id)` và đóng sheet; comment trong code ghi nhận KI-004. Luồng đổi kho trên Map chỉ qua sheet này nên kết quả tìm / highlight luôn được reset khi đổi kho.
 
 ---
 
