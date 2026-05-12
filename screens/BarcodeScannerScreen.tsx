@@ -185,6 +185,7 @@ export default function BarcodeScannerScreen() {
     }
 
     processingRef.current = false
+    const tabForAddInventory = returnTab || 'Products'
     Alert.alert(
       'Không tìm thấy mã vạch',
       'Mã vạch lô này chưa có trong hệ thống. Bạn muốn thêm thủ công?',
@@ -193,19 +194,29 @@ export default function BarcodeScannerScreen() {
           text: 'Thêm thủ công',
           onPress: () => {
             navigateTabsThenCloseModal({
-              screen: 'Products',
+              screen: tabForAddInventory,
               params: { screen: 'AddInventory', params: {} },
             })
           },
         },
         {
           text: 'Quét lại',
-          style: 'cancel',
           onPress: () => {
+            processingRef.current = false
             setIsScanLocked(false)
           },
         },
-      ]
+        {
+          text: 'Huỷ',
+          style: 'cancel',
+          onPress: () => {
+            processingRef.current = false
+            setIsScanLocked(false)
+            navigation.goBack()
+          },
+        },
+      ],
+      { cancelable: true }
     )
   }
 

@@ -116,3 +116,14 @@
 - **Đã fix:** `navigateTabsThenCloseModal` + `scheduleDismissModal` (delay ~160ms); `useFocusEffect` reset `processingRef` / UI lock; xử lý thất bại locate / search reset ref để quét lại.
 
 ---
+
+### [KI-011] BarcodeScanner (search): không có nút Huỷ / từ chối thêm thủ công — kẹt quét hoặc nhầm tab
+
+- **Mức độ:** Medium
+- **File liên quan:** `screens/BarcodeScannerScreen.tsx`, `screens/ProductsScreen.tsx`
+- **Mô tả:** Khi quét không ra lô, dialog chỉ có **Thêm thủ công** / **Quét lại**: không có lựa chọn rõ ràng để đóng scanner và về màn đã mở camera; **Thêm thủ công** luôn `navigate` tới tab `Products` → `AddInventory` dù có truyền `returnTab` sau này. Trên Android, bỏ qua dialog (tap ngoài nếu `cancelable`) có thể để `isScanLocked` vẫn true → cảm giác “kẹt”.
+- **Đã fix:** Thêm nút **Huỷ** (`goBack` + mở khóa); **Thêm thủ công** dùng `returnTab || 'Products'`; `Alert` `cancelable: true`; `ProductsScreen` truyền `returnTab: 'Products'` khi mở scanner.
+- **Rà soát màn dùng scanner:** `MapScreen` (mode `locate`, dialog khác — không nhánh AddInventory). `ZoneDetailSheet` / `ProductDetailScreen` / `AddInventoryScreen` chỉ dùng `onScanFillBarcode` (không qua dialog “thêm thủ công”). Chỉ luồng quét tìm lô mặc định trên tab Sản phẩm gặp dialog này.
+- **Trạng thái:** Resolved
+
+---

@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — ProductsScreen UI (zone dropdown + category), tab bar popToTop, BarcodeScanner Huỷ
+
+- **ProductsScreen:** Bỏ chip zone ngang; thêm hàng chọn **Zone** (cùng style hàng **Kho**) ngay dưới dropdown kho. **Tất cả kho:** hiện cảnh báo *Vui lòng chọn kho trước*, không mở danh sách. Đã chọn kho: modal **Tất cả zone** + từng zone; đổi kho → reset về **Tất cả zone**. Thẻ SP: dòng phân loại `L1 · L2` / chỉ L1 (ẩn nếu chưa gán L1); `fetchCategories` khi store category rỗng. Quét mã: truyền `returnTab: 'Products'`.
+- **App.tsx:** `tabPress` — `StackActions.popToTop()` với `target: route.state.key` (stack lồng), không dùng `route.key` của tab.
+- **BarcodeScannerScreen:** Dialog không tìm thấy mã: thêm **Huỷ** (`goBack` + mở khóa quét), **Thêm thủ công** dùng `returnTab`; `cancelable: true` (Android).
+- **Tài liệu:** `docs/project/CONTEXT.md` (mô tả lọc zone); `docs/KNOWN_ISSUES.md` (KI-011 Resolved — kẹt scanner / sai tab).
+
+---
+
 ## [tháng 5/2026] — F30 Task 3/3 hoàn thành — F30 Done
 
 - `warehouseStore`: action `updateProductCategory` (Supabase `products` + đồng bộ `products` / `inventoryEntries`).

@@ -14,7 +14,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
-import { CombinedStatus, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, Zone } from '../types'
+import { CombinedStatus, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 
 export default function ProductsScreen() {
@@ -25,13 +25,17 @@ export default function ProductsScreen() {
     zones,
     locations,
     inventoryEntries,
+    productCategoriesL1,
+    productCategoriesL2,
     fetchProducts,
     fetchLocations,
     fetchInventoryByZone,
+    fetchCategories,
   } = useWarehouseStore()
   const { colors } = useThemeStore()
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([])
+  /** null = Tất cả zone (chỉ khi đã chọn kho cụ thể) */
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
   const [showArchived, setShowArchived] = useState(false)
 
   const [editModalVisible, setEditModalVisible] = useState(false)
@@ -44,7 +48,14 @@ export default function ProductsScreen() {
 
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [locationPickerOpen, setLocationPickerOpen] = useState(false)
+  const [zonePickerOpen, setZonePickerOpen] = useState(false)
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
+
+  useEffect(() => {
+    if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
+      void fetchCategories()
+    }
+  }, [fetchCategories])
 
   useEffect(() => {
     fetchLocations()
@@ -94,7 +105,7 @@ export default function ProductsScreen() {
   }, [filterLocationId, zonesForFilterLoc, fetchInventoryByZone])
 
   useEffect(() => {
-    setSelectedZoneIds([])
+    setSelectedZoneId(null)
   }, [filterLocationId])
 
   useEffect(() => {
@@ -103,7 +114,7 @@ export default function ProductsScreen() {
     const lot = inventoryEntries.find((entry) => entry.id === scannedInventoryEntryId)
     if (lot) {
       setScannedLotId(lot.id)
-      setSelectedZoneIds([lot.zone_id])
+      setSelectedZoneId(lot.zone_id)
       setSearchQuery(lot.product?.name ?? '')
     }
     navigation.setParams({
@@ -112,12 +123,6 @@ export default function ProductsScreen() {
       scannedAt: undefined,
     })
   }, [route.params?.scannedInventoryEntryId, route.params?.scannedBarcode, route.params?.scannedAt, inventoryEntries, navigation])
-
-  function toggleZone(zoneId: string) {
-    setSelectedZoneIds((prev) => (
-      prev.includes(zoneId) ? prev.filter((id) => id !== zoneId) : [...prev, zoneId]
-    ))
-  }
 
   function clearSearch() {
     setSearchQuery('')
@@ -198,14 +203,10 @@ export default function ProductsScreen() {
     ])
   }
 
-  const selectedZoneSet = useMemo(() => new Set(selectedZoneIds), [selectedZoneIds])
-
   const locationZoneSet = useMemo(() => {
     if (!filterLocationId) return null
     return new Set(zonesForFilterLoc.map((z) => z.id))
   }, [filterLocationId, zonesForFilterLoc])
-
-  const zoneChipsSource = filterLocationId ? zonesForFilterLoc : zones
 
   const sortedLocations = useMemo(
     () => [...locations].sort((a, b) => a.name.localeCompare(b.name)),
@@ -214,20 +215,19 @@ export default function ProductsScreen() {
 
   const totalBoxesByProduct = useMemo(() => {
     const map = new Map<string, number>()
-    const hasZoneFilter = selectedZoneIds.length > 0
+    const hasZoneFilter = selectedZoneId != null
     for (const entry of inventoryEntries) {
       if (locationZoneSet && !locationZoneSet.has(entry.zone_id)) continue
-      if (hasZoneFilter && !selectedZoneSet.has(entry.zone_id)) continue
+      if (hasZoneFilter && entry.zone_id !== selectedZoneId) continue
       const id = entry.product_id
       map.set(id, (map.get(id) ?? 0) + entry.quantity_boxes)
     }
     return map
-  }, [inventoryEntries, selectedZoneIds, selectedZoneSet, locationZoneSet])
+  }, [inventoryEntries, selectedZoneId, locationZoneSet])
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase()
-    const hasZoneFilter = selectedZoneIds.length > 0
-    const selectedSet = new Set(selectedZoneIds)
+    const hasZoneFilter = selectedZoneId != null
 
     return products.filter((product) => {
       const matchSearch = normalizedQuery.length === 0 || product.name.toLowerCase().includes(normalizedQuery)
@@ -240,21 +240,20 @@ export default function ProductsScreen() {
       }
       if (!hasZoneFilter) return true
 
-      // Khi có filter zone: chỉ giữ sản phẩm có ít nhất 1 lot nằm trong zone đã chọn
       return inventoryEntries.some((entry) => (
         entry.product_id === product.id &&
-        selectedSet.has(entry.zone_id) &&
+        entry.zone_id === selectedZoneId &&
         (!locationZoneSet || locationZoneSet.has(entry.zone_id))
       ))
     })
-  }, [products, searchQuery, selectedZoneIds, inventoryEntries, locationZoneSet])
+  }, [products, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet])
 
   function getGroupedLotsByExpiry(productId: string) {
-    const hasZoneFilter = selectedZoneIds.length > 0
+    const hasZoneFilter = selectedZoneId != null
     const relevantEntries = inventoryEntries.filter((entry) => (
       entry.product_id === productId &&
       (!locationZoneSet || locationZoneSet.has(entry.zone_id)) &&
-      (!hasZoneFilter || selectedZoneSet.has(entry.zone_id))
+      (!hasZoneFilter || entry.zone_id === selectedZoneId)
     ))
 
     return [...relevantEntries].sort((a, b) => {
@@ -265,11 +264,11 @@ export default function ProductsScreen() {
   }
 
   function getWorstStatusForProduct(productId: string): CombinedStatus {
-    const hasZoneFilter = selectedZoneIds.length > 0
+    const hasZoneFilter = selectedZoneId != null
     const entries = inventoryEntries.filter((entry) => (
       entry.product_id === productId &&
       (!locationZoneSet || locationZoneSet.has(entry.zone_id)) &&
-      (!hasZoneFilter || selectedZoneSet.has(entry.zone_id))
+      (!hasZoneFilter || entry.zone_id === selectedZoneId)
     ))
     if (entries.length === 0) return 'ok'
 
@@ -290,6 +289,18 @@ export default function ProductsScreen() {
       }
     }
     return worstStatus
+  }
+
+  function getProductCategoryLine(product: Product): string | null {
+    const l1name = product.category_level1_id
+      ? productCategoriesL1.find((c) => c.id === product.category_level1_id)?.name
+      : undefined
+    const l2name = product.category_level2_id
+      ? productCategoriesL2.find((c) => c.id === product.category_level2_id)?.name
+      : undefined
+    if (l1name && l2name) return `${l1name} · ${l2name}`
+    if (l1name) return l1name
+    return null
   }
 
   return (
@@ -318,6 +329,29 @@ export default function ProductsScreen() {
         <Text style={[styles.locationFilterChevron, { color: colors.sub }]}>▾</Text>
       </TouchableOpacity>
 
+      {filterLocationId ? (
+        <TouchableOpacity
+          style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setZonePickerOpen(true)}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.locationFilterLabel, { color: colors.sub }]}>Zone</Text>
+          <Text style={[styles.locationFilterValue, { color: colors.text }]} numberOfLines={1}>
+            {selectedZoneId
+              ? zonesForFilterLoc.find((z) => z.id === selectedZoneId)?.name ?? '…'
+              : 'Tất cả zone'}
+          </Text>
+          <Text style={[styles.locationFilterChevron, { color: colors.sub }]}>▾</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.locationFilterLabel, { color: colors.sub }]}>Zone</Text>
+          <Text style={[styles.locationFilterValue, { color: colors.statusWarning }]} numberOfLines={1}>
+            Vui lòng chọn kho trước
+          </Text>
+        </View>
+      )}
+
       <View style={styles.searchWrap}>
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
@@ -336,40 +370,12 @@ export default function ProductsScreen() {
           </View>
           <TouchableOpacity
             style={[styles.scanBtn, { backgroundColor: colors.accent }]}
-            onPress={() => navigation.navigate('BarcodeScanner')}
+            onPress={() => navigation.navigate('BarcodeScanner', { returnTab: 'Products' })}
           >
             <Text style={styles.scanBtnText}>📷</Text>
           </TouchableOpacity>
         </View>
       </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.zoneFilterRow}
-        style={styles.zoneFilterScroll}
-      >
-        {zoneChipsSource.map((zone) => {
-          const isSelected = selectedZoneIds.includes(zone.id)
-          return (
-            <TouchableOpacity
-              key={zone.id}
-              style={[
-                styles.zoneChip,
-                {
-                  backgroundColor: isSelected ? colors.accent : colors.card,
-                  borderColor: isSelected ? colors.accent : colors.border,
-                },
-              ]}
-              onPress={() => toggleZone(zone.id)}
-            >
-              <Text style={{ color: isSelected ? colors.card : colors.sub, fontSize: 12 }}>
-                {zone.name}
-              </Text>
-            </TouchableOpacity>
-          )
-        })}
-      </ScrollView>
 
       {filteredProducts.length === 0 ? (
         <View style={styles.emptyWrap}>
@@ -382,6 +388,7 @@ export default function ProductsScreen() {
           {filteredProducts.map((product) => {
             const groupedLots = getGroupedLotsByExpiry(product.id)
             const worstStatus = getWorstStatusForProduct(product.id)
+            const categoryLine = getProductCategoryLine(product)
             const productDotColor = worstStatus === 'expired'
               ? colors.statusExpired
               : worstStatus === 'critical'
@@ -419,6 +426,11 @@ export default function ProductsScreen() {
                     <Text style={{ fontSize: 12 }}>✏️</Text>
                   </TouchableOpacity>
                 </View>
+                {categoryLine ? (
+                  <Text style={[styles.itemCategoryLine, { color: colors.sub }]} numberOfLines={2}>
+                    {categoryLine}
+                  </Text>
+                ) : null}
                 {product.is_archived && (
                   <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
                 )}
@@ -501,6 +513,52 @@ export default function ProductsScreen() {
                   >
                     <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]} numberOfLines={2}>
                       {loc.name}
+                    </Text>
+                    {sel && <Text style={{ color: colors.accent }}>✓</Text>}
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={zonePickerOpen} transparent animationType="fade" onRequestClose={() => setZonePickerOpen(false)}>
+        <Pressable style={styles.locationModalOverlay} onPress={() => setZonePickerOpen(false)}>
+          <Pressable style={[styles.locationModalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.locationModalTitle, { color: colors.text }]}>Chọn zone</Text>
+            <ScrollView style={styles.locationModalList} keyboardShouldPersistTaps="handled">
+              <TouchableOpacity
+                style={[
+                  styles.locationOption,
+                  { borderColor: colors.border, backgroundColor: selectedZoneId ? colors.bg : colors.accent + '22' },
+                ]}
+                onPress={() => {
+                  setSelectedZoneId(null)
+                  setZonePickerOpen(false)
+                }}
+              >
+                <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: selectedZoneId ? '500' : '700' }]}>
+                  Tất cả zone
+                </Text>
+                {!selectedZoneId && <Text style={{ color: colors.accent }}>✓</Text>}
+              </TouchableOpacity>
+              {zonesForFilterLoc.map((zone) => {
+                const sel = selectedZoneId === zone.id
+                return (
+                  <TouchableOpacity
+                    key={zone.id}
+                    style={[
+                      styles.locationOption,
+                      { borderColor: colors.border, backgroundColor: sel ? colors.accent + '22' : colors.bg },
+                    ]}
+                    onPress={() => {
+                      setSelectedZoneId(zone.id)
+                      setZonePickerOpen(false)
+                    }}
+                  >
+                    <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]} numberOfLines={2}>
+                      {zone.name}
                     </Text>
                     {sel && <Text style={{ color: colors.accent }}>✓</Text>}
                   </TouchableOpacity>
@@ -657,14 +715,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanBtnText: { fontSize: 16 },
-  zoneFilterScroll: { maxHeight: 44, marginBottom: 8 },
-  zoneFilterRow: { paddingHorizontal: 16, gap: 8, alignItems: 'center' },
-  zoneChip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
+  itemCategoryLine: { fontSize: 12, marginTop: 6, paddingHorizontal: 0 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
