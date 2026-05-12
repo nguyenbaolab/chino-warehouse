@@ -370,7 +370,7 @@ export default function ProductsScreen() {
           </View>
           <TouchableOpacity
             style={[styles.scanBtn, { backgroundColor: colors.accent }]}
-            onPress={() => navigation.navigate('BarcodeScanner', { returnTab: 'Products' })}
+            onPress={() => navigation.navigate('BarcodeScanner', { mode: 'search', returnTab: 'Products' })}
           >
             <Text style={styles.scanBtnText}>📷</Text>
           </TouchableOpacity>

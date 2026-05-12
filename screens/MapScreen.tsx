@@ -573,7 +573,7 @@ export default function MapScreen() {
             )}
           </View>
           <TouchableOpacity
-            onPress={() => navigation.navigate('BarcodeScanner', { mode: 'locate' })}
+            onPress={() => navigation.navigate('BarcodeScanner', { mode: 'locate', returnTab: 'Map' })}
             style={[styles.scanBtn, { backgroundColor: colors.accent }]}
           >
             <Text style={styles.scanBtnText}>📷</Text>

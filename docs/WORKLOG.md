@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Luồng quét + Huỷ: ProductsScreen `search`, Alert 3 nút, `returnTab` trên AddInventory + `lib/tabNavigation`
+
+- **`ProductsScreen`:** `{ mode: 'search', returnTab: 'Products' }` — tìm lô + kết quả về `ProductsMain` (params quét giữ nguyên); không dùng `locate` (tránh nhảy Map khi tìm thấy).
+- **`MapScreen`:** `{ mode: 'locate', returnTab: 'Map' }`.
+- **`BarcodeScannerScreen`:** Không tìm thấy lô — locate & search — `Alert` 3 nút: **Thử lại** / **Thêm thủ công** (`AddInventory` + `returnTab` trong params) / **Huỷ** (`tabsParamsForReturnTabMain` + đóng modal). Nhánh `addInventoryParams` cũng gửi `returnTab`.
+- **`lib/tabNavigation.ts`:** `tabsParamsForReturnTabMain`, `navigateToTabMainFromNestedStack` (Hủy AddInventory từ stack con).
+- **`AddInventoryScreen`:** `returnTab?` + header **Huỷ** theo `returnTab`; bỏ `getHostTabName` không dùng.
+
+---
+
+---
+
 ## [tháng 5/2026] — Tab 1 lần bấm (từ tab khác) + Huỷ scanner về main theo `returnTab`
 
 - **`App.tsx` — `stackTabPressListener`:** Stack sâu (`index > 0`) + đang **focus** tab đó → `preventDefault` + `popToTop` (target `route.state.key`). Stack sâu + **chưa** focus → `preventDefault` + `navigation.navigate(route.name)` + `popToTop` để vừa chuyển tab vừa reset stack một lần. `index === 0` → không `preventDefault`, để navigation mặc định.

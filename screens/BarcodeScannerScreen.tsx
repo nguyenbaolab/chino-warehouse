@@ -4,6 +4,7 @@ import { CameraView, Camera } from 'expo-camera'
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { tabsParamsForReturnTabMain } from '../lib/tabNavigation'
 
 type BarcodeScannerParams = {
   mode?: 'search' | 'locate'
@@ -28,24 +29,6 @@ function scheduleDismissModal(navigation: RootNav) {
     if (typeof navigation.canGoBack === 'function' && !navigation.canGoBack()) return
     navigation.goBack()
   }, 160)
-}
-
-/** `navigate('Tabs', …)` về màn gốc của từng tab (Huỷ scanner / không thêm thủ công). */
-function tabsParamsForReturnTabMain(returnTab: string | undefined): Record<string, unknown> {
-  switch (returnTab || 'Products') {
-    case 'Map':
-      return { screen: 'Map', params: { screen: 'MapMain' } }
-    case 'Products':
-      return { screen: 'Products', params: { screen: 'ProductsMain' } }
-    case 'Orders':
-      return { screen: 'Orders', params: { screen: 'OrderListMain' } }
-    case 'Notifications':
-      return { screen: 'Notifications', params: { screen: 'NotificationsMain' } }
-    case 'Settings':
-      return { screen: 'Settings', params: { screen: 'SettingsMain' } }
-    default:
-      return { screen: 'Products', params: { screen: 'ProductsMain' } }
-  }
 }
 
 export default function BarcodeScannerScreen() {
@@ -96,6 +79,46 @@ export default function BarcodeScannerScreen() {
     }, 160)
   }
 
+  /** Không tìm thấy lô — locate & search dùng chung 3 nút: Thử lại / Thêm thủ công / Huỷ */
+  function openBarcodeNotFoundAlert(effectiveReturnTab: string) {
+    processingRef.current = false
+    Alert.alert(
+      'Không tìm thấy mã vạch',
+      'Mã vạch lô này chưa có trong hệ thống. Bạn có thể thử lại, thêm thủ công hoặc huỷ.',
+      [
+        {
+          text: 'Thử lại',
+          onPress: () => {
+            processingRef.current = false
+            setIsScanLocked(false)
+          },
+        },
+        {
+          text: 'Thêm thủ công',
+          onPress: () => {
+            navigateTabsThenCloseModal({
+              screen: effectiveReturnTab,
+              params: {
+                screen: 'AddInventory',
+                params: { returnTab: effectiveReturnTab },
+              },
+            })
+          },
+        },
+        {
+          text: 'Huỷ',
+          style: 'cancel',
+          onPress: () => {
+            processingRef.current = false
+            setIsScanLocked(false)
+            navigateTabsThenCloseModal(tabsParamsForReturnTabMain(effectiveReturnTab))
+          },
+        },
+      ],
+      { cancelable: true }
+    )
+  }
+
   async function handleScanned({ data }: { data: string }) {
     if (processingRef.current) return
     processingRef.current = true
@@ -123,6 +146,7 @@ export default function BarcodeScannerScreen() {
             ...(addInventoryParams ?? {}),
             scannedBarcode: barcode,
             barcodeScannedAt: Date.now(),
+            returnTab: tab,
           },
         },
       })
@@ -168,21 +192,7 @@ export default function BarcodeScannerScreen() {
         })
       } else {
         console.log('[BarcodeScanner][locate] product not found for barcode')
-        processingRef.current = false
-        Alert.alert('Không tìm thấy sản phẩm với mã vạch này', '', [
-          {
-            text: 'Quét lại',
-            style: 'cancel',
-            onPress: () => setIsScanLocked(false),
-          },
-          {
-            text: 'Đóng',
-            onPress: () => {
-              setIsScanLocked(false)
-              navigation.goBack()
-            },
-          },
-        ])
+        openBarcodeNotFoundAlert(returnTab || 'Map')
       }
       return
     }
@@ -202,40 +212,7 @@ export default function BarcodeScannerScreen() {
       return
     }
 
-    processingRef.current = false
-    const tabForAddInventory = returnTab || 'Products'
-    Alert.alert(
-      'Không tìm thấy mã vạch',
-      'Mã vạch lô này chưa có trong hệ thống. Bạn muốn thêm thủ công?',
-      [
-        {
-          text: 'Thêm thủ công',
-          onPress: () => {
-            navigateTabsThenCloseModal({
-              screen: tabForAddInventory,
-              params: { screen: 'AddInventory', params: {} },
-            })
-          },
-        },
-        {
-          text: 'Quét lại',
-          onPress: () => {
-            processingRef.current = false
-            setIsScanLocked(false)
-          },
-        },
-        {
-          text: 'Huỷ',
-          style: 'cancel',
-          onPress: () => {
-            processingRef.current = false
-            setIsScanLocked(false)
-            navigateTabsThenCloseModal(tabsParamsForReturnTabMain(returnTab))
-          },
-        },
-      ],
-      { cancelable: true }
-    )
+    openBarcodeNotFoundAlert(returnTab || 'Products')
   }
 
   if (hasPermission === null) {

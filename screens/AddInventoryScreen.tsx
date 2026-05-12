@@ -15,6 +15,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { Product } from '../types'
 import { supabase } from '../lib/supabase'
+import { navigateToTabMainFromNestedStack } from '../lib/tabNavigation'
 
 type AddInventoryRouteParams = {
   zoneId?: string
@@ -25,6 +26,8 @@ type AddInventoryRouteParams = {
   productId?: string
   scannedBarcode?: string
   barcodeScannedAt?: number
+  /** Tab gốc để nút Hủy về `…Main` (từ scanner / luồng có truyền). */
+  returnTab?: string
 }
 
 // Parse DD/MM/YYYY -> YYYY-MM-DD để lưu xuống Supabase
@@ -65,6 +68,7 @@ export default function AddInventoryScreen() {
     productId,
     scannedBarcode,
     barcodeScannedAt,
+    returnTab,
   } = (route.params as AddInventoryRouteParams) || {}
   const { colors } = useThemeStore()
   const {
@@ -154,13 +158,6 @@ export default function AddInventoryScreen() {
     setLotBarcode(scannedBarcode.trim())
     navigation.setParams({ scannedBarcode: undefined, barcodeScannedAt: undefined })
   }, [scannedBarcode, barcodeScannedAt, navigation])
-
-  function getHostTabName(): string {
-    const tabNav = navigation.getParent()?.getParent()
-    const st = tabNav?.getState()
-    if (!st?.routes || st.index === undefined) return 'Products'
-    return String(st.routes[st.index]?.name ?? 'Products')
-  }
 
   const selectedZone = useMemo(
     () => zones.find((zone) => zone.id === selectedZoneId) ?? null,
@@ -320,7 +317,16 @@ export default function AddInventoryScreen() {
       {/* Header có nút hủy quay lại màn trước */}
       <View style={styles.headerRow}>
         <Text style={[styles.title, { color: colors.text }]}>Thêm hàng</Text>
-        <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={[styles.cancelBtn, { backgroundColor: colors.card }]}
+          onPress={() => {
+            if (returnTab) {
+              navigateToTabMainFromNestedStack(navigation, returnTab)
+            } else {
+              navigation.goBack()
+            }
+          }}
+        >
           <Text style={[styles.cancelBtnText, { color: colors.sub }]}>Hủy</Text>
         </TouchableOpacity>
       </View>
