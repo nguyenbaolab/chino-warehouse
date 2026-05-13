@@ -318,6 +318,7 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 **Kỹ thuật:**
 - Implementation: PostgreSQL trigger (SECURITY DEFINER) ghi vào bảng `audit_logs` sau mỗi INSERT/UPDATE/DELETE trên `inventory_entries` và `products` — không thể bypass từ client.
+- `location_id`: trigger lookup `zones.location_id` cho inventory_entries; NULL cho products (không gắn kho cụ thể). FK → `locations(id) ON DELETE SET NULL`.
 - Tên user: trigger lưu `split_part(auth.jwt() ->> 'email', '@', 1)` vào cột `changed_by_name TEXT` ngay lúc ghi — không join `auth.users` runtime (không accessible từ client).
 - RLS `audit_logs`: authenticated chỉ được SELECT; INSERT chỉ qua trigger.
 - Pagination: cursor-based dùng `changed_at` (tránh skip record khi có insert mới).
@@ -326,8 +327,12 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - `ProductDetailScreen`: section 10 entries gần nhất (static, không pagination) + nút "Xem tất cả" → `AuditLogScreen` filtered theo product.
 - `SettingsScreen`: card "Lịch sử thay đổi" subtitle = entry mới nhất → `AuditLogScreen` toàn bộ.
 
-**AuditLogScreen:**
-- Filter: người thay đổi + sản phẩm (dropdown, có thể kết hợp).
+**AuditLogScreen — 4 filter kết hợp:**
+- [1] Kho — disabled khi loại = Sản phẩm (vì products không gắn kho).
+- [2] Loại thay đổi — Lô hàng / Sản phẩm / Tất cả. Chọn Sản phẩm → reset kho, disable dropdown kho.
+- [3] Người thay đổi — distinct `changed_by_name` từ 50 entries gần nhất.
+- [4] Sản phẩm — lọc `record_id` hoặc `new_data/old_data->>'product_id'` cho inventory_entries.
+- **Logic kết hợp kho + loại:** nếu filterType = inventory_entries: lọc `table_name` + `location_id`; nếu filterType = products: chỉ `table_name`, bỏ qua `location_id`; nếu tất cả + có kho: `(inventory_entries AND location_id = X) OR products`.
 - Pagination: 10/trang, nút phải (cũ hơn) query DB, nút trái (mới hơn) từ cache.
 - Cache: local state, clear khi unmount.
 

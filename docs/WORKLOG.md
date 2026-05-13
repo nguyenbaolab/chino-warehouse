@@ -4,13 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
-## [tháng 5/2026] — SEC-11 Resolved: Audit Log hoàn chỉnh
+## [tháng 5/2026] — SEC-11 Resolved: Audit Log hoàn chỉnh (v2 — location_id + 4 filter)
 
-- Migration `20260513_add_audit_logs.sql`: bảng `audit_logs`, trigger `audit_trigger_fn` (SECURITY DEFINER) trên `inventory_entries` + `products`, RLS authenticated SELECT only, 2 index (`changed_at DESC`, `record_id`).
-- Type `AuditLog` trong `types/index.ts`.
-- Store: `fetchAuditLogs` (cursor-based, filter product + user), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`.
-- `AuditLogScreen.tsx`: filter người + sản phẩm (dropdown), pagination 10/trang (← mới hơn từ cache, → cũ hơn query DB), cache local state, changed fields diff.
-- `ProductDetailScreen`: section Lịch sử thay đổi (10 entries, icon + user + time + fields, nút Xem tất cả → AuditLogScreen filtered).
+- Migration `20260513_add_audit_logs.sql`: bảng `audit_logs` (gồm `location_id` FK → locations), trigger `audit_trigger_fn` (SECURITY DEFINER, lookup location_id từ zones cho inventory_entries) trên `inventory_entries` + `products`, RLS authenticated SELECT only, 4 index (`changed_at DESC`, `record_id`, `location_id`, `table_name`).
+- Type `AuditLog` trong `types/index.ts` (thêm `location_id`).
+- Store: `fetchAuditLogs` (cursor-based, filter kho + loại + người + sản phẩm — logic kết hợp loại + kho), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`.
+- `AuditLogScreen.tsx`: 4 filter dropdown (kho/loại/người/sản phẩm) — disable kho khi loại = Sản phẩm; pagination 10/trang, cache in-memory.
+- `ProductDetailScreen`: section Lịch sử thay đổi (10 entries, icon + user + nhãn loại + time + fields, nút Xem tất cả → AuditLogScreen filtered).
 - `SettingsScreen`: card Lịch sử thay đổi (subtitle relative time, navigate AuditLogScreen).
 - Navigation: `AuditLog` screen trong MapStack, ProductsStack, NotificationsStack, SettingsStack.
 - KI-022 → Resolved.

@@ -674,10 +674,12 @@ export default function ProductDetailScreen() {
               </TouchableOpacity>
             </View>
             {auditEntries.map((entry) => {
+              const ignored = new Set(['updated_at', 'created_at'])
               const fields = entry.old_data && entry.new_data
-                ? Object.keys(entry.new_data).filter((k) => k !== 'updated_at' && JSON.stringify(entry.old_data![k]) !== JSON.stringify(entry.new_data![k]))
+                ? Object.keys(entry.new_data).filter((k) => !ignored.has(k) && JSON.stringify(entry.old_data![k]) !== JSON.stringify(entry.new_data![k]))
                 : []
               const icon = entry.action === 'INSERT' ? '➕' : entry.action === 'UPDATE' ? '✏️' : '🗑️'
+              const tableLabel = entry.table_name === 'inventory_entries' ? 'Lô hàng' : 'Sản phẩm'
               const time = new Date(entry.changed_at)
               const pad = (n: number) => String(n).padStart(2, '0')
               const timeStr = `${pad(time.getDate())}/${pad(time.getMonth() + 1)} ${pad(time.getHours())}:${pad(time.getMinutes())}`
@@ -686,7 +688,7 @@ export default function ProductDetailScreen() {
                   <Text style={styles.auditIcon}>{icon}</Text>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.auditEntryText, { color: colors.text }]}>
-                      {entry.changed_by_name ?? 'Không rõ'} · {timeStr}
+                      {entry.changed_by_name ?? 'Không rõ'} · {tableLabel} · {timeStr}
                     </Text>
                     {fields.length > 0 && (
                       <Text style={[styles.auditFieldsText, { color: colors.sub }]}>{fields.join(', ')}</Text>

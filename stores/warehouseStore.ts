@@ -84,8 +84,10 @@ type WarehouseStore = {
   fetchAuditLogs: (params: {
     cursor?: string
     direction?: 'older' | 'newer'
-    filterProductId?: string
+    filterLocationId?: string
+    filterType?: 'inventory_entries' | 'products'
     filterChangedBy?: string
+    filterProductId?: string
     limit?: number
   }) => Promise<AuditLog[]>
   fetchAuditLogsForProduct: (productId: string, limit?: number) => Promise<AuditLog[]>
@@ -848,7 +850,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return (data as AuditLog) ?? null
   },
 
-  fetchAuditLogs: async ({ cursor, direction = 'older', filterProductId, filterChangedBy, limit = 10 }) => {
+  fetchAuditLogs: async ({ cursor, direction = 'older', filterLocationId, filterType, filterChangedBy, filterProductId, limit = 10 }) => {
     let query = supabase.from('audit_logs').select('*')
 
     if (cursor) {
@@ -859,12 +861,24 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       }
     }
 
+    // Filter loại + kho kết hợp
+    if (filterType === 'inventory_entries') {
+      query = query.eq('table_name', 'inventory_entries')
+      if (filterLocationId) query = query.eq('location_id', filterLocationId)
+    } else if (filterType === 'products') {
+      query = query.eq('table_name', 'products')
+    } else if (filterLocationId) {
+      // Tất cả loại nhưng lọc kho: inventory_entries theo kho OR products (không gắn kho)
+      query = query.or(
+        `and(table_name.eq.inventory_entries,location_id.eq.${filterLocationId}),table_name.eq.products`
+      )
+    }
+
     if (filterChangedBy) {
       query = query.eq('changed_by_name', filterChangedBy)
     }
 
     if (filterProductId) {
-      // Lọc audit cho product: record trực tiếp trên products HOẶC inventory_entries liên quan
       query = query.or(
         `record_id.eq.${filterProductId},` +
         `and(table_name.eq.inventory_entries,new_data->>product_id.eq.${filterProductId}),` +
@@ -882,7 +896,6 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
     const { data } = await query
     const rows = (data as AuditLog[]) ?? []
-    // Nếu lấy hướng mới hơn, đảo lại cho đúng thứ tự mới nhất trước
     return direction === 'newer' ? rows.reverse() : rows
   },
 

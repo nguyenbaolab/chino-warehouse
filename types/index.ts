@@ -102,6 +102,7 @@ export type AuditLog = {
   table_name: 'inventory_entries' | 'products'
   action: 'INSERT' | 'UPDATE' | 'DELETE'
   record_id: string | null
+  location_id: string | null
   changed_by: string | null
   changed_by_name: string | null
   changed_at: string
