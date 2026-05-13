@@ -1,8 +1,12 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 2.4 | Tháng 5/2026
+-- Phiên bản: 2.5 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v2.4:
+--   - SEC-11 v2: audit_trigger_fn() nhúng _product_name, _zone_name,
+--     _location_name vào JSONB (prefix _ = metadata display, không phải
+--     data gốc); xử lý riêng old_zone_name khi UPDATE đổi zone
 -- Thay đổi so với v2.3:
 --   - SEC-11: thêm bảng audit_logs, trigger function, và trigger
 --     trên inventory_entries và products
