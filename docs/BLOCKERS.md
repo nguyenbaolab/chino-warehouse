@@ -21,13 +21,14 @@ Khi gặp blocker mới: **ghi vào đây**, **dừng lại**, **hỏi người 
   - **Thùng không có barcode:** nhập tay vào field barcode khi thêm/sửa lô, **không bắt buộc** quét — hợp lệ.
 - **Kết luận:** **Không có edge case nào** trong phạm vi BLK-001 cần backlog thêm. (Mở rộng kiểu multi-barcode nhiều mã cho một lô — nếu có — là chủ đề Phase 2 tách, không mở lại BLK-001.)
 
+### [BLK-003] SEC-08 — Realtime security bị chặn bởi thiếu auth → Resolved
+
+- **Vấn đề:** `SettingsScreen` và `DiscontinuedProductsScreen` (và toàn bộ Realtime subscription trong app) cần `private: true` + RLS `authenticated` để bảo mật channel. Fix không thể thực hiện khi chưa có auth.
+- **Đã chốt:** `private: true` + migration RLS `realtime.messages` — xem KI-012 Resolved.
+- **Tham chiếu:** `docs/KNOWN_ISSUES.md` KI-012
+
 ---
 
 ## Đang chờ
 
-### [BLK-003] SEC-08 — Realtime security bị chặn bởi thiếu auth
-
-- **Vấn đề:** `SettingsScreen` và `DiscontinuedProductsScreen` (và toàn bộ Realtime subscription trong app) cần `private: true` + RLS `authenticated` để bảo mật channel. Fix không thể thực hiện khi chưa có auth.
-- **Chờ:** F24 — Auth & Super app integration (Phase 3)
-- **Khi auth xong:** Audit toàn bộ `.channel()` calls trong app, thêm `private: true` đồng loạt, tạo migration RLS cho `realtime.messages`.
-- **Tham chiếu:** `docs/KNOWN_ISSUES.md` KI-012
+(trống)

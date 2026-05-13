@@ -56,7 +56,9 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     const channel = supabase
-      .channel(`settings-discontinued-${Date.now()}`)
+      .channel(`settings-discontinued-${Date.now()}`, {
+        config: { private: true }, // SEC-08: yêu cầu authenticated token
+      })
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },

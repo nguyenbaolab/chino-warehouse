@@ -136,7 +136,7 @@
 - **Tại sao chưa fix:** Fix yêu cầu `private: true` trên channel config + RLS policy cho role `authenticated` trên `realtime.messages`. Phase 1 không có auth — toàn bộ user đang dùng role `anon`, không có JWT token. Áp dụng fix ngay sẽ ngắt Realtime hoàn toàn trên 2 màn hình này.
 - **Lưu ý thêm:** Các màn hình khác trong app cũng có Realtime subscription tương tự (F17) — cần audit và fix đồng loạt khi auth được implement, không fix rời từng màn.
 - **Hướng fix (khi có auth — Phase 3):** Thêm `config: { private: true }` vào tất cả `.channel()` calls; tạo RLS policy `authenticated_users_can_receive` và `authenticated_users_can_broadcast` trên `realtime.messages`.
-- **Trạng thái:** Deferred — chờ F24 (Auth, Phase 3)
-- **Tham chiếu:** `docs/BLOCKERS.md` BLK-003, `docs/DECISIONS.md` (Phase 1 không có auth)
+- **Trạng thái:** Resolved
+- **Đã fix:** Thêm `config: { private: true }` vào channel `SettingsScreen` (dòng 59) và `DiscontinuedProductsScreen` (dòng 58); migration `20260513_realtime_rls_sec08.sql` tạo RLS policy `authenticated_users_can_receive` + `authenticated_users_can_broadcast` trên `realtime.messages`.
 
 ---

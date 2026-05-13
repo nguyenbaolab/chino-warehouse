@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — SEC-08 Resolved: private channel + RLS realtime.messages
+
+- **Fix:** Thêm `config: { private: true }` vào `.channel()` của SettingsScreen (dòng 59) và DiscontinuedProductsScreen (dòng 58).
+- **Migration:** `20260513_realtime_rls_sec08.sql` — tạo policy `authenticated_users_can_receive` (SELECT) và `authenticated_users_can_broadcast` (INSERT) trên `realtime.messages` cho role `authenticated`.
+- **Lý do chọn được fix đầy đủ:** Phase 2 đã có auth (LoginScreen + `signInWithPassword`); RLS các bảng đã đổi sang `authenticated`; migration Realtime là phần còn thiếu duy nhất.
+- **File đã sửa:** `screens/SettingsScreen.tsx`, `screens/DiscontinuedProductsScreen.tsx`, `supabase/migrations/20260513_realtime_rls_sec08.sql`, `docs/KNOWN_ISSUES.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`
+- **Tham chiếu:** KI-012 Resolved, BLK-003 Resolved
+
+---
+
 ## [tháng 5/2026] — SEC-08: Phân tích và document lỗi Realtime subscription chưa xác thực
 
 - **Phân tích:** Xác nhận `SettingsScreen` (dòng 57–79) và `DiscontinuedProductsScreen` (dòng 56–78) đang subscribe Realtime `postgres_changes` trên `products` + `inventory_entries` dưới role `anon`, không có `private: true`.
