@@ -1,8 +1,11 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 2.2 | Tháng 5/2026
+-- Phiên bản: 2.3 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v2.2:
+--   - Realtime RLS (SEC-08): thêm policy cho realtime.messages
+--     chỉ user authenticated mới được subscribe/publish qua Realtime
 -- Thay đổi so với v2.1:
 --   - RLS policies: đổi từ `anon` sang `authenticated` (sau khi thêm auth)
 -- Thay đổi so với v2.0:
@@ -127,7 +130,7 @@ CREATE INDEX idx_product_categories_l2_level1 ON product_categories_l2(level1_id
 
 
 -- ============================================================
--- ROW LEVEL SECURITY
+-- ROW LEVEL SECURITY — Bảng ứng dụng
 -- ============================================================
 
 ALTER TABLE locations             ENABLE ROW LEVEL SECURITY;
@@ -140,7 +143,7 @@ ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
 
 -- Phase 1+: cho phép tất cả user đã đăng nhập
--- Phase 3: thay bằng policy kiểm tra user role
+-- Phase 3: thay bằng policy kiểm tra user role (F24 / SEC-09)
 CREATE POLICY "allow_all" ON locations             FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON zones                 FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON product_categories_l1 FOR ALL TO authenticated USING (true) WITH CHECK (true);
@@ -149,6 +152,25 @@ CREATE POLICY "allow_all" ON products              FOR ALL TO authenticated USIN
 CREATE POLICY "allow_all" ON inventory_entries     FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON order_lists           FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON order_items           FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+
+-- ============================================================
+-- ROW LEVEL SECURITY — Realtime (SEC-08)
+-- Chỉ user đã đăng nhập mới được subscribe/publish qua Realtime
+-- Áp dụng cho tất cả Realtime channel trong app (private: true)
+-- ============================================================
+
+CREATE POLICY "authenticated_users_can_receive"
+ON realtime.messages
+FOR SELECT
+TO authenticated
+USING (true);
+
+CREATE POLICY "authenticated_users_can_broadcast"
+ON realtime.messages
+FOR INSERT
+TO authenticated
+WITH CHECK (true);
 
 
 -- ============================================================
