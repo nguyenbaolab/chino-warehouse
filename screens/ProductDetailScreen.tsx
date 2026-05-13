@@ -16,7 +16,7 @@ import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/nativ
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
-import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone } from '../types'
+import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone, AuditLog } from '../types'
 
 type ProductDetailRouteParams = {
   productId: string
@@ -67,6 +67,7 @@ export default function ProductDetailScreen() {
     productCategoriesL2,
     fetchCategories,
     updateProductCategory,
+    fetchAuditLogsForProduct,
   } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
@@ -92,6 +93,7 @@ export default function ProductDetailScreen() {
   const [showCategoryL1Picker, setShowCategoryL1Picker] = useState(false)
   const [showCategoryL2Picker, setShowCategoryL2Picker] = useState(false)
   const [categorySaving, setCategorySaving] = useState(false)
+  const [auditEntries, setAuditEntries] = useState<AuditLog[]>([])
 
   const totalLotBoxes = useMemo(
     () => lots.reduce((sum, lot) => sum + lot.quantity_boxes, 0),
@@ -150,7 +152,8 @@ export default function ProductDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       void loadData()
-    }, [loadData])
+      void fetchAuditLogsForProduct(productId, 10).then(setAuditEntries)
+    }, [loadData, fetchAuditLogsForProduct, productId])
   )
 
   useEffect(() => {
@@ -660,6 +663,40 @@ export default function ProductDetailScreen() {
             )
           })
         )}
+
+        {/* SEC-11: Section Lịch sử thay đổi */}
+        {auditEntries.length > 0 && (
+          <View style={[styles.auditSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.auditHeader}>
+              <Text style={[styles.auditTitle, { color: colors.text }]}>Lịch sử thay đổi</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('AuditLog', { filterProductId: productId })}>
+                <Text style={[styles.auditViewAll, { color: colors.accent }]}>Xem tất cả →</Text>
+              </TouchableOpacity>
+            </View>
+            {auditEntries.map((entry) => {
+              const fields = entry.old_data && entry.new_data
+                ? Object.keys(entry.new_data).filter((k) => k !== 'updated_at' && JSON.stringify(entry.old_data![k]) !== JSON.stringify(entry.new_data![k]))
+                : []
+              const icon = entry.action === 'INSERT' ? '➕' : entry.action === 'UPDATE' ? '✏️' : '🗑️'
+              const time = new Date(entry.changed_at)
+              const pad = (n: number) => String(n).padStart(2, '0')
+              const timeStr = `${pad(time.getDate())}/${pad(time.getMonth() + 1)} ${pad(time.getHours())}:${pad(time.getMinutes())}`
+              return (
+                <View key={entry.id} style={[styles.auditEntry, { borderColor: colors.border }]}>
+                  <Text style={styles.auditIcon}>{icon}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.auditEntryText, { color: colors.text }]}>
+                      {entry.changed_by_name ?? 'Không rõ'} · {timeStr}
+                    </Text>
+                    {fields.length > 0 && (
+                      <Text style={[styles.auditFieldsText, { color: colors.sub }]}>{fields.join(', ')}</Text>
+                    )}
+                  </View>
+                </View>
+              )
+            })}
+          </View>
+        )}
       </ScrollView>
 
       <Modal visible={!!moveLot} transparent animationType="slide" onRequestClose={() => setMoveLot(null)}>
@@ -832,4 +869,12 @@ const styles = StyleSheet.create({
   optionsWrap: { borderWidth: 1, borderRadius: 10, marginTop: 6, overflow: 'hidden' },
   optionRow: { borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
   moveActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  auditSection: { borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 16 },
+  auditHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  auditTitle: { fontSize: 15, fontWeight: '700' },
+  auditViewAll: { fontSize: 13, fontWeight: '600' },
+  auditEntry: { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: 6, borderTopWidth: StyleSheet.hairlineWidth },
+  auditIcon: { fontSize: 14, marginRight: 8, marginTop: 1 },
+  auditEntryText: { fontSize: 13 },
+  auditFieldsText: { fontSize: 12, marginTop: 1, fontStyle: 'italic' },
 })

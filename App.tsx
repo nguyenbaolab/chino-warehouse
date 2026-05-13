@@ -22,6 +22,7 @@ import BarcodeScannerScreen from './screens/BarcodeScannerScreen'
 import OrderListScreen from './screens/OrderListScreen'
 import OrderDetailScreen from './screens/OrderDetailScreen'
 import ZoneLayoutEditorScreen from './screens/ZoneLayoutEditorScreen'
+import AuditLogScreen from './screens/AuditLogScreen'
 
 const Tab = createBottomTabNavigator()
 const RootStack = createNativeStackNavigator()
@@ -38,6 +39,7 @@ function MapStackNavigator() {
       <MapStack.Screen name="ZoneLayoutEditor" component={ZoneLayoutEditorScreen} />
       <MapStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <MapStack.Screen name="AddInventory" component={AddInventoryScreen} />
+      <MapStack.Screen name="AuditLog" component={AuditLogScreen} />
     </MapStack.Navigator>
   )
 }
@@ -48,6 +50,7 @@ function ProductsStackNavigator() {
       <ProductsStack.Screen name="ProductsMain" component={ProductsScreen} />
       <ProductsStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <ProductsStack.Screen name="AddInventory" component={AddInventoryScreen} />
+      <ProductsStack.Screen name="AuditLog" component={AuditLogScreen} />
     </ProductsStack.Navigator>
   )
 }
@@ -58,6 +61,7 @@ function NotificationsStackNavigator() {
       <NotificationsStack.Screen name="NotificationsMain" component={NotificationsScreen} />
       <NotificationsStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <NotificationsStack.Screen name="AddInventory" component={AddInventoryScreen} />
+      <NotificationsStack.Screen name="AuditLog" component={AuditLogScreen} />
     </NotificationsStack.Navigator>
   )
 }
@@ -78,6 +82,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="LocationManagement" component={LocationManagementScreen} />
       <SettingsStack.Screen name="CategoryManagement" component={CategoryManagementScreen} />
       <SettingsStack.Screen name="DiscontinuedProducts" component={DiscontinuedProductsScreen} />
+      <SettingsStack.Screen name="AuditLog" component={AuditLogScreen} />
     </SettingsStack.Navigator>
   )
 }

@@ -97,6 +97,18 @@ export type InventoryEntry = {
   zone?: Zone
 }
 
+export type AuditLog = {
+  id: string
+  table_name: 'inventory_entries' | 'products'
+  action: 'INSERT' | 'UPDATE' | 'DELETE'
+  record_id: string | null
+  changed_by: string | null
+  changed_by_name: string | null
+  changed_at: string
+  old_data: Record<string, unknown> | null
+  new_data: Record<string, unknown> | null
+}
+
 export type ExpiryStatus = 'expired' | 'warning' | 'ok'
 export type ExpiryColor = 'red' | 'yellow' | 'green'
 export type CombinedStatus = 'expired' | 'critical' | 'warning' | 'ok'

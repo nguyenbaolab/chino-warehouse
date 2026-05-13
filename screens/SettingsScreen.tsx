@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Platform, Switch } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -18,8 +18,11 @@ export default function SettingsScreen() {
     productCategoriesL1,
     productCategoriesL2,
     refreshDiscontinuedContext,
+    fetchLatestAuditEntry,
   } = useWarehouseStore()
   const { isDark, colors, loadTheme, toggleTheme } = useThemeStore()
+
+  const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
 
   const discontinuedCount = useMemo(
     () => products.filter((p) => !p.is_archived && p.is_discontinued === true).length,
@@ -46,9 +49,31 @@ export default function SettingsScreen() {
       if (productCategoriesL1.length === 0 && productCategoriesL2.length === 0) {
         void fetchCategories()
       }
+      void fetchLatestAuditEntry().then((entry) => {
+        if (!entry) { setAuditSubtitle('Chưa có thay đổi nào'); return }
+        const actionMap: Record<string, string> = { INSERT: 'thêm', UPDATE: 'sửa', DELETE: 'xóa' }
+        const tableMap: Record<string, string> = { inventory_entries: 'Lô hàng', products: 'Sản phẩm' }
+        const who = entry.changed_by_name ?? 'Không rõ'
+        const act = actionMap[entry.action] ?? entry.action
+        const tbl = tableMap[entry.table_name] ?? entry.table_name
+        const diff = Date.now() - new Date(entry.changed_at).getTime()
+        const mins = Math.floor(diff / 60000)
+        const hours = Math.floor(diff / 3600000)
+        let timeStr: string
+        if (mins < 1) timeStr = 'vừa xong'
+        else if (mins < 60) timeStr = `${mins} phút trước`
+        else if (hours < 24) timeStr = `${hours} giờ trước`
+        else {
+          const d = new Date(entry.changed_at)
+          const pad = (n: number) => String(n).padStart(2, '0')
+          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
+        }
+        setAuditSubtitle(`${who} ${act} ${tbl} · ${timeStr}`)
+      })
     }, [
       refreshDiscontinuedContext,
       fetchCategories,
+      fetchLatestAuditEntry,
       productCategoriesL1.length,
       productCategoriesL2.length,
     ])
@@ -127,6 +152,20 @@ export default function SettingsScreen() {
           <Text style={[styles.linkTitle, { color: colors.text }]}>Sản phẩm không nhập nữa</Text>
           <Text style={[styles.linkSub, { color: colors.sub }]}>
             {discontinuedCount} sản phẩm
+          </Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('AuditLog')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>Lịch sử thay đổi</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]} numberOfLines={1}>
+            {auditSubtitle}
           </Text>
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>

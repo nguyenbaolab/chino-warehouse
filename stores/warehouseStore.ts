@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import { Location, Zone, ZoneCell, Product, ProductCategoryL1, ProductCategoryL2, InventoryEntry, OrderItem, OrderList, OrderListStatus } from '../types'
+import { Location, Zone, ZoneCell, Product, ProductCategoryL1, ProductCategoryL2, InventoryEntry, OrderItem, OrderList, OrderListStatus, AuditLog } from '../types'
 
 type WarehouseStore = {
   locations: Location[]
@@ -80,6 +80,15 @@ type WarehouseStore = {
   deleteOrderItem: (id: string) => Promise<void>
   confirmOrderList: (id: string) => Promise<void>
   markOrderPlaced: (id: string) => Promise<void>
+  fetchLatestAuditEntry: () => Promise<AuditLog | null>
+  fetchAuditLogs: (params: {
+    cursor?: string
+    direction?: 'older' | 'newer'
+    filterProductId?: string
+    filterChangedBy?: string
+    limit?: number
+  }) => Promise<AuditLog[]>
+  fetchAuditLogsForProduct: (productId: string, limit?: number) => Promise<AuditLog[]>
 }
 
 export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
@@ -827,5 +836,57 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     set((s) => ({
       orderLists: s.orderLists.map((list) => (list.id === id ? (updated as OrderList) : list)),
     }))
+  },
+
+  fetchLatestAuditEntry: async () => {
+    const { data } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .order('changed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    return (data as AuditLog) ?? null
+  },
+
+  fetchAuditLogs: async ({ cursor, direction = 'older', filterProductId, filterChangedBy, limit = 10 }) => {
+    let query = supabase.from('audit_logs').select('*')
+
+    if (cursor) {
+      if (direction === 'older') {
+        query = query.lt('changed_at', cursor)
+      } else {
+        query = query.gt('changed_at', cursor)
+      }
+    }
+
+    if (filterChangedBy) {
+      query = query.eq('changed_by_name', filterChangedBy)
+    }
+
+    if (filterProductId) {
+      // Lọc audit cho product: record trực tiếp trên products HOẶC inventory_entries liên quan
+      query = query.or(
+        `record_id.eq.${filterProductId},` +
+        `and(table_name.eq.inventory_entries,new_data->>product_id.eq.${filterProductId}),` +
+        `and(table_name.eq.inventory_entries,old_data->>product_id.eq.${filterProductId})`
+      )
+    }
+
+    if (direction === 'newer') {
+      query = query.order('changed_at', { ascending: true })
+    } else {
+      query = query.order('changed_at', { ascending: false })
+    }
+
+    query = query.limit(limit)
+
+    const { data } = await query
+    const rows = (data as AuditLog[]) ?? []
+    // Nếu lấy hướng mới hơn, đảo lại cho đúng thứ tự mới nhất trước
+    return direction === 'newer' ? rows.reverse() : rows
+  },
+
+  fetchAuditLogsForProduct: async (productId, limit = 10) => {
+    return get().fetchAuditLogs({ filterProductId: productId, limit })
   },
 }))

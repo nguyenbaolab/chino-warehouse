@@ -50,12 +50,8 @@ F20, F29, F30 đã hoàn thành trong Phase 2.
 
 ## 5. Security (Phase 2)
 
-**Đang làm:**
-- **SEC-11: Audit Log (KI-022) — In Progress**
-  - Migration: bảng `audit_logs` (`id`, `table_name`, `action`, `record_id`, `changed_by` UUID, `changed_by_name` TEXT, `changed_at`, `old_data` JSONB, `new_data` JSONB) + trigger SECURITY DEFINER trên `inventory_entries` và `products`.
-  - RLS `audit_logs`: authenticated SELECT only.
-  - Store: `fetchAuditLogs(filter?, cursor?, limit=10)` · `fetchLatestAuditEntry()` cho Settings card.
-  - UI: `AuditLogScreen` (filter người + sản phẩm, pagination cursor-based, cache in-memory) · Section trong `ProductDetailScreen` (10 entries + nút Xem tất cả) · Card trong `SettingsScreen` (subtitle = entry mới nhất).
+**Đã hoàn thành:**
+- ~~SEC-11: Audit Log (KI-022)~~ **✓ Done** — migration `20260513_add_audit_logs.sql`, trigger `audit_trigger_fn`, 3 store actions, `AuditLogScreen`, section `ProductDetailScreen`, card `SettingsScreen`.
 
 **Còn lại (Medium/Low — làm dần):**
 - SEC-05: Input validation `maxLength` (KI-017)

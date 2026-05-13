@@ -4,6 +4,19 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — SEC-11 Resolved: Audit Log hoàn chỉnh
+
+- Migration `20260513_add_audit_logs.sql`: bảng `audit_logs`, trigger `audit_trigger_fn` (SECURITY DEFINER) trên `inventory_entries` + `products`, RLS authenticated SELECT only, 2 index (`changed_at DESC`, `record_id`).
+- Type `AuditLog` trong `types/index.ts`.
+- Store: `fetchAuditLogs` (cursor-based, filter product + user), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`.
+- `AuditLogScreen.tsx`: filter người + sản phẩm (dropdown), pagination 10/trang (← mới hơn từ cache, → cũ hơn query DB), cache local state, changed fields diff.
+- `ProductDetailScreen`: section Lịch sử thay đổi (10 entries, icon + user + time + fields, nút Xem tất cả → AuditLogScreen filtered).
+- `SettingsScreen`: card Lịch sử thay đổi (subtitle relative time, navigate AuditLogScreen).
+- Navigation: `AuditLog` screen trong MapStack, ProductsStack, NotificationsStack, SettingsStack.
+- KI-022 → Resolved.
+
+---
+
 ## [tháng 5/2026] — Docs: thiết kế SEC-11 Audit Log
 
 - Chốt kiến trúc: PostgreSQL trigger + bảng `audit_logs` + `changed_by_name` lưu prefix email.
