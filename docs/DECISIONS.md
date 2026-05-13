@@ -336,6 +336,8 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - Pagination: 10/trang, nút phải (cũ hơn) query DB, nút trái (mới hơn) từ cache.
 - Cache: local state, clear khi unmount.
 
+**Trigger v2 — enriched JSONB:** trigger nhúng `_product_name`, `_zone_name`, `_location_name` vào cột `old_data`/`new_data` JSONB (prefix `_` = metadata display, không phải data gốc). Khi `zone_id` thay đổi (UPDATE inventory_entries), `old_data._zone_name` = tên zone cũ, `new_data._zone_name` = tên zone mới. UI dùng `formatAuditEntry()` để render human-readable description theo action × table_name.
+
 **Realtime:** không implement ở màn `AuditLogScreen` — audit log là historical data, user vào để tra cứu; realtime insert khi đang xem page cũ gây UX phức tạp (deferred → KI-026).
 
 ---

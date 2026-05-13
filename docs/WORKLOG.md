@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Enrich audit log display — trigger nhúng tên SP/zone/kho, UI hiện thông tin rõ ràng
+
+- Migration `20260513_enrich_audit_trigger.sql`: `CREATE OR REPLACE FUNCTION audit_trigger_fn()` — nhúng `_product_name`, `_zone_name`, `_location_name` vào `old_data`/`new_data` JSONB cho `inventory_entries`; zone cũ lookup riêng khi `zone_id` thay đổi (UPDATE). Products giữ nguyên `to_jsonb(OLD/NEW)` không nhúng thêm.
+- `AuditLogScreen.tsx`: thêm `formatAuditEntry(entry)` — render human-readable description theo bảng action × table_name; `getChangedFields()` bỏ qua key prefix `_` và `updated_at`/`created_at`. Thay layout cũ (user + table label + field list) bằng: user name + description line + timestamp.
+- KI-022 updated, DECISIONS SEC-11 updated.
+
+---
+
 ## [tháng 5/2026] — Fix 3 UX issues AuditLogScreen (KI-027)
 
 - Dropdown Modal-based: đổi 4 inline dropdown sang `SearchableDropdownModal` (Modal + FlatList) — fix scroll conflict.

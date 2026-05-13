@@ -234,10 +234,11 @@
 ### [KI-022] SEC-11 — Audit Log
 
 - **Mức độ:** Medium
-- **File liên quan:** `supabase/migrations/20260513_add_audit_logs.sql`, `screens/AuditLogScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/SettingsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `App.tsx`
+- **File liên quan:** `supabase/migrations/20260513_add_audit_logs.sql`, `supabase/migrations/20260513_enrich_audit_trigger.sql`, `screens/AuditLogScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/SettingsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `App.tsx`
 - **Mô tả:** Migration `20260513_add_audit_logs.sql`: bảng `audit_logs` (gồm `location_id` FK → locations) + trigger `audit_trigger_fn` (SECURITY DEFINER, lookup `location_id` từ zones cho inventory_entries) trên `inventory_entries` và `products` + RLS authenticated SELECT only + 4 index. Store: `fetchAuditLogs` (filter kho + loại + người + sản phẩm, cursor-based pagination), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`. UI: `AuditLogScreen` (4 filter: kho/loại/người/sản phẩm — disable kho khi loại = Sản phẩm; pagination 10/trang, cache in-memory), section Lịch sử thay đổi trong `ProductDetailScreen` (10 entries + nút Xem tất cả), card Lịch sử thay đổi trong `SettingsScreen` (subtitle = entry mới nhất).
 - **Trạng thái:** Resolved
 - **Giải pháp:** Đã implement đầy đủ — xem `DECISIONS.md` (SEC-11).
+- **Đã fix:** Trigger v2 (`20260513_enrich_audit_trigger.sql`) nhúng `_product_name`, `_zone_name`, `_location_name` vào JSONB; display logic `formatAuditEntry()` render human-readable. Các field phụ (expiry_date, barcode, notes, is_price_reduced, category) → generic "Sửa lô" / "Sửa sản phẩm" — sẽ chi tiết hóa sau.
 
 ---
 

@@ -23,7 +23,6 @@ type RouteParams = { filterProductId?: string; scannedBarcode?: string; scannedB
 
 const ACTION_ICON: Record<string, string> = { INSERT: '➕', UPDATE: '✏️', DELETE: '🗑️' }
 const TABLE_LABEL: Record<string, string> = { inventory_entries: 'Lô hàng', products: 'Sản phẩm' }
-const IGNORED_FIELDS = new Set(['updated_at', 'created_at'])
 
 function formatTime(iso: string): string {
   const d = new Date(iso)
@@ -31,15 +30,71 @@ function formatTime(iso: string): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-function changedFields(old_data: Record<string, unknown> | null, new_data: Record<string, unknown> | null): string[] {
-  if (!old_data || !new_data) return []
-  const keys = new Set([...Object.keys(old_data), ...Object.keys(new_data)])
-  const changed: string[] = []
-  for (const k of keys) {
-    if (IGNORED_FIELDS.has(k)) continue
-    if (JSON.stringify(old_data[k]) !== JSON.stringify(new_data[k])) changed.push(k)
+function getChangedFields(old_data: Record<string, unknown>, new_data: Record<string, unknown>): string[] {
+  return Object.keys(new_data).filter((k) =>
+    !k.startsWith('_') &&
+    k !== 'updated_at' &&
+    k !== 'created_at' &&
+    JSON.stringify(old_data[k]) !== JSON.stringify(new_data[k]),
+  )
+}
+
+type D = Record<string, unknown>
+
+function formatAuditEntry(entry: AuditLog): string {
+  const { table_name, action, old_data, new_data } = entry
+  const od = old_data as D | null
+  const nd = new_data as D | null
+
+  if (table_name === 'inventory_entries') {
+    const pName = (nd?._product_name ?? od?._product_name ?? '') as string
+    const nZone = (nd?._zone_name ?? '') as string
+    const oZone = (od?._zone_name ?? '') as string
+    const nLoc = (nd?._location_name ?? '') as string
+    const oQty = od?.quantity_boxes as number | undefined
+    const nQty = nd?.quantity_boxes as number | undefined
+
+    if (action === 'INSERT')
+      return `Thêm lô · ${pName} · ${nZone} (${nLoc}) · ${nQty ?? '?'} thùng`
+    if (action === 'DELETE')
+      return `Xóa lô · ${pName} · ${oZone} (${(od?._location_name ?? '') as string}) · ${oQty ?? '?'} thùng`
+
+    if (action === 'UPDATE' && od && nd) {
+      const fields = getChangedFields(od, nd)
+      const qtyChanged = fields.includes('quantity_boxes')
+      const zoneChanged = fields.includes('zone_id')
+
+      if (qtyChanged && zoneChanged)
+        return `Chuyển ${pName}: ${oZone} → ${nZone} · ${oQty} → ${nQty} thùng`
+      if (zoneChanged)
+        return `Chuyển ${pName}: ${oZone} → ${nZone}`
+      if (qtyChanged)
+        return `Số thùng ${pName}: ${oQty} → ${nQty} thùng`
+      return `Sửa lô · ${pName} · ${nZone}`
+    }
   }
-  return changed
+
+  if (table_name === 'products') {
+    const oName = (od?.name ?? '') as string
+    const nName = (nd?.name ?? '') as string
+    const name = nName || oName
+
+    if (action === 'INSERT') return `Thêm sản phẩm · ${nName}`
+    if (action === 'DELETE') return `Xóa sản phẩm · ${oName}`
+
+    if (action === 'UPDATE' && od && nd) {
+      const fields = getChangedFields(od, nd)
+      if (fields.includes('name'))
+        return `Đổi tên: ${oName} → ${nName}`
+      if (fields.includes('is_discontinued') && nd.is_discontinued === true)
+        return `Ngừng kinh doanh · ${name}`
+      if (fields.includes('is_discontinued') && nd.is_discontinued === false)
+        return `Khôi phục kinh doanh · ${name}`
+      return `Sửa sản phẩm · ${name}`
+    }
+  }
+
+  return `${action} · ${TABLE_LABEL[table_name] ?? table_name}`
 }
 
 type FilterType = 'inventory_entries' | 'products' | null
@@ -340,31 +395,24 @@ export default function AuditLogScreen() {
         ) : currentEntries.length === 0 ? (
           <Text style={[styles.emptyText, { color: colors.sub }]}>Chưa có lịch sử thay đổi</Text>
         ) : (
-          currentEntries.map((entry) => {
-            const fields = changedFields(entry.old_data, entry.new_data)
-            return (
-              <View key={entry.id} style={[styles.entryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.entryRow}>
-                  <Text style={styles.entryIcon}>{ACTION_ICON[entry.action] ?? '❓'}</Text>
-                  <View style={styles.entryInfo}>
-                    <Text style={[styles.entryUser, { color: colors.text }]}>
-                      {entry.changed_by_name ?? 'Không rõ'}
-                    </Text>
-                    <Text style={[styles.entryMeta, { color: colors.sub }]}>
-                      {TABLE_LABEL[entry.table_name] ?? entry.table_name}
-                      {' · '}
-                      {formatTime(entry.changed_at)}
-                    </Text>
-                    {fields.length > 0 && (
-                      <Text style={[styles.entryFields, { color: colors.sub }]}>
-                        Đổi: {fields.join(', ')}
-                      </Text>
-                    )}
-                  </View>
+          currentEntries.map((entry) => (
+            <View key={entry.id} style={[styles.entryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.entryRow}>
+                <Text style={styles.entryIcon}>{ACTION_ICON[entry.action] ?? '❓'}</Text>
+                <View style={styles.entryInfo}>
+                  <Text style={[styles.entryUser, { color: colors.text }]}>
+                    {entry.changed_by_name ?? 'Không rõ'}
+                  </Text>
+                  <Text style={[styles.entryDesc, { color: colors.text }]}>
+                    {formatAuditEntry(entry)}
+                  </Text>
+                  <Text style={[styles.entryMeta, { color: colors.sub }]}>
+                    {formatTime(entry.changed_at)}
+                  </Text>
                 </View>
               </View>
-            )
-          })
+            </View>
+          ))
         )}
       </ScrollView>
 
@@ -450,8 +498,8 @@ const styles = StyleSheet.create({
   entryIcon: { fontSize: 16, marginRight: 10, marginTop: 2 },
   entryInfo: { flex: 1 },
   entryUser: { fontSize: 14, fontWeight: '600' },
+  entryDesc: { fontSize: 13, marginTop: 3 },
   entryMeta: { fontSize: 12, marginTop: 2 },
-  entryFields: { fontSize: 12, marginTop: 2, fontStyle: 'italic' },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
