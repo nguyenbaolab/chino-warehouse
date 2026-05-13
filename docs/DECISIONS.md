@@ -312,6 +312,29 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### SEC-11 — Audit Log: thiết kế kỹ thuật và UI
+
+**Ngày:** tháng 5/2026
+
+**Kỹ thuật:**
+- Implementation: PostgreSQL trigger (SECURITY DEFINER) ghi vào bảng `audit_logs` sau mỗi INSERT/UPDATE/DELETE trên `inventory_entries` và `products` — không thể bypass từ client.
+- Tên user: trigger lưu `split_part(auth.jwt() ->> 'email', '@', 1)` vào cột `changed_by_name TEXT` ngay lúc ghi — không join `auth.users` runtime (không accessible từ client).
+- RLS `audit_logs`: authenticated chỉ được SELECT; INSERT chỉ qua trigger.
+- Pagination: cursor-based dùng `changed_at` (tránh skip record khi có insert mới).
+
+**UI — 2 điểm truy cập:**
+- `ProductDetailScreen`: section 10 entries gần nhất (static, không pagination) + nút "Xem tất cả" → `AuditLogScreen` filtered theo product.
+- `SettingsScreen`: card "Lịch sử thay đổi" subtitle = entry mới nhất → `AuditLogScreen` toàn bộ.
+
+**AuditLogScreen:**
+- Filter: người thay đổi + sản phẩm (dropdown, có thể kết hợp).
+- Pagination: 10/trang, nút phải (cũ hơn) query DB, nút trái (mới hơn) từ cache.
+- Cache: local state, clear khi unmount.
+
+**Realtime:** không implement ở màn `AuditLogScreen` — audit log là historical data, user vào để tra cứu; realtime insert khi đang xem page cũ gây UX phức tạp (deferred → KI-026).
+
+---
+
 ### Kiến trúc bảo mật: Client-direct Supabase + RLS (không có server backend riêng)
 
 - **Ngày:** tháng 5/2026

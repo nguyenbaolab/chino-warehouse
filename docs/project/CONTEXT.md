@@ -49,6 +49,7 @@ lib/
   supabase.ts
 screens/
   AddInventoryScreen.tsx
+  AuditLogScreen.tsx
   BarcodeScannerScreen.tsx
   CategoryManagementScreen.tsx
   DiscontinuedProductsScreen.tsx
@@ -92,13 +93,14 @@ README.md
 
 **UI bản đồ & lọc (đối chiếu code):**
 
-- **SettingsScreen:** hai card ngang **Quản lý kho** / **Phân loại sản phẩm** (subtext `X nhóm · Y loại`); `useFocusEffect` gọi `fetchCategories` khi cả hai danh sách category rỗng; card phân loại → `CategoryManagement`.
+- **SettingsScreen:** hai card ngang **Quản lý kho** / **Phân loại sản phẩm** (subtext `X nhóm · Y loại`); `useFocusEffect` gọi `fetchCategories` khi cả hai danh sách category rỗng; card phân loại → `CategoryManagement`. Card **Lịch sử thay đổi** — subtitle hiển thị "Lần cuối: [tên] [action] [tên sản phẩm]" (query 1 record mới nhất từ `audit_logs`); navigate sang `AuditLogScreen`.
+- **AuditLogScreen:** truy cập từ Settings card "Lịch sử thay đổi" hoặc từ nút "Xem tất cả" trong `ProductDetailScreen`. **Filter:** dropdown lọc theo người thay đổi (tất cả / từng người — hiển thị tên trước @) và dropdown lọc theo sản phẩm (tất cả / từng sản phẩm); khi navigate từ `ProductDetailScreen` thì filter sản phẩm được set sẵn. **Danh sách:** 10 entries mỗi trang, mỗi entry gồm icon action · thời gian · tên người · tên sản phẩm · field thay đổi. **Pagination:** nút mũi tên góc dưới phải = xem cũ hơn (query thêm 10 từ DB); nút mũi tên góc dưới trái = xem mới hơn (từ cache). Cursor-based pagination dùng `changed_at`. **Cache:** tất cả pages đã query lưu trong local state, clear khi unmount màn. **Tên user:** lấy phần trước @ của email, được lưu sẵn trong cột `changed_by_name` của `audit_logs` (ghi bởi trigger, không join runtime). **Realtime:** chưa implement — deferred (xem KI-026).
 - **MapScreen:** thanh header có nút **▦** (Sắp xếp / mở `ZoneLayoutEditor` cho `locationId` đang chọn) và **+ Zone**. **Chọn kho:** `Pressable` mở bottom sheet modal — danh sách kho kèm kích thước lưới (`grid_rows × grid_cols`), dòng đang chọn có ✓; nút **Thêm kho mới** điều hướng sang tab Cài đặt → `LocationManagement` với `openCreateModal: true`. Đổi kho (`pickLocation`) gọi `clearSearch` trước `setSelectedLocation` (KI-004).
 - **ProductsScreen:** dropdown **Kho** (đầu **Tất cả kho**, sau đó từng `location`); khi chọn một kho chỉ hiện SP có lô trong zone của kho đó; **dropdown Zone** (cùng style hàng Kho) ngay dưới — khi **Tất cả kho** chỉ hiện cảnh báo *Vui lòng chọn kho trước* (không mở list); khi đã chọn kho: **Tất cả zone** + từng zone của kho, đổi kho reset zone về **Tất cả zone**. Khi **Tất cả kho** gọi `fetchAllInventoryEntries()` (một query toàn bộ `inventory_entries`, giống Thông báo — không phụ thuộc `store.zones`). Mỗi card hiện **tổng thùng** theo bộ lọc và **dòng phân loại** (L1·L2 / chỉ L1) khi có `category_level1_id`.
 - **NotificationsScreen:** dropdown **Kho** (cùng quy ước); khi **Tất cả kho** gọi `fetchAllInventoryEntries()` (một query toàn bộ `inventory_entries`, ghi đè store — không phụ thuộc `store.zones`). Khi chọn một kho: fetch theo zone của kho đó (`zonesForFilterLoc` + `fetchInventoryByZone`); lọc áp dụng cho cả hai tab **Sắp hết hạn** / **Sắp hết hàng**. Tab hết hạn có thêm lọc checkbox Hết hạn / Sắp hết hạn.
 - **LocationManagementScreen:** danh sách kho (tên, grid X×Y, số SKU distinct theo `inventory_entries` qua `zones` của từng kho); FAB **+** tạo kho; sửa/xóa có modal / confirm và thông báo lỗi từ store.
 - **CategoryManagementScreen:** accordion Cấp 1 → Cấp 2; thêm/sửa/xóa nhóm & loại (modal tên); `fetchCategories` khi mount; nút **+ Thêm nhóm** cuối danh sách; **+ Thêm loại** trong section khi đã xổ Cấp 1.
-- **ProductDetailScreen:** thanh **Tổng … thùng** + lọc lô theo ngữ cảnh màn hình; refetch khi focus (`useFocusEffect` + `loadData`); section **Chi tiết** (F30): `fetchCategories` khi mount nếu store category rỗng; dropdown **Nhóm (Cấp 1)** / **Loại (Cấp 2)** với **Không phân loại**, đổi Cấp 1 → xóa Cấp 2; cập nhật qua `updateProductCategory`.
+- **ProductDetailScreen:** thanh **Tổng … thùng** + lọc lô theo ngữ cảnh màn hình; refetch khi focus (`useFocusEffect` + `loadData`); section **Chi tiết** (F30): `fetchCategories` khi mount nếu store category rỗng; dropdown **Nhóm (Cấp 1)** / **Loại (Cấp 2)** với **Không phân loại**, đổi Cấp 1 → xóa Cấp 2; cập nhật qua `updateProductCategory`. Section **Lịch sử thay đổi** ở cuối màn — hiện 10 entries gần nhất liên quan đến product đó (bao gồm thay đổi trên cả bảng `inventory_entries` lẫn `products`). Mỗi entry: icon action (➕ INSERT / ✏️ UPDATE / 🗑️ DELETE) · thời gian · tên người thay đổi (phần trước @ của email) · field nào thay đổi. Có nút "Xem tất cả" navigate sang `AuditLogScreen` với filter sẵn theo product đó.
 - **AddInventoryScreen:** chọn zone/tầng, tìm/chọn SP hoặc tạo SP mới; **F30:** `fetchCategories` khi store category rỗng; SP đã chọn → dòng **Phân loại** read-only; form tạo SP mới → dropdown Cấp 1/2 dưới field tên, gửi kèm `addProduct`.
 
 ---

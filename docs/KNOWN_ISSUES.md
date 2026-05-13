@@ -231,13 +231,13 @@
 
 ---
 
-### [KI-022] SEC-11 — Thiếu audit log
+### [KI-022] SEC-11 — Audit Log
 
 - **Mức độ:** Medium
-- **File liên quan:** PostgreSQL (server-side triggers)
-- **Mô tả:** Không ghi lại ai xóa lô hàng, thay đổi số lượng — quan trọng cho môi trường kho thực tế.
-- **Trạng thái:** In Progress (Phase 2)
-- **Hướng fix:** PostgreSQL trigger server-side trên `inventory_entries` và `products` ghi vào bảng `audit_logs` (`table_name`, `action`, `record_id`, `changed_by`, `changed_at`, `old_data JSONB`, `new_data JSONB`).
+- **File liên quan:** PostgreSQL (server-side triggers), `screens/AuditLogScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/SettingsScreen.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** Migration: bảng `audit_logs` (`id`, `table_name`, `action`, `record_id`, `changed_by` UUID, `changed_by_name` TEXT, `changed_at`, `old_data` JSONB, `new_data` JSONB) + trigger SECURITY DEFINER trên `inventory_entries` và `products`. RLS `audit_logs`: authenticated SELECT only. Store: `fetchAuditLogs(filter?, cursor?, limit=10)` · `fetchLatestAuditEntry()` cho Settings card. UI: `AuditLogScreen` (filter người + sản phẩm, pagination cursor-based, cache in-memory) · Section trong `ProductDetailScreen` (10 entries + nút Xem tất cả) · Card trong `SettingsScreen` (subtitle = entry mới nhất).
+- **Trạng thái:** In Progress
+- **Hướng fix:** Xem `DECISIONS.md` (SEC-11) và `PLAN.md` §5.
 
 ---
 
@@ -268,5 +268,14 @@
 - **Mô tả:** Các file `.env.production`, `.env.staging` tạo sau này phải được ignore.
 - **Trạng thái:** Open
 - **Hướng fix:** Kiểm tra `.gitignore` có pattern `*.env*` hoặc liệt kê từng file.
+
+---
+
+### [KI-026] SEC-11 — Realtime chưa implement cho AuditLogScreen
+
+- **Mức độ:** Low
+- **Mô tả:** `AuditLogScreen` không subscribe Realtime — user phải ra vào lại màn để thấy thay đổi mới nhất. Realtime phức tạp khi kết hợp pagination: insert mới vào page 0 trong khi user đang xem page 2 cần xử lý logic "có N thay đổi mới" riêng.
+- **Trạng thái:** Deferred
+- **Hướng fix (khi làm):** Subscribe `audit_logs` INSERT; nếu user đang ở page 0 thì prepend vào cache; nếu ở page khác thì hiện banner "Có X thay đổi mới — về trang đầu".
 
 ---

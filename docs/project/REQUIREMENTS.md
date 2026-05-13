@@ -240,7 +240,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 |----------|-------|-----------------|
 | Bản đồ kho (Tab) | Màn hình chính | Sheet chọn kho (tên + kích thước lưới, Thêm kho mới) · nút ▦ mở Zone Layout Editor · Lưới 2D zone · + Zone · Thanh tìm kiếm · Nút quét mã · Chấm màu khi có kết quả |
 | Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng (nếu có) · Danh sách sản phẩm + số thùng + chấm màu |
-| Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Mã vạch · Ảnh (Phase 2) · Tất cả zone+tầng · Số thùng · Hạn (màu) · Ghi chú · Nút sửa/xóa · Ngưỡng cảnh báo · **Chi tiết (F30):** dropdown **Cấp 1** → sau khi chọn mới hiện dropdown **Cấp 2**; lưu/sửa; cả hai cấp optional |
+| Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Mã vạch · Ảnh (Phase 2) · Tất cả zone+tầng · Số thùng · Hạn (màu) · Ghi chú · Nút sửa/xóa · Ngưỡng cảnh báo · **Chi tiết (F30):** dropdown **Cấp 1** → sau khi chọn mới hiện dropdown **Cấp 2**; lưu/sửa; cả hai cấp optional · **Section Lịch sử thay đổi:** 10 entries gần nhất (inventory + product), icon + thời gian + người + field đổi · nút Xem tất cả → AuditLogScreen |
 | Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Dropdown lọc theo kho (Tất cả kho / từng kho) · Danh sách sản phẩm · Tổng thùng · Chấm màu · Tìm kiếm · Thêm mới (CRUD category **không** ở màn này — xem Settings / F30) |
 | Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · **list active** (hàng trong kho) vs **list tự tạo** (hàng mới) · trong chi tiết list: 2 tab **Hàng trong kho** (trái) / **Hàng mới** (phải) · một list active duy nhất; tạo mới + đặt tên (mặc định theo ngày) · nhóm theo category + nhóm **Chưa phân loại** · số thùng để trống đến khi Confirm · luồng Draft → Confirm → Xuất PDF (gộp 2 tab) → Đã đặt |
 | Thêm hàng (Stack) | Thêm lô hàng | Chọn sản phẩm · Zone · Tầng · Số thùng · Hạn · Ghi chú · **F30:** SP có sẵn → category **read-only** (theo SP); **SP mới** → dropdown Cấp 1 + Cấp 2 dưới field tên |
@@ -249,6 +249,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Cài đặt (Tab) | Tuỳ chỉnh app | Theme sáng/tối · card **Quản lý kho** (F20) · card **Phân loại sản phẩm** (F30 — tóm tắt **X nhóm · Y loại** → `CategoryManagement`) · card Không nhập nữa (F28) |
 | Quản lý phân loại (Stack, F30) | CRUD category 2 cấp | Accordion Cấp 1 mở ra Cấp 2 · thêm/sửa/xóa nhóm & loại |
 | Zone Layout Editor | Sắp xếp lại vị trí zone trên lưới | Tile compact per zone · Badge kích thước · Drag onto grid · Footprint preview · Collision highlight · Nút Preview + Confirm |
+| AuditLogScreen | Tra cứu lịch sử | Filter người thay đổi · Filter sản phẩm · Danh sách 10 entries/trang · Pagination trái(mới hơn)/phải(cũ hơn) · Cache in-memory · Tên user = prefix email |
 
 ---
 

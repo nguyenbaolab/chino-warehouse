@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Docs: thiết kế SEC-11 Audit Log
+
+- Chốt kiến trúc: PostgreSQL trigger + bảng `audit_logs` + `changed_by_name` lưu prefix email.
+- Chốt UI: `AuditLogScreen` (filter người + sản phẩm, pagination cursor-based, cache), section 10 entries trong `ProductDetailScreen` + nút Xem tất cả, card trong `SettingsScreen`.
+- Deferred: Realtime cho `AuditLogScreen` → KI-026.
+- Cập nhật: `CONTEXT.md`, `REQUIREMENTS.md` §9, `DECISIONS.md`, `PLAN.md` §5, `KNOWN_ISSUES.md` (KI-022 updated + KI-026 mới).
+
+---
+
 ## [tháng 5/2026] — Bảo mật: SEC-01 Resolved + sync security docs đầy đủ
 
 - **SEC-01 Resolved:** rotate anon key, fix `backup.mjs` dùng `process.env`, xóa khỏi Git history.
