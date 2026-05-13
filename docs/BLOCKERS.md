@@ -25,4 +25,9 @@ Khi gặp blocker mới: **ghi vào đây**, **dừng lại**, **hỏi người 
 
 ## Đang chờ
 
-(trống)
+### [BLK-003] SEC-08 — Realtime security bị chặn bởi thiếu auth
+
+- **Vấn đề:** `SettingsScreen` và `DiscontinuedProductsScreen` (và toàn bộ Realtime subscription trong app) cần `private: true` + RLS `authenticated` để bảo mật channel. Fix không thể thực hiện khi chưa có auth.
+- **Chờ:** F24 — Auth & Super app integration (Phase 3)
+- **Khi auth xong:** Audit toàn bộ `.channel()` calls trong app, thêm `private: true` đồng loạt, tạo migration RLS cho `realtime.messages`.
+- **Tham chiếu:** `docs/KNOWN_ISSUES.md` KI-012

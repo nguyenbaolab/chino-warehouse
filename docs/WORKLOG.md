@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — SEC-08: Phân tích và document lỗi Realtime subscription chưa xác thực
+
+- **Phân tích:** Xác nhận `SettingsScreen` (dòng 57–79) và `DiscontinuedProductsScreen` (dòng 56–78) đang subscribe Realtime `postgres_changes` trên `products` + `inventory_entries` dưới role `anon`, không có `private: true`.
+- **Kết luận:** Fix (thêm `private: true` + RLS `authenticated`) không áp dụng được cho Phase 1 vì toàn bộ user đang dùng `anon` — sẽ ngắt Realtime. Các màn hình khác trong app cũng có subscription tương tự, cần fix đồng loạt.
+- **Hành động:** Document vào `KNOWN_ISSUES.md` (KI-012) và `BLOCKERS.md` (BLK-003); defer sang Phase 3 cùng F24 (Auth).
+- **File đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — Authentication A3–A7
 
 - **A3:** Cài `expo-secure-store` (đã có sẵn / cài qua `npx expo install`).

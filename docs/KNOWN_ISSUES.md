@@ -80,7 +80,7 @@
 - **Mô tả:** Khi cập nhật lô về 0 thùng, lô biến mất khỏi UI do truy vấn Supabase lọc `quantity_boxes > 0`, không phải do xóa record trong DB.
 - **Hướng fix:** Bỏ `.gt('quantity_boxes', 0)` trên `fetchInventoryByZone` và `searchProducts`; `ProductDetailScreen.loadData` tải mọi lô; lô 0 thùng hiển thị dòng `Lô này đã hết hàng` + nút **Xóa lô** (xóa DB).
 - **Trạng thái:** Resolved
-- **Đã fix:** Bỏ lọc `quantity_boxes > 0` ở store và `ProductDetailScreen`; banner hết hàng + **Xóa lô** trên lô 0 thùng; ẩn nút 🗑️ hàng loạt khi 0 thùng để tránh trùng với **Xóa lô**. `NotificationsScreen`: dùng cờ “có lô có vấn đề” thay vì `issueBoxes === 0` để không bỏ sót SP chỉ còn lô 0 thùng.
+- **Đã fix:** Bỏ lọc `quantity_boxes > 0` ở store và `ProductDetailScreen`; banner hết hàng + **Xóa lô** trên lô 0 thùng; ẩn nút 🗑️ hàng loạt khi 0 thùng để tránh trùng với **Xóa lô**. `NotificationsScreen`: dùng cờ "có lô có vấn đề" thay vì `issueBoxes === 0` để không bỏ sót SP chỉ còn lô 0 thùng.
 
 ---
 
@@ -121,9 +121,22 @@
 
 - **Mức độ:** Medium
 - **File liên quan:** `screens/BarcodeScannerScreen.tsx`, `screens/ProductsScreen.tsx`
-- **Mô tả:** Khi quét không ra lô, dialog chỉ có **Thêm thủ công** / **Quét lại**: không có lựa chọn rõ ràng để đóng scanner và về màn đã mở camera; **Thêm thủ công** luôn `navigate` tới tab `Products` → `AddInventory` dù có truyền `returnTab` sau này. Trên Android, bỏ qua dialog (tap ngoài nếu `cancelable`) có thể để `isScanLocked` vẫn true → cảm giác “kẹt”.
+- **Mô tả:** Khi quét không ra lô, dialog chỉ có **Thêm thủ công** / **Quét lại**: không có lựa chọn rõ ràng để đóng scanner và về màn đã mở camera; **Thêm thủ công** luôn `navigate` tới tab `Products` → `AddInventory` dù có truyền `returnTab` sau này. Trên Android, bỏ qua dialog (tap ngoài nếu `cancelable`) có thể để `isScanLocked` vẫn true → cảm giác "kẹt".
 - **Đã fix:** Thêm nút **Huỷ** (`goBack` + mở khóa); **Thêm thủ công** dùng `returnTab || 'Products'`; `Alert` `cancelable: true`; `ProductsScreen` truyền `returnTab: 'Products'` khi mở scanner.
-- **Rà soát màn dùng scanner:** `MapScreen` (mode `locate`, dialog khác — không nhánh AddInventory). `ZoneDetailSheet` / `ProductDetailScreen` / `AddInventoryScreen` chỉ dùng `onScanFillBarcode` (không qua dialog “thêm thủ công”). Chỉ luồng quét tìm lô mặc định trên tab Sản phẩm gặp dialog này.
+- **Rà soát màn dùng scanner:** `MapScreen` (mode `locate`, dialog khác — không nhánh AddInventory). `ZoneDetailSheet` / `ProductDetailScreen` / `AddInventoryScreen` chỉ dùng `onScanFillBarcode` (không qua dialog "thêm thủ công"). Chỉ luồng quét tìm lô mặc định trên tab Sản phẩm gặp dialog này.
 - **Trạng thái:** Resolved
+
+---
+
+### [KI-012] SEC-08 — Realtime subscription chạy dưới role anon (chưa xác thực)
+
+- **Mức độ:** High (security)
+- **File liên quan:** `screens/SettingsScreen.tsx` (dòng 57–79), `screens/DiscontinuedProductsScreen.tsx` (dòng 56–78)
+- **Mô tả:** Hai subscription `postgres_changes` lắng nghe bảng `products` và `inventory_entries` đang chạy dưới role `anon`, không có `private: true`. Bất kỳ ai có `anon_key` đều có thể mở websocket và nhận Realtime updates từ hai màn hình này.
+- **Tại sao chưa fix:** Fix yêu cầu `private: true` trên channel config + RLS policy cho role `authenticated` trên `realtime.messages`. Phase 1 không có auth — toàn bộ user đang dùng role `anon`, không có JWT token. Áp dụng fix ngay sẽ ngắt Realtime hoàn toàn trên 2 màn hình này.
+- **Lưu ý thêm:** Các màn hình khác trong app cũng có Realtime subscription tương tự (F17) — cần audit và fix đồng loạt khi auth được implement, không fix rời từng màn.
+- **Hướng fix (khi có auth — Phase 3):** Thêm `config: { private: true }` vào tất cả `.channel()` calls; tạo RLS policy `authenticated_users_can_receive` và `authenticated_users_can_broadcast` trên `realtime.messages`.
+- **Trạng thái:** Deferred — chờ F24 (Auth, Phase 3)
+- **Tham chiếu:** `docs/BLOCKERS.md` BLK-003, `docs/DECISIONS.md` (Phase 1 không có auth)
 
 ---
