@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Authentication A3–A7
+
+- **A3:** Cài `expo-secure-store` (đã có sẵn / cài qua `npx expo install`).
+- **A4:** `lib/supabase.ts` — thêm `ExpoSecureStoreAdapter` vào `createClient` auth config: `storage`, `autoRefreshToken`, `persistSession`, `detectSessionInUrl: false`.
+- **A5:** Tạo `screens/LoginScreen.tsx` — email + password, `signInWithPassword`, hiện lỗi nếu sai credentials, dùng `useThemeStore()` cho màu, comment tiếng Việt. Không có link đăng ký / quên mật khẩu (tài khoản do admin tạo tay).
+- **A6:** `App.tsx` — auth gate: `getSession()` khi mount, subscribe `onAuthStateChange`; `session === null` → `<LoginScreen />`; loading → `<ActivityIndicator />`; có session → navigation hiện tại (giữ nguyên toàn bộ NavigationContainer + stacks + tabs).
+- **A7:** `screens/SettingsScreen.tsx` — nút **Đăng xuất** cuối màn, gọi `supabase.auth.signOut()`; style: nền đỏ nhạt, text đỏ, border đỏ, tách biệt rõ với card cài đặt phía trên.
+- **Docs:** `CONTEXT.md` §1 (thêm expo-secure-store + Supabase Auth), §2 (thêm `LoginScreen.tsx`), §3 (ghi chú auth gate); `WORKLOG.md`.
+- **File thay đổi:** `lib/supabase.ts`, `screens/LoginScreen.tsx` (mới), `App.tsx`, `screens/SettingsScreen.tsx`, `docs/project/CONTEXT.md`, `docs/WORKLOG.md`.
+
+---
+
 ## [tháng 5/2026] — ProductsScreen «Tất cả kho»: `fetchAllInventoryEntries` thay vì fetch theo `store.zones`
 
 - **Vấn đề:** `filterLocationId === null` cũ dùng `Promise.all(zones.map(fetchInventoryByZone))` — `zones` chỉ là zone của **kho đang chọn trên Map**, dễ trộn / thiếu lô của kho khác khi xem **Tất cả kho**.

@@ -1,9 +1,13 @@
+import { useState, useEffect } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { StackActions } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { StatusBar } from 'expo-status-bar'
-import { Text } from 'react-native'
+import { Text, View, ActivityIndicator, StyleSheet } from 'react-native'
+import type { Session } from '@supabase/supabase-js'
+import { supabase } from './lib/supabase'
+import LoginScreen from './screens/LoginScreen'
 
 import MapScreen from './screens/MapScreen'
 import ProductsScreen from './screens/ProductsScreen'
@@ -155,6 +159,48 @@ function TabNavigator() {
 }
 
 export default function App() {
+  const [session, setSession] = useState<Session | null>(null)
+  // null = chưa kiểm tra xong, true = đã kiểm tra
+  const [isReady, setIsReady] = useState(false)
+
+  useEffect(() => {
+    // Lấy session hiện tại khi app khởi động
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setIsReady(true)
+    })
+
+    // Lắng nghe thay đổi trạng thái auth (login / logout / token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session)
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Màn loading trong lúc chờ kiểm tra session lần đầu
+  if (!isReady) {
+    return (
+      <View style={authStyles.loadingContainer}>
+        <StatusBar style="light" />
+        <ActivityIndicator size="large" color="#22C55E" />
+      </View>
+    )
+  }
+
+  // Chưa đăng nhập → hiện màn LoginScreen
+  if (!session) {
+    return (
+      <>
+        <StatusBar style="light" />
+        <LoginScreen />
+      </>
+    )
+  }
+
+  // Đã đăng nhập → hiện navigation chính
   return (
     <NavigationContainer>
       <StatusBar style="light" />
@@ -169,3 +215,12 @@ export default function App() {
     </NavigationContainer>
   )
 }
+
+const authStyles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#111111',
+  },
+})

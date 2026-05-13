@@ -11,6 +11,8 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - **Supabase** — PostgreSQL + Realtime (backend)
 - **React Navigation** — Bottom Tabs + Native Stack
 - **expo-camera** — `CameraView`, quét barcode
+- **expo-secure-store** — lưu session auth (mã hoá trên thiết bị)
+- **Supabase Auth** — email/password sign-in, session persist qua SecureStore
 
 ---
 
@@ -44,6 +46,7 @@ screens/
   CategoryManagementScreen.tsx
   DiscontinuedProductsScreen.tsx
   LocationManagementScreen.tsx
+  LoginScreen.tsx
   MapScreen.tsx
   ZoneLayoutEditorScreen.tsx
   NotificationsScreen.tsx
@@ -69,6 +72,7 @@ README.md
 
 ## §3 Navigation structure
 
+- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading → `<ActivityIndicator />`; có session → render `NavigationContainer` + navigation bên dưới.
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar.
 - **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).

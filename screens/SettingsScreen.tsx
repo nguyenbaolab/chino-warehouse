@@ -161,6 +161,15 @@ export default function SettingsScreen() {
           Hiện có {zones.length} zone
         </Text>
       </View>
+
+      {/* Nút đăng xuất — tách biệt rõ với các card cài đặt phía trên */}
+      <TouchableOpacity
+        style={[styles.logoutBtn, { borderColor: '#EF444440' }]}
+        activeOpacity={0.7}
+        onPress={() => supabase.auth.signOut()}
+      >
+        <Text style={styles.logoutText}>Đăng xuất</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   )
 }
@@ -200,4 +209,19 @@ const styles = StyleSheet.create({
   infoText: { fontSize: 14, marginBottom: 6 },
   infoSub: { fontSize: 13, lineHeight: 20 },
   zoneCount: { fontSize: 13, marginTop: 10, fontWeight: 'bold' },
+  logoutBtn: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    marginBottom: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: '#EF444418',
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#EF4444',
+    fontSize: 15,
+    fontWeight: '600',
+  },
 })
