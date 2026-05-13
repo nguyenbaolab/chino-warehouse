@@ -45,3 +45,22 @@ F20, F29, F30 đã hoàn thành trong Phase 2.
 | `docs/phases/phase-2/TESTCASES.md` | Test cases — **điền khi bắt đầu Phase 2**. |
 
 Đồng bộ `REQUIREMENTS.md` / `DECISIONS.md` khi scope Phase 2 được chốt chi tiết từng sprint.
+
+---
+
+## 5. Security (Phase 2)
+
+**Đang làm:**
+- SEC-11: Audit log — PostgreSQL trigger + bảng `audit_logs` (KI-022)
+
+**Còn lại (Medium/Low — làm dần):**
+- SEC-05: Input validation `maxLength` (KI-017)
+- SEC-06: Generic error messages (KI-018)
+- SEC-07: Barcode scanner debounce (KI-019)
+- SEC-10: `backup.mjs` dùng `service_role` key (KI-021)
+- SEC-12: `__DEV__` guard cho `console.log` (KI-023)
+- SEC-13: `npm audit` trước release (KI-024)
+- SEC-14: `.env.*` coverage gitignore (KI-025)
+
+**Deferred → Phase 3:**
+- SEC-09: RBAC manager/nhân viên — cùng F24 super app integration (KI-020)

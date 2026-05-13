@@ -14,6 +14,13 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - **expo-secure-store** — lưu session auth (mã hoá trên thiết bị)
 - **Supabase Auth** — email/password sign-in, session persist qua SecureStore
 
+**Mô hình bảo mật (client-direct BaaS):**
+- Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.
+- RLS bật trên tất cả 8 bảng với policy `authenticated_only` (`auth.uid() IS NOT NULL`).
+- Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
+- Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
+- RBAC (phân quyền manager/nhân viên) → Phase 3, F24.
+
 ---
 
 ## §2 Cấu trúc file & thư mục (hiện tại)

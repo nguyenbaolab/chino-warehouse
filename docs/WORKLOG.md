@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Bảo mật: SEC-01 Resolved + sync security docs đầy đủ
+
+- **SEC-01 Resolved:** rotate anon key, fix `backup.mjs` dùng `process.env`, xóa khỏi Git history.
+- Thêm KI-013 đến KI-025 vào `KNOWN_ISSUES.md` (tracking đầy đủ SEC-01 → SEC-14).
+- `CONTEXT.md` §1: thêm ghi chú mô hình bảo mật (client-direct BaaS, RLS `authenticated_only`, Realtime `private: true`, không server backend riêng).
+- `DECISIONS.md`: thêm quyết định kiến trúc client-direct + RLS.
+- `PLAN.md`: thêm mục §5 Security Phase 2 (SEC-11 in progress, SEC-05/06/07/10/12/13/14 còn lại, SEC-09 deferred Phase 3).
+- Tạo `docs/phases/phase-2/GOLIVE_CHECKLIST.md` với trạng thái từng bước C/B/A/D/E.
+- **File đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/project/CONTEXT.md`, `docs/DECISIONS.md`, `docs/phases/phase-2/PLAN.md`, `docs/phases/phase-2/GOLIVE_CHECKLIST.md` (mới), `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — Sync và fix 7 lỗi sai lệch tài liệu
 
 - **SUMMARY.md §6:** KI-004 chuyển từ Deferred sang Resolved (fix trong Task 3/4 Phase 2).

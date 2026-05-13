@@ -140,3 +140,133 @@
 - **Đã fix:** Thêm `config: { private: true }` vào channel `SettingsScreen` (dòng 59) và `DiscontinuedProductsScreen` (dòng 58); migration `20260513_realtime_rls_sec08.sql` tạo RLS policy `authenticated_users_can_receive` + `authenticated_users_can_broadcast` trên `realtime.messages`.
 
 ---
+
+### [KI-013] SEC-01 — Credentials hardcode trong backup.mjs
+
+- **Mức độ:** Critical (security)
+- **File liên quan:** `backup.mjs`
+- **Mô tả:** `backup.mjs` chứa Supabase URL thật và publishable key đã commit vào Git.
+- **Trạng thái:** Resolved
+- **Đã fix:** Rotate Supabase anon key trên Dashboard; sửa `backup.mjs` thay bằng `process.env`; xóa khỏi Git history bằng `git filter-repo`.
+
+---
+
+### [KI-014] SEC-02 — RLS policy allow_all anon
+
+- **Mức độ:** Critical (security)
+- **File liên quan:** `supabase/migrations/schema.sql`
+- **Mô tả:** 8 bảng có policy `USING (true) WITH CHECK (true)` cho role `anon` — bất kỳ ai có anon key đều đọc/ghi/xóa tự do.
+- **Trạng thái:** Resolved
+- **Đã fix:** Xóa toàn bộ policy `allow_all`; tạo policy `authenticated_only` `FOR ALL TO authenticated USING (auth.uid() IS NOT NULL)` — thực hiện đồng thời với triển khai Auth (A3–A7).
+
+---
+
+### [KI-015] SEC-03 — EXPO_PUBLIC_* bundle vào APK
+
+- **Mức độ:** Critical (architectural)
+- **File liên quan:** `.env`, JS bundle
+- **Mô tả:** Anon key nhúng trong JS bundle. Đây là architectural reality của mọi app Supabase client-direct.
+- **Trạng thái:** Mitigated
+- **Ghi chú:** Vô hại vì SEC-02 đã xử lý — anon key không dùng được gì khi RLS yêu cầu JWT authenticated. Không cần fix thêm.
+
+---
+
+### [KI-016] SEC-04 — Không có Authentication
+
+- **Mức độ:** High (security)
+- **File liên quan:** `App.tsx`, `screens/LoginScreen.tsx`, `lib/supabase.ts`
+- **Mô tả:** App không có màn hình login, mọi user full quyền.
+- **Trạng thái:** Resolved
+- **Đã fix:** A3–A7 đã implement hoàn chỉnh — `LoginScreen`, SecureStore session, auth gate `App.tsx`, signOut Settings.
+
+---
+
+### [KI-017] SEC-05 — Input validation thiếu
+
+- **Mức độ:** High
+- **File liên quan:** Nhiều screens (`AddInventoryScreen`, `ProductDetailScreen`, `OrderDetailScreen`, ...)
+- **Mô tả:** `notes`, `barcode`, `product_name` không có giới hạn độ dài. Cần `maxLength` trên UI và kiểm tra type trước khi gửi DB.
+- **Trạng thái:** Open
+- **Hướng fix:** Thêm `maxLength` vào `TextInput` liên quan (`product_name` <= 100, `barcode` <= 50, `notes` <= 500); validate trước khi gọi Supabase.
+
+---
+
+### [KI-018] SEC-06 — Error message lộ thông tin schema
+
+- **Mức độ:** High
+- **File liên quan:** `stores/warehouseStore.ts`, các screens hiển thị `error?.message`
+- **Mô tả:** `error?.message` từ Supabase truyền thẳng ra UI, có thể chứa tên bảng, constraint, foreign key.
+- **Trạng thái:** Open
+- **Hướng fix:** Wrap error Supabase bằng generic message "Có lỗi xảy ra, vui lòng thử lại"; log chi tiết chỉ với `__DEV__`.
+
+---
+
+### [KI-019] SEC-07 — Không có rate limiting client
+
+- **Mức độ:** High
+- **File liên quan:** `screens/BarcodeScannerScreen.tsx`
+- **Mô tả:** Barcode scanner không có debounce đủ mạnh, có thể tạo hàng trăm request/giây.
+- **Trạng thái:** Open
+- **Hướng fix:** Thêm debounce tối thiểu 500ms trên kết quả quét barcode trước khi gọi DB.
+
+---
+
+### [KI-020] SEC-09 — Không có Authorization / RBAC
+
+- **Mức độ:** Medium
+- **File liên quan:** RLS policies, `App.tsx`
+- **Mô tả:** Không phân biệt quyền manager vs nhân viên — mọi user authenticated đều có full CRUD.
+- **Trạng thái:** Deferred — Phase 3 (F24)
+- **Ghi chú:** Sẽ thiết kế khi super app integration có yêu cầu cụ thể.
+
+---
+
+### [KI-021] SEC-10 — Backup script cần bảo mật
+
+- **Mức độ:** Medium
+- **File liên quan:** `backup.mjs` (hoặc `backup.ts`)
+- **Mô tả:** `backup.mjs` sau khi fix SEC-01 cần dùng `service_role` key (không phải anon key) và chỉ chạy server-side — không bao giờ bundle vào app.
+- **Trạng thái:** Open
+- **Hướng fix:** Dùng `process.env.SUPABASE_SERVICE_KEY` trong backup script; thêm vào `.gitignore` nếu cần.
+
+---
+
+### [KI-022] SEC-11 — Thiếu audit log
+
+- **Mức độ:** Medium
+- **File liên quan:** PostgreSQL (server-side triggers)
+- **Mô tả:** Không ghi lại ai xóa lô hàng, thay đổi số lượng — quan trọng cho môi trường kho thực tế.
+- **Trạng thái:** In Progress (Phase 2)
+- **Hướng fix:** PostgreSQL trigger server-side trên `inventory_entries` và `products` ghi vào bảng `audit_logs` (`table_name`, `action`, `record_id`, `changed_by`, `changed_at`, `old_data JSONB`, `new_data JSONB`).
+
+---
+
+### [KI-023] SEC-12 — console.log trong production
+
+- **Mức độ:** Low
+- **File liên quan:** `stores/warehouseStore.ts`, nhiều screens
+- **Mô tả:** 8+ `console.log`/`console.error` trong store và screens — leak thông tin khi build production.
+- **Trạng thái:** Open
+- **Hướng fix:** Wrap bằng `__DEV__` guard hoặc tắt hoàn toàn ở production build.
+
+---
+
+### [KI-024] SEC-13 — Dependency audit
+
+- **Mức độ:** Low
+- **File liên quan:** `package.json`
+- **Mô tả:** Cần chạy `npm audit` định kỳ; `@supabase/supabase-js` là bề mặt tấn công chính.
+- **Trạng thái:** Open
+- **Hướng fix:** Chạy `npm audit` trước mỗi release; update `@supabase/supabase-js` khi có patch security.
+
+---
+
+### [KI-025] SEC-14 — .env coverage trong .gitignore
+
+- **Mức độ:** Low
+- **File liên quan:** `.gitignore`
+- **Mô tả:** Các file `.env.production`, `.env.staging` tạo sau này phải được ignore.
+- **Trạng thái:** Open
+- **Hướng fix:** Kiểm tra `.gitignore` có pattern `*.env*` hoặc liệt kê từng file.
+
+---

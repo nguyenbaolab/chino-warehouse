@@ -309,3 +309,12 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quyết định:** Một file **PDF gộp** cả nội dung tab **Hàng trong kho** và tab **Hàng mới** sau bước phù hợp trong luồng (Draft → Confirm → **Xuất PDF** → Đã đặt — xem `REQUIREMENTS.md` §6 F27).
 - **Lý do:** Một đơn nhập một bản in, đủ thông tin cả hai nguồn dòng hàng.
 - **Thay thế đã xem xét:** Hai file PDF riêng — từ chối cho luồng chốt hiện tại.
+
+---
+
+### Kiến trúc bảo mật: Client-direct Supabase + RLS (không có server backend riêng)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Không thêm server backend (Node/Python) — dùng Supabase Auth + RLS làm tầng bảo mật duy nhất.
+- **Lý do:** App nội bộ quy mô nhỏ (~3 user), không public. Supabase thiết kế cho mô hình client-direct — an toàn khi Auth + RLS cấu hình đúng. Thêm server backend chỉ cần thiết khi: app public, cần tích hợp hệ thống ngoài (ERP), hoặc business logic phức tạp không encode được bằng RLS.
+- **Hệ quả:** Anon key bundle trong APK nhưng vô hại; mọi security phụ thuộc vào RLS + Auth đúng; RBAC thêm vào Phase 3 khi super app có yêu cầu.
