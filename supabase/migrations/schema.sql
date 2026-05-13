@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 2.1 | Tháng 5/2026
+-- Phiên bản: 2.2 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v2.1:
+--   - RLS policies: đổi từ `anon` sang `authenticated` (sau khi thêm auth)
 -- Thay đổi so với v2.0:
 --   - product_categories_l1, product_categories_l2: thêm mới (F30)
 --   - products: thêm category_level1_id, category_level2_id (F30)
@@ -137,16 +139,16 @@ ALTER TABLE inventory_entries     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
 
--- Phase 1: không có auth — cho phép tất cả
+-- Phase 1+: cho phép tất cả user đã đăng nhập
 -- Phase 3: thay bằng policy kiểm tra user role
-CREATE POLICY "allow_all" ON locations             FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON zones                 FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON product_categories_l1 FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON product_categories_l2 FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON products              FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON inventory_entries     FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON order_lists           FOR ALL TO anon USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON order_items           FOR ALL TO anon USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON locations             FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON zones                 FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON product_categories_l1 FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON product_categories_l2 FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON products              FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON inventory_entries     FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON order_lists           FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON order_items           FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 
 -- ============================================================
