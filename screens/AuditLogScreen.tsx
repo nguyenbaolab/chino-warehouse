@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
+  FlatList,
+  Modal,
   Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
@@ -15,7 +19,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import type { AuditLog } from '../types'
 
-type RouteParams = { filterProductId?: string }
+type RouteParams = { filterProductId?: string; scannedBarcode?: string; scannedBarcodeAt?: number }
 
 const ACTION_ICON: Record<string, string> = { INSERT: '➕', UPDATE: '✏️', DELETE: '🗑️' }
 const TABLE_LABEL: Record<string, string> = { inventory_entries: 'Lô hàng', products: 'Sản phẩm' }
@@ -39,13 +43,84 @@ function changedFields(old_data: Record<string, unknown> | null, new_data: Recor
 }
 
 type FilterType = 'inventory_entries' | 'products' | null
+type DropdownOption = { id: string; label: string }
+
+function SearchableDropdownModal({
+  visible,
+  options,
+  onSelect,
+  onClose,
+  title,
+  colors,
+}: {
+  visible: boolean
+  options: DropdownOption[]
+  onSelect: (id: string) => void
+  onClose: () => void
+  title: string
+  colors: Record<string, string>
+}) {
+  const [search, setSearch] = useState('')
+  const inputRef = useRef<TextInput>(null)
+
+  useEffect(() => {
+    if (visible) {
+      setSearch('')
+      setTimeout(() => inputRef.current?.focus(), 150)
+    }
+  }, [visible])
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return options
+    const q = search.trim().toLowerCase()
+    return options.filter((o) => o.label.toLowerCase().includes(q))
+  }, [options, search])
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={modalStyles.overlay}>
+        <TouchableOpacity style={modalStyles.backdrop} activeOpacity={1} onPress={onClose} />
+        <View style={[modalStyles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[modalStyles.title, { color: colors.text }]}>{title}</Text>
+          <TextInput
+            ref={inputRef}
+            style={[modalStyles.searchInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Tìm kiếm..."
+            placeholderTextColor={colors.sub}
+            autoCorrect={false}
+          />
+          {filtered.length === 0 ? (
+            <Text style={[modalStyles.emptyText, { color: colors.sub }]}>Không tìm thấy kết quả</Text>
+          ) : (
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.id}
+              style={{ maxHeight: 300 }}
+              keyboardShouldPersistTaps="handled"
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[modalStyles.optionRow, { borderBottomColor: colors.border }]}
+                  onPress={() => { onSelect(item.id); onClose() }}
+                >
+                  <Text style={{ color: colors.text, fontSize: 15 }}>{item.label}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          )}
+        </View>
+      </View>
+    </Modal>
+  )
+}
 
 export default function AuditLogScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
   const params = (route.params as RouteParams) ?? {}
   const { colors } = useThemeStore()
-  const { fetchAuditLogs, products, locations } = useWarehouseStore()
+  const { fetchAuditLogs, products, locations, searchByBarcode } = useWarehouseStore()
 
   const [pages, setPages] = useState<Record<number, AuditLog[]>>({})
   const [currentPage, setCurrentPage] = useState(0)
@@ -55,8 +130,7 @@ export default function AuditLogScreen() {
   const [filterProductId, setFilterProductId] = useState<string | null>(params.filterProductId ?? null)
   const [isLoading, setIsLoading] = useState(false)
   const [uniqueUserNames, setUniqueUserNames] = useState<string[]>([])
-
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [activeModal, setActiveModal] = useState<string | null>(null)
 
   const locationDisabled = filterType === 'products'
 
@@ -104,37 +178,47 @@ export default function AuditLogScreen() {
     void loadUserNames()
   }, [loadUserNames])
 
-  function toggleDropdown(name: string) {
-    setOpenDropdown((prev) => (prev === name ? null : name))
+  // Xử lý barcode scan trả về qua route params
+  useEffect(() => {
+    if (!params.scannedBarcode) return
+    const barcode = params.scannedBarcode
+    navigation.setParams({ scannedBarcode: undefined, scannedBarcodeAt: undefined })
+    void (async () => {
+      const entry = await searchByBarcode(barcode)
+      if (entry?.product_id) {
+        setFilterProductId(entry.product_id)
+        setPages({})
+        setCurrentPage(0)
+      } else {
+        Alert.alert('Không tìm thấy', 'Không tìm thấy sản phẩm với mã này')
+      }
+    })()
+  }, [params.scannedBarcode, params.scannedBarcodeAt, searchByBarcode, navigation])
+
+  function resetAndReload() {
+    setPages({})
+    setCurrentPage(0)
   }
 
   function applyFilterLocation(id: string | null) {
     setFilterLocationId(id)
-    setOpenDropdown(null)
-    setPages({})
-    setCurrentPage(0)
+    resetAndReload()
   }
 
   function applyFilterType(type: FilterType) {
     if (type === 'products') setFilterLocationId(null)
     setFilterType(type)
-    setOpenDropdown(null)
-    setPages({})
-    setCurrentPage(0)
+    resetAndReload()
   }
 
   function applyFilterUser(name: string | null) {
     setFilterChangedBy(name)
-    setOpenDropdown(null)
-    setPages({})
-    setCurrentPage(0)
+    resetAndReload()
   }
 
   function applyFilterProduct(id: string | null) {
     setFilterProductId(id)
-    setOpenDropdown(null)
-    setPages({})
-    setCurrentPage(0)
+    resetAndReload()
   }
 
   function handleGoOlder() {
@@ -149,6 +233,40 @@ export default function AuditLogScreen() {
     if (currentPage > 0) setCurrentPage(currentPage - 1)
   }
 
+  function handleScanBarcode() {
+    navigation.navigate('BarcodeScanner', {
+      mode: 'search',
+      onScanFillBarcode: (barcode: string) => {
+        navigation.setParams({ scannedBarcode: barcode.trim(), scannedBarcodeAt: Date.now() })
+      },
+    })
+  }
+
+  // Dropdown options
+  const locationOptions: DropdownOption[] = [
+    { id: '__all__', label: 'Tất cả kho' },
+    ...locations.map((l) => ({ id: l.id, label: l.name })),
+  ]
+  const typeOptions: DropdownOption[] = [
+    { id: '__all__', label: 'Tất cả' },
+    { id: 'inventory_entries', label: 'Lô hàng' },
+    { id: 'products', label: 'Sản phẩm' },
+  ]
+  const userOptions: DropdownOption[] = [
+    { id: '__all__', label: uniqueUserNames.length === 0 ? 'Tất cả (chưa có lịch sử)' : 'Tất cả' },
+    ...uniqueUserNames.map((n) => ({ id: n, label: n })),
+  ]
+  const productDropdownOptions: DropdownOption[] = [
+    { id: '__all__', label: 'Tất cả' },
+    ...productOptions.map((p) => ({ id: p.id, label: p.name })),
+  ]
+
+  // Display labels
+  const locationLabel = filterLocationId ? locations.find((l) => l.id === filterLocationId)?.name ?? 'Tất cả kho' : 'Tất cả kho'
+  const typeLabel = filterType ? TABLE_LABEL[filterType] : 'Tất cả'
+  const userLabel = filterChangedBy ?? (uniqueUserNames.length === 0 ? 'Tất cả (chưa có lịch sử)' : 'Tất cả')
+  const productLabel = filterProductId ? productOptions.find((p) => p.id === filterProductId)?.name ?? 'Tất cả' : 'Tất cả'
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.topSpacer} />
@@ -159,7 +277,7 @@ export default function AuditLogScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 4 Filters */}
+      {/* 4 Filters — trigger buttons */}
       <View style={styles.filtersWrap}>
         <View style={styles.filtersRow}>
           {/* [1] Kho */}
@@ -167,110 +285,50 @@ export default function AuditLogScreen() {
             <Text style={[styles.filterLabel, { color: colors.sub }]}>Kho</Text>
             <Pressable
               style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => { if (!locationDisabled) toggleDropdown('location') }}
+              onPress={() => { if (!locationDisabled) setActiveModal('location') }}
             >
-              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>
-                {filterLocationId ? locations.find((l) => l.id === filterLocationId)?.name ?? 'Tất cả kho' : 'Tất cả kho'}
-              </Text>
+              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{locationLabel}</Text>
             </Pressable>
-            {openDropdown === 'location' && !locationDisabled && (
-              <View style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <ScrollView style={{ maxHeight: 200 }}>
-                  <TouchableOpacity style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterLocation(null)}>
-                    <Text style={{ color: colors.text }}>Tất cả kho</Text>
-                  </TouchableOpacity>
-                  {locations.map((loc) => (
-                    <TouchableOpacity key={loc.id} style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterLocation(loc.id)}>
-                      <Text style={{ color: colors.text }}>{loc.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </View>
 
-          {/* [2] Loại thay đổi */}
+          {/* [2] Loại */}
           <View style={styles.filterCol}>
             <Text style={[styles.filterLabel, { color: colors.sub }]}>Loại</Text>
             <Pressable
               style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => toggleDropdown('type')}
+              onPress={() => setActiveModal('type')}
             >
-              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>
-                {filterType ? TABLE_LABEL[filterType] : 'Tất cả'}
-              </Text>
+              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{typeLabel}</Text>
             </Pressable>
-            {openDropdown === 'type' && (
-              <View style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <TouchableOpacity style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterType(null)}>
-                  <Text style={{ color: colors.text }}>Tất cả</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterType('inventory_entries')}>
-                  <Text style={{ color: colors.text }}>Lô hàng</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterType('products')}>
-                  <Text style={{ color: colors.text }}>Sản phẩm</Text>
-                </TouchableOpacity>
-              </View>
-            )}
           </View>
         </View>
 
         <View style={styles.filtersRow}>
-          {/* [3] Người thay đổi */}
+          {/* [3] Người */}
           <View style={styles.filterCol}>
             <Text style={[styles.filterLabel, { color: colors.sub }]}>Người</Text>
             <Pressable
               style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => toggleDropdown('user')}
+              onPress={() => setActiveModal('user')}
             >
-              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>
-                {filterChangedBy ?? 'Tất cả'}
-              </Text>
+              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{userLabel}</Text>
             </Pressable>
-            {openDropdown === 'user' && (
-              <View style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <ScrollView style={{ maxHeight: 200 }}>
-                  <TouchableOpacity style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterUser(null)}>
-                    <Text style={{ color: colors.text }}>Tất cả</Text>
-                  </TouchableOpacity>
-                  {uniqueUserNames.map((name) => (
-                    <TouchableOpacity key={name} style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterUser(name)}>
-                      <Text style={{ color: colors.text }}>{name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </View>
 
-          {/* [4] Sản phẩm */}
+          {/* [4] Sản phẩm + camera */}
           <View style={styles.filterCol}>
-            <Text style={[styles.filterLabel, { color: colors.sub }]}>Sản phẩm</Text>
+            <View style={styles.filterLabelRow}>
+              <Text style={[styles.filterLabel, { color: colors.sub }]}>Sản phẩm</Text>
+              <TouchableOpacity onPress={handleScanBarcode} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Text style={styles.cameraIcon}>📷</Text>
+              </TouchableOpacity>
+            </View>
             <Pressable
               style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => toggleDropdown('product')}
+              onPress={() => setActiveModal('product')}
             >
-              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>
-                {filterProductId
-                  ? productOptions.find((p) => p.id === filterProductId)?.name ?? 'Tất cả'
-                  : 'Tất cả'}
-              </Text>
+              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{productLabel}</Text>
             </Pressable>
-            {openDropdown === 'product' && (
-              <View style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <ScrollView style={{ maxHeight: 200 }}>
-                  <TouchableOpacity style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterProduct(null)}>
-                    <Text style={{ color: colors.text }}>Tất cả</Text>
-                  </TouchableOpacity>
-                  {productOptions.map((p) => (
-                    <TouchableOpacity key={p.id} style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => applyFilterProduct(p.id)}>
-                      <Text style={{ color: colors.text }}>{p.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
           </View>
         </View>
       </View>
@@ -328,6 +386,40 @@ export default function AuditLogScreen() {
           <Text style={[styles.pageBtnText, { color: colors.text }]}>→</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Modal dropdowns */}
+      <SearchableDropdownModal
+        visible={activeModal === 'location'}
+        title="Chọn kho"
+        options={locationOptions}
+        colors={colors}
+        onSelect={(id) => applyFilterLocation(id === '__all__' ? null : id)}
+        onClose={() => setActiveModal(null)}
+      />
+      <SearchableDropdownModal
+        visible={activeModal === 'type'}
+        title="Loại thay đổi"
+        options={typeOptions}
+        colors={colors}
+        onSelect={(id) => applyFilterType(id === '__all__' ? null : id as FilterType)}
+        onClose={() => setActiveModal(null)}
+      />
+      <SearchableDropdownModal
+        visible={activeModal === 'user'}
+        title="Người thay đổi"
+        options={userOptions}
+        colors={colors}
+        onSelect={(id) => applyFilterUser(id === '__all__' ? null : id)}
+        onClose={() => setActiveModal(null)}
+      />
+      <SearchableDropdownModal
+        visible={activeModal === 'product'}
+        title="Sản phẩm"
+        options={productDropdownOptions}
+        colors={colors}
+        onSelect={(id) => applyFilterProduct(id === '__all__' ? null : id)}
+        onClose={() => setActiveModal(null)}
+      />
     </SafeAreaView>
   )
 }
@@ -344,22 +436,13 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 17, fontWeight: 'bold' },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  filtersWrap: { paddingHorizontal: 16, marginBottom: 8, zIndex: 10 },
+  filtersWrap: { paddingHorizontal: 16, marginBottom: 8 },
   filtersRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
   filterCol: { flex: 1 },
   filterLabel: { fontSize: 12, marginBottom: 4 },
+  filterLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   filterBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
-  dropdown: {
-    position: 'absolute',
-    top: 58,
-    left: 0,
-    right: 0,
-    borderWidth: 1,
-    borderRadius: 10,
-    zIndex: 20,
-    overflow: 'hidden',
-  },
-  dropdownItem: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1 },
+  cameraIcon: { fontSize: 14 },
   listContent: { paddingHorizontal: 16, paddingBottom: 16 },
   emptyText: { textAlign: 'center', marginTop: 40, fontSize: 14 },
   entryCard: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 8 },
@@ -380,4 +463,27 @@ const styles = StyleSheet.create({
   pageBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   pageBtnText: { fontSize: 20, fontWeight: '700' },
   pageLabel: { fontSize: 13 },
+})
+
+const modalStyles = StyleSheet.create({
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
+  sheet: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+  },
+  title: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  searchInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  emptyText: { textAlign: 'center', paddingVertical: 20, fontSize: 14 },
+  optionRow: { paddingHorizontal: 12, paddingVertical: 12, borderBottomWidth: 1 },
 })

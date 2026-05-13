@@ -279,3 +279,13 @@
 - **Hướng fix (khi làm):** Subscribe `audit_logs` INSERT; nếu user đang ở page 0 thì prepend vào cache; nếu ở page khác thì hiện banner "Có X thay đổi mới — về trang đầu".
 
 ---
+
+### [KI-027] AuditLogScreen — dropdown UX fixes
+
+- **Mức độ:** Medium
+- **File liên quan:** `screens/AuditLogScreen.tsx`
+- **Mô tả:** 3 vấn đề UX: (1) dropdown inline trong ScrollView không scroll bằng tay được do conflict touch event, (2) dropdown Người trống khi chưa có audit log — thiếu placeholder rõ ràng, (3) dropdown không searchable và không có camera scan cho filter Sản phẩm.
+- **Trạng thái:** Resolved
+- **Giải pháp:** (1) Đổi tất cả 4 dropdown sang Modal-based (`SearchableDropdownModal`) với FlatList bên trong — không conflict touch event. (2) Placeholder "Tất cả (chưa có lịch sử)" khi chưa có user names. (3) TextInput tìm kiếm (auto-focus) trong mỗi Modal dropdown + icon 📷 trên filter Sản phẩm → navigate `BarcodeScanner`, lookup `searchByBarcode` → set `filterProductId`.
+
+---

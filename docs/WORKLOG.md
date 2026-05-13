@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Fix 3 UX issues AuditLogScreen (KI-027)
+
+- Dropdown Modal-based: đổi 4 inline dropdown sang `SearchableDropdownModal` (Modal + FlatList) — fix scroll conflict.
+- Searchable: TextInput tìm kiếm (auto-focus, case-insensitive substring) trong mỗi Modal dropdown.
+- Placeholder Người: "Tất cả (chưa có lịch sử)" khi chưa có audit entries.
+- Camera scan Sản phẩm: icon 📷 → BarcodeScanner → `searchByBarcode` → set `filterProductId`.
+
+---
+
 ## [tháng 5/2026] — SEC-11 Resolved: Audit Log hoàn chỉnh (v2 — location_id + 4 filter)
 
 - Migration `20260513_add_audit_logs.sql`: bảng `audit_logs` (gồm `location_id` FK → locations), trigger `audit_trigger_fn` (SECURITY DEFINER, lookup location_id từ zones cho inventory_entries) trên `inventory_entries` + `products`, RLS authenticated SELECT only, 4 index (`changed_at DESC`, `record_id`, `location_id`, `table_name`).
