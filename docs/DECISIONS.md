@@ -145,6 +145,7 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quy tắc list:** Sản phẩm thêm tay được đánh dấu ⭐; sản phẩm tự động từ kho không đánh dấu; cùng sản phẩm trong list đang soạn thì cộng dồn.
 - **Hành động:** Mỗi list có nút Confirm (khóa tạm), nút Đã đặt hàng (khóa hẳn, có mở lại), và nút xuất PDF riêng.
 - **Lý do:** Tách rõ luồng chuẩn bị đơn nhập, xác nhận nội bộ, và xác nhận đã đặt nhà cung cấp.
+- **Cập nhật sau này:** Model này được thay thế bởi design F27 mở rộng (list active / list tự tạo, 2 tab trong mỗi list, số thùng để trống đến Confirm, PDF tổng hợp) — xem các quyết định List đặt hàng / Số thùng / Xuất PDF bên dưới.
 
 ---
 

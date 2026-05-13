@@ -4,6 +4,20 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Sync và fix 7 lỗi sai lệch tài liệu
+
+- **SUMMARY.md §6:** KI-004 chuyển từ Deferred sang Resolved (fix trong Task 3/4 Phase 2).
+- **SUMMARY.md §3:** Xóa dòng "Barcode edge cases (BLK-001)" — BLK-001 đã Closed hoàn toàn.
+- **SUMMARY.md §7:** Sửa dòng barcode: bỏ "edge cases +", thêm ghi chú BLK-001 closed.
+- **PLAN.md §2:** Đánh dấu F20, F29, F30 là **✓ Done** (gạch ngang + nhãn).
+- **PLAN.md §3:** BLK-001 Closed — thay câu "chờ chủ cửa hàng" bằng "không còn edge case tồn đọng".
+- **PLAN.md §2 F30:** Sửa "gán SP trên tab Sản phẩm" → "gán SP trên ProductDetailScreen và AddInventoryScreen".
+- **REQUIREMENTS.md §9:** Xóa "Toggle lọc có vấn đề" khỏi ProductsScreen (đã bỏ từ code); thêm "checkbox lọc Hết hạn / Sắp hết hạn" vào Notifications.
+- **DECISIONS.md:** Thêm ghi chú supersede cho mục "Tab Đặt hàng" gốc → trỏ tới F27 mở rộng.
+- **File đã cập nhật:** `docs/phases/phase-1/SUMMARY.md`, `docs/phases/phase-2/PLAN.md`, `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — SEC-08 Resolved: private channel + RLS realtime.messages
 
 - **Fix:** Thêm `config: { private: true }` vào `.channel()` của SettingsScreen (dòng 59) và DiscontinuedProductsScreen (dòng 58).

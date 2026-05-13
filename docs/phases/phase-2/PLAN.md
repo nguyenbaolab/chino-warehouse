@@ -19,18 +19,20 @@
 |----|----------|
 | **F08** | Hình ảnh sản phẩm (chụp/chọn, Supabase Storage). |
 | **F19** | Chuyển hàng giữa khu vực (trừ nguồn, cộng đích). |
-| **F20** | Multi-kho: dropdown selector trên MapScreen, tạo/sửa/xóa kho, grid size per location (configurable), dropdown lọc theo kho trên Products/Notifications/Orders, fix KI-004. |
+| **F20** | ~~Multi-kho: dropdown selector trên MapScreen, tạo/sửa/xóa kho, grid size per location (configurable), dropdown lọc theo kho trên Products/Notifications/Orders, fix KI-004.~~ **✓ Done** |
 | **F21** | Chế độ offline (cache, queue, đồng bộ lại). |
 | **F26** | Kiểm kho (đối chiếu thực tế theo zone/tầng, diff, confirm). |
 | **F27** | **Mở rộng đặt hàng** (chưa code, chốt design v1.3.3): 2 tab trong một list (Hàng trong kho / Hàng mới); list active duy nhất + popup đặt tên; SP từ Sắp hết hàng nhảy vào với số thùng trống, bắt buộc điền trước Confirm; nhóm theo category (F30) + nhóm **Chưa phân loại**; PDF gộp 2 tab; flow Draft → Confirm → Xuất PDF → Đã đặt; tab Hàng mới: tên SP, phân loại, số thùng, ghi chú. |
-| **F29** | Zone Layout Editor: compact tile editor, footprint preview, collision check theo tọa độ thật, confirm → lưu. |
-| **F30** | **Phân loại sản phẩm** 2 cấp: `product_categories_l1` / `product_categories_l2`, FK optional trên `products`; CRUD trong Settings; gán SP trên tab Sản phẩm (optional); list đặt hàng cập nhật nhóm khi đổi phân loại sau. |
+| **F29** | ~~Zone Layout Editor: compact tile editor, footprint preview, collision check theo tọa độ thật, confirm → lưu.~~ **✓ Done** |
+| **F30** | ~~**Phân loại sản phẩm** 2 cấp: `product_categories_l1` / `product_categories_l2`, FK optional trên `products`; CRUD trong Settings; gán SP trên ProductDetailScreen và AddInventoryScreen (optional); list đặt hàng cập nhật nhóm khi đổi phân loại sau.~~ **✓ Done** |
+
+F20, F29, F30 đã hoàn thành trong Phase 2.
 
 ---
 
 ## 3. Barcode & dữ liệu mã
 
-- **Edge cases:** sau khi có thông tin từ **chủ cửa hàng** (vận hành thực tế barcode per lô) — cập nhật logic/UI nếu cần; tham chiếu theo dõi **BLK-001** trong tài liệu blocker / handoff.
+- **Edge cases:** BLK-001 đã Closed hoàn toàn — không còn edge case tồn đọng. Multi-barcode per sản phẩm là tính năng tương lai độc lập nếu nghiệp vụ yêu cầu.
 - **Multi-barcode per sản phẩm:** đánh giá nếu nghiệp vụ yêu cầu (có thể mở rộng schema và luồng quét).
 
 ---

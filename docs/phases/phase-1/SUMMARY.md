@@ -53,7 +53,6 @@ Theo đánh giá closeout và bảng `REQUIREMENTS.md` §6:
 | **F27 — PDF** | Nút xuất PDF còn placeholder, chưa implement generator + lưu file. |
 | **F27 — “Thêm vào danh sách nhập”** | Từ tab Sắp hết hàng chỉ log/placeholder, chưa tạo/ghi item vào `order_lists`. |
 | **F28 — Lý do discontinued** | Chưa có cột/field riêng; UI hiển thị “Lý do” từ `products.notes` — dễ trùng mục đích ghi chú chung. |
-| **Barcode edge cases (BLK-001)** | Per lô đã chốt và code; **chờ chủ cửa hàng** xác nhận thực tế quầy/kho (trùng mã, đổi nhãn, v.v.). |
 
 ---
 
@@ -84,10 +83,12 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 
 ---
 
-## 6. Known issues còn open / deferred
+## 6. Known issues đã giải quyết (bổ sung)
 
-- **KI-004** — Đổi kho không xóa search: **Deferred** tới Phase 2 (multi-kho / F20); Phase 1 một kho nên ít tái hiện.
-- **Theo dõi barcode (BLK-001):** chờ phản hồi chủ cửa hàng về edge cases sau khi dùng barcode per lô thực tế — xử lý bổ sung có thể vào Phase 2 (kèm multi-barcode nếu cần).
+- **KI-004** — Đổi kho không xóa search: **Resolved** — fix trong Task 3/4 Phase 2 (`pickLocation` gọi `clearSearch` trước `setSelectedLocation`).
+- **KI-011** — BarcodeScanner search: **Resolved**.
+
+**Closed / không còn mục open từ Phase 1.**
 
 ---
 
@@ -95,6 +96,6 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 
 - Nối **Sắp hết hàng → Đặt hàng**, **xuất PDF**, field **lý do discontinued** riêng.
 - **F08, F19, F20, F21, F26** theo scope đã hoãn.
-- **Barcode:** edge cases + tùy chọn **multi-barcode per sản phẩm** nếu nghiệp vụ yêu cầu.
+- **Barcode:** tùy chọn **multi-barcode per sản phẩm** nếu nghiệp vụ yêu cầu (BLK-001 đã closed — không còn edge case tồn đọng).
 
 Kế hoạch chi tiết: **`docs/phases/phase-2/PLAN.md`**.
