@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs: fix 5 lỗi nhỏ sau review tổng kết Phase 2
+
+- **CONTEXT §2:** thêm `SUMMARY_2.md` vào file tree phase-2/
+- **TESTCASES_2 TC-231:** sửa expected result (CASCADE + SET NULL, không Block)
+- **REQUIREMENTS §10:** Offline Phase 2 → Phase 3
+- **PLAN_2 §4:** cập nhật mô tả HANDOFF_2/TESTCASES_2 (đã đầy đủ)
+- **SUMMARY_2 §7:** thêm `DiscontinuedProductsScreen`/`OrderListScreen`/`OrderDetailScreen`
+- **File đã sửa:** `CONTEXT.md`, `TESTCASES_2.md`, `REQUIREMENTS.md`, `PLAN_2.md`, `SUMMARY_2.md`, `WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — docs: SUMMARY_2.md + rewrite USER_GUIDE.md
 
 - **SUMMARY_2:** tổng kết đầy đủ Phase 2 (features done, tính năng → Phase 3, decisions quan trọng, security 14 SEC tổng kết, KI open, số liệu Phase 2, lộ trình Phase 3).

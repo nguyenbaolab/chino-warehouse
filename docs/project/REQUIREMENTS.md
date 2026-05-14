@@ -266,7 +266,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Auth | Không (Phase 1) | Mở app dùng luôn |
 | Barcode | expo-camera (CameraView) | Camera native, hỗ trợ hầu hết định dạng |
 | Navigation | React Navigation (Bottom Tabs + Stack) | 5 tab (Kho, Sản phẩm, Đặt hàng, Thông báo, Cài đặt) + stack screens + modal BarcodeScanner |
-| Offline | Zustand persist (Phase 2) | Cache cục bộ, sync khi có mạng |
+| Offline | Zustand persist (Phase 3) | Cache cục bộ, sync khi có mạng |
 
 ---
 

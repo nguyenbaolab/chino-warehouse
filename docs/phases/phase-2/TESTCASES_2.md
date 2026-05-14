@@ -60,7 +60,7 @@
 | TC-228 | Sửa tên Cấp 1 | Bấm edit Cấp 1 → đổi tên → Lưu | Tên cập nhật trong danh sách và trên SP đã gán |
 | TC-229 | Sửa tên Cấp 2 | Bấm edit Cấp 2 → đổi tên → Lưu | Tên cập nhật |
 | TC-230 | Xóa Cấp 2 | Xóa một Cấp 2 (không SP nào dùng) | Xóa thành công, Cấp 1 vẫn còn |
-| TC-231 | Xóa Cấp 1 có Cấp 2 con | Xóa Cấp 1 đang có Cấp 2 bên trong | Block + thông báo (còn L2 con hoặc SP dùng) |
+| TC-231 | Xóa Cấp 1 có Cấp 2 con | Xóa Cấp 1 đang có Cấp 2 bên trong | Hiện confirm dialog → Xác nhận → L2 con bị xóa cascade; SP đang dùng category này được SET NULL (hiện Không phân loại) |
 | TC-232 | Gán category trong ProductDetail | Chi tiết SP → section Chi tiết → chọn Nhóm (Cấp 1) + Loại (Cấp 2) | Lưu thành công, hiện phân loại trên card SP |
 | TC-233 | Chọn Cấp 1 không chọn Cấp 2 | Chi tiết SP → chọn Cấp 1 → không chọn Cấp 2 → lưu | Lưu OK (Cấp 2 optional) |
 | TC-234 | Đổi Cấp 1 → Cấp 2 reset | SP đã có Cấp 1 + Cấp 2 → đổi Cấp 1 sang nhóm khác | Cấp 2 bị xóa (reset về "Không phân loại") |

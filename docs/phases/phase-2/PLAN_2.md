@@ -43,8 +43,8 @@ F20, F29, F30 đã hoàn thành trong Phase 2.
 
 | File | Mục đích |
 |------|----------|
-| `docs/phases/phase-2/HANDOFF_2.md` | Hướng dẫn dev/QA — **điền khi bắt đầu Phase 2**. |
-| `docs/phases/phase-2/TESTCASES_2.md` | Test cases — **điền khi bắt đầu Phase 2**. |
+| `docs/phases/phase-2/HANDOFF_2.md` | Hướng dẫn dev/QA — **đầy đủ** (features, migrations, breaking changes, checklist bàn giao). |
+| `docs/phases/phase-2/TESTCASES_2.md` | Test cases — **đầy đủ** (50 test cases TC-201→TC-250, nhóm Auth/F20/F29/F30/SEC-11/Security). |
 
 Đồng bộ `REQUIREMENTS.md` / `DECISIONS.md` khi scope Phase 2 được chốt chi tiết từng sprint.
 

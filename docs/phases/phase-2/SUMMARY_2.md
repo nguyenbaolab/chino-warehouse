@@ -114,7 +114,7 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 ## 7. Số liệu Phase 2
 
 - **Migrations tạo mới:** 15 file (bao gồm `schema.sql` cập nhật RLS + 14 incremental migrations)
-- **Screens mới:** `LoginScreen`, `AuditLogScreen`, `CategoryManagementScreen`, `LocationManagementScreen`, `ZoneLayoutEditorScreen`
+- **Screens mới:** `LoginScreen`, `AuditLogScreen`, `CategoryManagementScreen`, `LocationManagementScreen`, `ZoneLayoutEditorScreen`, `DiscontinuedProductsScreen`, `OrderListScreen`, `OrderDetailScreen`
 - **KI resolved trong Phase 2:** KI-004, KI-012, KI-013, KI-014, KI-015 (mitigated), KI-016, KI-022, KI-027, KI-028
 - **KI open:** KI-017, KI-018, KI-019, KI-021, KI-023, KI-024, KI-025
 - **KI deferred:** KI-020 (Phase 3), KI-026
