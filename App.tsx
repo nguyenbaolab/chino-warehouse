@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { StackActions } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { StatusBar } from 'expo-status-bar'
-import { Text, View, ActivityIndicator, StyleSheet } from 'react-native'
+import { Text, View, ActivityIndicator, StyleSheet, AppState, Alert } from 'react-native'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './lib/supabase'
 import LoginScreen from './screens/LoginScreen'
@@ -163,10 +163,42 @@ function TabNavigator() {
   )
 }
 
+const INACTIVITY_LIMIT_MS = 20 * 60 * 1000   // 20 phút
+const CHECK_INTERVAL_MS = 30 * 1000           // check mỗi 30 giây
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
   // null = chưa kiểm tra xong, true = đã kiểm tra
   const [isReady, setIsReady] = useState(false)
+
+  // Dùng ref thay state để tránh re-render toàn app mỗi lần chạm màn hình
+  const lastActivityRef = useRef<number>(Date.now())
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Phân biệt auto-logout (inactivity) vs user tự bấm đăng xuất / kill app
+  const isAutoLogoutRef = useRef(false)
+
+  const updateActivity = useCallback(() => {
+    lastActivityRef.current = Date.now()
+  }, [])
+
+  const checkInactivity = useCallback(() => {
+    if (Date.now() - lastActivityRef.current > INACTIVITY_LIMIT_MS) {
+      isAutoLogoutRef.current = true
+      supabase.auth.signOut()
+    }
+  }, [])
+
+  const startTimer = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    intervalRef.current = setInterval(checkInactivity, CHECK_INTERVAL_MS)
+  }, [checkInactivity])
+
+  const stopTimer = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     // Lấy session hiện tại khi app khởi động
@@ -184,6 +216,41 @@ export default function App() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Inactivity timer: start khi có session, stop khi không có
+  useEffect(() => {
+    if (session) {
+      updateActivity()
+      startTimer()
+    } else {
+      stopTimer()
+      // Toast chỉ hiện khi auto-logout do inactivity
+      if (isAutoLogoutRef.current) {
+        Alert.alert(
+          'Hết phiên',
+          'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.',
+        )
+        isAutoLogoutRef.current = false
+      }
+    }
+    return () => stopTimer()
+  }, [session, updateActivity, startTimer, stopTimer])
+
+  // AppState: check inactivity khi app quay lại foreground, dừng timer khi background
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        checkInactivity()
+        // Nếu session vẫn còn (chưa bị auto-logout) → restart interval
+        if (lastActivityRef.current && Date.now() - lastActivityRef.current <= INACTIVITY_LIMIT_MS) {
+          startTimer()
+        }
+      } else if (nextState === 'background') {
+        stopTimer()
+      }
+    })
+    return () => sub.remove()
+  }, [checkInactivity, startTimer, stopTimer])
 
   // Màn loading trong lúc chờ kiểm tra session lần đầu
   if (!isReady) {
@@ -205,19 +272,21 @@ export default function App() {
     )
   }
 
-  // Đã đăng nhập → hiện navigation chính
+  // Đã đăng nhập → wrap navigator trong View bắt touch để reset timer
   return (
-    <NavigationContainer>
-      <StatusBar style="light" />
-      <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        <RootStack.Screen name="Tabs" component={TabNavigator} />
-        <RootStack.Screen
-          name="BarcodeScanner"
-          component={BarcodeScannerScreen}
-          options={{ presentation: 'fullScreenModal' }}
-        />
-      </RootStack.Navigator>
-    </NavigationContainer>
+    <View style={{ flex: 1 }} onTouchStart={updateActivity} onTouchEnd={updateActivity}>
+      <NavigationContainer>
+        <StatusBar style="light" />
+        <RootStack.Navigator screenOptions={{ headerShown: false }}>
+          <RootStack.Screen name="Tabs" component={TabNavigator} />
+          <RootStack.Screen
+            name="BarcodeScanner"
+            component={BarcodeScannerScreen}
+            options={{ presentation: 'fullScreenModal' }}
+          />
+        </RootStack.Navigator>
+      </NavigationContainer>
+    </View>
   )
 }
 

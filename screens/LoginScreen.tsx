@@ -39,13 +39,13 @@ export default function LoginScreen() {
     setLoading(false)
 
     if (authError) {
-      // Thông báo lỗi thân thiện cho người dùng
       if (authError.message.includes('Invalid login credentials')) {
         setError('Email hoặc mật khẩu không đúng.')
       } else {
         setError(authError.message)
       }
     }
+    // Login thành công → App.tsx useEffect(session) tự reset inactivity timer
   }
 
   return (

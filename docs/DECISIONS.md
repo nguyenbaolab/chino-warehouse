@@ -342,6 +342,15 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Auto-logout: memory-only session + inactivity timer 20 phút
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Session auth chỉ lưu trong RAM (memory-only storage) — kill app = mất session = phải login lại. Inactivity timer 20 phút dùng timestamp-based check: `setInterval` 30s khi foreground + check ngay khi app quay lại foreground (`AppState` listener). Toast "Phiên đăng nhập đã hết hạn" chỉ hiện khi auto-logout do inactivity, không hiện khi user tự bấm đăng xuất hoặc kill app.
+- **Lý do:** Bảo mật cho app nội bộ — tránh session còn sống trên thiết bị sau khi nhân viên rời đi; background ngắn (switch app) vẫn giữ session vì RAM chưa bị clear.
+- **Thay thế đã xem xét:** SecureStore persist session (bỏ — kill app vẫn giữ session); server-side session timeout (quá phức tạp cho client-direct BaaS).
+
+---
+
 ### Kiến trúc bảo mật: Client-direct Supabase + RLS (không có server backend riêng)
 
 - **Ngày:** tháng 5/2026

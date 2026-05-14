@@ -11,8 +11,8 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - **Supabase** — PostgreSQL + Realtime (backend)
 - **React Navigation** — Bottom Tabs + Native Stack
 - **expo-camera** — `CameraView`, quét barcode
-- **expo-secure-store** — lưu session auth (mã hoá trên thiết bị)
-- **Supabase Auth** — email/password sign-in, session persist qua SecureStore
+- **expo-secure-store** — không còn dùng cho session auth (đã đổi sang memory-only); có thể dùng cho mục đích khác nếu cần
+- **Supabase Auth** — email/password sign-in, memory-only session (kill app = logout), inactivity timer 20 phút trong App.tsx
 
 **Mô hình bảo mật (client-direct BaaS):**
 - Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.

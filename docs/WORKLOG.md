@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: auto-logout — memory session + inactivity 20 phút
+
+- **`lib/supabase.ts`:** Xóa `ExpoSecureStoreAdapter` (SecureStore), thay bằng `memoryStorage` (getItem luôn trả null). Session chỉ sống trong RAM — kill app = logout.
+- **`App.tsx`:** Thêm inactivity timer: `INACTIVITY_LIMIT_MS` = 20 phút, `CHECK_INTERVAL_MS` = 30s. Refs: `lastActivityRef`, `intervalRef`, `isAutoLogoutRef`. `useEffect(session)`: start timer khi có session, stop + hiện Alert khi auto-logout. `AppState` listener: check inactivity ngay khi active, stop timer khi background. Wrap navigator trong `<View onTouchStart/onTouchEnd={updateActivity}>`.
+- **`screens/LoginScreen.tsx`:** Comment ghi nhận App.tsx useEffect(session) tự reset timer sau login thành công.
+- **Docs:** `DECISIONS.md` (auto-logout decision), `CONTEXT.md` §1 (expo-secure-store + Supabase Auth updated), `KNOWN_ISSUES.md` (KI-028 Resolved).
+- **File đã sửa:** `lib/supabase.ts`, `App.tsx`, `screens/LoginScreen.tsx`, `docs/DECISIONS.md`, `docs/project/CONTEXT.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — Enrich audit log display — trigger nhúng tên SP/zone/kho, UI hiện thông tin rõ ràng
 
 - Migration `20260513_enrich_audit_trigger.sql`: `CREATE OR REPLACE FUNCTION audit_trigger_fn()` — nhúng `_product_name`, `_zone_name`, `_location_name` vào `old_data`/`new_data` JSONB cho `inventory_entries`; zone cũ lookup riêng khi `zone_id` thay đổi (UPDATE). Products giữ nguyên `to_jsonb(OLD/NEW)` không nhúng thêm.

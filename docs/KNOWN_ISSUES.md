@@ -281,6 +281,16 @@
 
 ---
 
+### [KI-028] Auto-logout: inactivity 20 phút + kill app → phải login lại
+
+- **Mức độ:** Enhancement
+- **File liên quan:** `lib/supabase.ts`, `App.tsx`, `screens/LoginScreen.tsx`
+- **Mô tả:** Session auth lưu memory-only (kill app = mất session); inactivity timer 20 phút dùng timestamp + setInterval 30s khi foreground + AppState check khi active. Toast chỉ hiện khi auto-logout do inactivity.
+- **Trạng thái:** Resolved
+- **Đã fix:** Memory-only storage trong `supabase.ts`; `AppState` listener + `setInterval` + `isAutoLogoutRef` trong `App.tsx`; `useEffect(session)` reset timer khi login/logout.
+
+---
+
 ### [KI-027] AuditLogScreen — dropdown UX fixes
 
 - **Mức độ:** Medium
