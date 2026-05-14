@@ -46,6 +46,7 @@ yarn-error.*
 
 #backup
 /supabase/backups
+/supabase/db_dump_schema
 
 #temp
 /supabase/.temp
