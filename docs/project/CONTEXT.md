@@ -92,11 +92,11 @@ README.md
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar.
 - **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
-- **Map tab:** `MapStack` (`MapMain` → `ZoneLayoutEditor` → `ProductDetail` → `AddInventory`).
-- **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory`).
+- **Map tab:** `MapStack` (`MapMain` → `ZoneLayoutEditor` → `ProductDetail` → `AddInventory` → `AuditLog`).
+- **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
 - **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail`).
-- **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory`).
-- **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `CategoryManagement` → `DiscontinuedProducts`). `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount.
+- **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
+- **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `CategoryManagement` → `DiscontinuedProducts` → `AuditLog`). `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount.
 - **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng.
 
 **UI bản đồ & lọc (đối chiếu code):**
@@ -125,11 +125,13 @@ README.md
 
 **Actions — đặt hàng:** `fetchOrderLists`, `createOrderList`, `updateOrderList`, `deleteOrderList`, `addOrderItem`, `updateOrderItem`, `deleteOrderItem`, `confirmOrderList`, `markOrderPlaced`.
 
+**Actions — audit log:** `fetchAuditLogs` (cursor-based, filter kho + loại + người + sản phẩm), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`.
+
 ---
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, `AuditLog`, `OrderList`, `OrderItem`
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 

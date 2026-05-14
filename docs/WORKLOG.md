@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs: fix 3 thiếu sót CONTEXT.md
+
+- **§4:** thêm nhóm Actions audit log (`fetchAuditLogs`, `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`)
+- **§5:** thêm `AuditLog`, `OrderList`, `OrderItem` vào danh sách Types
+- **§3:** thêm `AuditLog` vào 4 stacks (Map/Products/Notifications/Settings)
+- **File đã sửa:** `CONTEXT.md`, `WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — docs: fix 5 lỗi nhỏ sau review tổng kết Phase 2
 
 - **CONTEXT §2:** thêm `SUMMARY_2.md` vào file tree phase-2/
