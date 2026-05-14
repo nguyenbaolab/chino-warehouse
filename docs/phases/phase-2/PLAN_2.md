@@ -1,6 +1,6 @@
 # Phase 2 — Plan
 
-**Trạng thái:** nháp kế hoạch — bắt đầu implement khi DEV kickoff Phase 2.
+**Trạng thái:** Phase 2 đang tổng kết | Tháng 5/2026
 
 ---
 
@@ -10,6 +10,8 @@
 - **Tab Đặt hàng + tab Sắp hết hàng:** implement theo `REQUIREMENTS.md` §6 **F27 mở rộng** (design v1.3.3): list **active** (hàng trong kho, auto từ Sắp hết hàng) + list **tự tạo**; trong mỗi list 2 tab **Hàng trong kho** (trái) / **Hàng mới** (phải); chỉ một active; auto tạo + popup đặt tên nếu chưa có; số thùng **để trống** đến khi Confirm; nhóm theo category + **Chưa phân loại**; nối nút **Thêm vào danh sách nhập**.
 - **Xuất PDF:** một file **PDF tổng hợp** cả hai tab (Hàng trong kho + Hàng mới), trong luồng Draft → Confirm → **Xuất PDF** → Đã đặt (`REQUIREMENTS.md` §6 F27).
 - **Sản phẩm không nhập nữa:** thêm **field lý do riêng** (migration + type + UI); không dùng `products.notes` làm proxy dài hạn.
+- ~~**Authentication & Security:** LoginScreen, `persistSession: false`, inactivity auto-logout 20 phút, RLS authenticated, Realtime private channel, SEC-11 Audit Log.~~ **✓ Done**
+- ~~**EAS Build setup:** `expo-updates`, `eas.json` profile preview, EAS environment variables.~~ **✓ Done**
 
 ---
 
@@ -20,7 +22,7 @@
 | **F08** | Hình ảnh sản phẩm (chụp/chọn, Supabase Storage). |
 | **F19** | Chuyển hàng giữa khu vực (trừ nguồn, cộng đích). |
 | **F20** | ~~Multi-kho: dropdown selector trên MapScreen, tạo/sửa/xóa kho, grid size per location (configurable), dropdown lọc theo kho trên Products/Notifications/Orders, fix KI-004.~~ **✓ Done** |
-| **F21** | Chế độ offline (cache, queue, đồng bộ lại). |
+| **F21** | ~~Chế độ offline (cache, queue, đồng bộ lại).~~ **Deferred → Phase 3** (priority P3, không thuộc cam kết Phase 2). |
 | **F26** | Kiểm kho (đối chiếu thực tế theo zone/tầng, diff, confirm). |
 | **F27** | **Mở rộng đặt hàng** (chưa code, chốt design v1.3.3): 2 tab trong một list (Hàng trong kho / Hàng mới); list active duy nhất + popup đặt tên; SP từ Sắp hết hàng nhảy vào với số thùng trống, bắt buộc điền trước Confirm; nhóm theo category (F30) + nhóm **Chưa phân loại**; PDF gộp 2 tab; flow Draft → Confirm → Xuất PDF → Đã đặt; tab Hàng mới: tên SP, phân loại, số thùng, ghi chú. |
 | **F29** | ~~Zone Layout Editor: compact tile editor, footprint preview, collision check theo tọa độ thật, confirm → lưu.~~ **✓ Done** |
@@ -52,6 +54,7 @@ F20, F29, F30 đã hoàn thành trong Phase 2.
 
 **Đã hoàn thành:**
 - ~~SEC-11: Audit Log (KI-022)~~ **✓ Done** — migration `20260513_add_audit_logs.sql` (bảng `audit_logs` + `location_id` FK + 4 index), trigger `audit_trigger_fn` (SECURITY DEFINER, lookup location_id), 3 store actions (filter kho/loại/người/sản phẩm), `AuditLogScreen` (4 filter dropdown + disable logic), section `ProductDetailScreen`, card `SettingsScreen`.
+- ~~Auto-logout~~ **✓ Done** — `persistSession: false` + inactivity timer 20 phút (`App.tsx`); kill app = logout; KI-028 Resolved.
 
 **Còn lại (Medium/Low — làm dần):**
 - SEC-05: Input validation `maxLength` (KI-017)

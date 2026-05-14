@@ -177,7 +177,7 @@
 - **File liên quan:** `App.tsx`, `screens/LoginScreen.tsx`, `lib/supabase.ts`
 - **Mô tả:** App không có màn hình login, mọi user full quyền.
 - **Trạng thái:** Resolved
-- **Đã fix:** A3–A7 đã implement hoàn chỉnh — `LoginScreen`, SecureStore session, auth gate `App.tsx`, signOut Settings.
+- **Đã fix:** A3–A7 đã implement hoàn chỉnh — `LoginScreen`, `lib/supabase.ts` (`persistSession: false`, không dùng SecureStore cho auth), auth gate `App.tsx`, signOut Settings.
 
 ---
 

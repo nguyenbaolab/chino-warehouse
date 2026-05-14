@@ -25,23 +25,24 @@ Checklist bảo mật và triển khai trước khi đưa app lên thiết bị 
 
 - [x] **A1** — Tắt "Confirm email" trong Supabase Dashboard → Auth → Settings
 - [x] **A2** — Tạo user (email + password) trên Supabase Dashboard → Authentication → Users
-- [x] **A3** — Cài `expo-secure-store`
-- [x] **A4** — Cập nhật `lib/supabase.ts`: `ExpoSecureStoreAdapter` + auth config (`persistSession`, `autoRefreshToken`, `detectSessionInUrl: false`)
+- [x] **A3** — Cấu hình Supabase client: `persistSession: false`, `autoRefreshToken: true`, `detectSessionInUrl: false` trong `lib/supabase.ts`
+- [x] **A4** — Xác nhận `lib/supabase.ts` dùng `persistSession: false` (không có custom storage — session chỉ sống trong RAM)
 - [x] **A5** — Tạo `screens/LoginScreen.tsx`: email + password, `signInWithPassword`, hiện lỗi
 - [x] **A6** — Cập nhật `App.tsx`: auth gate (`getSession` + `onAuthStateChange` + loading + LoginScreen)
 - [x] **A7** — Cập nhật `screens/SettingsScreen.tsx`: nút Đăng xuất (`signOut`)
 
 ---
 
-## Nhóm D: Build & cài máy — **Chưa làm**
+## Nhóm D: Build & cài máy (EAS) — **Đang làm**
 
-- [ ] **D1** — Chạy `npx expo prebuild` (tạo native project)
-- [ ] **D2** — Build APK: `cd android && ./gradlew assembleRelease` (hoặc `eas build --platform android --profile preview`)
-- [ ] **D3** — Cài APK lên thiết bị thật (sideload hoặc qua `adb install`)
-- [ ] **D4** — Build iOS (nếu cần): `eas build --platform ios --profile preview`
-- [ ] **D5** — Kiểm tra app khởi động đúng trên thiết bị thật (không crash on launch)
-- [ ] **D6** — Kiểm tra `.env` production có đúng Supabase URL + key mới (sau rotate)
-- [ ] **D7** — Xác nhận `expo-secure-store` hoạt động trên thiết bị thật (session persist sau kill app)
+- [x] **D1** — Cài EAS CLI: `npm install -g eas-cli` → `eas login`
+- [x] **D2** — Cài `expo-updates`: `npx expo install expo-updates`
+- [x] **D3** — Khởi tạo EAS: `eas build:configure` → chọn Android; thêm profile `"preview"` (`distribution: internal`, `buildType: apk`) vào `eas.json`
+- [x] **D4** — Cấu hình OTA: `eas update:configure`
+- [ ] **D5** — Set biến môi trường trên EAS (Sensitive): `eas env:create --name EXPO_PUBLIC_SUPABASE_URL --environment production` + `eas env:create --name EXPO_PUBLIC_SUPABASE_ANON_KEY --environment production`
+- [ ] **D6** — Build APK: `eas build --profile preview --platform android` (~10–30 phút, theo dõi tại expo.dev → project → Builds)
+- [ ] **D7** — Gửi link APK cho nhân viên → tải → bật "Cài từ nguồn không rõ" → cài
+- [ ] **D8** — Xác nhận app khởi động đúng trên thiết bị thật (không crash on launch)
 
 ---
 
@@ -52,6 +53,9 @@ Checklist bảo mật và triển khai trước khi đưa app lên thiết bị 
 - [ ] **E3** — Thử truy cập Supabase API với anon key (không JWT) → bị RLS chặn (403/empty)
 - [ ] **E4** — Realtime subscription hoạt động sau khi đăng nhập (2 thiết bị, cập nhật data → sync)
 - [ ] **E5** — Toàn bộ CRUD (thêm/sửa/xóa SP, lô, zone, kho) hoạt động bình thường sau auth
+- [ ] **E6** — Test auto-logout: để app foreground 20 phút không chạm → phải hiện Alert "Phiên đăng nhập đã hết hạn"
+- [ ] **E7** — Test kill app: tắt app hoàn toàn → mở lại → phải về màn LoginScreen (không vào thẳng app)
+- [ ] **E8** — Test background ngắn: switch sang app khác < 20 phút → quay lại → vẫn vào được app không cần login lại
 
 ---
 

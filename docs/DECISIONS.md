@@ -62,6 +62,7 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quyết định:** Mở app dùng luôn, mọi người **full quyền**, không đăng nhập.
 - **Lý do:** Đưa app vào vận hành nhanh, đủ cho quy mô cửa hàng nhỏ.
 - **Thay thế đã xem xét:** Auth sớm — hoãn sang super app / phase sau.
+- **Cập nhật sau này:** Phase 2 đã implement auth đầy đủ (LoginScreen, `persistSession: false`, inactivity timer 20 phút, signOut) — xem quyết định "Auto-logout: memory-only session + inactivity timer 20 phút" bên dưới.
 
 ---
 

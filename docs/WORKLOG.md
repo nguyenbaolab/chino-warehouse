@@ -4,6 +4,35 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs: SUMMARY_2.md + rewrite USER_GUIDE.md
+
+- **SUMMARY_2:** tổng kết đầy đủ Phase 2 (features done, tính năng → Phase 3, decisions quan trọng, security 14 SEC tổng kết, KI open, số liệu Phase 2, lộ trình Phase 3).
+- **USER_GUIDE:** rewrite phản ánh Phase 2 — thêm §2 Đăng nhập (auto-logout, kill app), §3 cập nhật multi-kho + Zone Layout Editor, §4 thêm filter kho/zone + category, §5 thêm phân loại + lịch sử thay đổi, §7 rewrite Cài đặt (quản lý kho, phân loại, audit log, discontinued, đăng xuất), §9 cập nhật gợi ý lỗi auth.
+- **File đã tạo/sửa:** `docs/phases/phase-2/SUMMARY_2.md`, `docs/project/USER_GUIDE.md`, `docs/WORKLOG.md`
+
+---
+
+## [tháng 5/2026] — docs: tạo HANDOFF_2.md + TESTCASES_2.md đầy đủ
+
+- **HANDOFF_2:** tổng quan Phase 2, features done (F20/F29/F30/Auth/SEC-08/SEC-11/Auto-logout), 15 migration files, breaking changes (auth bắt buộc, persistSession: false, Realtime private, expo-updates), files thêm/sửa, known issues open (9 KI), checklist bàn giao, hướng dẫn local.
+- **TESTCASES_2:** 50 test cases (TC-201→TC-250) nhóm Auth (10), F20 Multi-kho (10), F29 Zone Layout Editor (6), F30 Category (9), SEC-11 Audit Log (10), Security (5).
+- **File đã tạo:** `docs/phases/phase-2/HANDOFF_2.md`, `docs/phases/phase-2/TESTCASES_2.md`
+
+---
+
+## [tháng 5/2026] — docs: fix 7 file sai lệch chuẩn bị tổng kết Phase 2
+
+- **GOLIVE_CHECKLIST_2:** rewrite A3/A4 (persistSession: false thay SecureStore), D hoàn toàn (EAS thay gradlew/adb), thêm E6/E7/E8 (auto-logout, kill app, background).
+- **KNOWN_ISSUES KI-016:** sửa mô tả fix (persistSession: false thay SecureStore).
+- **CONTEXT §1:** sửa expo-secure-store + Supabase Auth (`persistSession: false` thay "memory-only").
+- **DECISIONS:** thêm supersede note cho "Phase 1 không có auth".
+- **PLAN_2:** cập nhật trạng thái → "đang tổng kết", thêm auth/EAS done, F21 deferred Phase 3, auto-logout done trong §5.
+- **REQUIREMENTS v1.3.6:** F21 Phase→Phase 3, F22 Partial (SEC-11), F24 Partial (auth cơ bản done).
+- **WORKFLOW:** tất cả references Phase 1 → Phase 2 (PLAN_2, HANDOFF_2, TESTCASES_2, SUMMARY_2).
+- **File đã sửa:** `GOLIVE_CHECKLIST_2.md`, `KNOWN_ISSUES.md`, `CONTEXT.md`, `DECISIONS.md`, `PLAN_2.md`, `REQUIREMENTS.md`, `WORKFLOW.md`, `WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — chore: update .cursorrules Phase 2 + tạo USER_GUIDE_2.md
 
 - **`.cursorrules`:** Rewrite toàn bộ — thêm Auth (persistSession: false), quy tắc WORKLOG (entry ở ĐẦU FILE), quy tắc đặt tên file theo phase (suffix _N), cập nhật tính năng đã hoàn thành (Phase 1 + Phase 2), tính năng chưa làm (Phase 2 còn lại), sửa handoff reference sang `HANDOFF_2.md`.
