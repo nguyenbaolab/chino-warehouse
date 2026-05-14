@@ -37,10 +37,10 @@ F01, F02, F03, F04, F05, F06, F07, F09, F10, F11, F12, F13, F14, F15, F16, F17, 
 | **Không nhập nữa (F28)** | Chưa có **field lý do riêng** trên DB/UI; đang dùng tạm `products.notes` cho dòng lý do trên màn discontinued. |
 | **Barcode (BLK-001 / edge cases)** | Barcode **per lô** đã triển khai; **chờ xác nhận từ chủ cửa hàng** về edge cases vận hành (quét trùng, đổi mã, v.v.) trước khi coi là “đóng hẳn” mọi kịch bản. |
 
-Chi tiết test và handoff kỹ thuật: `docs/phases/phase-1/HANDOFF.md`, `docs/phases/phase-1/TESTCASES.md`.
+Chi tiết test và handoff kỹ thuật: `docs/phases/phase-1/HANDOFF_1.md`, `docs/phases/phase-1/TESTCASES_1.md`.
 
 ---
 
 ## Tổng kết giai đoạn
 
-Phase 1 coi như **đóng scope MVP**: luồng kho chính, thông báo 2 tab, đặt hàng list, discontinued + Settings. Bản tổng hợp kết quả và quyết định: **`docs/phases/phase-1/SUMMARY.md`**. Kế hoạch tiếp theo: **`docs/phases/phase-2/PLAN.md`**.
+Phase 1 coi như **đóng scope MVP**: luồng kho chính, thông báo 2 tab, đặt hàng list, discontinued + Settings. Bản tổng hợp kết quả và quyết định: **`docs/phases/phase-1/SUMMARY_1.md`**. Kế hoạch tiếp theo: **`docs/phases/phase-2/PLAN_2.md`**.

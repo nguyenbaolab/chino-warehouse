@@ -37,10 +37,16 @@ docs/
     WORKFLOW.md
   phases/
     phase-1/
-      PLAN.md
-      TESTCASES.md
-      HANDOFF.md
-      SUMMARY.md
+      PLAN_1.md
+      TESTCASES_1.md
+      HANDOFF_1.md
+      SUMMARY_1.md
+      USER_GUIDE_1.md
+    phase-2/
+      PLAN_2.md
+      GOLIVE_CHECKLIST_2.md
+      HANDOFF_2.md
+      TESTCASES_2.md
   DECISIONS.md
   WORKLOG.md
   BLOCKERS.md

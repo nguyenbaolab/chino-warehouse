@@ -16,7 +16,7 @@ File này mô tả cách Cursor (và team) đọc/ghi tài liệu kèm code. **�
 1. `docs/project/REQUIREMENTS.md` — business rules, scope
 2. `docs/project/CONTEXT.md` — technical context, conventions
 3. `docs/BLOCKERS.md` — tránh lặp lỗi / chờ quyết định
-4. `docs/phases/phase-1/PLAN.md` — scope phase hiện tại
+4. `docs/phases/phase-1/PLAN_1.md` — scope phase hiện tại
 
 ---
 
@@ -27,13 +27,13 @@ File này mô tả cách Cursor (và team) đọc/ghi tài liệu kèm code. **�
 - `docs/project/CONTEXT.md` — nếu thêm/xóa file, đổi store, đổi convention
 - `docs/WORKLOG.md` — ghi log task vừa hoàn thành
 - `docs/KNOWN_ISSUES.md` — nếu phát hiện bug mới
-- `docs/phases/phase-1/HANDOFF.md` — nếu task sẵn sàng để test
+- `docs/phases/phase-1/HANDOFF_1.md` — nếu task sẵn sàng để test
 
 **Đề xuất, chờ người dùng confirm:**
 
 - `docs/project/REQUIREMENTS.md` — nếu business rule thay đổi
 - `docs/DECISIONS.md` — nếu có quyết định thiết kế mới
-- `docs/phases/phase-1/PLAN.md` — nếu scope thay đổi
+- `docs/phases/phase-1/PLAN_1.md` — nếu scope thay đổi
 
 **Không bao giờ tự update:**
 
@@ -45,8 +45,8 @@ File này mô tả cách Cursor (và team) đọc/ghi tài liệu kèm code. **�
 
 ## §4 Role TEST — Đọc trước khi test
 
-1. `docs/phases/phase-1/TESTCASES.md`
-2. `docs/phases/phase-1/HANDOFF.md`
+1. `docs/phases/phase-1/TESTCASES_1.md`
+2. `docs/phases/phase-1/HANDOFF_1.md`
 
 ---
 
@@ -54,9 +54,9 @@ File này mô tả cách Cursor (và team) đọc/ghi tài liệu kèm code. **�
 
 **Tự động:**
 
-- `docs/phases/phase-1/SUMMARY.md` — kết quả test
+- `docs/phases/phase-1/SUMMARY_1.md` — kết quả test
 - `docs/KNOWN_ISSUES.md` — bug phát hiện khi test
-- `docs/phases/phase-1/HANDOFF.md` — feedback lại cho DEV nếu fail
+- `docs/phases/phase-1/HANDOFF_1.md` — feedback lại cho DEV nếu fail
 
 ---
 

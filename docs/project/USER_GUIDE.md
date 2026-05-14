@@ -46,7 +46,7 @@ Trên tab **Kho**, phía trên bản đồ có **hàng nút** chọn kho đang x
 ## 6) Tab Thông báo
 
 - Danh sách cảnh báo (hết hạn, sắp hết hạn, tồn thấp theo ngưỡng, …).
-- Định dạng card đầy đủ theo **REQUIREMENTS.md §7.6** (tổng thùng + thùng có vấn đề) có thể chưa khớp — xem backlog trong `docs/phases/phase-1/PLAN.md` và `docs/KNOWN_ISSUES.md`.
+- Định dạng card đầy đủ theo **REQUIREMENTS.md §7.6** (tổng thùng + thùng có vấn đề) có thể chưa khớp — xem backlog trong `docs/phases/phase-1/PLAN_1.md` và `docs/KNOWN_ISSUES.md`.
 
 ---
 

@@ -21,7 +21,14 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.nguyenbaolab.chinowarehouse"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -34,6 +41,17 @@
         }
       ],
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9c362c8a-0700-4d04-82ee-a9a1f3054e25"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9c362c8a-0700-4d04-82ee-a9a1f3054e25"
+    }
   }
 }

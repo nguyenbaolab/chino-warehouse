@@ -41,8 +41,8 @@ F20, F29, F30 đã hoàn thành trong Phase 2.
 
 | File | Mục đích |
 |------|----------|
-| `docs/phases/phase-2/HANDOFF.md` | Hướng dẫn dev/QA — **điền khi bắt đầu Phase 2**. |
-| `docs/phases/phase-2/TESTCASES.md` | Test cases — **điền khi bắt đầu Phase 2**. |
+| `docs/phases/phase-2/HANDOFF_2.md` | Hướng dẫn dev/QA — **điền khi bắt đầu Phase 2**. |
+| `docs/phases/phase-2/TESTCASES_2.md` | Test cases — **điền khi bắt đầu Phase 2**. |
 
 Đồng bộ `REQUIREMENTS.md` / `DECISIONS.md` khi scope Phase 2 được chốt chi tiết từng sprint.
 

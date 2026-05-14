@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — chore: đổi tên file phase docs thêm số suffix (_1, _2)
+
+- **Phase 1:** `PLAN.md` → `PLAN_1.md`, `SUMMARY.md` → `SUMMARY_1.md`, `HANDOFF.md` → `HANDOFF_1.md`, `TESTCASES.md` → `TESTCASES_1.md`, `USER_GUIDE.md` → `USER_GUIDE_1.md`.
+- **Phase 2:** `PLAN.md` → `PLAN_2.md`, `GOLIVE_CHECKLIST.md` → `GOLIVE_CHECKLIST_2.md`, `HANDOFF.md` → `HANDOFF_2.md`, `TESTCASES.md` → `TESTCASES_2.md`.
+- **References updated:** `CONTEXT.md` §2, `WORKLOG.md`, `WORKFLOW.md`, `README.md`, `USER_GUIDE.md`, `PLAN_1.md`, `SUMMARY_1.md`, `PLAN_2.md`.
+
+---
+
 ## [tháng 5/2026] — fix: supabase.ts — đổi sang persistSession: false
 
 - **`lib/supabase.ts`:** Xóa `memoryStorage` object và `auth.storage`. Đổi `persistSession: true` → `false`. Lý do: `persistSession: true` + storage luôn trả null gây `autoRefreshToken` đọc storage thấy null → clear session → query mất JWT → RLS block. `persistSession: false` = session thuần trong RAM của Supabase client, không đụng storage, behavior vẫn đúng (kill app = logout).
@@ -66,8 +74,8 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - `CONTEXT.md` §1: thêm ghi chú mô hình bảo mật (client-direct BaaS, RLS `authenticated_only`, Realtime `private: true`, không server backend riêng).
 - `DECISIONS.md`: thêm quyết định kiến trúc client-direct + RLS.
 - `PLAN.md`: thêm mục §5 Security Phase 2 (SEC-11 in progress, SEC-05/06/07/10/12/13/14 còn lại, SEC-09 deferred Phase 3).
-- Tạo `docs/phases/phase-2/GOLIVE_CHECKLIST.md` với trạng thái từng bước C/B/A/D/E.
-- **File đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/project/CONTEXT.md`, `docs/DECISIONS.md`, `docs/phases/phase-2/PLAN.md`, `docs/phases/phase-2/GOLIVE_CHECKLIST.md` (mới), `docs/WORKLOG.md`
+- Tạo `docs/phases/phase-2/GOLIVE_CHECKLIST_2.md` với trạng thái từng bước C/B/A/D/E.
+- **File đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/project/CONTEXT.md`, `docs/DECISIONS.md`, `docs/phases/phase-2/PLAN_2.md`, `docs/phases/phase-2/GOLIVE_CHECKLIST_2.md` (mới), `docs/WORKLOG.md`
 
 ---
 
@@ -81,7 +89,7 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 - **PLAN.md §2 F30:** Sửa "gán SP trên tab Sản phẩm" → "gán SP trên ProductDetailScreen và AddInventoryScreen".
 - **REQUIREMENTS.md §9:** Xóa "Toggle lọc có vấn đề" khỏi ProductsScreen (đã bỏ từ code); thêm "checkbox lọc Hết hạn / Sắp hết hạn" vào Notifications.
 - **DECISIONS.md:** Thêm ghi chú supersede cho mục "Tab Đặt hàng" gốc → trỏ tới F27 mở rộng.
-- **File đã cập nhật:** `docs/phases/phase-1/SUMMARY.md`, `docs/phases/phase-2/PLAN.md`, `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`
+- **File đã cập nhật:** `docs/phases/phase-1/SUMMARY_1.md`, `docs/phases/phase-2/PLAN_2.md`, `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`
 
 ---
 
@@ -202,7 +210,7 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ## [tháng 5/2026] — Chốt design F27 mở rộng + F30 (docs only)
 
 - **F27:** 2 tab trong list (Hàng trong kho / Hàng mới), list active + list tự tạo, số thùng để trống đến Confirm, nhóm theo category, PDF tổng hợp cả 2 tab, luồng Draft → Confirm → Xuất PDF → Đã đặt.
-- **F30:** Category 2 cấp, quản lý trong Settings, optional trên sản phẩm; `REQUIREMENTS.md` §6 §8 §9, `DECISIONS.md`, `docs/phases/phase-2/PLAN.md`.
+- **F30:** Category 2 cấp, quản lý trong Settings, optional trên sản phẩm; `REQUIREMENTS.md` §6 §8 §9, `DECISIONS.md`, `docs/phases/phase-2/PLAN_2.md`.
 - **Chưa implement code** — chỉ cập nhật tài liệu (v1.3.3).
 
 ---
@@ -210,7 +218,7 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ## [tháng 5/2026] — F18 NotificationsScreen: Partial → Done
 
 - **F18** `NotificationsScreen`: xác nhận **Done** sau test thực tế; không phát hiện lỗi UI/UX.
-- Cập nhật `REQUIREMENTS.md` §6, `docs/phases/phase-2/PLAN.md` §1, `docs/phases/phase-1/SUMMARY.md`.
+- Cập nhật `REQUIREMENTS.md` §6, `docs/phases/phase-2/PLAN_2.md` §1, `docs/phases/phase-1/SUMMARY_1.md`.
 
 ---
 
@@ -305,7 +313,7 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ### KI-001 — Màu critical (0–1 thùng) = đỏ
 
 - **Task:** Fix KI-001: trạng thái `critical` hiển thị đỏ theo REQUIREMENTS §5 / DECISIONS
-- **Files thay đổi:** `types/index.ts`, `stores/themeStore.ts`, `docs/KNOWN_ISSUES.md`, đồng bộ tham chiếu KI-001 (`.cursorrules`, `README.md`, `docs/project/CONTEXT.md`, `docs/project/USER_GUIDE.md`, `docs/phases/phase-1/PLAN.md`)
+- **Files thay đổi:** `types/index.ts`, `stores/themeStore.ts`, `docs/KNOWN_ISSUES.md`, đồng bộ tham chiếu KI-001 (`.cursorrules`, `README.md`, `docs/project/CONTEXT.md`, `docs/project/USER_GUIDE.md`, `docs/phases/phase-1/PLAN_1.md`)
 - **Kết quả:** `EXPIRY_COLORS.critical` = `#EF4444`; `statusCritical` dark `#EF4444`, light `#DC2626`
 - **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md` (+ các file tham chiếu trạng thái bug)
 
@@ -319,58 +327,58 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ### KI-005 — Danh sách SP/lô cập nhật ngay sau Thêm hàng
 
 - **Task:** Fix KI-005: UI tab Sản phẩm không thấy SP mới sau khi tạo từ `AddInventoryScreen`
-- **Files thay đổi:** `screens/AddInventoryScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/AddInventoryScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Tránh race `fetchProducts()` mount ghi đè store sau `addProduct`; `warehouseStore` `addProduct` / `addInventoryEntry` giữ nguyên (đã merge state đúng)
-- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### KI-005 (bổ sung) — Chi tiết SP: refetch lô khi focus
 
 - **Task:** Sau `AddInventoryScreen` → back `ProductDetailScreen`, danh sách lô không cập nhật
-- **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** `loadData` bọc `useCallback`; `useFocusEffect` gọi `loadData` khi màn focus — refetch `inventory_entries` từ Supabase
-- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### UI — Thông báo, Sản phẩm, Chi tiết (tổng thùng + lọc Có vấn đề)
 
 - **Task:** Card Thông báo (tổng + thùng có vấn đề); Products + ProductDetail: tổng thùng và toggle lọc
-- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `screens/ProductsScreen.tsx`, `screens/ProductDetailScreen.tsx`, `docs/project/CONTEXT.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `screens/ProductsScreen.tsx`, `screens/ProductDetailScreen.tsx`, `docs/project/CONTEXT.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Không đổi store/schema; lọc theo `getCombinedStatus` ≠ `ok`
-- **Docs đã cập nhật:** `docs/project/CONTEXT.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md` (KNOWN_ISSUES: không phát hiện bug mới)
+- **Docs đã cập nhật:** `docs/project/CONTEXT.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md` (KNOWN_ISSUES: không phát hiện bug mới)
 
 ### UI — Thông báo (pill tồn/hạn) + Products (KI-008, trước đây KI-006)
 
 - **Task:** Khôi phục pill **Sắp hết hàng** / **Hết hàng** và **Sắp hết hạn** / **Hết hạn** trên card Thông báo; màu chữ/viền pill `#EF4444` / `#FACC15`; sửa crash toggle **Có vấn đề** (thứ tự `useMemo`).
-- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`, `docs/project/CONTEXT.md`
+- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`, `docs/project/CONTEXT.md`
 - **Kết quả:** Giữ dòng `Tổng X thùng | Y thùng có vấn đề`; `productIdsWithIssueLot` tính trước `filteredProducts` (Resolved — hiện ghi **KI-008** trong `KNOWN_ISSUES.md`)
-- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (KI-008), `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`, `docs/project/CONTEXT.md`
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (KI-008), `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`, `docs/project/CONTEXT.md`
 
 ### UI — Thông báo (pill dưới tổng) + Sản phẩm (bỏ toggle Có vấn đề)
 
 - **Task:** Pill tồn/hạn cùng một hàng ngay dưới `Tổng X thùng | Y thùng có vấn đề`; chỉ render pill đỏ/vàng khi có cảnh báo; xóa toggle **Có vấn đề** khỏi `ProductsScreen` (giữ toggle ở `ProductDetailScreen`); loại bỏ hoàn toàn đường filter `.has` trên Products.
-- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Không còn `TypeError` từ `.has` trên Products; lọc lô có vấn đề chỉ còn ở chi tiết SP
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Navigation + ProductDetail + Map + Thông báo + Thêm/Sửa lô (0 thùng)
 
 - **Task:** Tab bar hiện trên `ProductDetail` / `AddInventory` (stack lồng trong tab); `BarcodeScanner` fullscreen modal; `ProductDetail`: hardcode `low_critical_boxes = 1`, gỡ UI ngưỡng critical, gộp mã vạch + `low_warning_boxes` + `warning_days` vào section **Chi tiết** / **Thu gọn** (mặc định thu gọn); `MapScreen`: panel kết quả tìm mặc định thu gọn sau khi tìm, nút **Chi tiết** / **Thu gọn**; `NotificationsScreen`: pill tồn **Hết hàng** (0 thùng) / **Còn rất ít** (1 thùng) đỏ; `AddInventoryScreen` + `ZoneDetailSheet`: cho phép **0 thùng** (số nguyên ≥ 0).
-- **Files thay đổi:** `App.tsx`, `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/MapScreen.tsx`, `screens/NotificationsScreen.tsx`, `screens/AddInventoryScreen.tsx`, `components/ZoneDetailSheet.tsx`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `App.tsx`, `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/MapScreen.tsx`, `screens/NotificationsScreen.tsx`, `screens/AddInventoryScreen.tsx`, `components/ZoneDetailSheet.tsx`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** `returnTab` cho luồng gán mã vạch sau quét; navigate lồng `Tabs` → tab → `MapMain` / `ProductDetail` / `AddInventory`
-- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Docs — KI mới (0 thùng) + đổi mã KI cũ
 
 - **Task:** Ghi nhận **KI-006** (ProductDetail không cho sửa về 0 thùng), **KI-007** (lô 0 thùng biến mất khỏi app); đổi mã mục Resolved cũ ProductsScreen `.has` thành **KI-008**; cập nhật `HANDOFF.md`.
-- **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Truy vết KI-006/007 theo lỗi 0 thùng; lịch sử TypeError Products → KI-008
-- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Docs — Quyết định mới cho Notifications + tồn kho + lô 0 thùng
 
 - **Task:** Cập nhật quyết định mới: cảnh báo tồn kho theo tổng thùng sản phẩm; lô 0 thùng giữ lại, không tự xóa; format card Thông báo mới; thêm tab con **Có vấn đề / Để sau**; cập nhật F18 và blocker lưu trạng thái Để sau.
-- **Files thay đổi:** `docs/DECISIONS.md`, `docs/project/REQUIREMENTS.md`, `docs/BLOCKERS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `docs/DECISIONS.md`, `docs/project/REQUIREMENTS.md`, `docs/BLOCKERS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Đồng bộ docs theo hướng triển khai mới cho tab Thông báo và business logic lô 0 thùng; bổ sung blocker dữ liệu cho tab Để sau.
-- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/project/REQUIREMENTS.md`, `docs/BLOCKERS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/project/REQUIREMENTS.md`, `docs/BLOCKERS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Docs — Đồng bộ CONTEXT §3 (navigation + Notifications)
 
@@ -382,9 +390,9 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ### KI-007 (+ KI-006) — Giữ lô 0 thùng trong app và DB; chi tiết SP
 
 - **Task:** Fix KI-007: lô `quantity_boxes = 0` không còn “biến mất” khỏi danh sách; fix KI-006: cho phép lưu 0 thùng từ `ProductDetailScreen`.
-- **Files thay đổi:** `stores/warehouseStore.ts` (`fetchInventoryByZone`, `searchProducts`), `screens/ProductDetailScreen.tsx`, `screens/NotificationsScreen.tsx` (bỏ điều kiện `issueBoxes === 0` khi vẫn có lô combined ≠ ok), `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `stores/warehouseStore.ts` (`fetchInventoryByZone`, `searchProducts`), `screens/ProductDetailScreen.tsx`, `screens/NotificationsScreen.tsx` (bỏ điều kiện `issueBoxes === 0` khi vẫn có lô combined ≠ ok), `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Không còn lọc `quantity_boxes > 0` trên các truy vấn đó; lô 0 thùng có banner **Lô này đã hết hàng** + **Xóa lô** (xóa record); `deleteZone` vẫn chỉ chặn khi còn lô có `quantity_boxes > 0`. Không đổi schema — không migration mới.
-- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### KI-006 — Xác minh lại validation số thùng (ProductDetailScreen)
 
@@ -395,9 +403,9 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ### F18 — Thông báo: tab Có vấn đề / Để sau + format card + `is_deferred`
 
 - **Task:** Implement F18: migration `products.is_deferred`, `toggleDeferred` trong store, `NotificationsScreen` hai tab + card mới + nút chuyển tab; cập nhật REQUIREMENTS F18 Done, DECISIONS / BLOCKERS BLK-002 Resolved, HANDOFF.
-- **Files thay đổi:** `supabase/migrations/20260511_add_product_is_deferred.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `screens/NotificationsScreen.tsx`, `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `supabase/migrations/20260511_add_product_is_deferred.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `screens/NotificationsScreen.tsx`, `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Pill tồn theo tổng thùng SP; pill hạn theo lô xấu nhất; dòng sắp hết hạn = tổng thùng các lô có hạn warning/expired; BLK-002 đóng bằng cột DB.
-- **Docs đã cập nhật:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Docs — KNOWN_ISSUES: KI-002 Resolved, KI-009 mới
 
@@ -430,58 +438,58 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ### AddInventoryScreen — Field mã vạch + quét + cập nhật `products.barcode`
 
 - **Task:** Thêm field mã vạch dưới chọn SP: điền sẵn từ sản phẩm, nhập tay / quét camera (`BarcodeScanner` mode `addInventory`), khi Lưu nếu đổi thì `updateBarcode`.
-- **Files thay đổi:** `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Không phát hiện bug mới ghi trong KNOWN_ISSUES.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### KI-010 — BarcodeScanner: đóng modal + nested navigate ổn định
 
 - **Task:** Sau quét, modal scanner phải đóng và Tabs nhận params (locate / assign / addInventory / search mặc định).
-- **Files thay đổi:** `screens/BarcodeScannerScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/BarcodeScannerScreen.tsx`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** `navigate('Tabs', …)` rồi hoãn `goBack()` (~160ms); `useFocusEffect` reset lock; ref `processingRef` chống double-scan; reset ref khi alert “không tìm thấy”.
-- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (KI-010 Resolved), `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/KNOWN_ISSUES.md` (KI-010 Resolved), `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Docs — Quyết định barcode per lô + đóng BLK-001
 
 - **Task:** Cập nhật docs theo quyết định mới: barcode per lô (`inventory_entries.barcode`), bỏ `products.barcode`; cập nhật logic tìm kiếm barcode vs tên; BLK-001 chuyển Resolved.
-- **Files thay đổi:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Đồng bộ tài liệu theo hướng triển khai barcode per lô trong Phase 1.
-- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/DECISIONS.md`, `docs/BLOCKERS.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Barcode per lô — implement code + migration
 
 - **Task:** Chuyển barcode từ per sản phẩm sang per lô: migration drop `products.barcode`, add `inventory_entries.barcode`; cập nhật store/type/search; cập nhật `MapScreen`, `ProductsScreen`, `ProductDetailScreen`, `AddInventoryScreen`, `BarcodeScannerScreen` (bỏ assign mode).
-- **Files thay đổi:** `supabase/migrations/20260511_drop_products_barcode.sql`, `supabase/migrations/20260511_add_inventory_entries_barcode.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `screens/ProductsScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `supabase/migrations/20260511_drop_products_barcode.sql`, `supabase/migrations/20260511_add_inventory_entries_barcode.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `screens/ProductsScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Quét barcode tìm theo `inventory_entries.barcode` và trả về lô + zone chứa lô; AddInventory ghi barcode vào lô; ProductDetail cho xem/sửa barcode theo từng lô.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### UI — Barcode scan cho lô + format hạn DD/MM/YYYY
 
 - **Task:** `ProductDetailScreen`: thêm nút quét camera cạnh field barcode lô (inline edit) và tự điền barcode sau quét; `ZoneDetailSheet`: hiện barcode lô và bỏ nút `i`; đổi hiển thị hạn toàn app sang `DD/MM/YYYY` (không đổi format DB).
-- **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/BarcodeScannerScreen.tsx`, `types/index.ts`, `screens/MapScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/BarcodeScannerScreen.tsx`, `types/index.ts`, `screens/MapScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Luồng quét từ ProductDetail quay lại đúng lô đang edit; hạn hiển thị đồng nhất `DD/MM/YYYY`; không đổi schema/business rule.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### UI — Expand card lô + scan barcode trả về đúng màn
 
 - **Task:** `MapScreen`: đưa nút `✕` vào trong ô tìm (giữ nguyên nút scan camera); `ZoneDetailSheet`: expand lô thêm field barcode + nút 📷; `ProductDetailScreen`: bấm card lô để mở inline edit luôn; `BarcodeScannerScreen`: trả barcode về đúng ngữ cảnh `ProductDetailScreen` và `ZoneDetailSheet` (không đổi các mode khác).
-- **Files thay đổi:** `screens/MapScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/ProductDetailScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/MapScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/ProductDetailScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Quét từ `ZoneDetailSheet`/`ProductDetailScreen` điền barcode vào đúng lô đang sửa và đóng scanner, không chuyển sang màn khác; thao tác mở edit lô nhanh hơn bằng cách bấm trực tiếp card.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Fix scanner callback + ô tìm Sản phẩm
 
 - **Task:** `BarcodeScannerScreen`: trả barcode đúng chỗ cho `ProductDetailScreen`, `AddInventoryScreen`, `ZoneDetailSheet` theo callback tại màn gọi scanner (điền field rồi đóng scanner, không điều hướng về `MapScreen`); `ProductsScreen`: thêm nút `✕` trong input tìm kiếm (giữ nguyên vị trí nút scan).
-- **Files thay đổi:** `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `components/ZoneDetailSheet.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Luồng scan từ 3 màn nhập barcode trực tiếp vào field đang sửa và đóng scanner bằng `goBack`; locate/search flow hiện tại không thay đổi.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Fix nút X tìm kiếm — Map + Products
 
 - **Task:** `MapScreen` + `ProductsScreen`: nút `✕` active ngay khi có text; bấm `✕` xóa text tức thì, hủy kết quả tìm đang chờ và reset về trạng thái ban đầu.
-- **Files thay đổi:** `screens/MapScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/MapScreen.tsx`, `screens/ProductsScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** `MapScreen` thêm cơ chế request id để bỏ qua response search cũ sau khi clear; clear trên `ProductsScreen` đồng thời bỏ cờ highlight từ scan theo lô.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Docs — KNOWN_ISSUES: KI-009 → Closed
 
@@ -493,30 +501,30 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ### Docs lớn — định hướng mới Notifications + Tab Đặt hàng + Không nhập nữa
 
 - **Task:** Cập nhật tài liệu yêu cầu/thiết kế cho thay đổi lớn nhiều màn hình: thêm tab Đặt hàng (F27), thêm danh sách Không nhập nữa trong Settings (F28), restructure F18 (Sắp hết hạn / Sắp hết hàng, bỏ Để sau), bổ sung trường dữ liệu `is_expired_acknowledged`, và cập nhật quyết định `is_deferred` không còn dùng trong UI.
-- **Files thay đổi:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Tài liệu đã đồng bộ theo scope mới; chưa thay đổi code implement (trạng thái các feature mới: planned/not started).
-- **Docs đã cập nhật:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/project/REQUIREMENTS.md`, `docs/DECISIONS.md`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### ProductDetail — Banner lô hết hạn + Xóa lô
 
 - **Task:** `ProductDetailScreen`: thêm banner `Lô này đã hết hạn [Xóa lô]` cho lô có `expiry_date` đã qua ngày hiện tại; giữ hành vi xóa DB giống banner lô hết hàng; nếu lô vừa hết hàng vừa hết hạn thì hiển thị cả 2 banner.
-- **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/ProductDetailScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** UX lô hết hạn đồng nhất với lô hết hàng, thao tác dọn lô hết hạn ngay tại card lô.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Notifications restructure — Sắp hết hạn / Sắp hết hàng
 
 - **Task:** Refactor `NotificationsScreen` bỏ tab **Có vấn đề / Để sau**, thay bằng 2 tab **Sắp hết hạn** và **Sắp hết hàng**; thêm toggle **Đã giảm giá** (`products.is_price_reduced`) cho card sắp hết hạn; card đã hết hạn hiển thị đỏ nhạt + nhãn `Hết hạn rồi`; tab sắp hết hàng thêm 2 nút **Thêm vào danh sách nhập** (placeholder log) và **Không nhập nữa** (`products.is_discontinued`).
-- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `supabase/migrations/20260511_add_product_is_price_reduced.sql`, `supabase/migrations/20260511_add_product_is_discontinued.sql`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/NotificationsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `supabase/migrations/20260511_add_product_is_price_reduced.sql`, `supabase/migrations/20260511_add_product_is_discontinued.sql`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Notifications chuyển sang luồng xử lý trực tiếp theo hạn/tồn; thêm 2 action store `togglePriceReduced` và `toggleDiscontinued`; sản phẩm đánh dấu không nhập nữa được ẩn khỏi tab sắp hết hàng.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Notifications — chuyển `is_price_reduced` từ Product sang InventoryEntry
 
 - **Task:** Tạo migration chuyển cột `is_price_reduced` từ `products` sang `inventory_entries`; cập nhật tab Sắp hết hạn hiển thị theo từng lô có thể expand, mỗi lô có toggle Đã/Chưa giảm giá riêng; thêm filter bar `Hết hạn / Sắp hết hạn`; cập nhật `warehouseStore.togglePriceReduced` thao tác theo `inventory_entries`.
-- **Files thay đổi:** `supabase/migrations/20260511_move_is_price_reduced_to_inventory_entries.sql`, `screens/NotificationsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `supabase/migrations/20260511_move_is_price_reduced_to_inventory_entries.sql`, `screens/NotificationsScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Trạng thái giảm giá chuyển về cấp lô; UI tab Sắp hết hạn cho xem/toggle từng lô (màu đỏ nhạt/vàng nhạt theo loại hạn) và lọc nhanh theo loại lô.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Notifications — màu nút toggle giảm giá theo trạng thái
 
@@ -542,49 +550,49 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ### OrderDetail / OrderList — đổi tên list, xóa list, card item 2 dòng + inline edit
 
 - **Task:** `OrderDetailScreen`: list **draft** — bấm tiêu đề → `TextInput`, lưu khi blur / Done; nút **Xóa list** + `Alert` xác nhận (2 dòng copy theo spec), confirm gọi `deleteOrderList` rồi `navigate('OrderListMain')`; card item 2 dòng (⭐ + tên | dòng 2: số thùng | ghi chú | Xóa), bấm dòng mở chỉnh sửa inline (lưu blur / Done / bấm lại dòng). `OrderListScreen`: `useFocusEffect` refetch `fetchOrderLists` khi màn focus.
-- **Files thay đổi:** `screens/OrderDetailScreen.tsx`, `screens/OrderListScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/OrderDetailScreen.tsx`, `screens/OrderListScreen.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Không đổi schema/store API; xóa list vẫn dùng `deleteOrderList` (đã xóa items + list trên DB và store).
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Navigation + tab Đặt hàng + order list workflow
 
 - **Task:** `App.tsx` thêm tab **Đặt hàng** (giữa Sản phẩm và Thông báo), thêm stack riêng `OrderListMain` / `OrderDetail`, và bật hành vi `tabPress` popToTop khi bấm lại tab đang mở từ màn con; tạo `OrderListScreen` + `OrderDetailScreen`; bổ sung store actions cho `order_lists`/`order_items`; thêm migration tạo 2 bảng mới.
-- **Files thay đổi:** `App.tsx`, `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `supabase/migrations/20260511_add_order_lists_and_items.sql`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `App.tsx`, `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, `stores/warehouseStore.ts`, `types/index.ts`, `supabase/migrations/20260511_add_order_lists_and_items.sql`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Có luồng đặt hàng cơ bản theo list với 3 trạng thái (draft/confirmed/placed), CRUD item/list, cộng dồn sản phẩm trùng trong list đang soạn, và nút placeholder xuất PDF.
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Settings F28 — Sản phẩm không nhập nữa + màn danh sách
 
 - **Task:** Card **Sản phẩm không nhập nữa** trong `SettingsScreen` (số lượng theo store + Supabase Realtime); stack `DiscontinuedProductsScreen` liệt kê `is_discontinued`, tồn tổng thùng (0 → `Hết hàng`), dòng lý do từ `products.notes` nếu có, nút **Nhập lại** (`setProductDiscontinued(..., false)`). Store: `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`, `setProductDiscontinued`, `toggleDiscontinued` dùng chung cập nhật một chiều.
-- **Files thay đổi:** `screens/SettingsScreen.tsx`, `screens/DiscontinuedProductsScreen.tsx`, `stores/warehouseStore.ts`, `App.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Files thay đổi:** `screens/SettingsScreen.tsx`, `screens/DiscontinuedProductsScreen.tsx`, `stores/warehouseStore.ts`, `App.tsx`, `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 - **Kết quả:** Luồng F28 khép kín từ Cài đặt; đồng bộ `products` + `inventory_entries` qua Realtime (khi Supabase bật replication cho 2 bảng).
-- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF.md`
+- **Docs đã cập nhật:** `docs/WORKLOG.md`, `docs/phases/phase-1/HANDOFF_1.md`
 
 ### Docs — Tổng kết Phase 1 & chuẩn bị Phase 2
 
-- **Task:** Viết lại `docs/phases/phase-1/PLAN.md` theo trạng thái thực tế (Done / Partial F18 / Deferred F08,F19–F21,F26 / Out of scope F22–F25); tạo `docs/phases/phase-1/SUMMARY.md` (tổng quan, danh sách done & nợ, quyết định, KI, chuyển Phase 2); tạo `docs/phases/phase-2/PLAN.md`, `HANDOFF.md`, `TESTCASES.md` (placeholder); cập nhật `REQUIREMENTS.md` §6 (F15/F18/F27/F28); bump ghi chú phiên bản PRD 1.3.1.
-- **Files thay đổi:** `docs/phases/phase-1/PLAN.md`, `docs/phases/phase-1/SUMMARY.md`, `docs/phases/phase-2/PLAN.md`, `docs/phases/phase-2/HANDOFF.md`, `docs/phases/phase-2/TESTCASES.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`
+- **Task:** Viết lại `docs/phases/phase-1/PLAN_1.md` theo trạng thái thực tế (Done / Partial F18 / Deferred F08,F19–F21,F26 / Out of scope F22–F25); tạo `docs/phases/phase-1/SUMMARY_1.md` (tổng quan, danh sách done & nợ, quyết định, KI, chuyển Phase 2); tạo `docs/phases/phase-2/PLAN_2.md`, `HANDOFF.md`, `TESTCASES.md` (placeholder); cập nhật `REQUIREMENTS.md` §6 (F15/F18/F27/F28); bump ghi chú phiên bản PRD 1.3.1.
+- **Files thay đổi:** `docs/phases/phase-1/PLAN_1.md`, `docs/phases/phase-1/SUMMARY_1.md`, `docs/phases/phase-2/PLAN_2.md`, `docs/phases/phase-2/HANDOFF_2.md`, `docs/phases/phase-2/TESTCASES_2.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`
 - **Kết quả:** Phase 1 được đóng gói tài liệu; Phase 2 có skeleton plan và file handoff/test chờ điền.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`
 
 ### Docs — Phase 1 TESTCASES: F10 per lô + F17/F18/F27/F28
 
 - **Task:** Sửa **TC-F10-01/02** theo barcode **per lô** (`inventory_entries.barcode`): quét đúng → highlight zone + thông tin lô; quét sai → dialog thêm thủ công / quét lại. Bổ sung test cases **F17** (Realtime hai thiết bị), **F18** (tab Sắp hết hạn/hết hàng, toggle giảm giá per lô, filter, Không nhập nữa), **F27** (đặt hàng list lifecycle), **F28** (Settings discontinued + Nhập lại). Cập nhật phần mở đầu file test.
-- **Files thay đổi:** `docs/phases/phase-1/TESTCASES.md`, `docs/WORKLOG.md`
+- **Files thay đổi:** `docs/phases/phase-1/TESTCASES_1.md`, `docs/WORKLOG.md`
 - **Kết quả:** QA có checklist thủ công khớp implementation hiện tại.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`
 
 ### Docs — Phase 1 USER_GUIDE (chủ + nhân viên)
 
-- **Task:** Tạo `docs/phases/phase-1/USER_GUIDE.md` — hướng dẫn tiếng Việt ngắn gọn cho chủ cửa hàng và nhân viên: giới thiệu, Expo Go/WiFi, các tab, tác vụ (tìm hàng, zone, thêm SP/lô, cập nhật, xóa lô, thông báo hai tab, đặt hàng, không nhập nữa), màu sắc, lưu ý Realtime/đăng nhập/thùng; ví dụ Chino's Boba Tea & Asian Market.
-- **Files thay đổi:** `docs/phases/phase-1/USER_GUIDE.md`, `docs/WORKLOG.md`
+- **Task:** Tạo `docs/phases/phase-1/USER_GUIDE_1.md` — hướng dẫn tiếng Việt ngắn gọn cho chủ cửa hàng và nhân viên: giới thiệu, Expo Go/WiFi, các tab, tác vụ (tìm hàng, zone, thêm SP/lô, cập nhật, xóa lô, thông báo hai tab, đặt hàng, không nhập nữa), màu sắc, lưu ý Realtime/đăng nhập/thùng; ví dụ Chino's Boba Tea & Asian Market.
+- **Files thay đổi:** `docs/phases/phase-1/USER_GUIDE_1.md`, `docs/WORKLOG.md`
 - **Kết quả:** Tài liệu vận hành cho người không chuyên kỹ thuật.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`
 
 ### Docs — USER_GUIDE: nút Thêm vào danh sách nhập (Phase 1 vs 2)
 
-- **Task:** Sửa một đoạn trong `docs/phases/phase-1/USER_GUIDE.md` (mục Sắp hết hàng): ghi rõ nút **Thêm vào danh sách nhập** chưa hoạt động trong Phase 1; Phase 2 sẽ kết nối với tab Đặt hàng.
-- **Files thay đổi:** `docs/phases/phase-1/USER_GUIDE.md`, `docs/WORKLOG.md`
+- **Task:** Sửa một đoạn trong `docs/phases/phase-1/USER_GUIDE_1.md` (mục Sắp hết hàng): ghi rõ nút **Thêm vào danh sách nhập** chưa hoạt động trong Phase 1; Phase 2 sẽ kết nối với tab Đặt hàng.
+- **Files thay đổi:** `docs/phases/phase-1/USER_GUIDE_1.md`, `docs/WORKLOG.md`
 - **Kết quả:** Người đọc không kỳ vọng sai về nút placeholder.
 - **Docs đã cập nhật:** `docs/WORKLOG.md`
 

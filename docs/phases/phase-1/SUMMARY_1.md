@@ -13,7 +13,7 @@
 ### Kết quả
 
 - MVP kho **đạt**: nhân viên có thể làm việc hàng ngày trên một kho (location) với bản đồ zone, chi tiết sản phẩm, và scanner.
-- **F18** (`NotificationsScreen`) đã **Done** sau test thực tế (tháng 5/2026); trước đó từng ghi **Partial** trong closeout Phase 1. Một số hạng mục mở rộng của **F27** (PDF, nối từ Sắp hết hàng) và **F28** (field lý do riêng) vẫn **kế hoạch hóa sang Phase 2** — xem `docs/phases/phase-2/PLAN.md` và mục 3 dưới đây.
+- **F18** (`NotificationsScreen`) đã **Done** sau test thực tế (tháng 5/2026); trước đó từng ghi **Partial** trong closeout Phase 1. Một số hạng mục mở rộng của **F27** (PDF, nối từ Sắp hết hàng) và **F28** (field lý do riêng) vẫn **kế hoạch hóa sang Phase 2** — xem `docs/phases/phase-2/PLAN_2.md` và mục 3 dưới đây.
 - Các tính năng **F08, F19–F21, F26** không thuộc cam kết Phase 1 — đã lên kế hoạch Phase 2 từ đầu.
 
 ---
@@ -98,4 +98,4 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 - **F08, F19, F20, F21, F26** theo scope đã hoãn.
 - **Barcode:** tùy chọn **multi-barcode per sản phẩm** nếu nghiệp vụ yêu cầu (BLK-001 đã closed — không còn edge case tồn đọng).
 
-Kế hoạch chi tiết: **`docs/phases/phase-2/PLAN.md`**.
+Kế hoạch chi tiết: **`docs/phases/phase-2/PLAN_2.md`**.
