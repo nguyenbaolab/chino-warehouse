@@ -4,9 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: supabase.ts — đổi sang persistSession: false
+
+- **`lib/supabase.ts`:** Xóa `memoryStorage` object và `auth.storage`. Đổi `persistSession: true` → `false`. Lý do: `persistSession: true` + storage luôn trả null gây `autoRefreshToken` đọc storage thấy null → clear session → query mất JWT → RLS block. `persistSession: false` = session thuần trong RAM của Supabase client, không đụng storage, behavior vẫn đúng (kill app = logout).
+
+---
+
 ## [tháng 5/2026] — feat: auto-logout — memory session + inactivity 20 phút
 
-- **`lib/supabase.ts`:** Xóa `ExpoSecureStoreAdapter` (SecureStore), thay bằng `memoryStorage` (getItem luôn trả null). Session chỉ sống trong RAM — kill app = logout.
+- **`lib/supabase.ts`:** Xóa `ExpoSecureStoreAdapter` (SecureStore), thay bằng `memoryStorage` → sau đó đổi sang `persistSession: false` (xem entry trên).
 - **`App.tsx`:** Thêm inactivity timer: `INACTIVITY_LIMIT_MS` = 20 phút, `CHECK_INTERVAL_MS` = 30s. Refs: `lastActivityRef`, `intervalRef`, `isAutoLogoutRef`. `useEffect(session)`: start timer khi có session, stop + hiện Alert khi auto-logout. `AppState` listener: check inactivity ngay khi active, stop timer khi background. Wrap navigator trong `<View onTouchStart/onTouchEnd={updateActivity}>`.
 - **`screens/LoginScreen.tsx`:** Comment ghi nhận App.tsx useEffect(session) tự reset timer sau login thành công.
 - **Docs:** `DECISIONS.md` (auto-logout decision), `CONTEXT.md` §1 (expo-secure-store + Supabase Auth updated), `KNOWN_ISSUES.md` (KI-028 Resolved).
