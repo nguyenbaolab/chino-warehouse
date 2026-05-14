@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — chore: update .cursorrules Phase 2 + tạo USER_GUIDE_2.md
+
+- **`.cursorrules`:** Rewrite toàn bộ — thêm Auth (persistSession: false), quy tắc WORKLOG (entry ở ĐẦU FILE), quy tắc đặt tên file theo phase (suffix _N), cập nhật tính năng đã hoàn thành (Phase 1 + Phase 2), tính năng chưa làm (Phase 2 còn lại), sửa handoff reference sang `HANDOFF_2.md`.
+- **`docs/phases/phase-2/USER_GUIDE_2.md`:** Tạo mới — hướng dẫn sử dụng Phase 2 cho nhân viên dùng APK: cài app, đăng nhập & bảo mật (auto-logout 20 phút, kill app), các tab, tính năng mới (multi-kho, zone editor, phân loại 2 cấp, lịch sử thay đổi, quản lý kho), cài đặt, màu sắc, đồng bộ, liên hệ sự cố.
+- **File đã sửa:** `.cursorrules`, `docs/phases/phase-2/USER_GUIDE_2.md` (mới), `docs/project/CONTEXT.md` §2, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — chore: đổi tên file phase docs thêm số suffix (_1, _2)
 
 - **Phase 1:** `PLAN.md` → `PLAN_1.md`, `SUMMARY.md` → `SUMMARY_1.md`, `HANDOFF.md` → `HANDOFF_1.md`, `TESTCASES.md` → `TESTCASES_1.md`, `USER_GUIDE.md` → `USER_GUIDE_1.md`.

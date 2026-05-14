@@ -47,6 +47,7 @@ docs/
       GOLIVE_CHECKLIST_2.md
       HANDOFF_2.md
       TESTCASES_2.md
+      USER_GUIDE_2.md
   DECISIONS.md
   WORKLOG.md
   BLOCKERS.md

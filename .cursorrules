@@ -4,10 +4,10 @@
 
 Trước khi làm bất cứ việc gì, đọc theo thứ tự:
 
-1. `docs/project/WORKFLOW.md`   ← quy trình làm việc
-2. `docs/project/REQUIREMENTS.md` ← business rules, features
-3. `docs/project/CONTEXT.md`   ← technical context
-4. `docs/BLOCKERS.md`          ← tránh lặp lỗi cũ
+1. docs/project/WORKFLOW.md      ← quy trình làm việc
+2. docs/project/REQUIREMENTS.md  ← business rules, features
+3. docs/project/CONTEXT.md       ← technical context
+4. docs/BLOCKERS.md              ← tránh lặp lỗi cũ
 
 ## Project
 
@@ -19,6 +19,7 @@ Joensuu, Finland. React Native (Expo) + TypeScript + Supabase + Zustand.
 - Mobile: React Native (Expo SDK), TypeScript
 - State: Zustand (warehouseStore, themeStore)
 - Backend: Supabase (PostgreSQL + Realtime)
+- Auth: Supabase Auth — email/password, persistSession: false (memory only)
 - Navigation: React Navigation (Bottom Tabs + Native Stack)
 - Barcode: expo-camera (CameraView + onBarcodeScanned)
 
@@ -29,7 +30,26 @@ Joensuu, Finland. React Native (Expo) + TypeScript + Supabase + Zustand.
 - Luôn dùng useThemeStore() để lấy colors — không hardcode màu
 - Không tự thêm npm package mới khi chưa được yêu cầu
 - Khi bí → ghi vào docs/BLOCKERS.md, dừng lại hỏi người dùng
-- **Supabase schema:** mỗi lần thêm / xóa / sửa bảng, cột, index, policy… phải tạo **file migration mới** trong `supabase/migrations/`, đặt tên theo format `YYYYMMDD_HHmmss_mô_tả_ngắn_gọn.sql` (ví dụ `20260510_143000_add_deferred_column_to_products.sql`). **Một thay đổi độc lập = một file riêng**; tên file phải rõ ràng, đọc là biết thay đổi gì; **không** gộp nhiều thay đổi không liên quan vào một file.
+- Supabase schema: mỗi lần thêm / xóa / sửa bảng, cột, index, policy
+  phải tạo file migration mới trong supabase/migrations/, đặt tên
+  theo format YYYYMMDD_mô_tả_ngắn_gọn.sql. Một thay đổi độc lập = một
+  file riêng; không gộp nhiều thay đổi không liên quan vào một file.
+
+## Quy tắc WORKLOG — BẮT BUỘC
+
+Mỗi entry WORKLOG mới phải được viết ở ĐẦU FILE (sau dòng tiêu đề
+và dòng kẻ ngang đầu tiên) — KHÔNG viết xuống cuối.
+File đọc từ trên xuống = mới nhất → cũ nhất.
+
+## Quy tắc đặt tên file tài liệu theo phase
+
+Tài liệu trong docs/phases/phase-N/ đặt tên có suffix _N:
+  Phase 1: PLAN_1.md, TESTCASES_1.md, HANDOFF_1.md,
+           SUMMARY_1.md, USER_GUIDE_1.md
+  Phase 2: PLAN_2.md, TESTCASES_2.md, HANDOFF_2.md,
+           SUMMARY_2.md, USER_GUIDE_2.md, GOLIVE_CHECKLIST_2.md
+  Phase 3: PLAN_3.md, TESTCASES_3.md, ... (tương tự)
+Tài liệu trong docs/project/ KHÔNG có suffix (dùng xuyên suốt mọi phase).
 
 ## Quy tắc cập nhật tài liệu
 
@@ -37,23 +57,23 @@ Xem đầy đủ: docs/project/WORKFLOW.md
 
 Tóm tắt:
 
-- Tự update: docs/project/CONTEXT.md, docs/WORKLOG.md,
-  docs/KNOWN_ISSUES.md, docs/phases/phase-1/HANDOFF.md
+- Tự update: docs/project/CONTEXT.md, docs/WORKLOG.md (entry mới ở ĐẦU),
+  docs/KNOWN_ISSUES.md, docs/phases/phase-2/HANDOFF_2.md
 - Cần confirm: docs/project/REQUIREMENTS.md, docs/DECISIONS.md
-- Không bao giờ tự update: docs/project/USER_GUIDE.md, README.md, .cursorrules
+- Không bao giờ tự update: docs/project/USER_GUIDE.md, README.md,
+  .cursorrules (trừ khi có chỉ đạo trực tiếp từ người dùng)
 
 ---
 
 ## Nhắc nhở Project Knowledge
 
-Sau mỗi task hoàn thành, nếu có file tài liệu nào thay đổi
-quan trọng, luôn thêm dòng này vào cuối response:
+Sau mỗi task hoàn thành, nếu có file tài liệu nào thay đổi quan trọng,
+luôn thêm dòng này vào cuối response:
 
 > 📌 Nhắc upload lại lên Claude Project Knowledge:
 > - [tên file] — [lý do cụ thể]
 
 Các file cần upload lại khi thay đổi:
-
 - docs/project/REQUIREMENTS.md
 - docs/project/CONTEXT.md
 - docs/project/WORKFLOW.md
@@ -61,36 +81,30 @@ Các file cần upload lại khi thay đổi:
 - docs/KNOWN_ISSUES.md
 
 Các file KHÔNG cần upload (thay đổi liên tục):
-
 - docs/WORKLOG.md
 - docs/BLOCKERS.md
-- docs/phases/phase-1/HANDOFF.md
-- docs/phases/phase-1/SUMMARY.md
+- docs/phases/phase-2/HANDOFF_2.md
 
 ---
 
 ## Màu status (chuẩn — không được thay đổi nếu không có chỉ đạo)
 
-- 0–1 thùng    → Đỏ #EF4444 (đã fix KI-001)
-- ≤ low_warning_boxes → Vàng #FACC15
-- Hết hạn      → Đỏ #EF4444
-- ≤ warning_days     → Vàng #FACC15
-- Bình thường  → Xanh #22C55E
+- 0–1 thùng           → Đỏ #EF4444
+- ≤ low_warning_boxes  → Vàng #FACC15
+- Hết hạn             → Đỏ #EF4444
+- ≤ warning_days       → Vàng #FACC15
+- Bình thường         → Xanh #22C55E
 
-## Tính năng đã xong (Phase 1)
+## Tính năng đã hoàn thành
 
-F01 Chọn kho (hàng nút), F02 Bản đồ 6×6, F03 Chấm màu zone,
-F04 Quản lý zone, F05 Zone nhiều tầng, F06 Danh sách SP trong zone,
-F07 Chi tiết sản phẩm, F09 Tìm kiếm, F10 Quét barcode 3 mode,
-F11 Tồn kho theo thùng, F12 Theo dõi hạn, F13 Ghi chú,
-F14 Thêm sản phẩm, F16 Sửa/xóa lô, F17 Realtime (cần verify)
+Phase 1: F01 F02 F03 F04 F05 F06 F07 F09 F10 F11 F12 F13 F14 F15 F16
+         F17 F18 F27(basic) F28
+Phase 2: F20 F29 F30 SEC-04(Auth) SEC-08(Realtime RLS) SEC-11(Audit Log)
+         Auto-logout(20 phút + kill app)
 
-## Còn phải làm (theo thứ tự)
+## Tính năng chưa làm (Phase 2 còn lại)
 
-1. Bỏ UI low_critical_boxes, hardcode = 1
-2. Fix NotificationsScreen: format card (tổng thùng + thùng có vấn đề)
-3. Toggle lọc "có vấn đề" ở ProductsScreen
-4. Tổng thùng ở ProductsScreen
-5. Bottom tab bar cho stack screens
-6. Barcode field ở AddInventoryScreen
-7. Verify F17 Realtime
+F27 mở rộng (2 tab + PDF), F28 lý do riêng (discontinued_reason),
+F08 ảnh sản phẩm, F19 chuyển hàng, F26 kiểm kho.
+SEC-05/06/07/10/12/13/14 (medium/low security items).
+F21 offline → deferred Phase 3.
