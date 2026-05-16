@@ -415,3 +415,13 @@
 - **Đã fix:** `deleteProduct(productId)` — block nếu còn `inventory_entries` liên kết; nút **Xóa sản phẩm** + confirm dialog trên `ProductDetailScreen`.
 
 ---
+
+### [KI-039] Performance / caching — fetch thừa khi re-focus màn hình
+
+- **Mức độ:** Medium
+- **File liên quan:** Nhiều screens (`useFocusEffect`, `useEffect` mount)
+- **Mô tả:** Một số màn hình fetch lại dữ liệu không cần thiết khi re-focus, gây load chậm.
+- **Hướng fix (Phase 3):** Xác định các `useFocusEffect` đang fetch thừa; thêm TTL cache hoặc điều kiện skip fetch khi data còn mới.
+- **Trạng thái:** Deferred — Phase 3
+
+---

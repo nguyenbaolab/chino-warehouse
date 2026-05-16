@@ -142,7 +142,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 - Hàng có mã vạch: quét → tra cứu theo **lô hàng**.
 - Hàng không có mã vạch: tìm tên thủ công. Không bắt buộc phải có mã vạch.
 - Quét không nhận ra → hiện nút 'Thêm thủ công'.
-- Gõ tên: tìm theo **sản phẩm**, highlight tất cả zone có sản phẩm đó.
+- Gõ tên trên **MapScreen**: `searchProducts` tìm **toàn bộ kho**; kết quả hiển thị **nhóm theo kho** (tên kho + danh sách lô: zone, tầng, số thùng, hạn). Bấm một lô → chuyển sang kho đó, highlight zone tương ứng, đóng panel kết quả. Khi đang xem một kho, chấm màu vẫn áp dụng cho mọi zone khớp trên lưới kho hiện tại (zone kho khác chỉ hiện sau khi chuyển kho hoặc bấm lô trong kết quả).
 - Quét barcode: tìm theo **lô**, highlight zone chứa đúng lô và hiện thông tin lô đó.
 
 ### 7.5 Ngưỡng cảnh báo
@@ -239,7 +239,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 
 | Màn hình | Mô tả | Thành phần chính |
 |----------|-------|-----------------|
-| Bản đồ kho (Tab) | Màn hình chính | Sheet chọn kho (tên + kích thước lưới, Thêm kho mới) · nút ▦ mở Zone Layout Editor · Lưới 2D zone · + Zone · Thanh tìm kiếm · Nút quét mã · Chấm màu khi có kết quả |
+| Bản đồ kho (Tab) | Màn hình chính | Sheet chọn kho (tên + kích thước lưới, Thêm kho mới) · nút ▦ mở Zone Layout Editor · Lưới 2D zone · + Zone · Thanh tìm kiếm **toàn kho** (kết quả group theo kho, bấm lô → đổi kho + highlight) · Nút quét mã · Chấm màu khi có kết quả |
 | Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng (nếu có) · Danh sách sản phẩm + số thùng + chấm màu |
 | Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Mã vạch · Ảnh (Phase 2) · Tất cả zone+tầng · Số thùng · Hạn (màu) · Ghi chú · Nút sửa/xóa lô · **Xóa sản phẩm** (confirm; block nếu còn lô trong kho) · Ngưỡng cảnh báo · **Chi tiết (F30):** dropdown **Cấp 1** → sau khi chọn mới hiện dropdown **Cấp 2**; lưu/sửa; cả hai cấp optional · **Section Lịch sử thay đổi:** 10 entries gần nhất (inventory + product), icon + thời gian + người + field đổi · nút Xem tất cả → AuditLogScreen |
 | Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Dropdown lọc theo kho (Tất cả kho / từng kho) · Danh sách sản phẩm · Tổng thùng · Chấm màu · Tìm kiếm · Thêm mới (CRUD category **không** ở màn này — xem Settings / F30) |

@@ -4,6 +4,31 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: MapScreen locate barcode — không auto đổi kho, tất cả lô cùng mã
+
+- **Root cause:** Effect #2 (locate barcode) gọi `searchByBarcode` (mutate `inventoryEntries`/`products`) + `setSelectedLocation` ngay → xung đột với Effect #3 (`fetchInventoryByZone` toàn bộ zone) → freeze; `setSearchResults([entry])` chỉ 1 lô.
+- **Fix:** Thêm `searchInventoryByBarcode` (query `.eq('barcode')`, return mảng, không ghi store). Locate barcode: chỉ `setSearchQuery` + `setSearchResults` (mọi lô, mọi kho), không highlight / không `setSelectedLocation` — user bấm lô → `focusSearchResultLot` như text search. Revert mutation trong `searchByBarcode` (chỉ return data cho scanner khác).
+- **File đã sửa:** `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `docs/WORKLOG.md`
+
+---
+
+## [tháng 5/2026] — fix: MapScreen search — revert store merge, stop locate effect loop
+
+- **Root cause:** `searchProducts` merge kết quả vào `inventoryEntries` / `products` → MapScreen re-render liên tục; `useEffect` locate phụ thuộc `inventoryEntries` + `products` → chạy lại sau mỗi search / đổi kho → lag, nhảy kho, thiếu kết quả hiển thị.
+- **Fix:** `searchProducts` chỉ `return` data (revert merge). Panel kết quả chỉ dùng local `searchResults`. Locate: `searchByBarcode` + ref `lastLocateAtRef` (bỏ deps store); highlight từ `entry.product` trong kết quả local.
+- **File đã sửa:** `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `docs/WORKLOG.md`
+
+---
+
+## [tháng 5/2026] — feat: MapScreen tìm kiếm toàn kho + kết quả nhóm theo kho
+
+- **`searchProducts`:** Xác nhận query không lọc `selectedLocationId`; merge kết quả vào store (`inventoryEntries`, `products`) để dùng khi đổi kho / locate.
+- **`MapScreen`:** Panel kết quả nhóm theo kho (header đậm + lô: SP, zone, tầng, thùng, hạn); bấm lô → `setSelectedLocation` + highlight zone (`highlightedZones`) + đóng panel. Locate barcode: tự chuyển kho nếu lô thuộc kho khác.
+- **Docs:** `CONTEXT.md` §3, `REQUIREMENTS.md` §7.4 + §9; `KNOWN_ISSUES.md` KI-039 (Deferred Phase 3).
+- **File đã sửa:** `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `docs/project/CONTEXT.md`, `docs/project/REQUIREMENTS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — fix: 4 bug UX (pre-fill tên SP, barcode debounce, xóa SP, bàn phím)
 
 - **BUG 1:** `AddInventoryScreen` — pre-fill `newProductName` từ `searchQuery` khi bấm **Tạo sản phẩm mới**.

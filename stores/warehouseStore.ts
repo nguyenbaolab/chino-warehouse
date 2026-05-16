@@ -31,6 +31,8 @@ type WarehouseStore = {
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
   fetchAllInventoryEntries: () => Promise<{ error: string | null }>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
+  /** Mọi lô có barcode khớp (toàn kho) — chỉ return, không ghi store. */
+  searchInventoryByBarcode: (barcode: string) => Promise<InventoryEntry[]>
   searchByBarcode: (barcode: string) => Promise<InventoryEntry | null>
   addProduct: (data: Partial<Product>) => Promise<Product | null>
   deleteProduct: (productId: string) => Promise<void>
@@ -421,19 +423,37 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return { error: null }
   },
 
+  /** Tìm theo tên SP trên mọi kho — chỉ trả về data, không ghi store (MapScreen giữ local state). */
   searchProducts: async (query) => {
-    const { data: products } = await supabase
+    const trimmed = query.trim()
+    if (trimmed.length < 2) return []
+
+    const { data: matchedProducts } = await supabase
       .from('products')
       .select('*')
-      .ilike('name', `%${query}%`)
+      .ilike('name', `%${trimmed}%`)
       .eq('is_archived', false)
-    if (!products || products.length === 0) return []
-    const productIds = products.map(p => p.id)
+    if (!matchedProducts || matchedProducts.length === 0) return []
+
+    const productIds = matchedProducts.map((p) => p.id)
     const { data } = await supabase
       .from('inventory_entries')
       .select('*, product:products(*), zone:zones(*)')
       .in('product_id', productIds)
-    return data || []
+
+    return (data || []) as InventoryEntry[]
+  },
+
+  searchInventoryByBarcode: async (barcode) => {
+    const normalized = barcode.trim().toLowerCase()
+    if (!normalized) return []
+
+    const { data } = await supabase
+      .from('inventory_entries')
+      .select('*, product:products(*), zone:zones(*)')
+      .eq('barcode', normalized)
+
+    return (data || []) as InventoryEntry[]
   },
 
   searchByBarcode: async (barcode) => {
@@ -450,22 +470,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .limit(1)
       .maybeSingle()
 
-    if (data) {
-      const entry = data as InventoryEntry
-      set((s) => {
-        const nextEntries = s.inventoryEntries.filter((item) => item.id !== entry.id)
-        return {
-          inventoryEntries: [...nextEntries, entry],
-          products: entry.product
-            ? s.products.some((p) => p.id === entry.product!.id)
-              ? s.products.map((p) => (p.id === entry.product!.id ? entry.product! : p))
-              : [...s.products, entry.product!].sort((a, b) => a.name.localeCompare(b.name))
-            : s.products,
-        }
-      })
-      return entry
-    }
-    return null
+    return (data as InventoryEntry) ?? null
   },
 
   addProduct: async (data) => {

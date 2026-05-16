@@ -5,8 +5,8 @@ import {
 } from 'react-native'
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
-import { useThemeStore } from '../stores/themeStore'
-import { Zone, ZoneCell, InventoryEntry, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
+import { useThemeStore, type ThemeColors } from '../stores/themeStore'
+import { Zone, ZoneCell, InventoryEntry, Product, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
 import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
 const CELL_SIZE = 56
@@ -43,21 +43,57 @@ function formatResultExpiry(expiryDate?: string): string {
   return `Hạn: ${formatExpiryDate(expiryDate)}`
 }
 
+type SearchLocationGroup = {
+  locationId: string
+  locationName: string
+  entries: InventoryEntry[]
+}
+
+function buildHighlightMapFromEntries(
+  entries: InventoryEntry[],
+  colors: ThemeColors,
+): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const entry of entries) {
+    if (!entry.zone_id) continue
+    map.set(entry.zone_id, getEntryHighlightColor(entry, entry.product, colors))
+  }
+  return map
+}
+
+function getEntryHighlightColor(
+  entry: InventoryEntry,
+  product: Product | undefined,
+  colors: ThemeColors,
+): string {
+  const status = getCombinedStatus(
+    entry.quantity_boxes,
+    entry.expiry_date,
+    product?.low_warning_boxes ?? 3,
+    product?.low_critical_boxes ?? 1,
+    product?.warning_days ?? 30,
+  )
+  if (status === 'expired') return colors.statusExpired
+  if (status === 'critical') return colors.statusCritical
+  if (status === 'warning') return colors.statusWarning
+  return colors.statusOk
+}
+
 export default function MapScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
   const isFocused = useIsFocused()
   const {
     locations, selectedLocationId, zones, products, inventoryEntries, isLoading,
-    fetchLocations, fetchProducts, fetchInventoryByZone, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts
+    fetchLocations, fetchProducts, fetchInventoryByZone, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts, searchInventoryByBarcode
   } = useWarehouseStore()
   const { colors, loadTheme } = useThemeStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InventoryEntry[]>([])
   const [highlightedZones, setHighlightedZones] = useState<Map<string, string>>(new Map())
-  const [isSearchPanelExpanded, setIsSearchPanelExpanded] = useState(false)
   const searchRequestRef = useRef(0)
+  const lastLocateAtRef = useRef<number | undefined>(undefined)
 
   const [mode, setMode] = useState<'normal' | 'selecting'>('normal')
   const [selectedCells, setSelectedCells] = useState<ZoneCell[]>([])
@@ -108,59 +144,44 @@ export default function MapScreen() {
 
   useEffect(() => {
     if (!isFocused) return
-    console.log('[MapScreen][locate] focus params:', {
-      scannedProductName,
-      locateScannedAt,
-    })
-    if (scannedBarcode && scannedInventoryEntryId) {
-      const matchedEntry = inventoryEntries.find((e) => e.id === scannedInventoryEntryId)
-      if (matchedEntry) {
-        const product = matchedEntry.product ?? products.find((p) => p.id === matchedEntry.product_id)
-        const status = getCombinedStatus(
-          matchedEntry.quantity_boxes,
-          matchedEntry.expiry_date,
-          product?.low_warning_boxes ?? 3,
-          product?.low_critical_boxes ?? 1,
-          product?.warning_days ?? 30
-        )
-        const color = status === 'expired'
-          ? colors.statusExpired
-          : status === 'critical'
-            ? colors.statusCritical
-            : status === 'warning'
-              ? colors.statusWarning
-              : colors.statusOk
-        setSearchQuery(scannedBarcode)
-        setSearchResults([matchedEntry])
-        setIsSearchPanelExpanded(false)
-        setHighlightedZones(new Map([[matchedEntry.zone_id, color]]))
-      }
-      navigation.setParams({
-        scannedBarcode: undefined,
-        scannedInventoryEntryId: undefined,
-        scannedZoneLotBarcode: undefined,
-        scannedZoneLotId: undefined,
-        scannedZoneLotBarcodeAt: undefined,
-        scannedProductName: undefined,
-        locateScannedAt: undefined,
-      })
-      return
-    }
+    if (!scannedBarcode && !scannedProductName) return
+    if (locateScannedAt != null && lastLocateAtRef.current === locateScannedAt) return
 
-    if (scannedProductName) {
-      console.log('[MapScreen][locate] triggering search for:', scannedProductName)
-      setSearchQuery(scannedProductName)
-      handleSearch(scannedProductName)
-      navigation.setParams({
-        scannedProductName: undefined,
-        scannedZoneLotBarcode: undefined,
-        scannedZoneLotId: undefined,
-        scannedZoneLotBarcodeAt: undefined,
-        locateScannedAt: undefined,
-      })
-      return
+    let cancelled = false
+
+    void (async () => {
+      if (locateScannedAt != null) lastLocateAtRef.current = locateScannedAt
+
+      if (scannedBarcode) {
+        const results = await searchInventoryByBarcode(scannedBarcode)
+        if (!cancelled) {
+          setSearchQuery(scannedBarcode)
+          setSearchResults(results)
+        }
+      } else if (scannedProductName) {
+        if (!cancelled) {
+          setSearchQuery(scannedProductName)
+          await handleSearch(scannedProductName)
+        }
+      }
+
+      if (!cancelled) {
+        navigation.setParams({
+          scannedBarcode: undefined,
+          scannedInventoryEntryId: undefined,
+          scannedZoneLotBarcode: undefined,
+          scannedZoneLotId: undefined,
+          scannedZoneLotBarcodeAt: undefined,
+          scannedProductName: undefined,
+          locateScannedAt: undefined,
+        })
+      }
+    })()
+
+    return () => {
+      cancelled = true
     }
-  }, [isFocused, scannedProductName, scannedBarcode, scannedInventoryEntryId, locateScannedAt, inventoryEntries, products, colors.statusCritical, colors.statusExpired, colors.statusOk, colors.statusWarning])
+  }, [isFocused, scannedProductName, scannedBarcode, scannedInventoryEntryId, locateScannedAt])
 
   useEffect(() => {
     if (!selectedLocationId || zones.length === 0) return
@@ -174,33 +195,12 @@ export default function MapScreen() {
     if (text.trim().length < 2) {
       setSearchResults([])
       setHighlightedZones(new Map())
-      setIsSearchPanelExpanded(false)
       return
     }
     const results = await searchProducts(text)
     if (requestId !== searchRequestRef.current) return
     setSearchResults(results)
-    setIsSearchPanelExpanded(false)
-    const map = new Map<string, string>()
-    for (const r of results) {
-      const product = r.product ?? products.find((p) => p.id === r.product_id)
-      const status = getCombinedStatus(
-        r.quantity_boxes,
-        r.expiry_date,
-        product?.low_warning_boxes ?? 3,
-        product?.low_critical_boxes ?? 1,
-        product?.warning_days ?? 30
-      )
-      const color = status === 'expired'
-        ? colors.statusExpired
-        : status === 'critical'
-          ? colors.statusCritical
-          : status === 'warning'
-            ? colors.statusWarning
-            : colors.statusOk
-      if (r.zone_id) map.set(r.zone_id, color)
-    }
-    setHighlightedZones(map)
+    setHighlightedZones(buildHighlightMapFromEntries(results, colors))
   }
 
   function clearSearch() {
@@ -208,27 +208,49 @@ export default function MapScreen() {
     setSearchQuery('')
     setSearchResults([])
     setHighlightedZones(new Map())
-    setIsSearchPanelExpanded(false)
   }
 
-  const collapsedSearchSummaries = useMemo(() => {
-    const map = new Map<string, { productName: string; totalBoxes: number; zoneIds: Set<string> }>()
+  const searchResultsByLocation = useMemo((): SearchLocationGroup[] => {
+    const groupMap = new Map<string, SearchLocationGroup>()
     for (const entry of searchResults) {
-      const productId = entry.product_id
-      const current = map.get(productId)
-      if (current) {
-        current.totalBoxes += entry.quantity_boxes
-        current.zoneIds.add(entry.zone_id)
+      const locationId = entry.zone?.location_id
+      if (!locationId) continue
+      const locationName =
+        locations.find((l) => l.id === locationId)?.name ?? 'Kho không xác định'
+      const existing = groupMap.get(locationId)
+      if (existing) {
+        existing.entries.push(entry)
       } else {
-        map.set(productId, {
-          productName: entry.product?.name ?? 'Sản phẩm không xác định',
-          totalBoxes: entry.quantity_boxes,
-          zoneIds: new Set([entry.zone_id]),
-        })
+        groupMap.set(locationId, { locationId, locationName, entries: [entry] })
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.productName.localeCompare(b.productName))
-  }, [searchResults])
+    return Array.from(groupMap.values())
+      .map((g) => ({
+        ...g,
+        entries: [...g.entries].sort((a, b) => {
+          const nameA = a.product?.name ?? ''
+          const nameB = b.product?.name ?? ''
+          if (nameA !== nameB) return nameA.localeCompare(nameB)
+          const zoneA = a.zone?.name ?? ''
+          const zoneB = b.zone?.name ?? ''
+          return zoneA.localeCompare(zoneB)
+        }),
+      }))
+      .sort((a, b) => a.locationName.localeCompare(b.locationName))
+  }, [searchResults, locations])
+
+  function focusSearchResultLot(entry: InventoryEntry) {
+    const locationId = entry.zone?.location_id
+    if (!locationId || !entry.zone_id) {
+      Alert.alert('Thiếu thông tin', 'Không xác định được kho hoặc zone của lô này.')
+      return
+    }
+    searchRequestRef.current += 1
+    setSelectedLocation(locationId)
+    setHighlightedZones(buildHighlightMapFromEntries([entry], colors))
+    setSearchResults([])
+    setSearchQuery('')
+  }
 
   function startAddZone() {
     setEditingZone(null)
@@ -596,56 +618,41 @@ export default function MapScreen() {
       {/* Search results */}
       {searchResults.length > 0 && mode === 'normal' && (
         <View style={[styles.resultsBox, { backgroundColor: colors.card }]}>
-          <View style={styles.resultsHeaderRow}>
-            <Text style={[styles.resultsTitle, { color: colors.sub }]}>Kết quả ({searchResults.length})</Text>
-            <TouchableOpacity
-              style={[styles.resultsToggleBtn, { backgroundColor: colors.bg }]}
-              onPress={() => setIsSearchPanelExpanded((prev) => !prev)}
-            >
-              <Text style={[styles.resultsToggleLabel, { color: colors.text }]}>
-                {isSearchPanelExpanded ? 'Thu gọn' : 'Chi tiết'}
-              </Text>
-              <Text style={[styles.resultsToggleText, { color: colors.sub }]}>
-                {isSearchPanelExpanded ? '▴' : '▾'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {isSearchPanelExpanded ? (
-            searchResults.slice(0, 5).map(r => (
-              <View key={r.id} style={styles.resultItem}>
-                <View
-                  style={[
-                    styles.dot,
-                    {
-                      backgroundColor: (() => {
-                        const status = getCombinedStatus(
-                          r.quantity_boxes,
-                          r.expiry_date,
-                          r.product?.low_warning_boxes ?? 3,
-                          r.product?.low_critical_boxes ?? 1,
-                          r.product?.warning_days ?? 30
-                        )
-                        if (status === 'expired') return colors.statusExpired
-                        if (status === 'critical') return colors.statusCritical
-                        if (status === 'warning') return colors.statusWarning
-                        return colors.statusOk
-                      })(),
-                    },
-                  ]}
-                />
-                <Text style={[styles.resultText, { color: colors.text }]} numberOfLines={1}>
-                  {r.product?.name} — {r.zone?.name} T{r.tier} — {r.quantity_boxes} thùng · {formatResultExpiry(r.expiry_date)}{r.barcode ? ` · BC: ${r.barcode}` : ''}
+          <Text style={[styles.resultsTitle, { color: colors.sub }]}>
+            Kết quả ({searchResults.length} lô · {searchResultsByLocation.length} kho)
+          </Text>
+          <ScrollView style={styles.resultsScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            {searchResultsByLocation.map((group) => (
+              <View key={group.locationId} style={styles.resultLocationGroup}>
+                <Text style={[styles.resultLocationHeader, { color: colors.text }]}>
+                  {group.locationName}
                 </Text>
+                {group.entries.map((entry) => {
+                  const product = entry.product
+                  const dotColor = getEntryHighlightColor(entry, product, colors)
+                  return (
+                    <TouchableOpacity
+                      key={entry.id}
+                      style={[styles.resultLotRow, { borderColor: colors.border }]}
+                      onPress={() => focusSearchResultLot(entry)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={[styles.dot, { backgroundColor: dotColor }]} />
+                      <View style={styles.resultLotTextWrap}>
+                        <Text style={[styles.resultProductName, { color: colors.text }]} numberOfLines={1}>
+                          {product?.name ?? 'Sản phẩm không xác định'}
+                        </Text>
+                        <Text style={[styles.resultLotMeta, { color: colors.sub }]} numberOfLines={2}>
+                          {entry.zone?.name ?? '—'} · Tầng {entry.tier} · {entry.quantity_boxes} thùng
+                          {entry.expiry_date ? ` · ${formatResultExpiry(entry.expiry_date)}` : ''}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )
+                })}
               </View>
-            ))
-          ) : (
-            collapsedSearchSummaries.map((summary, idx) => (
-              <Text key={`${summary.productName}-${idx}`} style={[styles.resultText, styles.collapsedSummaryText, { color: colors.text }]} numberOfLines={1}>
-                {summary.productName} — {summary.totalBoxes} thùng — {summary.zoneIds.size} zone
-              </Text>
-            ))
-          )}
+            ))}
+          </ScrollView>
         </View>
       )}
 
@@ -855,22 +862,23 @@ const styles = StyleSheet.create({
   instructionText: { fontWeight: 'bold', fontSize: 14 },
   instructionSub: { fontSize: 12, marginTop: 2 },
   resultsBox: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 12 },
-  resultsHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
-  resultsTitle: { fontSize: 12, marginBottom: 6 },
-  resultsToggleBtn: {
+  resultsTitle: { fontSize: 12, marginBottom: 8 },
+  resultsScroll: { maxHeight: 220 },
+  resultLocationGroup: { marginBottom: 10 },
+  resultLocationHeader: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
+  resultLotRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: 10,
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 8,
+    marginBottom: 6,
   },
-  resultsToggleLabel: { fontSize: 13, fontWeight: '600' },
-  resultsToggleText: { fontSize: 12, fontWeight: '700' },
-  resultItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
-  resultText: { fontSize: 13, marginLeft: 8, flex: 1 },
-  collapsedSummaryText: { marginLeft: 0, marginBottom: 5 },
-  dot: { width: 8, height: 8, borderRadius: 4 },
+  resultLotTextWrap: { flex: 1, marginLeft: 8 },
+  resultProductName: { fontSize: 13, fontWeight: '600', marginBottom: 2 },
+  resultLotMeta: { fontSize: 12, lineHeight: 17 },
+  dot: { width: 8, height: 8, borderRadius: 4, marginTop: 5 },
   grid: { padding: 16 },
   gridRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 0 },
   axisCorner: { width: 20, height: CELL_SIZE },
