@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -270,7 +272,10 @@ export default function ZoneDetailSheet({
           <View style={styles.backdropArea} />
         </TouchableWithoutFeedback>
 
-        <View style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <KeyboardAvoidingView
+          style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={[styles.zoneColorBar, { backgroundColor: zone?.color ?? colors.accent }]} />
 
           <View style={styles.header}>
@@ -331,7 +336,7 @@ export default function ZoneDetailSheet({
                 </TouchableOpacity>
               </View>
             ) : (
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 {filteredGroupedProducts.length === 0 ? (
                   <View style={styles.emptyWrap}>
                     <Text style={[styles.emptyText, { color: colors.sub }]}>Không tìm thấy sản phẩm phù hợp</Text>
@@ -519,7 +524,7 @@ export default function ZoneDetailSheet({
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.accent }]} onPress={handlePressAddInventory}>
             <Text style={[styles.addBtnText, { color: colors.card }]}>Thêm hàng</Text>
           </TouchableOpacity>
-        </View>
+        </KeyboardAvoidingView>
 
         <Modal visible={!!moveLot} transparent animationType="slide" onRequestClose={() => setMoveLot(null)}>
           <View style={styles.modalOverlay}>

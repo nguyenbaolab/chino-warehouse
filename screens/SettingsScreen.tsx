@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Platform, Switch } from 'react-native'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -23,6 +23,10 @@ export default function SettingsScreen() {
   const { isDark, colors, loadTheme, toggleTheme } = useThemeStore()
 
   const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
+  const lastFetchedAt = useRef(0)
+  const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const REALTIME_DEBOUNCE_MS = 2_000
 
   const discontinuedCount = useMemo(
     () => products.filter((p) => !p.is_archived && p.is_discontinued === true).length,
@@ -45,31 +49,38 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void refreshDiscontinuedContext()
-      if (productCategoriesL1.length === 0 && productCategoriesL2.length === 0) {
-        void fetchCategories()
-      }
-      void fetchLatestAuditEntry().then((entry) => {
-        if (!entry) { setAuditSubtitle('Chưa có thay đổi nào'); return }
-        const actionMap: Record<string, string> = { INSERT: 'thêm', UPDATE: 'sửa', DELETE: 'xóa' }
-        const tableMap: Record<string, string> = { inventory_entries: 'Lô hàng', products: 'Sản phẩm' }
-        const who = entry.changed_by_name ?? 'Không rõ'
-        const act = actionMap[entry.action] ?? entry.action
-        const tbl = tableMap[entry.table_name] ?? entry.table_name
-        const diff = Date.now() - new Date(entry.changed_at).getTime()
-        const mins = Math.floor(diff / 60000)
-        const hours = Math.floor(diff / 3600000)
-        let timeStr: string
-        if (mins < 1) timeStr = 'vừa xong'
-        else if (mins < 60) timeStr = `${mins} phút trước`
-        else if (hours < 24) timeStr = `${hours} giờ trước`
-        else {
-          const d = new Date(entry.changed_at)
-          const pad = (n: number) => String(n).padStart(2, '0')
-          timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
+      if (Date.now() - lastFetchedAt.current <= FOCUS_FETCH_TTL_MS) return
+
+      void (async () => {
+        await refreshDiscontinuedContext()
+        if (productCategoriesL1.length === 0 && productCategoriesL2.length === 0) {
+          await fetchCategories()
         }
-        setAuditSubtitle(`${who} ${act} ${tbl} · ${timeStr}`)
-      })
+        const entry = await fetchLatestAuditEntry()
+        if (!entry) {
+          setAuditSubtitle('Chưa có thay đổi nào')
+        } else {
+          const actionMap: Record<string, string> = { INSERT: 'thêm', UPDATE: 'sửa', DELETE: 'xóa' }
+          const tableMap: Record<string, string> = { inventory_entries: 'Lô hàng', products: 'Sản phẩm' }
+          const who = entry.changed_by_name ?? 'Không rõ'
+          const act = actionMap[entry.action] ?? entry.action
+          const tbl = tableMap[entry.table_name] ?? entry.table_name
+          const diff = Date.now() - new Date(entry.changed_at).getTime()
+          const mins = Math.floor(diff / 60000)
+          const hours = Math.floor(diff / 3600000)
+          let timeStr: string
+          if (mins < 1) timeStr = 'vừa xong'
+          else if (mins < 60) timeStr = `${mins} phút trước`
+          else if (hours < 24) timeStr = `${hours} giờ trước`
+          else {
+            const d = new Date(entry.changed_at)
+            const pad = (n: number) => String(n).padStart(2, '0')
+            timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
+          }
+          setAuditSubtitle(`${who} ${act} ${tbl} · ${timeStr}`)
+        }
+        lastFetchedAt.current = Date.now()
+      })()
     }, [
       refreshDiscontinuedContext,
       fetchCategories,
@@ -80,6 +91,14 @@ export default function SettingsScreen() {
   )
 
   useEffect(() => {
+    const scheduleRefreshDiscontinued = () => {
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
+      realtimeDebounceRef.current = setTimeout(() => {
+        realtimeDebounceRef.current = null
+        void refreshDiscontinuedContext()
+      }, REALTIME_DEBOUNCE_MS)
+    }
+
     const channel = supabase
       .channel(`settings-discontinued-${Date.now()}`, {
         config: { private: true }, // SEC-08: yêu cầu authenticated token
@@ -87,20 +106,18 @@ export default function SettingsScreen() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
-        () => {
-          void refreshDiscontinuedContext()
-        }
+        scheduleRefreshDiscontinued
       )
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'inventory_entries' },
-        () => {
-          void refreshDiscontinuedContext()
-        }
+        scheduleRefreshDiscontinued
       )
       .subscribe()
 
     return () => {
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
+      realtimeDebounceRef.current = null
       void supabase.removeChannel(channel)
     }
   }, [refreshDiscontinuedContext])

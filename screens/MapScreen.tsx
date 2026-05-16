@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable,
-  TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform
+  TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform, KeyboardAvoidingView
 } from 'react-native'
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -54,9 +54,15 @@ function buildHighlightMapFromEntries(
   colors: ThemeColors,
 ): Map<string, string> {
   const map = new Map<string, string>()
+  const worstRankByZone = new Map<string, number>()
   for (const entry of entries) {
     if (!entry.zone_id) continue
-    map.set(entry.zone_id, getEntryHighlightColor(entry, entry.product, colors))
+    const rank = getEntryStatusRank(entry)
+    const prevWorst = worstRankByZone.get(entry.zone_id) ?? Infinity
+    if (rank < prevWorst) {
+      worstRankByZone.set(entry.zone_id, rank)
+      map.set(entry.zone_id, getEntryHighlightColor(entry, entry.product, colors))
+    }
   }
   return map
 }
@@ -77,6 +83,34 @@ function getEntryHighlightColor(
   if (status === 'critical') return colors.statusCritical
   if (status === 'warning') return colors.statusWarning
   return colors.statusOk
+}
+
+/** Rank thấp = tệ hơn (1 expired … 4 ok) — dùng ascending để đỏ → vàng → xanh. */
+function getEntryStatusRank(entry: InventoryEntry): number {
+  return getCombinedStatusRank(
+    getCombinedStatus(
+      entry.quantity_boxes,
+      entry.expiry_date,
+      entry.product?.low_warning_boxes ?? 3,
+      entry.product?.low_critical_boxes ?? 1,
+      entry.product?.warning_days ?? 30,
+    ),
+  )
+}
+
+function compareEntriesByStatusThenName(a: InventoryEntry, b: InventoryEntry): number {
+  const rankDiff = getEntryStatusRank(a) - getEntryStatusRank(b)
+  if (rankDiff !== 0) return rankDiff
+  const nameA = a.product?.name ?? ''
+  const nameB = b.product?.name ?? ''
+  if (nameA !== nameB) return nameA.localeCompare(nameB)
+  const zoneA = a.zone?.name ?? ''
+  const zoneB = b.zone?.name ?? ''
+  return zoneA.localeCompare(zoneB)
+}
+
+function sortSearchResultsByStatusRank(entries: InventoryEntry[]): InventoryEntry[] {
+  return [...entries].sort(compareEntriesByStatusThenName)
 }
 
 export default function MapScreen() {
@@ -154,7 +188,7 @@ export default function MapScreen() {
       if (locateScannedAt != null) lastLocateAtRef.current = locateScannedAt
 
       if (scannedBarcode) {
-        const results = await searchInventoryByBarcode(scannedBarcode)
+        const results = sortSearchResultsByStatusRank(await searchInventoryByBarcode(scannedBarcode))
         if (!cancelled) {
           setSearchQuery(scannedBarcode)
           setSearchResults(results)
@@ -187,10 +221,10 @@ export default function MapScreen() {
   }, [isFocused, scannedProductName, scannedBarcode, scannedInventoryEntryId, locateScannedAt])
 
   useEffect(() => {
-    if (!selectedLocationId || zones.length === 0) return
+    if (!isFocused || !selectedLocationId || zones.length === 0) return
     // Đồng bộ lot hiện tại của các zone để auto hiển thị chấm đỏ/vàng (1 query / kho)
     void fetchInventoryByLocation(selectedLocationId)
-  }, [selectedLocationId, zones, fetchInventoryByLocation])
+  }, [isFocused, selectedLocationId, zones, fetchInventoryByLocation])
 
   async function handleSearch(text: string) {
     const requestId = ++searchRequestRef.current
@@ -200,7 +234,7 @@ export default function MapScreen() {
       setHighlightedZones(new Map())
       return
     }
-    const results = await searchProducts(text)
+    const results = sortSearchResultsByStatusRank(await searchProducts(text))
     if (requestId !== searchRequestRef.current) return
     setSearchResults(results)
     setIsSearchPanelExpanded(false)
@@ -232,35 +266,42 @@ export default function MapScreen() {
     return Array.from(groupMap.values())
       .map((g) => ({
         ...g,
-        entries: [...g.entries].sort((a, b) => {
-          const nameA = a.product?.name ?? ''
-          const nameB = b.product?.name ?? ''
-          if (nameA !== nameB) return nameA.localeCompare(nameB)
-          const zoneA = a.zone?.name ?? ''
-          const zoneB = b.zone?.name ?? ''
-          return zoneA.localeCompare(zoneB)
-        }),
+        entries: [...g.entries].sort(compareEntriesByStatusThenName),
       }))
-      .sort((a, b) => a.locationName.localeCompare(b.locationName))
+      .sort((a, b) => {
+        const worstA = Math.min(...a.entries.map(getEntryStatusRank))
+        const worstB = Math.min(...b.entries.map(getEntryStatusRank))
+        if (worstA !== worstB) return worstA - worstB
+        return a.locationName.localeCompare(b.locationName)
+      })
   }, [searchResults, locations])
 
   const collapsedSearchSummaries = useMemo(() => {
-    const map = new Map<string, { productName: string; totalBoxes: number; zoneIds: Set<string> }>()
+    const map = new Map<
+      string,
+      { productName: string; totalBoxes: number; zoneIds: Set<string>; worstRank: number }
+    >()
     for (const entry of searchResults) {
       const productId = entry.product_id
+      const rank = getEntryStatusRank(entry)
       const current = map.get(productId)
       if (current) {
         current.totalBoxes += entry.quantity_boxes
         current.zoneIds.add(entry.zone_id)
+        current.worstRank = Math.min(current.worstRank, rank)
       } else {
         map.set(productId, {
           productName: entry.product?.name ?? 'Sản phẩm không xác định',
           totalBoxes: entry.quantity_boxes,
           zoneIds: new Set([entry.zone_id]),
+          worstRank: rank,
         })
       }
     }
-    return Array.from(map.values()).sort((a, b) => a.productName.localeCompare(b.productName))
+    return Array.from(map.values()).sort((a, b) => {
+      if (a.worstRank !== b.worstRank) return a.worstRank - b.worstRank
+      return a.productName.localeCompare(b.productName)
+    })
   }, [searchResults])
 
   function focusSearchResultLot(entry: InventoryEntry) {
@@ -740,7 +781,10 @@ export default function MapScreen() {
 
       {/* Modal đặt tên + chọn màu */}
       <Modal visible={nameModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
           <View style={[styles.modalBox, { backgroundColor: colors.card }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
               {editingZone ? 'Sửa zone' : 'Đặt tên zone'}
@@ -794,7 +838,7 @@ export default function MapScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Action modal */}

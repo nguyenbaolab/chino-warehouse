@@ -63,12 +63,12 @@ type ThemeStore = {
 }
 
 export const useThemeStore = create<ThemeStore>((set, get) => ({
-  isDark: true,
-  colors: darkColors,
+  isDark: false,
+  colors: lightColors,
 
   loadTheme: async () => {
     const saved = await AsyncStorage.getItem('theme')
-    const isDark = saved !== 'light'
+    const isDark = saved === 'dark'
     set({ isDark, colors: isDark ? darkColors : lightColors })
   },
 

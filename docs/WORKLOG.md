@@ -4,6 +4,41 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: MapScreen highlight zone — giữ màu lô tệ nhất
+
+- **Vấn đề:** `buildHighlightMapFromEntries` `map.set` ghi đè — nhiều lô cùng `zone_id` → grid hiện màu entry cuối, không phải đỏ/vàng tệ nhất.
+- **Fix:** `worstRankByZone` + `getEntryStatusRank` — chỉ cập nhật màu khi `rank <` rank đã lưu cho zone.
+- **File:** `screens/MapScreen.tsx`, `docs/WORKLOG.md`
+
+---
+
+## [tháng 5/2026] — perf: giảm lag chuyển tab (Settings TTL/debounce, Map focus guard)
+
+- **FIX 1:** `SettingsScreen` `useFocusEffect` — `lastFetchedAt` + TTL 30s; chỉ `refreshDiscontinuedContext` / `fetchLatestAuditEntry` (và `fetchCategories` nếu L1 rỗng) khi quá TTL; cập nhật timestamp sau khi fetch xong.
+- **FIX 2:** Realtime `products` / `inventory_entries` — debounce 2s trước `refreshDiscontinuedContext`; clear timer trong cleanup.
+- **FIX 3:** `MapScreen` Effect #3 — `fetchInventoryByLocation` chỉ khi `isFocused === true`.
+- **File:** `screens/SettingsScreen.tsx`, `screens/MapScreen.tsx`, `docs/WORKLOG.md`
+
+---
+
+## [tháng 5/2026] — fix: MapScreen sort kết quả tìm kiếm đỏ → vàng → xanh (UI ghi đè)
+
+- **Kiểm tra:** `getCombinedStatusRank` — 1=expired (tệ nhất), 4=ok; sort ascending (`rankA - rankB`) là đúng hướng.
+- **Root cause:** `searchResults` đã sort đúng trước `setSearchResults`, nhưng `searchResultsByLocation` sort lại theo **tên SP/zone**; `collapsedSearchSummaries` sort theo tên → panel hiện xanh trước đỏ/vàng.
+- **Fix:** `getEntryStatusRank` + `compareEntriesByStatusThenName`; nhóm theo kho / thu gọn dùng cùng thứ tự status (tie-break tên). Sort global vẫn trước `setSearchResults` (text + barcode).
+- **File:** `screens/MapScreen.tsx`, `docs/WORKLOG.md`
+
+---
+
+## [tháng 5/2026] — fix: sort search theo màu, light theme mặc định, keyboard & Hủy form SP
+
+- **FIX 1 (MapScreen):** `sortSearchResultsByStatusRank` — sort kết quả `searchProducts` / `searchInventoryByBarcode` theo `getCombinedStatusRank` (đỏ → vàng → xanh) trước `setSearchResults`.
+- **FIX 2:** `themeStore` default `isDark: false`; `loadTheme` chỉ dark khi AsyncStorage `theme === 'dark'`. `LoginScreen`: KAV + ScrollView, toggle mật khẩu 👁/🙈. Thêm KAV cho màn/modal có TextInput: `ProductDetailScreen`, `LocationManagementScreen`, `CategoryManagementScreen`, `ProductsScreen` (modal sửa), `AuditLogScreen` (FilterPicker), `ZoneDetailSheet`, `MapScreen` (modal zone).
+- **FIX 3:** `AddInventoryScreen` — nút **Hủy** cạnh **Tạo và chọn sản phẩm** (`closeCreateProductForm`, không lưu).
+- **File đã sửa:** `screens/MapScreen.tsx`, `stores/themeStore.ts`, `screens/LoginScreen.tsx`, `screens/AddInventoryScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/LocationManagementScreen.tsx`, `screens/CategoryManagementScreen.tsx`, `screens/ProductsScreen.tsx`, `screens/AuditLogScreen.tsx`, `components/ZoneDetailSheet.tsx`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — fix: MapScreen highlight barcode, panel thu gọn, fetchInventoryByLocation
 
 - **FIX 1:** Effect #2 barcode — `setHighlightedZones(buildHighlightMapFromEntries(results, colors))` sau search (không `setSelectedLocation`).

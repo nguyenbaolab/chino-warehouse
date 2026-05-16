@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -568,7 +570,10 @@ export default function ProductsScreen() {
 
       <Modal visible={editModalVisible} transparent animationType="slide" onRequestClose={() => setEditModalVisible(false)}>
         <TouchableWithoutFeedback onPress={() => setEditModalVisible(false)}>
-          <View style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
+          <KeyboardAvoidingView
+            style={[styles.modalOverlay, { backgroundColor: 'rgba(0,0,0,0.55)' }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
             <TouchableWithoutFeedback onPress={() => {}}>
               <View style={[styles.modalBox, { backgroundColor: colors.card }]}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>Sửa sản phẩm</Text>
@@ -626,7 +631,7 @@ export default function ProductsScreen() {
                 </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
-          </View>
+          </KeyboardAvoidingView>
         </TouchableWithoutFeedback>
       </Modal>
     </View>

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -270,6 +272,10 @@ export default function CategoryManagementScreen() {
 
       <Modal visible={nameModal.open} transparent animationType="fade" onRequestClose={closeNameModal}>
         <Pressable style={styles.modalBackdrop} onPress={closeNameModal}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalKav}
+          >
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={(e) => e.stopPropagation()}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>{modalTitle}</Text>
             <TextInput
@@ -293,6 +299,7 @@ export default function CategoryManagementScreen() {
               </TouchableOpacity>
             </View>
           </Pressable>
+          </KeyboardAvoidingView>
         </Pressable>
       </Modal>
     </SafeAreaView>
@@ -301,6 +308,7 @@ export default function CategoryManagementScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  modalKav: { width: '100%', justifyContent: 'center', paddingHorizontal: 24 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

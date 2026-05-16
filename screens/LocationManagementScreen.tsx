@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -248,6 +250,10 @@ export default function LocationManagementScreen() {
       {/* Modal tạo kho */}
       <Modal visible={createOpen} transparent animationType="slide" onRequestClose={() => setCreateOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setCreateOpen(false)}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalKav}
+          >
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Tạo kho mới</Text>
             <Text style={[styles.label, { color: colors.sub }]}>Tên kho *</Text>
@@ -285,12 +291,17 @@ export default function LocationManagementScreen() {
               </TouchableOpacity>
             </View>
           </Pressable>
+          </KeyboardAvoidingView>
         </Pressable>
       </Modal>
 
       {/* Modal sửa kho */}
       <Modal visible={editing !== null} transparent animationType="slide" onRequestClose={() => setEditing(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setEditing(null)}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalKav}
+          >
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Sửa kho</Text>
             <Text style={[styles.label, { color: colors.sub }]}>Tên kho *</Text>
@@ -327,6 +338,7 @@ export default function LocationManagementScreen() {
               </TouchableOpacity>
             </View>
           </Pressable>
+          </KeyboardAvoidingView>
         </Pressable>
       </Modal>
     </SafeAreaView>
@@ -335,6 +347,7 @@ export default function LocationManagementScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  modalKav: { width: '100%', justifyContent: 'flex-end' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

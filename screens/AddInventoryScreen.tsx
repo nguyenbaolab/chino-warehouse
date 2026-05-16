@@ -119,6 +119,16 @@ export default function AddInventoryScreen() {
     setShowCreateProduct(true)
   }
 
+  function closeCreateProductForm() {
+    setShowCreateProduct(false)
+    setNewProductName('')
+    setNewProductNote('')
+    setNewCategoryL1Id(null)
+    setNewCategoryL2Id(null)
+    setShowNewCatL1(false)
+    setShowNewCatL2(false)
+  }
+
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
       void fetchCategories()
@@ -643,15 +653,24 @@ export default function AddInventoryScreen() {
               placeholderTextColor={colors.sub}
             />
 
-            <TouchableOpacity
-              style={[styles.submitCreateBtn, { backgroundColor: colors.accent }]}
-              onPress={handleCreateProduct}
-              disabled={isCreatingProduct}
-            >
-              <Text style={[styles.submitCreateText, { color: colors.card }]}>
-                {isCreatingProduct ? 'Đang tạo...' : 'Tạo và chọn sản phẩm'}
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.createFormActions}>
+              <TouchableOpacity
+                style={[styles.cancelCreateBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                onPress={closeCreateProductForm}
+                disabled={isCreatingProduct}
+              >
+                <Text style={{ color: colors.text, fontWeight: '600' }}>Hủy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitCreateBtn, { backgroundColor: colors.accent, flex: 1 }]}
+                onPress={handleCreateProduct}
+                disabled={isCreatingProduct}
+              >
+                <Text style={[styles.submitCreateText, { color: colors.card }]}>
+                  {isCreatingProduct ? 'Đang tạo...' : 'Tạo và chọn sản phẩm'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -892,6 +911,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 12,
+  },
+  createFormActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 4,
+  },
+  cancelCreateBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitCreateBtn: {
     borderRadius: 10,
