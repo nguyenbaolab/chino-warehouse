@@ -29,6 +29,8 @@ type WarehouseStore = {
   fetchZones: (locationId: string) => Promise<void>
   fetchProducts: () => Promise<void>
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
+  /** Một query cho mọi zone của kho — set inventoryEntries một lần. */
+  fetchInventoryByLocation: (locationId: string) => Promise<void>
   fetchAllInventoryEntries: () => Promise<{ error: string | null }>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
   /** Mọi lô có barcode khớp (toàn kho) — chỉ return, không ghi store. */
@@ -410,6 +412,32 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       return { inventoryEntries: [...next, ...entries] }
     })
     return entries
+  },
+
+  fetchInventoryByLocation: async (locationId) => {
+    const zoneList = get().zones.filter((z) => z.location_id === locationId)
+    const zoneIds = zoneList.map((z) => z.id)
+    const zoneIdSet = new Set(zoneIds)
+
+    if (zoneIds.length === 0) {
+      set((s) => ({
+        inventoryEntries: s.inventoryEntries.filter((entry) => !zoneIdSet.has(entry.zone_id)),
+      }))
+      return
+    }
+
+    const { data } = await supabase
+      .from('inventory_entries')
+      .select('*, product:products(*), zone:zones(*)')
+      .in('zone_id', zoneIds)
+
+    const entries = data || []
+    set((s) => ({
+      inventoryEntries: [
+        ...s.inventoryEntries.filter((entry) => !zoneIdSet.has(entry.zone_id)),
+        ...entries,
+      ],
+    }))
   },
 
   fetchAllInventoryEntries: async () => {

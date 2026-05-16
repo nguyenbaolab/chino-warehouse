@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: MapScreen highlight barcode, panel thu gọn, fetchInventoryByLocation
+
+- **FIX 1:** Effect #2 barcode — `setHighlightedZones(buildHighlightMapFromEntries(results, colors))` sau search (không `setSelectedLocation`).
+- **FIX 2:** Khôi phục `isSearchPanelExpanded` + nút Chi tiết/Thu gọn; thu gọn = `collapsedSearchSummaries`, chi tiết = ScrollView nhóm theo kho.
+- **FIX 3:** `fetchInventoryByLocation` — 1 query Supabase per kho, 1 lần merge `inventoryEntries`; MapScreen Effect #3 thay `Promise.all(fetchInventoryByZone)`.
+- **File đã sửa:** `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `docs/project/CONTEXT.md`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — fix: MapScreen locate barcode — không auto đổi kho, tất cả lô cùng mã
 
 - **Root cause:** Effect #2 (locate barcode) gọi `searchByBarcode` (mutate `inventoryEntries`/`products`) + `setSelectedLocation` ngay → xung đột với Effect #3 (`fetchInventoryByZone` toàn bộ zone) → freeze; `setSearchResults([entry])` chỉ 1 lô.

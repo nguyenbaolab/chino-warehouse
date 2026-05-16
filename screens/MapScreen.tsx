@@ -85,13 +85,14 @@ export default function MapScreen() {
   const isFocused = useIsFocused()
   const {
     locations, selectedLocationId, zones, products, inventoryEntries, isLoading,
-    fetchLocations, fetchProducts, fetchInventoryByZone, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts, searchInventoryByBarcode
+    fetchLocations, fetchProducts, fetchInventoryByLocation, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts, searchInventoryByBarcode
   } = useWarehouseStore()
   const { colors, loadTheme } = useThemeStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InventoryEntry[]>([])
   const [highlightedZones, setHighlightedZones] = useState<Map<string, string>>(new Map())
+  const [isSearchPanelExpanded, setIsSearchPanelExpanded] = useState(false)
   const searchRequestRef = useRef(0)
   const lastLocateAtRef = useRef<number | undefined>(undefined)
 
@@ -157,6 +158,8 @@ export default function MapScreen() {
         if (!cancelled) {
           setSearchQuery(scannedBarcode)
           setSearchResults(results)
+          setIsSearchPanelExpanded(false)
+          setHighlightedZones(buildHighlightMapFromEntries(results, colors))
         }
       } else if (scannedProductName) {
         if (!cancelled) {
@@ -185,9 +188,9 @@ export default function MapScreen() {
 
   useEffect(() => {
     if (!selectedLocationId || zones.length === 0) return
-    // Đồng bộ lot hiện tại của các zone để auto hiển thị chấm đỏ/vàng
-    Promise.all(zones.map((zone) => fetchInventoryByZone(zone.id)))
-  }, [selectedLocationId, zones, fetchInventoryByZone])
+    // Đồng bộ lot hiện tại của các zone để auto hiển thị chấm đỏ/vàng (1 query / kho)
+    void fetchInventoryByLocation(selectedLocationId)
+  }, [selectedLocationId, zones, fetchInventoryByLocation])
 
   async function handleSearch(text: string) {
     const requestId = ++searchRequestRef.current
@@ -200,6 +203,7 @@ export default function MapScreen() {
     const results = await searchProducts(text)
     if (requestId !== searchRequestRef.current) return
     setSearchResults(results)
+    setIsSearchPanelExpanded(false)
     setHighlightedZones(buildHighlightMapFromEntries(results, colors))
   }
 
@@ -208,6 +212,7 @@ export default function MapScreen() {
     setSearchQuery('')
     setSearchResults([])
     setHighlightedZones(new Map())
+    setIsSearchPanelExpanded(false)
   }
 
   const searchResultsByLocation = useMemo((): SearchLocationGroup[] => {
@@ -238,6 +243,25 @@ export default function MapScreen() {
       }))
       .sort((a, b) => a.locationName.localeCompare(b.locationName))
   }, [searchResults, locations])
+
+  const collapsedSearchSummaries = useMemo(() => {
+    const map = new Map<string, { productName: string; totalBoxes: number; zoneIds: Set<string> }>()
+    for (const entry of searchResults) {
+      const productId = entry.product_id
+      const current = map.get(productId)
+      if (current) {
+        current.totalBoxes += entry.quantity_boxes
+        current.zoneIds.add(entry.zone_id)
+      } else {
+        map.set(productId, {
+          productName: entry.product?.name ?? 'Sản phẩm không xác định',
+          totalBoxes: entry.quantity_boxes,
+          zoneIds: new Set([entry.zone_id]),
+        })
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.productName.localeCompare(b.productName))
+  }, [searchResults])
 
   function focusSearchResultLot(entry: InventoryEntry) {
     const locationId = entry.zone?.location_id
@@ -618,9 +642,24 @@ export default function MapScreen() {
       {/* Search results */}
       {searchResults.length > 0 && mode === 'normal' && (
         <View style={[styles.resultsBox, { backgroundColor: colors.card }]}>
-          <Text style={[styles.resultsTitle, { color: colors.sub }]}>
-            Kết quả ({searchResults.length} lô · {searchResultsByLocation.length} kho)
-          </Text>
+          <View style={styles.resultsHeaderRow}>
+            <Text style={[styles.resultsTitle, { color: colors.sub }]}>
+              Kết quả ({searchResults.length} lô · {searchResultsByLocation.length} kho)
+            </Text>
+            <TouchableOpacity
+              style={[styles.resultsToggleBtn, { backgroundColor: colors.bg }]}
+              onPress={() => setIsSearchPanelExpanded((prev) => !prev)}
+            >
+              <Text style={[styles.resultsToggleLabel, { color: colors.text }]}>
+                {isSearchPanelExpanded ? 'Thu gọn' : 'Chi tiết'}
+              </Text>
+              <Text style={[styles.resultsToggleText, { color: colors.sub }]}>
+                {isSearchPanelExpanded ? '▴' : '▾'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {isSearchPanelExpanded ? (
           <ScrollView style={styles.resultsScroll} nestedScrollEnabled keyboardShouldPersistTaps="handled">
             {searchResultsByLocation.map((group) => (
               <View key={group.locationId} style={styles.resultLocationGroup}>
@@ -653,6 +692,17 @@ export default function MapScreen() {
               </View>
             ))}
           </ScrollView>
+          ) : (
+            collapsedSearchSummaries.map((summary, idx) => (
+              <Text
+                key={`${summary.productName}-${idx}`}
+                style={[styles.resultText, styles.collapsedSummaryText, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {summary.productName} — {summary.totalBoxes} thùng — {summary.zoneIds.size} zone
+              </Text>
+            ))
+          )}
         </View>
       )}
 
@@ -862,8 +912,21 @@ const styles = StyleSheet.create({
   instructionText: { fontWeight: 'bold', fontSize: 14 },
   instructionSub: { fontSize: 12, marginTop: 2 },
   resultsBox: { marginHorizontal: 16, marginBottom: 8, borderRadius: 10, padding: 12 },
-  resultsTitle: { fontSize: 12, marginBottom: 8 },
+  resultsHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  resultsTitle: { fontSize: 12, flex: 1 },
+  resultsToggleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  resultsToggleLabel: { fontSize: 13, fontWeight: '600' },
+  resultsToggleText: { fontSize: 12, fontWeight: '700' },
   resultsScroll: { maxHeight: 220 },
+  resultText: { fontSize: 13, flex: 1 },
+  collapsedSummaryText: { marginBottom: 5 },
   resultLocationGroup: { marginBottom: 10 },
   resultLocationHeader: { fontSize: 14, fontWeight: '700', marginBottom: 6 },
   resultLotRow: {
