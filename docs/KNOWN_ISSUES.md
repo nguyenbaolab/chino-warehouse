@@ -11,6 +11,75 @@
 - **Hướng fix:** Validate env trong `lib/supabase.ts` + màn `ConfigErrorScreen` thay vì crash; bọc auth bootstrap try/catch; `StartupErrorBoundary` ở `index.ts`; bỏ `newArchEnabled: false`; set EAS env (GOLIVE D5) và build lại.
 - **Trạng thái:** Resolved
 - **Đã fix:** `readSupabaseEnv()` + `isSupabaseConfigured`; placeholder client khi thiếu env; `App.tsx` auth gate an toàn; `components/ConfigErrorScreen.tsx`, `components/StartupErrorBoundary.tsx`; dedupe quyền Android trong `app.json`; `.env.example` cho dev local.
+- **Tham chiếu build:** `docs/BUILD_APK_GUIDE.md` §7 (env EAS Cloud vs export Local).
+
+---
+
+### [KI-030] EAS Local build không đọc file `.env`
+
+- **Mức độ:** High (build / runtime)
+- **File liên quan:** `build.sh`, `.env`, `lib/supabase.ts`, `docs/BUILD_APK_GUIDE.md` §4.3 / §7
+- **Mô tả:** `eas build --local` copy project sang `/tmp/` — **không** tự embed biến từ `.env`. Quên `export EXPO_PUBLIC_SUPABASE_*` trước build → APK thiếu env → crash hoặc màn "Chưa cấu hình kết nối" (sau KI-029: không crash native nữa).
+- **Cách tái hiện:** Build local trong WSL không export env → cài APK → mở app.
+- **Hướng fix:** Export env mỗi lần build (hoặc dùng `build.sh`); EAS Cloud dùng `eas env:create` (một lần). Chi tiết: **BUILD_APK_GUIDE.md**.
+- **Trạng thái:** Mitigated
+- **Ghi chú:** Runtime đã có `ConfigErrorScreen`; vận hành build vẫn phải export / script.
+
+---
+
+### [KI-031] EAS Local — Gradle `OutOfMemoryError: Metaspace`
+
+- **Mức độ:** High (build)
+- **File liên quan:** WSL2 `~/.wslconfig`, `~/.gradle/gradle.properties`, `docs/BUILD_APK_GUIDE.md` §4.3 / §6 / §7
+- **Mô tả:** Build Android native trong WSL2 hết Metaspace/RAM → Gradle fail giữa chừng.
+- **Cách tái hiện:** `eas build --local` trên máy WSL RAM thấp hoặc thiếu `org.gradle.jvmargs` / `.wslconfig`.
+- **Hướng fix:** Tăng `memory` trong `.wslconfig`; tạo `~/.gradle/gradle.properties` (`-Xmx12g`, `MaxMetaspaceSize=2g`, `org.gradle.daemon=false`); xóa `~/.gradle/caches` nếu corrupt rồi build lại.
+- **Trạng thái:** Open (toolchain / môi trường)
+- **Tham chiếu:** BUILD_APK_GUIDE.md §7 — `OutOfMemoryError: Metaspace`.
+
+---
+
+### [KI-032] `build.sh` CRLF — script im lặng trên WSL
+
+- **Mức độ:** Medium (build)
+- **File liên quan:** `build.sh`, `docs/BUILD_APK_GUIDE.md` §7
+- **Mô tả:** File tạo/sửa trên Windows có line ending CRLF → Linux không chạy được shebang; `./build.sh` không output, không báo lỗi rõ.
+- **Cách tái hiện:** Tạo `build.sh` bằng Notepad/Windows → chạy trong Ubuntu.
+- **Hướng fix:** `sed -i 's/\r//' build.sh` hoặc lưu LF trong editor; giữ script chỉ chạy trong WSL.
+- **Trạng thái:** Open (workaround documented)
+
+---
+
+### [KI-033] Gradle cache corrupt — `metadata.bin` / journal lock
+
+- **Mức độ:** Medium (build)
+- **File liên quan:** `~/.gradle`, `docs/BUILD_APK_GUIDE.md` §6 / §7
+- **Mô tả:** Cache Gradle corrupt sau build bị ngắt (OOM, Ctrl+C) → `Could not read workspace metadata`, `Timeout waiting to lock journal cache`, v.v.
+- **Cách tái hiện:** Build local fail giữa chừng → build lại báo lỗi cache/lock.
+- **Hướng fix:** `pkill -f gradle` + xóa lock; hoặc `rm -rf ~/.gradle/caches` / toàn bộ `~/.gradle` rồi **tạo lại** `gradle.properties` (tránh OOM lần sau — xem KI-031).
+- **Trạng thái:** Open (operational)
+
+---
+
+### [KI-034] Project trên OneDrive — `git init exited with non-zero code: 128` (WSL)
+
+- **Mức độ:** Medium (build)
+- **File liên quan:** đường dẫn project, `docs/BUILD_APK_GUIDE.md` §7
+- **Mô tả:** EAS local trong WSL gọi `git` trên thư mục sync OneDrive → lỗi quyền `chmod` / git init.
+- **Cách tái hiện:** Clone/project nằm trong OneDrive Desktop/Documents → `eas build --local`.
+- **Hướng fix:** Chuyển repo ra ổ local (vd. `E:\personal projects\`), tắt backup OneDrive cho thư mục đó.
+- **Trạng thái:** Open (môi trường)
+
+---
+
+### [KI-035] `eas build --local` chạy trên Windows CMD/PowerShell
+
+- **Mức độ:** Medium (build)
+- **File liên quan:** `docs/BUILD_APK_GUIDE.md` §7
+- **Mô tả:** Flag `--local` chỉ hỗ trợ môi trường Unix-like (WSL2/Linux/macOS), không chạy trực tiếp trên Windows host.
+- **Cách tái hiện:** `eas build --profile preview --platform android --local` trong CMD/PowerShell.
+- **Hướng fix:** Mở Ubuntu (`wsl -d Ubuntu`), `cd` sang mount path project, export env, build lại; hoặc dùng EAS Cloud trên Windows.
+- **Trạng thái:** Open (by design)
 
 ---
 

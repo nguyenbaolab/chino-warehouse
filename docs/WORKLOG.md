@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs: BUILD_APK_GUIDE.md + build.sh (EAS Cloud & Local WSL2)
+
+- **Tạo:** `docs/BUILD_APK_GUIDE.md` — hướng dẫn build APK end-to-end: EAS Cloud (Windows), EAS Local (WSL2 + Android SDK/Java/Gradle), set env (`eas env:create` / export), xóa cache Gradle, mục 7 lỗi thường gặp, quy trình build lần sau, FAQ.
+- **Tạo:** `build.sh` — script tự động export env + `eas build --local` + copy APK vào `apk/`.
+- **Đồng bộ docs:** `CONTEXT.md` §1 (tham chiếu BUILD_APK_GUIDE), §2 (file tree); `KNOWN_ISSUES.md` KI-030–KI-035 (lỗi build chưa ghi trước đó).
+- **File đã sửa:** `docs/BUILD_APK_GUIDE.md` (mới), `build.sh` (mới), `docs/project/CONTEXT.md`, `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — fix: Android crash on launch (auth gate, Supabase env, New Arch)
 
 - **Nguyên nhân:** APK EAS thường thiếu `EXPO_PUBLIC_*` nếu chưa D5 (`eas env:create`) → `createClient` với url/key `undefined` crash lúc import; `App.tsx` `getSession()` không try/catch; `newArchEnabled: false` lệch Expo Go.

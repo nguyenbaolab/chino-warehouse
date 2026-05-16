@@ -53,3 +53,4 @@ yarn-error.*
 
 #apk
 /apk
+build.sh

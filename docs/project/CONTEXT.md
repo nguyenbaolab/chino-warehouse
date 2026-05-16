@@ -21,6 +21,8 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
 - RBAC (phân quyền manager/nhân viên) → Phase 3, F24.
 
+**Build & phân phối APK:** hướng dẫn vận hành đầy đủ (EAS Cloud + EAS Local qua WSL2, cache Gradle, lỗi thường gặp, script `build.sh`) → **`docs/BUILD_APK_GUIDE.md`**. Checklist go-live: `docs/phases/phase-2/GOLIVE_CHECKLIST_2.md`. Tổng quan kiến trúc EAS (phase 2): `docs/phases/phase-2/EAS_BUILD_GUIDE.md`.
+
 ---
 
 ## §2 Cấu trúc file & thư mục (hiện tại)
@@ -53,6 +55,7 @@ docs/
   WORKLOG.md
   BLOCKERS.md
   KNOWN_ISSUES.md
+  BUILD_APK_GUIDE.md    # Hướng dẫn build APK (EAS Cloud + Local WSL2, cache, troubleshooting)
 lib/
   supabase.ts
 screens/
@@ -78,6 +81,9 @@ supabase/migrations/
 types/
   index.ts
 App.tsx
+build.sh                # Script build EAS Local (chạy trong Ubuntu/WSL2; xem BUILD_APK_GUIDE.md)
+eas.json
+apk/                    # APK đã build (gitignore)
 .cursorrules
 README.md
 ```

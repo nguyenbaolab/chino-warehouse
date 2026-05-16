@@ -560,6 +560,14 @@ cd "/mnt/e/personal projects/chino-warehouse"
 **Fix EAS Cloud:** Chạy `eas env:create` như Bước 3.4.  
 **Fix EAS Local:** Bỏ qua thông báo này, đảm bảo đã export env trước khi build.
 
+### ❌ `./build.sh chạy không có output gì, không báo lỗi`
+**Nguyên nhân:** File build.sh được tạo/edit trên Windows có line endings CRLF — Linux không chạy được script này.  
+**Fix:** 
+```bash
+sed -i 's/\r//' build.sh
+./build.sh
+```
+
 ---
 
 ## 8. Quy trình build lần sau
@@ -606,18 +614,13 @@ set -e
 export EXPO_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
 export EXPO_PUBLIC_SUPABASE_ANON_KEY="eyJ..."
 
-VERSION=$1
-if [ -z "$VERSION" ]; then
-  echo "Dùng: ./build.sh v1.0"
-  exit 1
-fi
-
-echo "Building $VERSION..."
+echo "Building..."
 eas build --profile preview --platform android --local
 
 mkdir -p apk
-cp build-*.apk "apk/chino-warehouse-$VERSION.apk"
-echo "Done: apk/chino-warehouse-$VERSION.apk"
+ORIGINAL=$(ls build-*.apk | head -1)
+cp "$ORIGINAL" "apk/$ORIGINAL"
+echo "Done: apk/$ORIGINAL"
 EOF
 
 chmod +x "/mnt/e/personal projects/chino-warehouse/build.sh"
@@ -626,7 +629,8 @@ chmod +x "/mnt/e/personal projects/chino-warehouse/build.sh"
 Dùng:
 ```bash
 cd "/mnt/e/personal projects/chino-warehouse"
-./build.sh v1.1
+sed -i 's/\r//' build.sh
+./build.sh
 ```
 
 ---
