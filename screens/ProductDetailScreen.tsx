@@ -68,6 +68,7 @@ export default function ProductDetailScreen() {
     fetchCategories,
     updateProductCategory,
     fetchAuditLogsForProduct,
+    deleteProduct,
   } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
@@ -355,6 +356,33 @@ export default function ProductDetailScreen() {
     const st = tabNav?.getState()
     if (!st?.routes || st.index === undefined) return 'Products'
     return String(st.routes[st.index]?.name ?? 'Products')
+  }
+
+  function handleDeleteProduct() {
+    if (!product) return
+    Alert.alert(
+      'Xóa sản phẩm',
+      `Bạn có chắc muốn xóa sản phẩm ${product.name}? Hành động này không thể hoàn tác.`,
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              try {
+                await deleteProduct(product.id)
+                navigation.goBack()
+              } catch (err) {
+                const message =
+                  err instanceof Error ? err.message : 'Không thể xóa sản phẩm.'
+                Alert.alert('Không thể xóa', message)
+              }
+            })()
+          },
+        },
+      ],
+    )
   }
 
   return (
@@ -699,6 +727,13 @@ export default function ProductDetailScreen() {
             })}
           </View>
         )}
+
+        <TouchableOpacity
+          style={[styles.deleteProductBtn, { borderColor: colors.statusExpired, backgroundColor: colors.card }]}
+          onPress={handleDeleteProduct}
+        >
+          <Text style={[styles.deleteProductBtnText, { color: colors.statusExpired }]}>Xóa sản phẩm</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       <Modal visible={!!moveLot} transparent animationType="slide" onRequestClose={() => setMoveLot(null)}>
@@ -795,6 +830,17 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700' },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   content: { padding: 16, paddingBottom: 20 },
+  deleteProductBtn: {
+    marginTop: 20,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  deleteProductBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
   infoBox: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 12 },
   detailsToggleRow: {
     marginTop: 10,

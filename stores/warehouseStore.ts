@@ -33,6 +33,7 @@ type WarehouseStore = {
   searchProducts: (query: string) => Promise<InventoryEntry[]>
   searchByBarcode: (barcode: string) => Promise<InventoryEntry | null>
   addProduct: (data: Partial<Product>) => Promise<Product | null>
+  deleteProduct: (productId: string) => Promise<void>
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
   updateInventoryEntry: (id: string, data: Partial<InventoryEntry>) => Promise<void>
   deleteInventoryEntry: (id: string) => Promise<void>
@@ -479,6 +480,28 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       }))
     }
     return created
+  },
+
+  deleteProduct: async (productId) => {
+    const { data: linked } = await supabase
+      .from('inventory_entries')
+      .select('id')
+      .eq('product_id', productId)
+      .limit(1)
+
+    if (linked && linked.length > 0) {
+      throw new Error(
+        'Sản phẩm vẫn còn tồn kho. Vui lòng điều chỉnh tất cả lô hàng về 0 trước khi xóa.',
+      )
+    }
+
+    const { error } = await supabase.from('products').delete().eq('id', productId)
+    if (error) throw error
+
+    set((s) => ({
+      products: s.products.filter((p) => p.id !== productId),
+      inventoryEntries: s.inventoryEntries.filter((e) => e.product_id !== productId),
+    }))
   },
 
   addInventoryEntry: async (data) => {

@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: 4 bug UX (pre-fill tên SP, barcode debounce, xóa SP, bàn phím)
+
+- **BUG 1:** `AddInventoryScreen` — pre-fill `newProductName` từ `searchQuery` khi bấm **Tạo sản phẩm mới**.
+- **BUG 2:** `BarcodeScannerScreen` — debounce 600ms (cùng mã liên tục) + overlay xác nhận 800ms trước navigate/callback.
+- **BUG 3:** `warehouseStore.deleteProduct` (block nếu còn `inventory_entries`) + nút **Xóa sản phẩm** trên `ProductDetailScreen`.
+- **BUG 4:** `KeyboardAvoidingView` trên `AddInventoryScreen`, `OrderDetailScreen` (ô ghi chú cuối màn).
+- **Docs:** KI-019 Resolved; KI-036–KI-038; `CONTEXT.md` §3 §4; `REQUIREMENTS.md` F14 + màn chi tiết SP.
+- **File đã sửa:** `screens/AddInventoryScreen.tsx`, `screens/BarcodeScannerScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/OrderDetailScreen.tsx`, `stores/warehouseStore.ts`, `docs/KNOWN_ISSUES.md`, `docs/project/CONTEXT.md`, `docs/project/REQUIREMENTS.md`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — milestone: APK v1.0 build + cài điện thoại thành công
 
 - **Kết quả:** EAS Local (WSL2) build APK preview thành công; cài lên thiết bị Android thật, app mở và chạy bình thường (D8 go-live).

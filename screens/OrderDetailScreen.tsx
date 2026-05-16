@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, Keyboard, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -46,6 +57,7 @@ export default function OrderDetailScreen() {
   const [itemEditQty, setItemEditQty] = useState('')
   const [itemEditNotes, setItemEditNotes] = useState('')
   const itemSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const listScrollRef = useRef<ScrollView>(null)
 
   useEffect(() => {
     void fetchProducts()
@@ -221,7 +233,10 @@ export default function OrderDetailScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.bg }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <View style={styles.headerRow}>
         <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
           <Text style={{ color: colors.text }}>←</Text>
@@ -289,6 +304,9 @@ export default function OrderDetailScreen() {
             placeholder="Ghi chú"
             placeholderTextColor={colors.sub}
             editable={!isLocked}
+            onFocus={() => {
+              setTimeout(() => listScrollRef.current?.scrollTo({ y: 0, animated: true }), 100)
+            }}
           />
         </View>
         {suggestions.length > 0 && !isLocked && (
@@ -309,7 +327,11 @@ export default function OrderDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={listScrollRef}
+        contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
+      >
         {items.map((item) => {
           const editing = editingItemId === item.id
           return (
@@ -415,7 +437,7 @@ export default function OrderDetailScreen() {
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   )
 }
 

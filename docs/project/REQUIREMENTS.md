@@ -98,7 +98,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F11 | Quản lý tồn kho theo thùng | Đơn vị: thùng nguyên. Thùng đang dở vẫn tính 1. Chỉ cập nhật khi bỏ hẳn. Một sản phẩm có thể ở nhiều zone. | P1 | MVP | Done |
 | F12 | Theo dõi hạn sử dụng | Mỗi lô có hạn riêng. Màu sắc theo §5. Hiển thị xuyên suốt toàn app. | P1 | MVP | Done |
 | F13 | Ghi chú sản phẩm & lô hàng | Ghi chú tự do cho sản phẩm (nhà cung cấp, bảo quản...) và cho từng lô (ngày nhập, tình trạng...). | P1 | MVP | Done |
-| F14 | Thêm sản phẩm mới | Thêm sản phẩm: tên (bắt buộc), mã vạch (tuỳ chọn), ghi chú. | P1 | MVP | Done |
+| F14 | Thêm sản phẩm mới | Thêm sản phẩm: tên (bắt buộc), mã vạch (tuỳ chọn), ghi chú. **Xóa sản phẩm:** chỉ cho phép khi không còn `inventory_entries` liên kết; nếu còn tồn kho → block với thông báo yêu cầu điều chỉnh về 0 / xóa hết lô trước (`ProductDetailScreen` + `deleteProduct`). | P1 | MVP | Done |
 | F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn sử dụng, ghi chú, **barcode theo lô (optional)** ngay tại AddInventoryScreen. | P1 | MVP | Done |
 | F16 | Sửa / Xóa lô hàng | Cập nhật số thùng, hạn, ghi chú. Xóa khi hết hàng. Truy cập từ màn hình chi tiết (F07). | P1 | MVP | Done |
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
@@ -241,7 +241,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 |----------|-------|-----------------|
 | Bản đồ kho (Tab) | Màn hình chính | Sheet chọn kho (tên + kích thước lưới, Thêm kho mới) · nút ▦ mở Zone Layout Editor · Lưới 2D zone · + Zone · Thanh tìm kiếm · Nút quét mã · Chấm màu khi có kết quả |
 | Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng (nếu có) · Danh sách sản phẩm + số thùng + chấm màu |
-| Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Mã vạch · Ảnh (Phase 2) · Tất cả zone+tầng · Số thùng · Hạn (màu) · Ghi chú · Nút sửa/xóa · Ngưỡng cảnh báo · **Chi tiết (F30):** dropdown **Cấp 1** → sau khi chọn mới hiện dropdown **Cấp 2**; lưu/sửa; cả hai cấp optional · **Section Lịch sử thay đổi:** 10 entries gần nhất (inventory + product), icon + thời gian + người + field đổi · nút Xem tất cả → AuditLogScreen |
+| Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Mã vạch · Ảnh (Phase 2) · Tất cả zone+tầng · Số thùng · Hạn (màu) · Ghi chú · Nút sửa/xóa lô · **Xóa sản phẩm** (confirm; block nếu còn lô trong kho) · Ngưỡng cảnh báo · **Chi tiết (F30):** dropdown **Cấp 1** → sau khi chọn mới hiện dropdown **Cấp 2**; lưu/sửa; cả hai cấp optional · **Section Lịch sử thay đổi:** 10 entries gần nhất (inventory + product), icon + thời gian + người + field đổi · nút Xem tất cả → AuditLogScreen |
 | Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Dropdown lọc theo kho (Tất cả kho / từng kho) · Danh sách sản phẩm · Tổng thùng · Chấm màu · Tìm kiếm · Thêm mới (CRUD category **không** ở màn này — xem Settings / F30) |
 | Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · **list active** (hàng trong kho) vs **list tự tạo** (hàng mới) · trong chi tiết list: 2 tab **Hàng trong kho** (trái) / **Hàng mới** (phải) · một list active duy nhất; tạo mới + đặt tên (mặc định theo ngày) · nhóm theo category + nhóm **Chưa phân loại** · số thùng để trống đến khi Confirm · luồng Draft → Confirm → Xuất PDF (gộp 2 tab) → Đã đặt |
 | Thêm hàng (Stack) | Thêm lô hàng | Chọn sản phẩm · Zone · Tầng · Số thùng · Hạn · Ghi chú · **F30:** SP có sẵn → category **read-only** (theo SP); **SP mới** → dropdown Cấp 1 + Cấp 2 dưới field tên |

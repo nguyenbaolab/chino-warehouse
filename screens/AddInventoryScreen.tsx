@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -105,6 +107,17 @@ export default function AddInventoryScreen() {
   const [newCategoryL2Id, setNewCategoryL2Id] = useState<string | null>(null)
   const [showNewCatL1, setShowNewCatL1] = useState(false)
   const [showNewCatL2, setShowNewCatL2] = useState(false)
+
+  const scrollRef = useRef<ScrollView>(null)
+
+  function openCreateProductForm() {
+    setNewProductName(searchQuery.trim())
+    setNewCategoryL1Id(null)
+    setNewCategoryL2Id(null)
+    setShowNewCatL1(false)
+    setShowNewCatL2(false)
+    setShowCreateProduct(true)
+  }
 
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
@@ -312,6 +325,10 @@ export default function AddInventoryScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <KeyboardAvoidingView
+        style={styles.flex1}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <View style={[styles.topColorBar, { backgroundColor: selectedZone?.color || zoneColor || colors.accent }]} />
 
       {/* Header có nút hủy quay lại màn trước */}
@@ -331,7 +348,12 @@ export default function AddInventoryScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        ref={scrollRef}
+        style={styles.scrollArea}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Dropdown zone + tầng */}
         <View style={styles.zoneTierRow}>
           <View style={styles.zoneTierCol}>
@@ -455,16 +477,11 @@ export default function AddInventoryScreen() {
                 <TouchableOpacity
                   style={[styles.createBtn, { backgroundColor: colors.accent }]}
                   onPress={() => {
-                    setShowCreateProduct((v) => {
-                      const next = !v
-                      if (next) {
-                        setNewCategoryL1Id(null)
-                        setNewCategoryL2Id(null)
-                        setShowNewCatL1(false)
-                        setShowNewCatL2(false)
-                      }
-                      return next
-                    })
+                    if (showCreateProduct) {
+                      setShowCreateProduct(false)
+                    } else {
+                      openCreateProductForm()
+                    }
                   }}
                 >
                   <Text style={[styles.createBtnText, { color: colors.card }]}>Tạo sản phẩm mới</Text>
@@ -668,6 +685,9 @@ export default function AddInventoryScreen() {
           onChangeText={setBatchNote}
           placeholder="Optional"
           placeholderTextColor={colors.sub}
+          onFocus={() => {
+            setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
+          }}
         />
       </ScrollView>
 
@@ -678,12 +698,16 @@ export default function AddInventoryScreen() {
       >
         <Text style={[styles.saveBtnText, { color: colors.card }]}>{isSaving ? 'Đang lưu...' : 'Lưu'}</Text>
       </TouchableOpacity>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  flex1: {
     flex: 1,
   },
   topColorBar: {

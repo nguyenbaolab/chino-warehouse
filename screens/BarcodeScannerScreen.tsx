@@ -23,6 +23,9 @@ type RootNav = {
   canGoBack?: () => boolean
 }
 
+const BARCODE_STABLE_MS = 600
+const SUCCESS_OVERLAY_MS = 800
+
 /** Đóng modal scanner sau khi nested `navigate('Tabs', …)` đã được xử lý (tránh goBack() cùng frame làm mất params / không đóng modal). */
 function scheduleDismissModal(navigation: RootNav) {
   setTimeout(() => {
@@ -47,8 +50,12 @@ export default function BarcodeScannerScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [isScanLocked, setIsScanLocked] = useState(false)
+  const [successOverlay, setSuccessOverlay] = useState<{ value: string } | null>(null)
   const processingRef = useRef(false)
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stableBarcodeRef = useRef<string | null>(null)
+  const stableSinceRef = useRef(0)
 
   useEffect(() => {
     Camera.requestCameraPermissionsAsync().then(({ status }) => {
@@ -61,14 +68,23 @@ export default function BarcodeScannerScreen() {
       processingRef.current = false
       setIsScanLocked(false)
       setIsSearching(false)
+      setSuccessOverlay(null)
+      stableBarcodeRef.current = null
+      stableSinceRef.current = 0
       return () => {
         if (dismissTimerRef.current) {
           clearTimeout(dismissTimerRef.current)
           dismissTimerRef.current = null
         }
+        if (overlayTimerRef.current) {
+          clearTimeout(overlayTimerRef.current)
+          overlayTimerRef.current = null
+        }
       }
     }, [])
   )
+
+  const isScannerLocked = isScanLocked || !!successOverlay
 
   function navigateTabsThenCloseModal(tabsParams: Record<string, unknown>) {
     navigation.navigate('Tabs', tabsParams)
@@ -119,14 +135,12 @@ export default function BarcodeScannerScreen() {
     )
   }
 
-  async function handleScanned({ data }: { data: string }) {
-    if (processingRef.current) return
+  async function processConfirmedBarcode(barcode: string) {
     processingRef.current = true
     setIsScanLocked(true)
     setIsSearching(true)
 
-    const barcode = data.trim()
-    console.log('[BarcodeScanner] scanned barcode:', barcode, 'mode:', mode)
+    console.log('[BarcodeScanner] confirmed barcode:', barcode, 'mode:', mode)
 
     if (mode === 'search' && typeof onScanFillBarcode === 'function') {
       setIsSearching(false)
@@ -215,6 +229,37 @@ export default function BarcodeScannerScreen() {
     openBarcodeNotFoundAlert(returnTab || 'Products')
   }
 
+  function beginSuccessOverlayThenProcess(barcode: string) {
+    setSuccessOverlay({ value: barcode })
+    setIsScanLocked(true)
+    if (overlayTimerRef.current) clearTimeout(overlayTimerRef.current)
+    overlayTimerRef.current = setTimeout(() => {
+      overlayTimerRef.current = null
+      setSuccessOverlay(null)
+      void processConfirmedBarcode(barcode)
+    }, SUCCESS_OVERLAY_MS)
+  }
+
+  function handleBarcodeDetected(raw: string) {
+    if (processingRef.current || isScannerLocked) return
+
+    const barcode = raw.trim()
+    if (!barcode) return
+
+    const now = Date.now()
+    if (stableBarcodeRef.current !== barcode) {
+      stableBarcodeRef.current = barcode
+      stableSinceRef.current = now
+      return
+    }
+
+    if (now - stableSinceRef.current < BARCODE_STABLE_MS) return
+
+    stableBarcodeRef.current = null
+    stableSinceRef.current = 0
+    beginSuccessOverlayThenProcess(barcode)
+  }
+
   if (hasPermission === null) {
     return (
       <SafeAreaView style={[styles.center, { backgroundColor: colors.bg }]}>
@@ -246,13 +291,23 @@ export default function BarcodeScannerScreen() {
       <CameraView
         style={StyleSheet.absoluteFillObject}
         facing="back"
-        onBarcodeScanned={isScanLocked ? undefined : handleScanned}
+        onBarcodeScanned={isScannerLocked ? undefined : ({ data }) => handleBarcodeDetected(data)}
         barcodeScannerSettings={{
           barcodeTypes: ['ean13', 'ean8', 'code128', 'code39', 'upc_a', 'upc_e', 'qr'],
         }}
       />
 
-      <View style={styles.overlay}>
+      {successOverlay && (
+        <View style={styles.successOverlay} pointerEvents="auto">
+          <Text style={styles.successCheck}>✓</Text>
+          <Text style={styles.successTitle}>Đã đọc barcode</Text>
+          <Text style={styles.successValue} numberOfLines={2}>
+            {successOverlay.value}
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.overlay} pointerEvents="box-none">
         <TouchableOpacity style={[styles.closeBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]} onPress={() => navigation.goBack()}>
           <Text style={styles.closeBtnText}>✕</Text>
         </TouchableOpacity>
@@ -325,4 +380,15 @@ const styles = StyleSheet.create({
   settingsBtn: { borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
   settingsBtnText: { fontWeight: '700' },
   closeFallbackBtn: { marginTop: 10, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 },
+  successOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(34, 197, 94, 0.72)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    zIndex: 20,
+  },
+  successCheck: { color: '#FFFFFF', fontSize: 48, fontWeight: '700', marginBottom: 8 },
+  successTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  successValue: { color: '#FFFFFF', fontSize: 15, textAlign: 'center', fontWeight: '600' },
 })

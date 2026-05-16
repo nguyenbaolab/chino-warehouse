@@ -291,8 +291,8 @@
 - **Mức độ:** High
 - **File liên quan:** `screens/BarcodeScannerScreen.tsx`
 - **Mô tả:** Barcode scanner không có debounce đủ mạnh, có thể tạo hàng trăm request/giây.
-- **Trạng thái:** Open
-- **Hướng fix:** Thêm debounce tối thiểu 500ms trên kết quả quét barcode trước khi gọi DB.
+- **Trạng thái:** Resolved
+- **Đã fix:** debounce 600ms + success overlay 800ms trong `BarcodeScannerScreen`.
 
 ---
 
@@ -383,5 +383,35 @@
 - **Mô tả:** 3 vấn đề UX: (1) dropdown inline trong ScrollView không scroll bằng tay được do conflict touch event, (2) dropdown Người trống khi chưa có audit log — thiếu placeholder rõ ràng, (3) dropdown không searchable và không có camera scan cho filter Sản phẩm.
 - **Trạng thái:** Resolved
 - **Giải pháp:** (1) Đổi tất cả 4 dropdown sang Modal-based (`SearchableDropdownModal`) với FlatList bên trong — không conflict touch event. (2) Placeholder "Tất cả (chưa có lịch sử)" khi chưa có user names. (3) TextInput tìm kiếm (auto-focus) trong mỗi Modal dropdown + icon 📷 trên filter Sản phẩm → navigate `BarcodeScanner`, lookup `searchByBarcode` → set `filterProductId`.
+
+---
+
+### [KI-036] AddInventoryScreen — không pre-fill tên SP từ ô tìm kiếm
+
+- **Mức độ:** Medium
+- **File liên quan:** `screens/AddInventoryScreen.tsx`
+- **Mô tả:** Bấm **Tạo sản phẩm mới** sau khi gõ tên tìm kiếm không thấy kết quả → field tên SP mới trống, phải gõ lại.
+- **Trạng thái:** Resolved
+- **Đã fix:** `openCreateProductForm()` gán `searchQuery.trim()` vào `newProductName` khi mở form tạo SP.
+
+---
+
+### [KI-037] Bàn phím che TextInput cuối màn hình
+
+- **Mức độ:** Medium
+- **File liên quan:** `screens/AddInventoryScreen.tsx`, `screens/OrderDetailScreen.tsx`
+- **Mô tả:** Tap ô nhập ở cuối màn (ghi chú lô, ghi chú đặt hàng) → bàn phím che mất field.
+- **Trạng thái:** Resolved
+- **Đã fix:** `KeyboardAvoidingView` (`padding` iOS / `height` Android) + `keyboardShouldPersistTaps="handled"`; `scrollToEnd` / scroll khi focus field cuối.
+
+---
+
+### [KI-038] ProductDetailScreen — thiếu xóa sản phẩm
+
+- **Mức độ:** Medium
+- **File liên quan:** `screens/ProductDetailScreen.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** Không có nút xóa SP; store thiếu `deleteProduct`.
+- **Trạng thái:** Resolved
+- **Đã fix:** `deleteProduct(productId)` — block nếu còn `inventory_entries` liên kết; nút **Xóa sản phẩm** + confirm dialog trên `ProductDetailScreen`.
 
 ---
