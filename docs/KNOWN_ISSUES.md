@@ -34,8 +34,8 @@
 - **Mô tả:** Build Android native trong WSL2 hết Metaspace/RAM → Gradle fail giữa chừng.
 - **Cách tái hiện:** `eas build --local` trên máy WSL RAM thấp hoặc thiếu `org.gradle.jvmargs` / `.wslconfig`.
 - **Hướng fix:** Tăng `memory` trong `.wslconfig`; tạo `~/.gradle/gradle.properties` (`-Xmx12g`, `MaxMetaspaceSize=2g`, `org.gradle.daemon=false`); xóa `~/.gradle/caches` nếu corrupt rồi build lại.
-- **Trạng thái:** Open (toolchain / môi trường)
-- **Tham chiếu:** BUILD_APK_GUIDE.md §7 — `OutOfMemoryError: Metaspace`.
+- **Trạng thái:** Mitigated
+- **Đã fix:** Cấu hình `~/.gradle/gradle.properties` (`org.gradle.jvmargs`, `org.gradle.daemon=false`) + `.wslconfig` `memory=16GB`; build local thành công. Tham chiếu: BUILD_APK_GUIDE.md §7.
 
 ---
 
@@ -46,7 +46,8 @@
 - **Mô tả:** File tạo/sửa trên Windows có line ending CRLF → Linux không chạy được shebang; `./build.sh` không output, không báo lỗi rõ.
 - **Cách tái hiện:** Tạo `build.sh` bằng Notepad/Windows → chạy trong Ubuntu.
 - **Hướng fix:** `sed -i 's/\r//' build.sh` hoặc lưu LF trong editor; giữ script chỉ chạy trong WSL.
-- **Trạng thái:** Open (workaround documented)
+- **Trạng thái:** Mitigated
+- **Đã fix:** `sed -i 's/\r//' build.sh` — script chạy bình thường trên WSL.
 
 ---
 
@@ -57,7 +58,8 @@
 - **Mô tả:** Cache Gradle corrupt sau build bị ngắt (OOM, Ctrl+C) → `Could not read workspace metadata`, `Timeout waiting to lock journal cache`, v.v.
 - **Cách tái hiện:** Build local fail giữa chừng → build lại báo lỗi cache/lock.
 - **Hướng fix:** `pkill -f gradle` + xóa lock; hoặc `rm -rf ~/.gradle/caches` / toàn bộ `~/.gradle` rồi **tạo lại** `gradle.properties` (tránh OOM lần sau — xem KI-031).
-- **Trạng thái:** Open (operational)
+- **Trạng thái:** Mitigated
+- **Đã fix:** `rm -rf ~/.gradle/caches` khi cache corrupt; build lại thành công (giữ `gradle.properties` — xem KI-031).
 
 ---
 
@@ -68,7 +70,8 @@
 - **Mô tả:** EAS local trong WSL gọi `git` trên thư mục sync OneDrive → lỗi quyền `chmod` / git init.
 - **Cách tái hiện:** Clone/project nằm trong OneDrive Desktop/Documents → `eas build --local`.
 - **Hướng fix:** Chuyển repo ra ổ local (vd. `E:\personal projects\`), tắt backup OneDrive cho thư mục đó.
-- **Trạng thái:** Open (môi trường)
+- **Trạng thái:** Resolved
+- **Đã fix:** Đã chuyển project sang ổ `E:\personal projects\chino-warehouse` (ngoài OneDrive sync).
 
 ---
 
@@ -79,7 +82,8 @@
 - **Mô tả:** Flag `--local` chỉ hỗ trợ môi trường Unix-like (WSL2/Linux/macOS), không chạy trực tiếp trên Windows host.
 - **Cách tái hiện:** `eas build --profile preview --platform android --local` trong CMD/PowerShell.
 - **Hướng fix:** Mở Ubuntu (`wsl -d Ubuntu`), `cd` sang mount path project, export env, build lại; hoặc dùng EAS Cloud trên Windows.
-- **Trạng thái:** Open (by design)
+- **Trạng thái:** Resolved
+- **Đã fix:** Build local chạy trong WSL2 Ubuntu (`wsl -d Ubuntu`) thay vì CMD/PowerShell; APK v1.0 build và cài máy thật OK.
 
 ---
 
