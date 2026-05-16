@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: Android crash on launch (auth gate, Supabase env, New Arch)
+
+- **Nguyên nhân:** APK EAS thường thiếu `EXPO_PUBLIC_*` nếu chưa D5 (`eas env:create`) → `createClient` với url/key `undefined` crash lúc import; `App.tsx` `getSession()` không try/catch; `newArchEnabled: false` lệch Expo Go.
+- **Fix:** `lib/supabase.ts` — `readSupabaseEnv()`, `isSupabaseConfigured`, client placeholder khi thiếu env; `App.tsx` — bootstrap auth async + try/catch + `ConfigErrorScreen`; `index.ts` — `StartupErrorBoundary`; `app.json` — bỏ `newArchEnabled: false`, dedupe permissions; `.env.example`.
+- **Cần làm sau fix code:** Set EAS env (D5) → `eas build --profile preview --platform android` lại → D8.
+- **File đã sửa:** `lib/supabase.ts`, `App.tsx`, `index.ts`, `app.json`, `components/ConfigErrorScreen.tsx` (mới), `components/StartupErrorBoundary.tsx` (mới), `.env.example` (mới), `docs/KNOWN_ISSUES.md` (KI-029), `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — docs: fix 3 thiếu sót CONTEXT.md
 
 - **§4:** thêm nhóm Actions audit log (`fetchAuditLogs`, `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`)

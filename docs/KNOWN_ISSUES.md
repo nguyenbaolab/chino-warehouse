@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-029] Android crash on launch (màn đen, "has stopped working")
+
+- **Mức độ:** Critical (runtime)
+- **File liên quan:** `lib/supabase.ts`, `App.tsx`, `index.ts`, `app.json`, `eas.json` / EAS env (D5)
+- **Mô tả:** APK standalone (EAS preview/production) thoát ngay khi mở nếu build **không embed** `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` — `createClient(undefined, …)` ném lỗi lúc import module. Thêm: `getSession()` / `onAuthStateChange` không có try/catch; `newArchEnabled: false` lệch với Expo Go (New Arch bật) có thể gây hành vi lạ trên bản native.
+- **Cách tái hiện:** `eas build --profile preview` khi chưa `eas env:create` hai biến EXPO_PUBLIC_* → cài APK → mở app → crash hoặc màn đen.
+- **Hướng fix:** Validate env trong `lib/supabase.ts` + màn `ConfigErrorScreen` thay vì crash; bọc auth bootstrap try/catch; `StartupErrorBoundary` ở `index.ts`; bỏ `newArchEnabled: false`; set EAS env (GOLIVE D5) và build lại.
+- **Trạng thái:** Resolved
+- **Đã fix:** `readSupabaseEnv()` + `isSupabaseConfigured`; placeholder client khi thiếu env; `App.tsx` auth gate an toàn; `components/ConfigErrorScreen.tsx`, `components/StartupErrorBoundary.tsx`; dedupe quyền Android trong `app.json`; `.env.example` cho dev local.
+
+---
+
 ### [KI-001] critical (≤1 thùng) hiển thị màu vàng thay vì đỏ
 
 - **Mức độ:** Critical

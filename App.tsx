@@ -6,7 +6,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { StatusBar } from 'expo-status-bar'
 import { Text, View, ActivityIndicator, StyleSheet, AppState, Alert } from 'react-native'
 import type { Session } from '@supabase/supabase-js'
-import { supabase } from './lib/supabase'
+import { isSupabaseConfigured, supabase } from './lib/supabase'
+import ConfigErrorScreen from './components/ConfigErrorScreen'
 import LoginScreen from './screens/LoginScreen'
 
 import MapScreen from './screens/MapScreen'
@@ -170,6 +171,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null)
   // null = chưa kiểm tra xong, true = đã kiểm tra
   const [isReady, setIsReady] = useState(false)
+  const [authBootstrapError, setAuthBootstrapError] = useState<string | null>(null)
 
   // Dùng ref thay state để tránh re-render toàn app mỗi lần chạm màn hình
   const lastActivityRef = useRef<number>(Date.now())
@@ -182,9 +184,12 @@ export default function App() {
   }, [])
 
   const checkInactivity = useCallback(() => {
+    if (!isSupabaseConfigured) return
     if (Date.now() - lastActivityRef.current > INACTIVITY_LIMIT_MS) {
       isAutoLogoutRef.current = true
-      supabase.auth.signOut()
+      void supabase.auth.signOut().catch((err) => {
+        if (__DEV__) console.error('[App] signOut failed', err)
+      })
     }
   }, [])
 
@@ -201,20 +206,47 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    // Lấy session hiện tại khi app khởi động
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
+    if (!isSupabaseConfigured) {
       setIsReady(true)
-    })
+      return
+    }
 
-    // Lắng nghe thay đổi trạng thái auth (login / logout / token refresh)
+    let cancelled = false
+
+    const bootstrapAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) throw error
+        if (!cancelled) {
+          setSession(session)
+          setAuthBootstrapError(null)
+        }
+      } catch (err) {
+        if (__DEV__) console.error('[App] getSession failed', err)
+        if (!cancelled) {
+          setAuthBootstrapError('Không thể khởi tạo phiên đăng nhập. Kiểm tra mạng và thử mở lại app.')
+          setSession(null)
+        }
+      } finally {
+        if (!cancelled) setIsReady(true)
+      }
+    }
+
+    void bootstrapAuth()
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setSession(session)
+        if (!cancelled) {
+          setSession(session)
+          setAuthBootstrapError(null)
+        }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   // Inactivity timer: start khi có session, stop khi không có
@@ -252,6 +284,15 @@ export default function App() {
     return () => sub.remove()
   }, [checkInactivity, startTimer, stopTimer])
 
+  if (!isSupabaseConfigured) {
+    return (
+      <ConfigErrorScreen
+        message="Thiếu EXPO_PUBLIC_SUPABASE_URL hoặc EXPO_PUBLIC_SUPABASE_ANON_KEY trong bản build."
+        hint="Dev: tạo file .env từ .env.example. APK EAS: chạy eas env:create cho cả hai biến (profile preview/production) rồi build lại."
+      />
+    )
+  }
+
   // Màn loading trong lúc chờ kiểm tra session lần đầu
   if (!isReady) {
     return (
@@ -259,6 +300,16 @@ export default function App() {
         <StatusBar style="light" />
         <ActivityIndicator size="large" color="#22C55E" />
       </View>
+    )
+  }
+
+  if (authBootstrapError) {
+    return (
+      <ConfigErrorScreen
+        title="Lỗi khởi động"
+        message={authBootstrapError}
+        hint="Kiểm tra kết nối Internet và cấu hình Supabase trên máy chủ."
+      />
     )
   }
 
