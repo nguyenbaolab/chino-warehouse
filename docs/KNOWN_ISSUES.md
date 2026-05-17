@@ -425,3 +425,13 @@
 - **Trạng thái:** Deferred — Phase 3
 
 ---
+
+### [KI-040] Performance — ProductsScreen fetch toàn bộ sản phẩm 1 lần
+
+- **Mức độ:** Medium
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchProducts`), `screens/ProductsScreen.tsx` (`filteredProducts`, pagination client)
+- **Mô tả:** Hiện tại `fetchProducts()` không có limit, load toàn bộ `products` về store. Với quy mô vài trăm SP thì ổn. Nếu lên vài nghìn SP: load chậm lúc đầu; tốn RAM; `useMemo` filter lag khi gõ search.
+- **Hướng fix (Phase 3):** Cursor-based pagination từ DB giống `AuditLogScreen`, kết hợp server-side filter theo search/kho/zone. Cần refactor `fetchProducts` + `filteredProducts` useMemo + pagination bar.
+- **Trạng thái:** Deferred — Phase 3
+
+---

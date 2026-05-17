@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Alert,
+  FlatList,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -19,6 +20,8 @@ import { useThemeStore } from '../stores/themeStore'
 import { CombinedStatus, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
+
+const PAGE_SIZE = 10
 
 export default function ProductsScreen() {
   const navigation = useNavigation<any>()
@@ -39,6 +42,7 @@ export default function ProductsScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   /** null = Tất cả zone (chỉ khi đã chọn kho cụ thể) */
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(0)
   const [showArchived, setShowArchived] = useState(false)
 
   const [editModalVisible, setEditModalVisible] = useState(false)
@@ -108,6 +112,10 @@ export default function ProductsScreen() {
   useEffect(() => {
     setSelectedZoneId(null)
   }, [filterLocationId])
+
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [searchQuery, filterLocationId, selectedZoneId])
 
   useEffect(() => {
     const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
@@ -249,6 +257,102 @@ export default function ProductsScreen() {
     })
   }, [products, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet])
 
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE))
+  const pagedProducts = useMemo(
+    () => filteredProducts.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE),
+    [filteredProducts, currentPage],
+  )
+  const canGoPrev = currentPage > 0
+  const canGoNext = currentPage < totalPages - 1
+
+  function renderProductItem({ item: product }: { item: Product }) {
+    const groupedLots = getGroupedLotsByExpiry(product.id)
+    const worstStatus = getWorstStatusForProduct(product.id)
+    const categoryLine = getProductCategoryLine(product)
+    const productDotColor = worstStatus === 'expired'
+      ? colors.statusExpired
+      : worstStatus === 'critical'
+        ? colors.statusCritical
+        : worstStatus === 'warning'
+          ? colors.statusWarning
+          : colors.statusOk
+    return (
+      <TouchableOpacity
+        style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+      >
+        <View style={styles.itemHeader}>
+          <View style={styles.itemTitleRow}>
+            <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
+            <Text
+              style={[
+                styles.itemName,
+                { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
+              ]}
+              numberOfLines={1}
+            >
+              {product.name}
+            </Text>
+          </View>
+          <Text style={[styles.totalBoxesLabel, { color: colors.sub }]}>
+            Tổng {totalBoxesByProduct.get(product.id) ?? 0} thùng
+          </Text>
+          <TouchableOpacity
+            style={[styles.editBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+            onPress={() => openEditProduct(product.id)}
+          >
+            <Text style={{ fontSize: 12 }}>✏️</Text>
+          </TouchableOpacity>
+        </View>
+        {categoryLine ? (
+          <Text style={[styles.itemCategoryLine, { color: colors.sub }]} numberOfLines={2}>
+            {categoryLine}
+          </Text>
+        ) : null}
+        {product.is_archived && (
+          <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
+        )}
+        {scannedLotId && inventoryEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
+          <Text style={[styles.itemSub, { color: colors.accent }]} numberOfLines={1}>
+            Kết quả quét barcode theo lô
+          </Text>
+        )}
+
+        {groupedLots.length === 0 ? (
+          <Text style={[styles.noLotText, { color: colors.sub }]}>Chưa có lô hàng</Text>
+        ) : (
+          <View style={styles.lotGroupWrap}>
+            {groupedLots.map((lot, index) => {
+              const lotStatus = getCombinedStatus(
+                lot.quantity_boxes,
+                lot.expiry_date,
+                product.low_warning_boxes ?? 3,
+                product.low_critical_boxes ?? 1,
+                product.warning_days ?? 30
+              )
+              const dotColor = lotStatus === 'expired'
+                ? colors.statusExpired
+                : lotStatus === 'critical'
+                  ? colors.statusCritical
+                  : lotStatus === 'warning'
+                    ? colors.statusWarning
+                    : colors.statusOk
+              return (
+                <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
+                  <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
+                  <Text style={[styles.lotText, { color: colors.sub }]}>
+                    Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng · {lot.barcode?.trim() || '—'}
+                  </Text>
+                </View>
+              )
+            })}
+          </View>
+        )}
+      </TouchableOpacity>
+    )
+  }
+
   function getGroupedLotsByExpiry(productId: string) {
     const hasZoneFilter = selectedZoneId != null
     const relevantEntries = inventoryEntries.filter((entry) => (
@@ -385,96 +489,36 @@ export default function ProductsScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
-          {filteredProducts.map((product) => {
-            const groupedLots = getGroupedLotsByExpiry(product.id)
-            const worstStatus = getWorstStatusForProduct(product.id)
-            const categoryLine = getProductCategoryLine(product)
-            const productDotColor = worstStatus === 'expired'
-              ? colors.statusExpired
-              : worstStatus === 'critical'
-                ? colors.statusCritical
-                : worstStatus === 'warning'
-                  ? colors.statusWarning
-                  : colors.statusOk
-            return (
+        <View style={styles.listWrap}>
+          <FlatList
+            data={pagedProducts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderProductItem}
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+          />
+          {filteredProducts.length > PAGE_SIZE && (
+            <View style={[styles.footer, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <TouchableOpacity
-                key={product.id}
-                style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+                style={[styles.pageBtn, { opacity: canGoPrev ? 1 : 0.3 }]}
+                disabled={!canGoPrev}
+                onPress={() => setCurrentPage((p) => Math.max(0, p - 1))}
               >
-                <View style={styles.itemHeader}>
-                  <View style={styles.itemTitleRow}>
-                    <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
-                    <Text
-                      style={[
-                        styles.itemName,
-                        { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {product.name}
-                    </Text>
-                  </View>
-                  <Text style={[styles.totalBoxesLabel, { color: colors.sub }]}>
-                    Tổng {totalBoxesByProduct.get(product.id) ?? 0} thùng
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.editBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                    onPress={() => openEditProduct(product.id)}
-                  >
-                    <Text style={{ fontSize: 12 }}>✏️</Text>
-                  </TouchableOpacity>
-                </View>
-                {categoryLine ? (
-                  <Text style={[styles.itemCategoryLine, { color: colors.sub }]} numberOfLines={2}>
-                    {categoryLine}
-                  </Text>
-                ) : null}
-                {product.is_archived && (
-                  <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
-                )}
-                {scannedLotId && inventoryEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
-                  <Text style={[styles.itemSub, { color: colors.accent }]} numberOfLines={1}>
-                    Kết quả quét barcode theo lô
-                  </Text>
-                )}
-
-                {groupedLots.length === 0 ? (
-                  <Text style={[styles.noLotText, { color: colors.sub }]}>Chưa có lô hàng</Text>
-                ) : (
-                  <View style={styles.lotGroupWrap}>
-                    {groupedLots.map((lot, index) => {
-                      const lotStatus = getCombinedStatus(
-                        lot.quantity_boxes,
-                        lot.expiry_date,
-                        product.low_warning_boxes ?? 3,
-                        product.low_critical_boxes ?? 1,
-                        product.warning_days ?? 30
-                      )
-                      const dotColor = lotStatus === 'expired'
-                        ? colors.statusExpired
-                        : lotStatus === 'critical'
-                          ? colors.statusCritical
-                          : lotStatus === 'warning'
-                            ? colors.statusWarning
-                            : colors.statusOk
-                      return (
-                        <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
-                          <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
-                          <Text style={[styles.lotText, { color: colors.sub }]}>
-                            Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng · {lot.barcode?.trim() || '—'}
-                          </Text>
-                        </View>
-                      )
-                    })}
-                  </View>
-                )}
+                <Text style={[styles.pageBtnText, { color: colors.text }]}>←</Text>
               </TouchableOpacity>
-            )
-          })}
-        </ScrollView>
+              <Text style={[styles.pageLabel, { color: colors.sub }]}>
+                Trang {currentPage + 1} / {totalPages}
+              </Text>
+              <TouchableOpacity
+                style={[styles.pageBtn, { opacity: canGoNext ? 1 : 0.3 }]}
+                disabled={!canGoNext}
+                onPress={() => setCurrentPage((p) => p + 1)}
+              >
+                <Text style={[styles.pageBtnText, { color: colors.text }]}>→</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       )}
 
       <Modal visible={locationPickerOpen} transparent animationType="fade" onRequestClose={() => setLocationPickerOpen(false)}>
@@ -720,7 +764,19 @@ const styles = StyleSheet.create({
   scanBtnText: { fontSize: 16 },
   itemCategoryLine: { fontSize: 12, marginTop: 6, paddingHorizontal: 0 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  listWrap: { flex: 1 },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  pageBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  pageBtnText: { fontSize: 20, fontWeight: '700' },
+  pageLabel: { fontSize: 13 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
   itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   itemTitleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 4, minWidth: 0 },

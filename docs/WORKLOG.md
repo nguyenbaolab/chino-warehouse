@@ -4,6 +4,22 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs: KI-040 ProductsScreen fetch toàn bộ SP (Deferred Phase 3)
+
+- **KNOWN_ISSUES.md:** KI-040 — performance `fetchProducts` không limit; hướng fix Phase 3: cursor pagination DB + server-side filter.
+- **File:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
+
+---
+
+## [tháng 5/2026] — feat: ProductsScreen pagination (10 SP/trang, FlatList)
+
+- **UI:** `currentPage`, `pagedProducts` slice từ `filteredProducts`; `FlatList` thay `ScrollView`+map; footer ← Trang X / Y → khi > 10 item (style AuditLog).
+- **Reset trang:** `useEffect` khi `searchQuery`, `filterLocationId`, `selectedZoneId` đổi.
+- **Không đổi:** logic `fetchProducts` / filter hiện tại.
+- **File:** `screens/ProductsScreen.tsx`, `docs/project/CONTEXT.md` §3, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — feat: normalizeText() — tìm kiếm không dấu toàn app
 
 - **Utility:** `utils/textUtils.ts` — `normalizeText()` (lowercase, thay ký tự VI/FI, NFD, strip dấu).
