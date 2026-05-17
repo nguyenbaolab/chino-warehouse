@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: NotificationsScreen — search + pagination
+
+- **Search:** `TextInput` + `normalizeText` trên tên SP (sau `expiryCardsFiltered` / `lowStockCards`); 📷 → `BarcodeScanner` → lô trong `inventoryEntriesForNotify` → `searchQuery` = tên SP.
+- **Pagination:** `currentPageExpiry` / `currentPageLowStock`, slice 10/trang, `FlatList`, footer giống Products/AuditLog; reset khi search / kho / checkbox / tab.
+- **Không đổi:** data flow fetch, logic tab/checkbox/expiry-lowStock.
+- **File:** `screens/NotificationsScreen.tsx`, `docs/project/CONTEXT.md` §3, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — docs: KI-040 ProductsScreen fetch toàn bộ SP (Deferred Phase 3)
 
 - **KNOWN_ISSUES.md:** KI-040 — performance `fetchProducts` không limit; hướng fix Phase 3: cursor pagination DB + server-side filter.
