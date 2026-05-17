@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs: KI-003 Resolved, KI-019 sync phase-2, theme convention
+
+- **KNOWN_ISSUES.md:** KI-003 Closed → **Resolved**; ghi chú light theme + tab bar hardcode.
+- **HANDOFF_2.md §6:** bỏ KI-019 khỏi open; ghi chú Resolved (debounce 600ms + overlay 800ms).
+- **SUMMARY_2.md §5–§7:** SEC-07/KI-019 Resolved; cập nhật đếm open/resolved.
+- **CONTEXT.md §7:** default theme `isDark = false`, không hardcode dark.
+- **File:** `docs/KNOWN_ISSUES.md`, `docs/phases/phase-2/HANDOFF_2.md`, `docs/phases/phase-2/SUMMARY_2.md`, `docs/project/CONTEXT.md`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — feat: NotificationsScreen — checkbox count badge + lọc hết hàng
 
 - **Sắp hết hạn:** label `Hết hạn (X)` / `Sắp hết hạn (X)` — count card sau search, trước checkbox.

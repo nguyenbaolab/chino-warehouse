@@ -89,13 +89,14 @@ Phase 2 bổ sung **multi-kho** (F20), **auth bảo mật** (SEC-04, auto-logout
 |----|-------|--------|-----------|
 | KI-017 | SEC-05: Input validation thiếu (`maxLength`) | High | Open |
 | KI-018 | SEC-06: Error message lộ schema | High | Open |
-| KI-019 | SEC-07: Barcode scanner thiếu debounce | High | Open |
 | KI-020 | SEC-09: Không có RBAC | Medium | Deferred → Phase 3 |
 | KI-021 | SEC-10: Backup script cần `service_role` key | Medium | Open |
 | KI-023 | SEC-12: `console.log` trong production | Low | Open |
 | KI-024 | SEC-13: Dependency audit | Low | Open |
 | KI-025 | SEC-14: `.env.*` coverage gitignore | Low | Open |
 | KI-026 | Realtime chưa implement cho AuditLogScreen | Low | Deferred |
+
+**Resolved (không còn open):** KI-019 — SEC-07: đã fix debounce 600ms + success overlay 800ms trong `BarcodeScannerScreen`.
 
 ---
 
@@ -108,7 +109,7 @@ Phase 2 bổ sung **multi-kho** (F20), **auth bảo mật** (SEC-04, auto-logout
 - [ ] F08 hình ảnh sản phẩm
 - [ ] F19 chuyển hàng giữa khu vực
 - [ ] F26 kiểm kho
-- [ ] SEC-05/06/07/12 (medium/low security items)
+- [ ] SEC-05/06/12 (medium/low security items)
 
 ---
 

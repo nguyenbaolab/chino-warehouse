@@ -168,6 +168,7 @@ Tóm tắt nhanh:
 - Comment code bằng **tiếng Việt**
 - **Functional components** + hooks, không dùng class components
 - Luôn dùng **`useThemeStore()`** để lấy colors — **không** hardcode màu (ngoại lệ đang tồn tại: tab bar trong `App.tsx` — xem **KI-003**)
+- **Default theme:** `isDark = false` (light mode mặc định); `themeStore` chỉ đổi sang dark khi AsyncStorage trả về `'dark'`. Không hardcode `isDark = true`.
 - **Không** tự thêm npm package mới khi chưa được yêu cầu
 - **Tìm kiếm / filter text:** LUÔN dùng `normalizeText()` từ `utils/textUtils.ts`, không dùng `.toLowerCase().includes()` trực tiếp. Áp dụng cho cả query lẫn data khi so sánh. `normalizeText()` xử lý: tiếng Việt không dấu, Phần Lan (ö, ä, å), và dấu Latin khác.
 - Khi bí hoặc thiếu thông tin → ghi vào **`docs/BLOCKERS.md`**, dừng lại hỏi người dùng

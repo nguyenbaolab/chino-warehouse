@@ -82,7 +82,7 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 | SEC-04 | Không có Authentication | KI-016 | Resolved — LoginScreen + auth gate + `persistSession: false` |
 | SEC-05 | Input validation thiếu | KI-017 | Open (High) |
 | SEC-06 | Error message lộ schema | KI-018 | Open (High) |
-| SEC-07 | Barcode scanner thiếu debounce | KI-019 | Open (High) |
+| SEC-07 | Barcode scanner thiếu debounce | KI-019 | Resolved — debounce 600ms + success overlay 800ms trong `BarcodeScannerScreen` |
 | SEC-08 | Realtime chạy dưới role anon | KI-012 | Resolved — `private: true` + RLS `realtime.messages` |
 | SEC-09 | Không có RBAC | KI-020 | Deferred → Phase 3 (F24) |
 | SEC-10 | Backup script cần `service_role` | KI-021 | Open (Medium) |
@@ -91,7 +91,7 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 | SEC-13 | Dependency audit | KI-024 | Open (Low) |
 | SEC-14 | `.env.*` coverage gitignore | KI-025 | Open (Low) |
 
-**Tóm tắt:** 6 resolved (SEC-01/02/04/08/11 + SEC-03 mitigated), 1 deferred (SEC-09), 7 open (SEC-05/06/07/10/12/13/14).
+**Tóm tắt:** 7 resolved (SEC-01/02/04/07/08/11 + SEC-03 mitigated), 1 deferred (SEC-09), 6 open (SEC-05/06/10/12/13/14).
 
 ---
 
@@ -101,7 +101,6 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 |----|-------|--------|-----------|
 | KI-017 | SEC-05: Input validation thiếu (`maxLength`) | High | Open |
 | KI-018 | SEC-06: Error message lộ thông tin schema | High | Open |
-| KI-019 | SEC-07: Barcode scanner thiếu debounce | High | Open |
 | KI-020 | SEC-09: Không có RBAC | Medium | Deferred → Phase 3 |
 | KI-021 | SEC-10: Backup script cần `service_role` key | Medium | Open |
 | KI-023 | SEC-12: `console.log` trong production | Low | Open |
@@ -115,8 +114,8 @@ Tóm tắt — chi tiết đầy đủ trong **[`docs/DECISIONS.md`](../../DECIS
 
 - **Migrations tạo mới:** 15 file (bao gồm `schema.sql` cập nhật RLS + 14 incremental migrations)
 - **Screens mới:** `LoginScreen`, `AuditLogScreen`, `CategoryManagementScreen`, `LocationManagementScreen`, `ZoneLayoutEditorScreen`, `DiscontinuedProductsScreen`, `OrderListScreen`, `OrderDetailScreen`
-- **KI resolved trong Phase 2:** KI-004, KI-012, KI-013, KI-014, KI-015 (mitigated), KI-016, KI-022, KI-027, KI-028
-- **KI open:** KI-017, KI-018, KI-019, KI-021, KI-023, KI-024, KI-025
+- **KI resolved trong Phase 2:** KI-004, KI-012, KI-013, KI-014, KI-015 (mitigated), KI-016, KI-019, KI-022, KI-027, KI-028
+- **KI open:** KI-017, KI-018, KI-021, KI-023, KI-024, KI-025
 - **KI deferred:** KI-020 (Phase 3), KI-026
 
 ---
