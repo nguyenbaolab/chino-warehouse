@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { normalizeText } from '../utils/textUtils'
 import { Location, Zone, ZoneCell, Product, ProductCategoryL1, ProductCategoryL2, InventoryEntry, OrderItem, OrderList, OrderListStatus, AuditLog } from '../types'
 
 type WarehouseStore = {
@@ -451,17 +452,16 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return { error: null }
   },
 
-  /** Tìm theo tên SP trên mọi kho — chỉ trả về data, không ghi store (MapScreen giữ local state). */
+  /** Tìm theo tên SP trên mọi kho — filter `store.products` local (normalizeText), rồi query lô theo product IDs. */
   searchProducts: async (query) => {
     const trimmed = query.trim()
     if (trimmed.length < 2) return []
 
-    const { data: matchedProducts } = await supabase
-      .from('products')
-      .select('*')
-      .ilike('name', `%${trimmed}%`)
-      .eq('is_archived', false)
-    if (!matchedProducts || matchedProducts.length === 0) return []
+    const q = normalizeText(trimmed)
+    const matchedProducts = get().products.filter(
+      (p) => !p.is_archived && normalizeText(p.name).includes(q),
+    )
+    if (matchedProducts.length === 0) return []
 
     const productIds = matchedProducts.map((p) => p.id)
     const { data } = await supabase

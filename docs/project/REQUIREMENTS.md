@@ -93,7 +93,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F06 | Danh sách sản phẩm trong zone | Tap vào zone → danh sách tên sản phẩm + số thùng + chấm màu. Tap tên → mở chi tiết (F07). | P1 | MVP | Done |
 | F07 | Màn hình chi tiết sản phẩm | Tên, mã vạch, tất cả zone+tầng đang chứa, số thùng, hạn (màu), ghi chú, ảnh (Phase 2). Nút sửa/xóa lô. | P1 | MVP | Done |
 | F08 | Hình ảnh sản phẩm | Thêm/xem ảnh sản phẩm. Chụp trực tiếp hoặc chọn từ thư viện. Lưu trên Supabase Storage. | P2 | Phase 2 | Not started |
-| F09 | Tìm kiếm sản phẩm | Tìm theo tên. Kết quả hiện thẻ sản phẩm + bản đồ tự highlight zone. Tap vào thẻ → mở chi tiết. | P1 | MVP | Done |
+| F09 | Tìm kiếm sản phẩm | Tìm theo tên. Kết quả hiện thẻ sản phẩm + bản đồ tự highlight zone. Tap vào thẻ → mở chi tiết. Tìm kiếm không phân biệt dấu: gõ không dấu vẫn ra kết quả (ví dụ: `mi` → `mì`); hỗ trợ ký tự Phần Lan ö/ä/å → o/a/a. Áp dụng toàn bộ app. | P1 | MVP | Done |
 | F10 | Quét mã vạch | Camera quét mã vạch → kết quả như tìm kiếm tên. Không nhận ra → nút 'Thêm thủ công'. 3 mode: search / assign / locate. | P1 | MVP | Done |
 | F11 | Quản lý tồn kho theo thùng | Đơn vị: thùng nguyên. Thùng đang dở vẫn tính 1. Chỉ cập nhật khi bỏ hẳn. Một sản phẩm có thể ở nhiều zone. | P1 | MVP | Done |
 | F12 | Theo dõi hạn sử dụng | Mỗi lô có hạn riêng. Màu sắc theo §5. Hiển thị xuyên suốt toàn app. | P1 | MVP | Done |
@@ -142,7 +142,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 - Hàng có mã vạch: quét → tra cứu theo **lô hàng**.
 - Hàng không có mã vạch: tìm tên thủ công. Không bắt buộc phải có mã vạch.
 - Quét không nhận ra → hiện nút 'Thêm thủ công'.
-- Gõ tên trên **MapScreen**: `searchProducts` tìm **toàn bộ kho**; kết quả hiển thị **nhóm theo kho** (tên kho + danh sách lô: zone, tầng, số thùng, hạn). Bấm một lô → chuyển sang kho đó, highlight zone tương ứng, đóng panel kết quả. Khi đang xem một kho, chấm màu vẫn áp dụng cho mọi zone khớp trên lưới kho hiện tại (zone kho khác chỉ hiện sau khi chuyển kho hoặc bấm lô trong kết quả).
+- Gõ tên trên **MapScreen**: `searchProducts` tìm **toàn bộ kho** (filter tên SP bằng `normalizeText` trên `store.products`, không phân biệt dấu); kết quả hiển thị **nhóm theo kho** (tên kho + danh sách lô: zone, tầng, số thùng, hạn). Bấm một lô → chuyển sang kho đó, highlight zone tương ứng, đóng panel kết quả. Khi đang xem một kho, chấm màu vẫn áp dụng cho mọi zone khớp trên lưới kho hiện tại (zone kho khác chỉ hiện sau khi chuyển kho hoặc bấm lô trong kết quả).
 - Quét barcode: tìm theo **lô**, highlight zone chứa đúng lô và hiện thông tin lô đó.
 
 ### 7.5 Ngưỡng cảnh báo

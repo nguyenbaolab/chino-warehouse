@@ -16,6 +16,7 @@ import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/nativ
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { ZoneCell } from '../types'
+import { normalizeText } from '../utils/textUtils'
 
 const H_PADDING = 16
 const CONFLICT = '#EF4444'
@@ -169,11 +170,11 @@ export default function ZoneLayoutEditorScreen() {
   const zoneIds = useMemo(() => [...originalShapes.keys()], [originalShapes])
 
   const filteredZoneIds = useMemo(() => {
-    const q = zoneSearchQuery.trim().toLowerCase()
+    const q = normalizeText(zoneSearchQuery.trim())
     if (!q) return zoneIds
     return zoneIds.filter((zid) => {
       const name = zoneMeta.get(zid)?.name ?? ''
-      return name.toLowerCase().includes(q)
+      return normalizeText(name).includes(q)
     })
   }, [zoneIds, zoneMeta, zoneSearchQuery])
 

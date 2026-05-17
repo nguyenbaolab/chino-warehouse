@@ -15,6 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { OrderItem, OrderListStatus } from '../types'
+import { normalizeText } from '../utils/textUtils'
 
 type RouteParams = {
   orderListId: string
@@ -82,9 +83,9 @@ export default function OrderDetailScreen() {
   }, [orderList?.title, orderList, editingTitle])
 
   const suggestions = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
+    const q = normalizeText(searchQuery.trim())
     if (q.length < 2) return []
-    return products.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 8)
+    return products.filter((p) => normalizeText(p.name).includes(q)).slice(0, 8)
   }, [products, searchQuery])
 
   function cancelItemSaveTimer() {

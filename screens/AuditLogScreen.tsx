@@ -19,6 +19,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import type { AuditLog } from '../types'
+import { normalizeText } from '../utils/textUtils'
 
 type RouteParams = { filterProductId?: string; scannedBarcode?: string; scannedBarcodeAt?: number }
 
@@ -128,8 +129,8 @@ function SearchableDropdownModal({
 
   const filtered = useMemo(() => {
     if (!search.trim()) return options
-    const q = search.trim().toLowerCase()
-    return options.filter((o) => o.label.toLowerCase().includes(q))
+    const q = normalizeText(search.trim())
+    return options.filter((o) => normalizeText(o.label).includes(q))
   }, [options, search])
 
   return (

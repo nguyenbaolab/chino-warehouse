@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: normalizeText() — tìm kiếm không dấu toàn app
+
+- **Utility:** `utils/textUtils.ts` — `normalizeText()` (lowercase, thay ký tự VI/FI, NFD, strip dấu).
+- **Store:** `searchProducts` — bỏ `ilike` DB; filter `store.products` local + query `inventory_entries` theo `product_id`.
+- **Màn hình / component:** `ProductsScreen`, `AddInventoryScreen`, `OrderDetailScreen`, `ZoneDetailSheet`, `AuditLogScreen` (FilterPicker), `ZoneLayoutEditorScreen`.
+- **Docs:** `docs/project/CONTEXT.md` (§2, §4, §7), `docs/project/REQUIREMENTS.md` (F09, §7.4), `docs/DECISIONS.md`, `docs/WORKLOG.md`.
+
+---
+
 ## [tháng 5/2026] — feat: ZoneLayoutEditor — tìm kiếm lọc zone theo tên
 
 - **UI:** `TextInput` trên danh sách zone scroll ngang; filter local case-insensitive; clear ✕; empty state **Không tìm thấy zone**.

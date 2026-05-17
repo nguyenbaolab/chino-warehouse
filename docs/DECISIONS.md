@@ -4,6 +4,19 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Tìm kiếm / filter text: `normalizeText()` client-side
+
+- **Ngày:** tháng 5/2026
+- **Vấn đề:** Tìm kiếm không nhận dấu tiếng Việt và ký tự Phần Lan (ö, ä, å).
+- **Các lựa chọn đã xem xét:**
+  1. PostgreSQL `unaccent` extension — không xử lý đủ tiếng Việt, cần migration DB.
+  2. Normalize client-side + fetch all rồi filter — fetch thừa.
+  3. Normalize client-side trên data đã có trong store — **được chọn**.
+- **Quyết định:** `normalizeText()` trong `utils/textUtils.ts`; filter `store.products` local trong `searchProducts` (data đã load khi mount); áp dụng tất cả filter text toàn app.
+- **Lý do:** Không cần DB migration, không fetch thêm, không lag, dễ maintain.
+
+---
+
 ### Hệ thống màu: gộp critical + warning = vàng
 
 - **Ngày:** tháng 5/2026

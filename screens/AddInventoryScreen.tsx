@@ -18,6 +18,7 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 import { Product } from '../types'
 import { supabase } from '../lib/supabase'
 import { navigateToTabMainFromNestedStack } from '../lib/tabNavigation'
+import { normalizeText } from '../utils/textUtils'
 
 type AddInventoryRouteParams = {
   zoneId?: string
@@ -146,9 +147,9 @@ export default function AddInventoryScreen() {
   }, [fetchLocations, fetchProducts])
 
   const filteredProducts = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
+    const query = normalizeText(searchQuery.trim())
     if (!query) return products
-    return products.filter((p) => p.name.toLowerCase().includes(query))
+    return products.filter((p) => normalizeText(p.name).includes(query))
   }, [products, searchQuery])
   const isSearching = searchQuery.trim().length > 0
 

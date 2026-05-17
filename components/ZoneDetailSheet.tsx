@@ -17,6 +17,7 @@ import {
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { formatExpiryDate, getCombinedStatus, getCombinedStatusRank, InventoryEntry, Zone } from '../types'
+import { normalizeText } from '../utils/textUtils'
 
 type ZoneDetailSheetProps = {
   visible: boolean
@@ -155,10 +156,10 @@ export default function ZoneDetailSheet({
     return groups.sort((a, b) => a.productName.localeCompare(b.productName))
   }, [currentTierEntries])
 
-  const currentSearchQuery = (tierSearchQueries[selectedTier] ?? '').trim().toLowerCase()
+  const currentSearchQuery = normalizeText((tierSearchQueries[selectedTier] ?? '').trim())
   const filteredGroupedProducts = useMemo(() => {
     if (!currentSearchQuery) return groupedProducts
-    return groupedProducts.filter((group) => group.productName.toLowerCase().includes(currentSearchQuery))
+    return groupedProducts.filter((group) => normalizeText(group.productName).includes(currentSearchQuery))
   }, [groupedProducts, currentSearchQuery])
 
   function handlePressLot(entry: InventoryEntry) {

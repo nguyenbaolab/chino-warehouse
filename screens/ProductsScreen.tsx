@@ -18,6 +18,7 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { CombinedStatus, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
+import { normalizeText } from '../utils/textUtils'
 
 export default function ProductsScreen() {
   const navigation = useNavigation<any>()
@@ -226,11 +227,11 @@ export default function ProductsScreen() {
   }, [inventoryEntries, selectedZoneId, locationZoneSet])
 
   const filteredProducts = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase()
+    const normalizedQuery = normalizeText(searchQuery.trim())
     const hasZoneFilter = selectedZoneId != null
 
     return products.filter((product) => {
-      const matchSearch = normalizedQuery.length === 0 || product.name.toLowerCase().includes(normalizedQuery)
+      const matchSearch = normalizedQuery.length === 0 || normalizeText(product.name).includes(normalizedQuery)
       if (!matchSearch) return false
       if (locationZoneSet) {
         const inLoc = inventoryEntries.some(

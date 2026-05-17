@@ -108,3 +108,18 @@ F27 mở rộng (2 tab + PDF), F28 lý do riêng (discontinued_reason),
 F08 ảnh sản phẩm, F19 chuyển hàng, F26 kiểm kho.
 SEC-05/06/07/10/12/13/14 (medium/low security items).
 F21 offline → deferred Phase 3.
+
+---
+
+## Tìm kiếm / filter text
+
+- LUÔN dùng `normalizeText()` từ `utils/textUtils.ts` cho mọi 
+  tìm kiếm hoặc filter text trong app.
+- KHÔNG dùng `.toLowerCase().includes()` trực tiếp.
+- Áp dụng normalizeText() cho CẢ HAI vế khi so sánh:
+  normalizeText(query) và normalizeText(data).
+- Áp dụng cho: filter local array, search input, dropdown filter, 
+  và bất kỳ chỗ nào so sánh chuỗi để tìm kiếm.
+- Với Supabase query (ilike): filter store local thay vì ilike DB 
+  nếu data đã có sẵn trong store; nếu bắt buộc phải query DB thì 
+  normalize query trước khi truyền vào.
