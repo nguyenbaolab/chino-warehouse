@@ -40,6 +40,7 @@ type LowStockCard = {
   productId: string
   productName: string
   totalBoxes: number
+  lowWarningBoxes: number
 }
 
 export default function NotificationsScreen() {
@@ -65,6 +66,8 @@ export default function NotificationsScreen() {
   const [activeTab, setActiveTab] = useState<'expiry' | 'lowStock'>('expiry')
   const [showExpiredFilter, setShowExpiredFilter] = useState(false)
   const [showWarningFilter, setShowWarningFilter] = useState(false)
+  const [showOutOfStockFilter, setShowOutOfStockFilter] = useState(false)
+  const [showLowStockFilter, setShowLowStockFilter] = useState(false)
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({})
   const [currentPageExpiry, setCurrentPageExpiry] = useState(0)
   const [currentPageLowStock, setCurrentPageLowStock] = useState(0)
@@ -106,7 +109,15 @@ export default function NotificationsScreen() {
   useEffect(() => {
     setCurrentPageExpiry(0)
     setCurrentPageLowStock(0)
-  }, [searchQuery, filterLocationId, showExpiredFilter, showWarningFilter, activeTab])
+  }, [
+    searchQuery,
+    filterLocationId,
+    showExpiredFilter,
+    showWarningFilter,
+    showOutOfStockFilter,
+    showLowStockFilter,
+    activeTab,
+  ])
 
   const locationZoneSet = useMemo(() => {
     if (!filterLocationId) return null
@@ -197,14 +208,34 @@ export default function NotificationsScreen() {
           productId,
           productName: product.name,
           totalBoxes,
+          lowWarningBoxes: lowWarning,
         })
       }
     }
     return cards.sort((a, b) => a.productName.localeCompare(b.productName))
   }, [productIdToEntries, products])
 
+  const normalizedSearch = normalizeText(searchQuery.trim())
+
+  const expiryCardsSearched = useMemo(() => {
+    if (!normalizedSearch) return expiryCards
+    return expiryCards.filter((card) =>
+      normalizeText(card.productName).includes(normalizedSearch)
+    )
+  }, [expiryCards, normalizedSearch])
+
+  const countExpired = useMemo(
+    () => expiryCardsSearched.filter((card) => card.lots.some((lot) => lot.status === 'expired')).length,
+    [expiryCardsSearched]
+  )
+
+  const countWarning = useMemo(
+    () => expiryCardsSearched.filter((card) => card.lots.some((lot) => lot.status === 'warning')).length,
+    [expiryCardsSearched]
+  )
+
   const expiryCardsFiltered = useMemo(() => {
-    return expiryCards
+    return expiryCardsSearched
       .map((card) => {
         const filteredLots = card.lots.filter((lot) => {
           if (!showExpiredFilter && !showWarningFilter) return true
@@ -220,16 +251,7 @@ export default function NotificationsScreen() {
         }
       })
       .filter((card) => card.lots.length > 0)
-  }, [expiryCards, showExpiredFilter, showWarningFilter])
-
-  const normalizedSearch = normalizeText(searchQuery.trim())
-
-  const expiryCardsSearched = useMemo(() => {
-    if (!normalizedSearch) return expiryCardsFiltered
-    return expiryCardsFiltered.filter((card) =>
-      normalizeText(card.productName).includes(normalizedSearch)
-    )
-  }, [expiryCardsFiltered, normalizedSearch])
+  }, [expiryCardsSearched, showExpiredFilter, showWarningFilter])
 
   const lowStockCardsSearched = useMemo(() => {
     if (!normalizedSearch) return lowStockCards
@@ -238,7 +260,30 @@ export default function NotificationsScreen() {
     )
   }, [lowStockCards, normalizedSearch])
 
-  const activeSearchedList = activeTab === 'expiry' ? expiryCardsSearched : lowStockCardsSearched
+  const countOutOfStock = useMemo(
+    () => lowStockCardsSearched.filter((card) => card.totalBoxes === 0).length,
+    [lowStockCardsSearched]
+  )
+
+  const countLowStock = useMemo(
+    () =>
+      lowStockCardsSearched.filter(
+        (card) => card.totalBoxes > 0 && card.totalBoxes <= card.lowWarningBoxes
+      ).length,
+    [lowStockCardsSearched]
+  )
+
+  const lowStockCardsFiltered = useMemo(() => {
+    return lowStockCardsSearched.filter((card) => {
+      if (!showOutOfStockFilter && !showLowStockFilter) return true
+      if (showOutOfStockFilter && showLowStockFilter) return true
+      if (showOutOfStockFilter) return card.totalBoxes === 0
+      if (showLowStockFilter) return card.totalBoxes > 0
+      return true
+    })
+  }, [lowStockCardsSearched, showOutOfStockFilter, showLowStockFilter])
+
+  const activeSearchedList = activeTab === 'expiry' ? expiryCardsFiltered : lowStockCardsFiltered
   const currentPage = activeTab === 'expiry' ? currentPageExpiry : currentPageLowStock
   const setCurrentPage = activeTab === 'expiry' ? setCurrentPageExpiry : setCurrentPageLowStock
 
@@ -521,7 +566,7 @@ export default function NotificationsScreen() {
             <View style={[styles.tickBox, { borderColor: colors.border, backgroundColor: showExpiredFilter ? colors.accent : colors.bg }]}>
               {showExpiredFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
             </View>
-            <Text style={[styles.filterText, { color: colors.text }]}>Hết hạn</Text>
+            <Text style={[styles.filterText, { color: colors.text }]}>Hết hạn ({countExpired})</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.filterItem}
@@ -531,7 +576,42 @@ export default function NotificationsScreen() {
             <View style={[styles.tickBox, { borderColor: colors.border, backgroundColor: showWarningFilter ? colors.accent : colors.bg }]}>
               {showWarningFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
             </View>
-            <Text style={[styles.filterText, { color: colors.text }]}>Sắp hết hạn</Text>
+            <Text style={[styles.filterText, { color: colors.text }]}>Sắp hết hạn ({countWarning})</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {activeTab === 'lowStock' && (
+        <View style={[styles.filterBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <TouchableOpacity
+            style={styles.filterItem}
+            onPress={() => setShowOutOfStockFilter((v) => !v)}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.tickBox,
+                { borderColor: colors.border, backgroundColor: showOutOfStockFilter ? colors.accent : colors.bg },
+              ]}
+            >
+              {showOutOfStockFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
+            </View>
+            <Text style={[styles.filterText, { color: colors.text }]}>Hết hàng ({countOutOfStock})</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.filterItem}
+            onPress={() => setShowLowStockFilter((v) => !v)}
+            activeOpacity={0.8}
+          >
+            <View
+              style={[
+                styles.tickBox,
+                { borderColor: colors.border, backgroundColor: showLowStockFilter ? colors.accent : colors.bg },
+              ]}
+            >
+              {showLowStockFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
+            </View>
+            <Text style={[styles.filterText, { color: colors.text }]}>Sắp hết hàng ({countLowStock})</Text>
           </TouchableOpacity>
         </View>
       )}

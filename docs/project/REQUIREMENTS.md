@@ -152,13 +152,13 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 
 ### 7.6 Thông báo
 - Tab Thông báo tách thành 2 tab: **Sắp hết hạn** và **Sắp hết hàng**.
+- Dropdown **Kho** (Tất cả / từng kho); thanh **tìm kiếm** tên SP (`normalizeText`) + quét barcode; **pagination** 10 SP/trang (client).
 - Tab **Sắp hết hạn**:
-  - Sản phẩm sắp hết hạn có toggle **Đã giảm giá**.
-  - Sản phẩm đã hết hạn hiển thị nền đỏ nhạt + nhãn `Hết hạn rồi`.
-  - Tap card mở `ProductDetailScreen`.
+  - Checkbox **Hết hạn (X)** / **Sắp hết hạn (X)** — `X` = số card sau search có ít nhất một lô hết hạn / sắp hết hạn (`warning_days` per SP). Lọc: cả hai tắt hoặc cả hai bật → hiện tất cả; chỉ một bật → chỉ lô/cards thuộc loại đó.
+  - Toggle **Đã giảm giá** / **Chưa giảm giá** theo lô; card hết hạn nền đỏ nhạt; tap lô/card → `ProductDetailScreen`.
 - Tab **Sắp hết hàng**:
-  - Card sản phẩm có nút **Thêm vào danh sách nhập**.
-  - Có nút **Không nhập nữa** để chuyển sang danh sách không nhập nữa trong Settings.
+  - Checkbox **Hết hàng (X)** / **Sắp hết hàng (X)** — `X` = số card sau search với `totalBoxes === 0` / `totalBoxes > 0` và ≤ `low_warning_boxes`. Lọc cùng quy ước hai checkbox như tab hết hạn.
+  - Card có nút **Thêm vào danh sách nhập** và **Không nhập nữa** (Settings).
 - Không còn tab **Để sau** trong UI.
 
 ---
@@ -245,7 +245,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Dropdown lọc theo kho (Tất cả kho / từng kho) · Danh sách sản phẩm · Tổng thùng · Chấm màu · Tìm kiếm · Thêm mới (CRUD category **không** ở màn này — xem Settings / F30) |
 | Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · **list active** (hàng trong kho) vs **list tự tạo** (hàng mới) · trong chi tiết list: 2 tab **Hàng trong kho** (trái) / **Hàng mới** (phải) · một list active duy nhất; tạo mới + đặt tên (mặc định theo ngày) · nhóm theo category + nhóm **Chưa phân loại** · số thùng để trống đến khi Confirm · luồng Draft → Confirm → Xuất PDF (gộp 2 tab) → Đã đặt |
 | Thêm hàng (Stack) | Thêm lô hàng | Chọn sản phẩm · Zone · Tầng · Số thùng · Hạn · Ghi chú · **F30:** SP có sẵn → category **read-only** (theo SP); **SP mới** → dropdown Cấp 1 + Cấp 2 dưới field tên |
-| Thông báo (Tab) | Cảnh báo tồn kho & hạn | Dropdown kho (Tất cả kho / từng kho) · 2 tab con Sắp hết hạn / Sắp hết hàng · Sắp hết hạn: toggle Đã giảm giá · checkbox lọc Hết hạn / Sắp hết hạn · thẻ hết hạn nền đỏ nhạt + nhãn Hết hạn rồi · Sắp hết hàng: nút Thêm vào danh sách nhập + Không nhập nữa |
+| Thông báo (Tab) | Cảnh báo tồn kho & hạn | Dropdown kho · search + pagination 10/trang · Sắp hết hạn: checkbox Hết hạn (X) / Sắp hết hạn (X) + toggle giảm giá theo lô · Sắp hết hàng: checkbox Hết hàng (X) / Sắp hết hàng (X) + Thêm danh sách nhập + Không nhập nữa |
 | Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả quét · Nút thêm thủ công nếu không nhận ra |
 | Cài đặt (Tab) | Tuỳ chỉnh app | Theme sáng/tối · card **Quản lý kho** (F20) · card **Phân loại sản phẩm** (F30 — tóm tắt **X nhóm · Y loại** → `CategoryManagement`) · card Không nhập nữa (F28) |
 | Quản lý phân loại (Stack, F30) | CRUD category 2 cấp | Accordion Cấp 1 mở ra Cấp 2 · thêm/sửa/xóa nhóm & loại |

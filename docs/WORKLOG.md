@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: NotificationsScreen — checkbox count badge + lọc hết hàng
+
+- **Sắp hết hạn:** label `Hết hạn (X)` / `Sắp hết hạn (X)` — count card sau search, trước checkbox.
+- **Sắp hết hàng:** checkbox mới `Hết hàng (X)` / `Sắp hết hàng (X)` + filter (logic giống tab hết hạn); `lowWarningBoxes` trên card.
+- **Pipeline:** search → checkbox → pagination (giữ search/pagination trước đó).
+- **File:** `screens/NotificationsScreen.tsx`, `docs/project/CONTEXT.md` §3, `docs/project/REQUIREMENTS.md` §7.6, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — feat: NotificationsScreen — search + pagination
 
 - **Search:** `TextInput` + `normalizeText` trên tên SP (sau `expiryCardsFiltered` / `lowStockCards`); 📷 → `BarcodeScanner` → lô trong `inventoryEntriesForNotify` → `searchQuery` = tên SP.
