@@ -255,41 +255,47 @@ export default function LocationManagementScreen() {
             style={styles.modalKav}
           >
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Tạo kho mới</Text>
-            <Text style={[styles.label, { color: colors.sub }]}>Tên kho *</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={newName}
-              onChangeText={setNewName}
-              placeholder="VD: Kho chính"
-              placeholderTextColor={colors.sub}
-            />
-            <Text style={[styles.label, { color: colors.sub }]}>Số hàng (rows)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={newRows}
-              onChangeText={setNewRows}
-              keyboardType="number-pad"
-            />
-            <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={newCols}
-              onChangeText={setNewCols}
-              keyboardType="number-pad"
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setCreateOpen(false)}>
-                <Text style={{ color: colors.text }}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.btnPrimary, { backgroundColor: colors.accent, opacity: saving ? 0.6 : 1 }]}
-                disabled={saving}
-                onPress={() => void handleCreateSave()}
-              >
-                <Text style={{ color: colors.card, fontWeight: '700' }}>Tạo</Text>
-              </TouchableOpacity>
-            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Tạo kho mới</Text>
+              <Text style={[styles.label, { color: colors.sub }]}>Tên kho *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                value={newName}
+                onChangeText={setNewName}
+                placeholder="VD: Kho chính"
+                placeholderTextColor={colors.sub}
+              />
+              <Text style={[styles.label, { color: colors.sub }]}>Số hàng (rows)</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                value={newRows}
+                onChangeText={setNewRows}
+                keyboardType="number-pad"
+              />
+              <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                value={newCols}
+                onChangeText={setNewCols}
+                keyboardType="number-pad"
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setCreateOpen(false)}>
+                  <Text style={{ color: colors.text }}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.btnPrimary, { backgroundColor: colors.accent, opacity: saving ? 0.6 : 1 }]}
+                  disabled={saving}
+                  onPress={() => void handleCreateSave()}
+                >
+                  <Text style={{ color: colors.card, fontWeight: '700' }}>Tạo</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </Pressable>
           </KeyboardAvoidingView>
         </Pressable>
@@ -303,40 +309,46 @@ export default function LocationManagementScreen() {
             style={styles.modalKav}
           >
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Sửa kho</Text>
-            <Text style={[styles.label, { color: colors.sub }]}>Tên kho *</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={editName}
-              onChangeText={setEditName}
-              placeholderTextColor={colors.sub}
-            />
-            <Text style={[styles.label, { color: colors.sub }]}>Số hàng (rows)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={editRows}
-              onChangeText={setEditRows}
-              keyboardType="number-pad"
-            />
-            <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-              value={editCols}
-              onChangeText={setEditCols}
-              keyboardType="number-pad"
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setEditing(null)}>
-                <Text style={{ color: colors.text }}>Hủy</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.btnPrimary, { backgroundColor: colors.accent, opacity: editSaving ? 0.6 : 1 }]}
-                disabled={editSaving}
-                onPress={() => void handleEditSave()}
-              >
-                <Text style={{ color: colors.card, fontWeight: '700' }}>Lưu</Text>
-              </TouchableOpacity>
-            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Sửa kho</Text>
+              <Text style={[styles.label, { color: colors.sub }]}>Tên kho *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                value={editName}
+                onChangeText={setEditName}
+                placeholderTextColor={colors.sub}
+              />
+              <Text style={[styles.label, { color: colors.sub }]}>Số hàng (rows)</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                value={editRows}
+                onChangeText={setEditRows}
+                keyboardType="number-pad"
+              />
+              <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                value={editCols}
+                onChangeText={setEditCols}
+                keyboardType="number-pad"
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setEditing(null)}>
+                  <Text style={{ color: colors.text }}>Hủy</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.btnPrimary, { backgroundColor: colors.accent, opacity: editSaving ? 0.6 : 1 }]}
+                  disabled={editSaving}
+                  onPress={() => void handleEditSave()}
+                >
+                  <Text style={{ color: colors.card, fontWeight: '700' }}>Lưu</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </Pressable>
           </KeyboardAvoidingView>
         </Pressable>

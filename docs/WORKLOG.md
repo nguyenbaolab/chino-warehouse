@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: LocationManagement modal tạo/sửa kho — bàn phím che input
+
+- **Vấn đề:** Modal bottom sheet bị keyboard che field rows/cols.
+- **Fix:** `KeyboardAvoidingView` (`padding` iOS / `height` Android) + `ScrollView` (`keyboardShouldPersistTaps="handled"`) bọc nội dung modal tạo và sửa kho.
+- **File:** `screens/LocationManagementScreen.tsx`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — fix: MapScreen highlight zone — giữ màu lô tệ nhất
 
 - **Vấn đề:** `buildHighlightMapFromEntries` `map.set` ghi đè — nhiều lô cùng `zone_id` → grid hiện màu entry cuối, không phải đỏ/vàng tệ nhất.
