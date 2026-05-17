@@ -4,8 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TextInput,
   TouchableOpacity,
   SafeAreaView,
+  KeyboardAvoidingView,
   useWindowDimensions,
   Alert,
   Platform,
@@ -109,6 +111,7 @@ export default function ZoneLayoutEditorScreen() {
   const [originalShapes, setOriginalShapes] = useState<Map<string, ZoneCell[]>>(new Map())
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
   const [toast, setToast] = useState('')
+  const [zoneSearchQuery, setZoneSearchQuery] = useState('')
   const [zoneMeta, setZoneMeta] = useState<Map<string, { name: string; color: string }>>(new Map())
 
   useEffect(() => {
@@ -164,6 +167,15 @@ export default function ZoneLayoutEditorScreen() {
   }, [toast])
 
   const zoneIds = useMemo(() => [...originalShapes.keys()], [originalShapes])
+
+  const filteredZoneIds = useMemo(() => {
+    const q = zoneSearchQuery.trim().toLowerCase()
+    if (!q) return zoneIds
+    return zoneIds.filter((zid) => {
+      const name = zoneMeta.get(zid)?.name ?? ''
+      return name.toLowerCase().includes(q)
+    })
+  }, [zoneIds, zoneMeta, zoneSearchQuery])
 
   const getCellsForZone = useCallback(
     (zid: string) => {
@@ -343,32 +355,70 @@ export default function ZoneLayoutEditorScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <View style={styles.topSpacer} />
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Sắp xếp Zone</Text>
-        <TouchableOpacity
-          style={[styles.confirmHeaderBtn, { backgroundColor: colors.accent }]}
-          onPress={onConfirm}
-        >
-          <Text style={styles.confirmHeaderBtnText}>Xác nhận</Text>
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView
+        style={styles.kavRoot}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.topSpacer} />
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Sắp xếp Zone</Text>
+          <TouchableOpacity
+            style={[styles.confirmHeaderBtn, { backgroundColor: colors.accent }]}
+            onPress={onConfirm}
+          >
+            <Text style={styles.confirmHeaderBtnText}>Xác nhận</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.gridWrap}>
-        <ScrollView
-          style={styles.gridScrollOuter}
-          contentContainerStyle={styles.gridScrollContent}
-          nestedScrollEnabled
-        >
-          <ScrollView horizontal nestedScrollEnabled>
-            <View style={{ paddingHorizontal: H_PADDING, paddingVertical: 8 }}>{renderGrid()}</View>
+        <View style={styles.gridWrap}>
+          <ScrollView
+            style={styles.gridScrollOuter}
+            contentContainerStyle={styles.gridScrollContent}
+            nestedScrollEnabled
+          >
+            <ScrollView horizontal nestedScrollEnabled>
+              <View style={{ paddingHorizontal: H_PADDING, paddingVertical: 8 }}>{renderGrid()}</View>
+            </ScrollView>
           </ScrollView>
-        </ScrollView>
-      </View>
+        </View>
 
-      <View style={[styles.bottomPanel, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tileRow}>
-          {zoneIds.map((zid) => {
+        <View style={[styles.bottomPanel, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
+        <View style={styles.zoneSearchRow}>
+          <View style={styles.zoneSearchInputWrap}>
+            <TextInput
+              style={[
+                styles.zoneSearchInput,
+                { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border },
+              ]}
+              value={zoneSearchQuery}
+              onChangeText={setZoneSearchQuery}
+              placeholder="Tìm zone theo tên..."
+              placeholderTextColor={colors.sub}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {zoneSearchQuery.length > 0 && (
+              <TouchableOpacity
+                style={styles.zoneSearchClearBtn}
+                onPress={() => setZoneSearchQuery('')}
+                hitSlop={8}
+              >
+                <Text style={{ color: colors.text }}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {filteredZoneIds.length === 0 && zoneSearchQuery.trim().length > 0 ? (
+          <Text style={[styles.zoneSearchEmpty, { color: colors.sub }]}>Không tìm thấy zone</Text>
+        ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tileRow}
+          keyboardShouldPersistTaps="handled"
+        >
+          {filteredZoneIds.map((zid) => {
             const zm = zoneMeta.get(zid)
             const shape = originalShapes.get(zid) ?? []
             const selected = selectedZoneId === zid
@@ -397,7 +447,9 @@ export default function ZoneLayoutEditorScreen() {
             )
           })}
         </ScrollView>
-      </View>
+        )}
+        </View>
+      </KeyboardAvoidingView>
 
       {toast ? (
         <View style={[styles.toast, { backgroundColor: colors.card }]}>
@@ -410,6 +462,7 @@ export default function ZoneLayoutEditorScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  kavRoot: { flex: 1 },
   topSpacer: { height: Platform.OS === 'android' ? 8 : 0 },
   header: {
     flexDirection: 'row',
@@ -448,6 +501,35 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
+  },
+  zoneSearchRow: {
+    paddingHorizontal: 8,
+    marginBottom: 10,
+  },
+  zoneSearchInputWrap: {
+    position: 'relative',
+  },
+  zoneSearchInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingLeft: 14,
+    paddingRight: 40,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  zoneSearchClearBtn: {
+    position: 'absolute',
+    right: 10,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  zoneSearchEmpty: {
+    textAlign: 'center',
+    fontSize: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   tileRow: { alignItems: 'center', paddingHorizontal: 8, flexDirection: 'row' },
   tile: {

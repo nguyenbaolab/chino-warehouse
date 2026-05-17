@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: ZoneLayoutEditor — tìm kiếm lọc zone theo tên
+
+- **UI:** `TextInput` trên danh sách zone scroll ngang; filter local case-insensitive; clear ✕; empty state **Không tìm thấy zone**.
+- **Fix keyboard:** `KeyboardAvoidingView` (`flex: 1`, `padding` iOS / `height` Android) bọc toàn bộ nội dung trong `SafeAreaView` (header + grid + bottomPanel); `keyboardShouldPersistTaps="handled"` trên scroll ngang zone.
+- **File:** `screens/ZoneLayoutEditorScreen.tsx`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — fix: LocationManagement modal tạo/sửa kho — bàn phím che input
 
 - **Vấn đề:** Modal bottom sheet bị keyboard che field rows/cols.
