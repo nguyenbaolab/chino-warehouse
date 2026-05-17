@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: LocationManagementScreen modal keyboard (Android APK)
+
+- **Nguyên nhân:** `KeyboardAvoidingView` trong RN `Modal` không hoạt động trên APK + `edgeToEdgeEnabled`.
+- **Fix:** Bỏ KAV; `createScrollRef` / `editScrollRef` + `scrollToEnd` onFocus (rows, cols) — pattern AddInventory.
+- **File:** `screens/LocationManagementScreen.tsx`, `docs/WORKLOG.md`
+
+---
+
 ## [tháng 5/2026] — docs: KI-003 Resolved, KI-019 sync phase-2, theme convention
 
 - **KNOWN_ISSUES.md:** KI-003 Closed → **Resolved**; ghi chú light theme + tab bar hardcode.

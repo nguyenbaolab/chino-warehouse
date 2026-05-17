@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -58,6 +56,13 @@ export default function LocationManagementScreen() {
   const [editRows, setEditRows] = useState('6')
   const [editCols, setEditCols] = useState('6')
   const [editSaving, setEditSaving] = useState(false)
+
+  const createScrollRef = useRef<ScrollView>(null)
+  const editScrollRef = useRef<ScrollView>(null)
+
+  function scrollModalToEnd(ref: React.RefObject<ScrollView | null>) {
+    setTimeout(() => ref.current?.scrollToEnd({ animated: true }), 100)
+  }
 
   async function refreshCounts() {
     if (locations.length === 0) {
@@ -250,12 +255,9 @@ export default function LocationManagementScreen() {
       {/* Modal tạo kho */}
       <Modal visible={createOpen} transparent animationType="slide" onRequestClose={() => setCreateOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setCreateOpen(false)}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalKav}
-          >
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
             <ScrollView
+              ref={createScrollRef}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               bounces={false}
@@ -275,6 +277,7 @@ export default function LocationManagementScreen() {
                 value={newRows}
                 onChangeText={setNewRows}
                 keyboardType="number-pad"
+                onFocus={() => scrollModalToEnd(createScrollRef)}
               />
               <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
               <TextInput
@@ -282,6 +285,7 @@ export default function LocationManagementScreen() {
                 value={newCols}
                 onChangeText={setNewCols}
                 keyboardType="number-pad"
+                onFocus={() => scrollModalToEnd(createScrollRef)}
               />
               <View style={styles.modalActions}>
                 <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setCreateOpen(false)}>
@@ -297,19 +301,15 @@ export default function LocationManagementScreen() {
               </View>
             </ScrollView>
           </Pressable>
-          </KeyboardAvoidingView>
         </Pressable>
       </Modal>
 
       {/* Modal sửa kho */}
       <Modal visible={editing !== null} transparent animationType="slide" onRequestClose={() => setEditing(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setEditing(null)}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.modalKav}
-          >
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
             <ScrollView
+              ref={editScrollRef}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
               bounces={false}
@@ -328,6 +328,7 @@ export default function LocationManagementScreen() {
                 value={editRows}
                 onChangeText={setEditRows}
                 keyboardType="number-pad"
+                onFocus={() => scrollModalToEnd(editScrollRef)}
               />
               <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
               <TextInput
@@ -335,6 +336,7 @@ export default function LocationManagementScreen() {
                 value={editCols}
                 onChangeText={setEditCols}
                 keyboardType="number-pad"
+                onFocus={() => scrollModalToEnd(editScrollRef)}
               />
               <View style={styles.modalActions}>
                 <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setEditing(null)}>
@@ -350,7 +352,6 @@ export default function LocationManagementScreen() {
               </View>
             </ScrollView>
           </Pressable>
-          </KeyboardAvoidingView>
         </Pressable>
       </Modal>
     </SafeAreaView>
@@ -359,7 +360,6 @@ export default function LocationManagementScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  modalKav: { width: '100%', justifyContent: 'flex-end' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
