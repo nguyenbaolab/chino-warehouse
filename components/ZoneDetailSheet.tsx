@@ -531,70 +531,77 @@ export default function ZoneDetailSheet({
           <View style={styles.modalOverlay}>
             <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setMoveLot(null)} />
             <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Chuyển lô hàng</Text>
-
-              <Text style={[styles.editLabel, { color: colors.sub }]}>Zone đích</Text>
-              <Pressable
-                style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                onPress={() => {
-                  setShowZoneOptions((v) => !v)
-                  setShowTierOptions(false)
-                }}
+              <ScrollView
+                style={styles.moveModalScroll}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                bounces={false}
               >
-                <Text style={{ color: selectedTargetZone ? colors.text : colors.sub }}>
-                  {selectedTargetZone?.name ?? 'Chọn zone đích'}
-                </Text>
-              </Pressable>
-              {showZoneOptions && (
-                <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-                  {availableTargetZones.map((zoneItem) => (
-                    <TouchableOpacity
-                      key={zoneItem.id}
-                      style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                      onPress={() => {
-                        setTargetZoneId(zoneItem.id)
-                        const tiersCount = Math.max(zoneItem.tier_count || 1, 1)
-                        setTargetTier(tiersCount === 1 ? 1 : null)
-                        setShowZoneOptions(false)
-                      }}
-                    >
-                      <Text style={{ color: colors.text }}>{zoneItem.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Chuyển lô hàng</Text>
 
-              <Text style={[styles.editLabel, { color: colors.sub, marginTop: 8 }]}>Tầng đích</Text>
-              <Pressable
-                style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, opacity: selectedTargetZone ? 1 : 0.5 }]}
-                onPress={() => {
-                  if (!selectedTargetZone || availableTargetTiers.length <= 1) return
-                  setShowTierOptions((v) => !v)
-                  setShowZoneOptions(false)
-                }}
-              >
-                <Text style={{ color: targetTier ? colors.text : colors.sub }}>
-                  {targetTier ? `Tầng ${targetTier}` : 'Chọn tầng đích'}
-                </Text>
-              </Pressable>
-              {showTierOptions && availableTargetTiers.length > 1 && (
-                <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-                  {availableTargetTiers.map((tierNum) => (
-                    <TouchableOpacity
-                      key={tierNum}
-                      style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                      onPress={() => {
-                        setTargetTier(tierNum)
-                        setShowTierOptions(false)
-                      }}
-                    >
-                      <Text style={{ color: colors.text }}>Tầng {tierNum}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
+                <Text style={[styles.editLabel, { color: colors.sub }]}>Zone đích</Text>
+                <Pressable
+                  style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                  onPress={() => {
+                    setShowZoneOptions((v) => !v)
+                    setShowTierOptions(false)
+                  }}
+                >
+                  <Text style={{ color: selectedTargetZone ? colors.text : colors.sub }}>
+                    {selectedTargetZone?.name ?? 'Chọn zone đích'}
+                  </Text>
+                </Pressable>
+                {showZoneOptions && (
+                  <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                    {availableTargetZones.map((zoneItem) => (
+                      <TouchableOpacity
+                        key={zoneItem.id}
+                        style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                        onPress={() => {
+                          setTargetZoneId(zoneItem.id)
+                          const tiersCount = Math.max(zoneItem.tier_count || 1, 1)
+                          setTargetTier(tiersCount === 1 ? 1 : null)
+                          setShowZoneOptions(false)
+                        }}
+                      >
+                        <Text style={{ color: colors.text }}>{zoneItem.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
 
-              <View style={styles.editActions}>
+                <Text style={[styles.editLabel, { color: colors.sub, marginTop: 8 }]}>Tầng đích</Text>
+                <Pressable
+                  style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, opacity: selectedTargetZone ? 1 : 0.5 }]}
+                  onPress={() => {
+                    if (!selectedTargetZone || availableTargetTiers.length <= 1) return
+                    setShowTierOptions((v) => !v)
+                    setShowZoneOptions(false)
+                  }}
+                >
+                  <Text style={{ color: targetTier ? colors.text : colors.sub }}>
+                    {targetTier ? `Tầng ${targetTier}` : 'Chọn tầng đích'}
+                  </Text>
+                </Pressable>
+                {showTierOptions && availableTargetTiers.length > 1 && (
+                  <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                    {availableTargetTiers.map((tierNum) => (
+                      <TouchableOpacity
+                        key={tierNum}
+                        style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                        onPress={() => {
+                          setTargetTier(tierNum)
+                          setShowTierOptions(false)
+                        }}
+                      >
+                        <Text style={{ color: colors.text }}>Tầng {tierNum}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </ScrollView>
+
+              <View style={[styles.editActions, styles.moveModalActions]}>
                 <TouchableOpacity style={[styles.editCancelBtn, { backgroundColor: colors.bg }]} onPress={() => setMoveLot(null)}>
                   <Text style={{ color: colors.sub }}>Huỷ</Text>
                 </TouchableOpacity>
@@ -805,6 +812,8 @@ const styles = StyleSheet.create({
   barcodeScanBtnText: {
     fontSize: 18,
   },
+  moveModalScroll: { maxHeight: 360 },
+  moveModalActions: { marginTop: 16 },
   editActions: {
     flexDirection: 'row',
     gap: 8,

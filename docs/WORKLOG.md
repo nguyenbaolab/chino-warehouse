@@ -4,29 +4,35 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
-## [tháng 5/2026] — docs + in progress: KI-041–043, FEATURE-A/B/C
+## [tháng 5/2026] — Đợt 1: KI-043 + KI-041 + FEATURE-B (Done)
 
-**Trạng thái:** In progress (docs cập nhật trước; code chưa implement đợt này)
-
-| Nhóm | Mô tả ngắn |
+| Nhóm | Trạng thái |
 |------|------------|
-| **KI-041** | Keyboard che modal tạo/sửa kho APK — `softwareKeyboardLayoutMode: pan` + KAV trong Modal |
-| **KI-042** | SafeAreaProvider + SafeAreaView 4 màn thiếu + chuẩn hóa `react-native-safe-area-context` |
-| **KI-043** | ZoneDetailSheet modal chuyển lô: ScrollView + margin nút |
-| **FEATURE-A** | AddInventory: 📷 search SP qua `searchByBarcode` + hint |
-| **FEATURE-B** | AddInventory: nút "Tạo mới '[tên]'" inline với suggestion |
-| **FEATURE-C** | ProductDetail: 📍 locate qua `locateIntent` → Map; bỏ chuyển lô tại PDS |
+| **KI-043** | Done — `ZoneDetailSheet` modal chuyển lô: `ScrollView` + `editActions` marginTop 16 |
+| **KI-041** | Done — `app.json` `softwareKeyboardLayoutMode: pan`; KAV trong modal tạo/sửa kho |
+| **FEATURE-B** | Done — `AddInventoryScreen`: `+ Tạo mới '[tên]'` cuối list gợi ý |
 
-- **Docs:** `KNOWN_ISSUES.md` (KI-041–043), `REQUIREMENTS.md` (F07, F15, §9), `CONTEXT.md` (§2–§5), `DECISIONS.md`, `WORKLOG.md`
-- **Code (planned):** `app.json`, `LocationManagementScreen.tsx`, `App.tsx`, screens SafeArea, `ZoneDetailSheet.tsx`, `AddInventoryScreen.tsx`, `ProductDetailScreen.tsx`, `MapScreen.tsx`, `warehouseStore.ts`, `types/index.ts`
+- **Docs:** `KNOWN_ISSUES.md`, `WORKLOG.md`, `CONTEXT.md`, `REQUIREMENTS.md`
+- **Code:** `components/ZoneDetailSheet.tsx`, `app.json`, `screens/LocationManagementScreen.tsx`, `screens/AddInventoryScreen.tsx`
 
 ---
 
-## [tháng 5/2026] — fix: LocationManagementScreen modal keyboard (Android APK)
+## [tháng 5/2026] — docs + in progress: KI-042, FEATURE-A, FEATURE-C
 
-- **Nguyên nhân:** `KeyboardAvoidingView` trong RN `Modal` không hoạt động trên APK + `edgeToEdgeEnabled`.
-- **Fix:** Bỏ KAV; `createScrollRef` / `editScrollRef` + `scrollToEnd` onFocus (rows, cols) — pattern AddInventory.
-- **File:** `screens/LocationManagementScreen.tsx`, `docs/WORKLOG.md`
+**Trạng thái:** In progress (đợt 1 xong)
+
+| Nhóm | Mô tả ngắn |
+|------|------------|
+| **KI-042** | SafeAreaProvider + SafeAreaView 4 màn thiếu |
+| **FEATURE-A** | AddInventory: 📷 search SP qua `searchByBarcode` + hint |
+| **FEATURE-C** | ProductDetail: 📍 locate qua `locateIntent` → Map; bỏ chuyển lô tại PDS |
+
+---
+
+## [tháng 5/2026] — fix: LocationManagementScreen modal keyboard (Android APK) — bước trung gian
+
+- **Bước trung gian:** Bỏ KAV; chỉ `scrollToEnd` onFocus — chưa đủ trên APK.
+- **Superseded bởi:** Đợt 1 KI-041 (`softwareKeyboardLayoutMode: pan` + KAV lại).
 
 ---
 

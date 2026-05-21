@@ -440,10 +440,11 @@
 
 - **Mức độ:** Medium
 - **File liên quan:** `app.json`, `screens/LocationManagementScreen.tsx`
-- **Mô tả:** Modal tạo/sửa kho (RN `Modal` + bottom sheet) — bàn phím che field nhập trên APK standalone. `edgeToEdgeEnabled: true` → Android không tự resize window khi bàn phím mở. `ScrollView` + `scrollToEnd` onFocus **không đủ** trong Modal context. Expo Go có thể không tái hiện (native context khác).
-- **Root cause:** `edgeToEdgeEnabled` + giới hạn `KeyboardAvoidingView` trong RN Modal trên APK.
-- **Hướng fix:** Thêm `"softwareKeyboardLayoutMode": "pan"` vào block `android` trong `app.json`; thêm lại `KeyboardAvoidingView` trong Modal (`behavior`: iOS `padding`, Android `height`).
-- **Trạng thái:** Open
+- **Mô tả:** Modal tạo/sửa kho (RN `Modal` + bottom sheet) — bàn phím che field nhập trên APK standalone. `edgeToEdgeEnabled: true` → Android không tự resize window khi bàn phím mở. `ScrollView` + `scrollToEnd` onFocus **không đủ** một mình trong Modal context.
+- **Root cause:** `edgeToEdgeEnabled` + giới hạn resize window trong RN Modal trên APK.
+- **Hướng fix:** `softwareKeyboardLayoutMode: pan` + `KeyboardAvoidingView` trong modal.
+- **Trạng thái:** Resolved
+- **Đã fix:** `app.json` — `"softwareKeyboardLayoutMode": "pan"`; `LocationManagementScreen` — `KeyboardAvoidingView` (`padding` iOS / `height` Android) trong `modalBox`, giữ `ScrollView` + `scrollToEnd` onFocus.
 
 ---
 
@@ -462,7 +463,8 @@
 - **Mức độ:** Low
 - **File liên quan:** `components/ZoneDetailSheet.tsx`
 - **Mô tả:** Modal **Chuyển lô hàng** không có `ScrollView` → không scroll vùng chọn zone/tầng đích khi bàn phím hoặc danh sách dài. Nút Hủy/Xác nhận (`editActions`) sát field phía trên, thiếu `marginTop`.
-- **Hướng fix:** Bọc nội dung modal trong `ScrollView`; thêm `marginTop` cho `moveActions` / `editActions`.
-- **Trạng thái:** Open
+- **Hướng fix:** Bọc nội dung modal trong `ScrollView`; thêm `marginTop` cho `editActions`.
+- **Trạng thái:** Resolved
+- **Đã fix:** Nội dung chọn zone/tầng trong `ScrollView` (`maxHeight` 360); `editActions` fixed dưới modal với `marginTop: 16`.
 
 ---

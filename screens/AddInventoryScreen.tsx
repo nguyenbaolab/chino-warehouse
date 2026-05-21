@@ -482,6 +482,16 @@ export default function AddInventoryScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
+            {filteredProducts.length > 0 && (
+              <TouchableOpacity
+                style={[styles.createInlineRow, { borderTopColor: colors.border, backgroundColor: colors.bg }]}
+                onPress={() => openCreateProductForm()}
+              >
+                <Text style={[styles.createInlineText, { color: colors.accent }]} numberOfLines={2}>
+                  {`+ Tạo mới '${searchQuery.trim()}'`}
+                </Text>
+              </TouchableOpacity>
+            )}
             {filteredProducts.length === 0 && (
               <View style={styles.emptyProductWrap}>
                 <Text style={[styles.emptyProductText, { color: colors.sub }]}>Không tìm thấy sản phẩm phù hợp.</Text>
@@ -890,6 +900,16 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  createInlineRow: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+  },
+  createInlineText: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontStyle: 'italic',
   },
   emptyProductWrap: {
     padding: 12,

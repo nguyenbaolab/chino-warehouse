@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -256,6 +258,7 @@ export default function LocationManagementScreen() {
       <Modal visible={createOpen} transparent animationType="slide" onRequestClose={() => setCreateOpen(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setCreateOpen(false)}>
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView
               ref={createScrollRef}
               keyboardShouldPersistTaps="handled"
@@ -300,6 +303,7 @@ export default function LocationManagementScreen() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
+            </KeyboardAvoidingView>
           </Pressable>
         </Pressable>
       </Modal>
@@ -308,6 +312,7 @@ export default function LocationManagementScreen() {
       <Modal visible={editing !== null} transparent animationType="slide" onRequestClose={() => setEditing(null)}>
         <Pressable style={styles.modalOverlay} onPress={() => setEditing(null)}>
           <Pressable style={[styles.modalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
             <ScrollView
               ref={editScrollRef}
               keyboardShouldPersistTaps="handled"
@@ -351,6 +356,7 @@ export default function LocationManagementScreen() {
                 </TouchableOpacity>
               </View>
             </ScrollView>
+            </KeyboardAvoidingView>
           </Pressable>
         </Pressable>
       </Modal>
