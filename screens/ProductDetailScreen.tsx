@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -71,6 +70,7 @@ export default function ProductDetailScreen() {
     updateProductCategory,
     fetchAuditLogsForProduct,
     deleteProduct,
+    setLocateIntent,
   } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
@@ -87,11 +87,6 @@ export default function ProductDetailScreen() {
   const [isSavingProduct, setIsSavingProduct] = useState(false)
   const [detailsExpanded, setDetailsExpanded] = useState(false)
 
-  const [moveLot, setMoveLot] = useState<InventoryEntry | null>(null)
-  const [targetZoneId, setTargetZoneId] = useState<string | null>(null)
-  const [targetTier, setTargetTier] = useState<number | null>(null)
-  const [showZoneOptions, setShowZoneOptions] = useState(false)
-  const [showTierOptions, setShowTierOptions] = useState(false)
   const [showIssuesOnly, setShowIssuesOnly] = useState(false)
   const [showCategoryL1Picker, setShowCategoryL1Picker] = useState(false)
   const [showCategoryL2Picker, setShowCategoryL2Picker] = useState(false)
@@ -312,28 +307,19 @@ export default function ProductDetailScreen() {
     if (res.product) setProduct(res.product)
   }
 
-  function openMoveLot(lot: InventoryEntry) {
-    setMoveLot(lot)
-    setTargetZoneId(null)
-    setTargetTier(null)
-    setShowZoneOptions(false)
-    setShowTierOptions(false)
-  }
-
-  const availableTargetZones = zones.filter((z) => z.id !== moveLot?.zone_id)
-  const selectedTargetZone = zones.find((z) => z.id === targetZoneId) ?? null
-  const availableTargetTiers = selectedTargetZone
-    ? Array.from({ length: Math.max(selectedTargetZone.tier_count || 1, 1) }, (_, idx) => idx + 1)
-    : []
-
-  async function confirmMoveLot() {
-    if (!moveLot || !targetZoneId || !targetTier) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng chọn zone đích và tầng đích.')
+  function handleLocateLot(lot: InventoryEntry) {
+    if (!product?.name) return
+    const locationId = lot.zone?.location_id ?? zones.find((z) => z.id === lot.zone_id)?.location_id
+    if (!locationId || !lot.zone_id) {
+      Alert.alert('Thiếu thông tin', 'Không xác định được kho của lô này.')
       return
     }
-    await updateInventoryEntry(moveLot.id, { zone_id: targetZoneId, tier: targetTier })
-    setLots((prev) => prev.map((lot) => (lot.id === moveLot.id ? { ...lot, zone_id: targetZoneId, tier: targetTier, zone: zones.find((z) => z.id === targetZoneId) } : lot)))
-    setMoveLot(null)
+    setLocateIntent({
+      productName: product.name,
+      locationId,
+      zoneId: lot.zone_id,
+    })
+    navigation.getParent()?.navigate('Map' as never)
   }
 
   function handleAddNewLot() {
@@ -608,12 +594,14 @@ export default function ProductDetailScreen() {
                     >
                       <Text style={styles.deleteBtnText}>✏️</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                      onPress={() => openMoveLot(lot)}
-                    >
-                      <Text style={styles.deleteBtnText}>→</Text>
-                    </TouchableOpacity>
+                    {lot.quantity_boxes > 0 && (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                        onPress={() => handleLocateLot(lot)}
+                      >
+                        <Text style={styles.deleteBtnText}>📍</Text>
+                      </TouchableOpacity>
+                    )}
                     {lot.quantity_boxes > 0 && (
                       <TouchableOpacity
                         style={[styles.deleteBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
@@ -742,85 +730,6 @@ export default function ProductDetailScreen() {
         </TouchableOpacity>
       </ScrollView>
       </KeyboardAvoidingView>
-
-      <Modal visible={!!moveLot} transparent animationType="slide" onRequestClose={() => setMoveLot(null)}>
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setMoveLot(null)} />
-          <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Chuyển lô hàng</Text>
-
-            <Text style={[styles.editLabel, { color: colors.sub }]}>Zone đích</Text>
-            <Pressable
-              style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-              onPress={() => {
-                setShowZoneOptions((v) => !v)
-                setShowTierOptions(false)
-              }}
-            >
-              <Text style={{ color: targetZoneId ? colors.text : colors.sub }}>
-                {selectedTargetZone?.name ?? 'Chọn zone đích'}
-              </Text>
-            </Pressable>
-            {showZoneOptions && (
-              <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-                {availableTargetZones.map((zone) => (
-                  <TouchableOpacity
-                    key={zone.id}
-                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                    onPress={() => {
-                      setTargetZoneId(zone.id)
-                      const tiers = Math.max(zone.tier_count || 1, 1)
-                      setTargetTier(tiers === 1 ? 1 : null)
-                      setShowZoneOptions(false)
-                    }}
-                  >
-                    <Text style={{ color: colors.text }}>{zone.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            <Text style={[styles.editLabel, { color: colors.sub, marginTop: 8 }]}>Tầng đích</Text>
-            <Pressable
-              style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, opacity: selectedTargetZone ? 1 : 0.5 }]}
-              onPress={() => {
-                if (!selectedTargetZone || availableTargetTiers.length <= 1) return
-                setShowTierOptions((v) => !v)
-                setShowZoneOptions(false)
-              }}
-            >
-              <Text style={{ color: targetTier ? colors.text : colors.sub }}>
-                {targetTier ? `Tầng ${targetTier}` : 'Chọn tầng đích'}
-              </Text>
-            </Pressable>
-            {showTierOptions && availableTargetTiers.length > 1 && (
-              <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-                {availableTargetTiers.map((tierNum) => (
-                  <TouchableOpacity
-                    key={tierNum}
-                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                    onPress={() => {
-                      setTargetTier(tierNum)
-                      setShowTierOptions(false)
-                    }}
-                  >
-                    <Text style={{ color: colors.text }}>Tầng {tierNum}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.moveActions}>
-              <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.bg }]} onPress={() => setMoveLot(null)}>
-                <Text style={{ color: colors.sub }}>Huỷ</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.accent }]} onPress={confirmMoveLot}>
-                <Text style={{ color: colors.card, fontWeight: '700' }}>Xác nhận</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   )
 }
@@ -917,14 +826,9 @@ const styles = StyleSheet.create({
   editActions: { flexDirection: 'row', gap: 8 },
   cancelBtn: { flex: 1, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
   saveBtn: { flex: 1, borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
-  modalBox: { borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 1, padding: 16 },
-  modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
   selectBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   optionsWrap: { borderWidth: 1, borderRadius: 10, marginTop: 6, overflow: 'hidden' },
   optionRow: { borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
-  moveActions: { flexDirection: 'row', gap: 8, marginTop: 12 },
   auditSection: { borderWidth: 1, borderRadius: 12, padding: 12, marginTop: 16 },
   auditHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   auditTitle: { fontSize: 15, fontWeight: '700' },

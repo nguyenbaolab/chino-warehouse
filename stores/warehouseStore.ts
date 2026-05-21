@@ -1,7 +1,20 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
-import { Location, Zone, ZoneCell, Product, ProductCategoryL1, ProductCategoryL2, InventoryEntry, OrderItem, OrderList, OrderListStatus, AuditLog } from '../types'
+import {
+  Location,
+  Zone,
+  ZoneCell,
+  Product,
+  ProductCategoryL1,
+  ProductCategoryL2,
+  InventoryEntry,
+  OrderItem,
+  OrderList,
+  OrderListStatus,
+  AuditLog,
+  LocateIntent,
+} from '../types'
 
 type WarehouseStore = {
   locations: Location[]
@@ -14,8 +27,11 @@ type WarehouseStore = {
   orderLists: OrderList[]
   orderItems: OrderItem[]
   isLoading: boolean
+  locateIntent: LocateIntent | null
 
   setSelectedLocation: (id: string) => void
+  setLocateIntent: (intent: LocateIntent) => void
+  clearLocateIntent: () => void
   fetchLocations: () => Promise<void>
   addLocation: (
     name: string,
@@ -110,11 +126,16 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   orderLists: [],
   orderItems: [],
   isLoading: false,
+  locateIntent: null,
 
   setSelectedLocation: (id) => {
     set({ selectedLocationId: id })
     get().fetchZones(id)
   },
+
+  setLocateIntent: (intent) => set({ locateIntent: intent }),
+
+  clearLocateIntent: () => set({ locateIntent: null }),
 
   fetchLocations: async () => {
     const { data } = await supabase.from('locations').select('*').order('name')

@@ -81,6 +81,12 @@ export type OrderItem = {
   updated_at: string
 }
 
+export type LocateIntent = {
+  productName: string
+  locationId: string
+  zoneId: string
+}
+
 export type InventoryEntry = {
   id: string
   product_id: string

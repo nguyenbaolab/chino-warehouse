@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable,
   TextInput, ActivityIndicator, Modal, Alert, Platform, KeyboardAvoidingView
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
+import { useFocusEffect, useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore, type ThemeColors } from '../stores/themeStore'
 import { Zone, ZoneCell, InventoryEntry, Product, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
@@ -120,7 +120,7 @@ export default function MapScreen() {
   const isFocused = useIsFocused()
   const {
     locations, selectedLocationId, zones, products, inventoryEntries, isLoading,
-    fetchLocations, fetchProducts, fetchInventoryByLocation, setSelectedLocation, addZone, updateZone, deleteZone, searchProducts, searchInventoryByBarcode
+    fetchLocations, fetchProducts, fetchInventoryByLocation, setSelectedLocation, clearLocateIntent, addZone, updateZone, deleteZone, searchProducts, searchInventoryByBarcode
   } = useWarehouseStore()
   const { colors, loadTheme } = useThemeStore()
 
@@ -241,6 +241,21 @@ export default function MapScreen() {
     setIsSearchPanelExpanded(false)
     setHighlightedZones(buildHighlightMapFromEntries(results, colors))
   }
+
+  useFocusEffect(
+    useCallback(() => {
+      const intent = useWarehouseStore.getState().locateIntent
+      if (!intent) return
+
+      const { productName, locationId } = intent
+      setSelectedLocation(locationId)
+      void (async () => {
+        await handleSearch(productName)
+        setIsSearchPanelExpanded(true)
+      })()
+      clearLocateIntent()
+    }, [setSelectedLocation, clearLocateIntent, colors])
+  )
 
   function clearSearch() {
     searchRequestRef.current += 1

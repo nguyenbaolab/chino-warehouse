@@ -29,13 +29,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
-## [tháng 5/2026] — docs + in progress: FEATURE-C
+## [tháng 5/2026] — Đợt 3: FEATURE-C (Done)
 
-**Trạng thái:** In progress (đợt 1–2 xong)
-
-| Nhóm | Mô tả ngắn |
+| Nhóm | Trạng thái |
 |------|------------|
-| **FEATURE-C** | ProductDetail: 📍 locate qua `locateIntent` → Map; bỏ chuyển lô tại PDS |
+| **FEATURE-C** | Done — `LocateIntent` + `locateIntent` store; ProductDetail 📍 → Map; bỏ chuyển lô/modal → tại PDS |
+
+- **Đợt 3:** hoàn tất (đợt 1–3 xong)
+- **Docs:** `KNOWN_ISSUES.md` (không KI mới), `WORKLOG.md`, `CONTEXT.md`, `REQUIREMENTS.md`
+- **Code:** `types/index.ts`, `stores/warehouseStore.ts`, `screens/ProductDetailScreen.tsx`, `screens/MapScreen.tsx`
 
 ---
 
