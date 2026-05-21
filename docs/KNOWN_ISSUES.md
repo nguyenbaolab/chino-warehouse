@@ -452,9 +452,10 @@
 
 - **Mức độ:** Medium
 - **File liên quan:** `App.tsx`, `screens/ProductsScreen.tsx`, `screens/NotificationsScreen.tsx`, `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, các màn đang dùng `SafeAreaView`, `components/ZoneDetailSheet.tsx`
-- **Mô tả:** `App.tsx` không có `SafeAreaProvider`. Bốn màn thiếu safe area: `ProductsScreen`, `NotificationsScreen`, `OrderListScreen`, `OrderDetailScreen`. Các màn khác có thể import `SafeAreaView` từ `react-native` thay vì `react-native-safe-area-context`.
-- **Hướng fix:** (1) `SafeAreaProvider` wrap ngoài `NavigationContainer` trong `App.tsx`. (2) Thêm `SafeAreaView` vào 4 màn thiếu. (3) Chuẩn hóa import `SafeAreaView` từ `react-native-safe-area-context`. (4) `ZoneDetailSheet`: `paddingBottom` đủ cho thanh điều hướng Android.
-- **Trạng thái:** Open
+- **Mô tả:** `App.tsx` không có `SafeAreaProvider`. Bốn màn thiếu safe area: `ProductsScreen`, `NotificationsScreen`, `OrderListScreen`, `OrderDetailScreen`. Các màn khác import `SafeAreaView` từ `react-native` thay vì `react-native-safe-area-context`.
+- **Hướng fix:** `SafeAreaProvider` + chuẩn hóa import + 4 màn thiếu + `useSafeAreaInsets` trên sheet.
+- **Trạng thái:** Resolved
+- **Đã fix:** `SafeAreaProvider` bọc Login + `NavigationContainer`; toàn bộ `screens/*` dùng `SafeAreaView` từ `react-native-safe-area-context`; 4 màn thiếu đã thêm; `OrderDetailScreen`: `SafeAreaView` trong `KeyboardAvoidingView`; `ZoneDetailSheet`: `paddingBottom: Math.max(insets.bottom, 12)`.
 
 ---
 

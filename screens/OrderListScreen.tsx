@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -32,7 +33,7 @@ export default function OrderListScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <Text style={[styles.title, { color: colors.text }]}>🧾 Đặt hàng</Text>
 
       <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.accent }]} onPress={handleCreateList}>
@@ -67,7 +68,7 @@ export default function OrderListScreen() {
           })}
         </ScrollView>
       )}
-    </View>
+    </SafeAreaView>
   )
 }
 

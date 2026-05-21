@@ -5,6 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { StatusBar } from 'expo-status-bar'
 import { Text, View, ActivityIndicator, StyleSheet, AppState, Alert } from 'react-native'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 import type { Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import ConfigErrorScreen from './components/ConfigErrorScreen'
@@ -316,28 +317,30 @@ export default function App() {
   // Chưa đăng nhập → hiện màn LoginScreen
   if (!session) {
     return (
-      <>
+      <SafeAreaProvider>
         <StatusBar style="light" />
         <LoginScreen />
-      </>
+      </SafeAreaProvider>
     )
   }
 
   // Đã đăng nhập → wrap navigator trong View bắt touch để reset timer
   return (
-    <View style={{ flex: 1 }} onTouchStart={updateActivity} onTouchEnd={updateActivity}>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <RootStack.Navigator screenOptions={{ headerShown: false }}>
-          <RootStack.Screen name="Tabs" component={TabNavigator} />
-          <RootStack.Screen
-            name="BarcodeScanner"
-            component={BarcodeScannerScreen}
-            options={{ presentation: 'fullScreenModal' }}
-          />
-        </RootStack.Navigator>
-      </NavigationContainer>
-    </View>
+    <SafeAreaProvider>
+      <View style={{ flex: 1 }} onTouchStart={updateActivity} onTouchEnd={updateActivity}>
+        <NavigationContainer>
+          <StatusBar style="light" />
+          <RootStack.Navigator screenOptions={{ headerShown: false }}>
+            <RootStack.Screen name="Tabs" component={TabNavigator} />
+            <RootStack.Screen
+              name="BarcodeScanner"
+              component={BarcodeScannerScreen}
+              options={{ presentation: 'fullScreenModal' }}
+            />
+          </RootStack.Navigator>
+        </NavigationContainer>
+      </View>
+    </SafeAreaProvider>
   )
 }
 

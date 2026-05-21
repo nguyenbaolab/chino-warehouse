@@ -96,7 +96,7 @@ README.md
 
 ## §3 Navigation structure
 
-- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading → `<ActivityIndicator />`; có session → render `NavigationContainer` + navigation bên dưới.
+- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading → `<ActivityIndicator />`; có session → `SafeAreaProvider` → `NavigationContainer` + navigation bên dưới.
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar.
 - **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
@@ -105,7 +105,7 @@ README.md
 - **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail`).
 - **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
 - **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `CategoryManagement` → `DiscontinuedProducts` → `AuditLog`). `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount.
-- **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng. Modal **Chuyển lô hàng**: nội dung zone/tầng trong `ScrollView`; nút Hủy/Xác nhận fixed dưới (`marginTop` 16).
+- **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng. Sheet: `paddingBottom` động (`useSafeAreaInsets().bottom`). Modal **Chuyển lô hàng**: nội dung zone/tầng trong `ScrollView`; nút Hủy/Xác nhận fixed dưới (`marginTop` 16).
 - **Cross-tab locate (planned):** `ProductDetailScreen` bấm **📍** trên lô → `setLocateIntent` trong `warehouseStore` → chuyển tab **Kho**; `MapScreen` `useFocusEffect` đọc intent → `setSelectedLocation` · `setHighlightedZones` · `setSearchQuery` · panel kết quả expanded → `clearLocateIntent`. Không truyền qua navigation params (xem `DECISIONS.md`).
 
 **UI bản đồ & lọc (đối chiếu code):**
@@ -118,7 +118,7 @@ README.md
 - **LocationManagementScreen:** danh sách kho (tên, grid X×Y, số SKU distinct theo `inventory_entries` qua `zones` của từng kho); FAB **+** tạo kho; modal tạo/sửa kho (RN `Modal` bottom sheet). Keyboard: `softwareKeyboardLayoutMode: pan` (`app.json`) + `KeyboardAvoidingView` trong modal + `ScrollView`/`scrollToEnd` onFocus.
 - **CategoryManagementScreen:** accordion Cấp 1 → Cấp 2; thêm/sửa/xóa nhóm & loại (modal tên); `fetchCategories` khi mount; nút **+ Thêm nhóm** cuối danh sách; **+ Thêm loại** trong section khi đã xổ Cấp 1.
 - **ProductDetailScreen:** thanh **Tổng … thùng** + lọc lô; refetch khi focus. Mỗi lô (planned): **✏️** inline edit · **📍** `setLocateIntent` → tab Kho · **🗑️** xóa (khi còn thùng). **Bỏ** nút **→** chuyển lô và modal chuyển lô tại màn này (chuyển lô chỉ `ZoneDetailSheet`). Section **Chi tiết** (F30), **Lịch sử** (10 entries + AuditLog), **Xóa sản phẩm** (`deleteProduct` block nếu còn lô).
-- **AddInventoryScreen:** chọn zone/tầng, tìm/chọn SP. Cuối list gợi ý (khi có kết quả): **+ Tạo mới '[tên]'** → `openCreateProductForm()` (pre-fill tên). Không có kết quả: vẫn nút **Tạo sản phẩm mới**. **Planned:** 📷 + hint barcode. Pre-fill tên khi tạo SP mới; `KeyboardAvoidingView` ô cuối màn. **F30:** category read-only / dropdown Cấp 1–2 khi tạo SP mới.
+- **AddInventoryScreen:** chọn zone/tầng, tìm/chọn SP. Ô tìm SP: **📷** → `BarcodeScanner` → `searchByBarcode` → điền tên vào gợi ý (không auto-chọn); không thấy → text warning. Hint cố định dưới ô tìm (tránh tạo trùng tên). Cuối gợi ý: **+ Tạo mới '[tên]'**; không kết quả: **Tạo sản phẩm mới**. `SafeAreaView` (`react-native-safe-area-context`). **F30:** category read-only / dropdown khi tạo SP mới.
 
 ---
 
@@ -171,6 +171,7 @@ Tóm tắt nhanh:
 - Comment code bằng **tiếng Việt**
 - **Functional components** + hooks, không dùng class components
 - Luôn dùng **`useThemeStore()`** để lấy colors — **không** hardcode màu (ngoại lệ đang tồn tại: tab bar trong `App.tsx` — xem **KI-003**)
+- **Safe area:** `SafeAreaProvider` ở `App.tsx`; màn hình dùng `SafeAreaView` từ **`react-native-safe-area-context`** (không từ `react-native`)
 - **Default theme:** `isDark = false` (light mode mặc định); `themeStore` chỉ đổi sang dark khi AsyncStorage trả về `'dark'`. Không hardcode `isDark = true`.
 - **Không** tự thêm npm package mới khi chưa được yêu cầu
 - **Tìm kiếm / filter text:** LUÔN dùng `normalizeText()` từ `utils/textUtils.ts`, không dùng `.toLowerCase().includes()` trực tiếp. Áp dụng cho cả query lẫn data khi so sánh. `normalizeText()` xử lý: tiếng Việt không dấu, Phần Lan (ö, ä, å), và dấu Latin khác.

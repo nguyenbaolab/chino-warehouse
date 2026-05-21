@@ -17,14 +17,24 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
-## [tháng 5/2026] — docs + in progress: KI-042, FEATURE-A, FEATURE-C
+## [tháng 5/2026] — Đợt 2: KI-042 + FEATURE-A (Done)
 
-**Trạng thái:** In progress (đợt 1 xong)
+| Nhóm | Trạng thái |
+|------|------------|
+| **KI-042** | Done — `SafeAreaProvider`; chuẩn hóa `SafeAreaView`; 4 màn thiếu; `ZoneDetailSheet` insets |
+| **FEATURE-A** | Done — AddInventory: 📷 + `searchByBarcode` + hint + warning text |
+
+- **Docs:** `KNOWN_ISSUES.md`, `WORKLOG.md`, `CONTEXT.md`, `REQUIREMENTS.md`
+- **Code:** `App.tsx`, `components/ZoneDetailSheet.tsx`, `screens/*` (SafeArea import), `ProductsScreen`, `NotificationsScreen`, `OrderListScreen`, `OrderDetailScreen`, `AddInventoryScreen`
+
+---
+
+## [tháng 5/2026] — docs + in progress: FEATURE-C
+
+**Trạng thái:** In progress (đợt 1–2 xong)
 
 | Nhóm | Mô tả ngắn |
 |------|------------|
-| **KI-042** | SafeAreaProvider + SafeAreaView 4 màn thiếu |
-| **FEATURE-A** | AddInventory: 📷 search SP qua `searchByBarcode` + hint |
 | **FEATURE-C** | ProductDetail: 📍 locate qua `locateIntent` → Map; bỏ chuyển lô tại PDS |
 
 ---

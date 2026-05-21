@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Platform, Switch } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'

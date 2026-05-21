@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -85,9 +85,11 @@ export default function AddInventoryScreen() {
     addProduct,
     addInventoryEntry,
     updateInventoryEntry,
+    searchByBarcode,
   } = useWarehouseStore()
 
   const [searchQuery, setSearchQuery] = useState('')
+  const [barcodeSearchWarning, setBarcodeSearchWarning] = useState<string | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [lotBarcode, setLotBarcode] = useState('')
   const [quantityBoxes, setQuantityBoxes] = useState('1')
@@ -110,6 +112,26 @@ export default function AddInventoryScreen() {
   const [showNewCatL2, setShowNewCatL2] = useState(false)
 
   const scrollRef = useRef<ScrollView>(null)
+
+  async function handleProductBarcodeScan(barcode: string) {
+    const entry = await searchByBarcode(barcode)
+    const productName = entry?.product?.name ?? products.find((p) => p.id === entry?.product_id)?.name
+    if (productName) {
+      setBarcodeSearchWarning(null)
+      setSearchQuery(productName)
+      return
+    }
+    setBarcodeSearchWarning('Chưa có sản phẩm với mã này')
+  }
+
+  function openProductBarcodeScanner() {
+    navigation.navigate('BarcodeScanner', {
+      mode: 'search',
+      onScanFillBarcode: (barcode: string) => {
+        void handleProductBarcodeScan(barcode)
+      },
+    })
+  }
 
   function openCreateProductForm() {
     setNewProductName(searchQuery.trim())
@@ -435,13 +457,44 @@ export default function AddInventoryScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.sub }]}>Tìm/chọn sản phẩm *</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
-          placeholder="Gõ tên sản phẩm..."
-          placeholderTextColor={colors.sub}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputWrap}>
+            <TextInput
+              style={[styles.searchInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
+              placeholder="Gõ tên sản phẩm..."
+              placeholderTextColor={colors.sub}
+              value={searchQuery}
+              onChangeText={(text) => {
+                setSearchQuery(text)
+                if (barcodeSearchWarning) setBarcodeSearchWarning(null)
+              }}
+            />
+            {searchQuery.length > 0 && !selectedProduct && (
+              <TouchableOpacity
+                style={styles.searchClearInsideBtn}
+                onPress={() => {
+                  setSearchQuery('')
+                  setBarcodeSearchWarning(null)
+                }}
+              >
+                <Text style={{ color: colors.text }}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            style={[styles.scanBtn, { backgroundColor: colors.accent }]}
+            onPress={openProductBarcodeScanner}
+            disabled={!!selectedProduct}
+          >
+            <Text style={styles.scanBtnText}>📷</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={[styles.searchHintMuted, { color: colors.sub }]}>
+          Hỏi anh/chị chủ xem hàng đã được nhập chưa để tránh tạo trùng tên sản phẩm
+        </Text>
+        {barcodeSearchWarning ? (
+          <Text style={[styles.barcodeSearchWarning, { color: colors.statusWarning }]}>{barcodeSearchWarning}</Text>
+        ) : null}
 
         {selectedProduct ? (
           <View style={[styles.selectedProductBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -811,6 +864,53 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 12,
     marginBottom: 6,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  searchInputWrap: {
+    flex: 1,
+    position: 'relative',
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingLeft: 12,
+    paddingRight: 38,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  searchClearInsideBtn: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanBtn: {
+    marginLeft: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanBtnText: {
+    fontSize: 16,
+  },
+  searchHintMuted: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  barcodeSearchWarning: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   input: {
     borderWidth: 1,

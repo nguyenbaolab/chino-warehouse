@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ActivityIndicator,
   Alert,
@@ -49,6 +50,7 @@ export default function ZoneDetailSheet({
   scannedLotBarcodeAt,
 }: ZoneDetailSheetProps) {
   const { colors } = useThemeStore()
+  const insets = useSafeAreaInsets()
   const { zones, fetchInventoryByZone, updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
 
   const [entries, setEntries] = useState<InventoryEntry[]>([])
@@ -274,7 +276,14 @@ export default function ZoneDetailSheet({
         </TouchableWithoutFeedback>
 
         <KeyboardAvoidingView
-          style={[styles.sheet, { backgroundColor: colors.card, borderColor: colors.border }]}
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              paddingBottom: Math.max(insets.bottom, 12),
+            },
+          ]}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={[styles.zoneColorBar, { backgroundColor: zone?.color ?? colors.accent }]} />

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, Pressable,
-  TextInput, SafeAreaView, ActivityIndicator, Modal, Alert, Platform, KeyboardAvoidingView
+  TextInput, ActivityIndicator, Modal, Alert, Platform, KeyboardAvoidingView
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore, type ThemeColors } from '../stores/themeStore'

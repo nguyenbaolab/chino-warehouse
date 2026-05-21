@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -437,7 +438,7 @@ export default function NotificationsScreen() {
   )
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <Text style={[styles.title, { color: colors.text }]}>🔔 Thông báo</Text>
 
       <TouchableOpacity
@@ -668,7 +669,7 @@ export default function NotificationsScreen() {
           )}
         </View>
       )}
-    </View>
+    </SafeAreaView>
   )
 }
 

@@ -14,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
@@ -409,7 +410,7 @@ export default function ProductsScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <Text style={[styles.title, { color: colors.text }]}>📦 Sản phẩm</Text>
       <TouchableOpacity
         style={[styles.archivedToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -679,7 +680,7 @@ export default function ProductsScreen() {
           </KeyboardAvoidingView>
         </TouchableWithoutFeedback>
       </Modal>
-    </View>
+    </SafeAreaView>
   )
 }
 

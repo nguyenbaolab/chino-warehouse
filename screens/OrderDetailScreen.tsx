@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -227,9 +228,9 @@ export default function OrderDetailScreen() {
 
   if (!orderList) {
     return (
-      <View style={[styles.emptyWrap, { backgroundColor: colors.bg }]}>
+      <SafeAreaView style={[styles.emptyWrap, { backgroundColor: colors.bg }]}>
         <Text style={{ color: colors.sub }}>Không tìm thấy list đặt hàng.</Text>
-      </View>
+      </SafeAreaView>
     )
   }
 
@@ -238,6 +239,7 @@ export default function OrderDetailScreen() {
       style={[styles.container, { backgroundColor: colors.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <SafeAreaView style={styles.safeInner}>
       <View style={styles.headerRow}>
         <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
           <Text style={{ color: colors.text }}>←</Text>
@@ -438,12 +440,14 @@ export default function OrderDetailScreen() {
           </TouchableOpacity>
         )}
       </View>
+      </SafeAreaView>
     </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingTop: 12 },
+  container: { flex: 1 },
+  safeInner: { flex: 1, paddingTop: 12 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16 },
   backBtn: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
