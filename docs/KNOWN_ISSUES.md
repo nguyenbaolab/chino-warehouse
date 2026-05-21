@@ -435,3 +435,34 @@
 - **Trạng thái:** Deferred — Phase 3
 
 ---
+
+### [KI-041] Bàn phím che bottom sheet thêm/sửa kho trên APK (LocationManagementScreen)
+
+- **Mức độ:** Medium
+- **File liên quan:** `app.json`, `screens/LocationManagementScreen.tsx`
+- **Mô tả:** Modal tạo/sửa kho (RN `Modal` + bottom sheet) — bàn phím che field nhập trên APK standalone. `edgeToEdgeEnabled: true` → Android không tự resize window khi bàn phím mở. `ScrollView` + `scrollToEnd` onFocus **không đủ** trong Modal context. Expo Go có thể không tái hiện (native context khác).
+- **Root cause:** `edgeToEdgeEnabled` + giới hạn `KeyboardAvoidingView` trong RN Modal trên APK.
+- **Hướng fix:** Thêm `"softwareKeyboardLayoutMode": "pan"` vào block `android` trong `app.json`; thêm lại `KeyboardAvoidingView` trong Modal (`behavior`: iOS `padding`, Android `height`).
+- **Trạng thái:** Open
+
+---
+
+### [KI-042] SafeAreaView không đồng nhất toàn app
+
+- **Mức độ:** Medium
+- **File liên quan:** `App.tsx`, `screens/ProductsScreen.tsx`, `screens/NotificationsScreen.tsx`, `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, các màn đang dùng `SafeAreaView`, `components/ZoneDetailSheet.tsx`
+- **Mô tả:** `App.tsx` không có `SafeAreaProvider`. Bốn màn thiếu safe area: `ProductsScreen`, `NotificationsScreen`, `OrderListScreen`, `OrderDetailScreen`. Các màn khác có thể import `SafeAreaView` từ `react-native` thay vì `react-native-safe-area-context`.
+- **Hướng fix:** (1) `SafeAreaProvider` wrap ngoài `NavigationContainer` trong `App.tsx`. (2) Thêm `SafeAreaView` vào 4 màn thiếu. (3) Chuẩn hóa import `SafeAreaView` từ `react-native-safe-area-context`. (4) `ZoneDetailSheet`: `paddingBottom` đủ cho thanh điều hướng Android.
+- **Trạng thái:** Open
+
+---
+
+### [KI-043] ZoneDetailSheet — modal chuyển lô không scroll + thiếu margin nút
+
+- **Mức độ:** Low
+- **File liên quan:** `components/ZoneDetailSheet.tsx`
+- **Mô tả:** Modal **Chuyển lô hàng** không có `ScrollView` → không scroll vùng chọn zone/tầng đích khi bàn phím hoặc danh sách dài. Nút Hủy/Xác nhận (`editActions`) sát field phía trên, thiếu `marginTop`.
+- **Hướng fix:** Bọc nội dung modal trong `ScrollView`; thêm `marginTop` cho `moveActions` / `editActions`.
+- **Trạng thái:** Open
+
+---

@@ -371,3 +371,25 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quyết định:** Không thêm server backend (Node/Python) — dùng Supabase Auth + RLS làm tầng bảo mật duy nhất.
 - **Lý do:** App nội bộ quy mô nhỏ (~3 user), không public. Supabase thiết kế cho mô hình client-direct — an toàn khi Auth + RLS cấu hình đúng. Thêm server backend chỉ cần thiết khi: app public, cần tích hợp hệ thống ngoài (ERP), hoặc business logic phức tạp không encode được bằng RLS.
 - **Hệ quả:** Anon key bundle trong APK nhưng vô hại; mọi security phụ thuộc vào RLS + Auth đúng; RBAC thêm vào Phase 3 khi super app có yêu cầu.
+
+---
+
+### Truyền locate intent qua Zustand store thay vì navigation params
+
+- **Ngày:** tháng 5/2026
+- **Vấn đề:** Từ `ProductDetailScreen` (stack tab Sản phẩm / Thông báo / …) cần mở tab **Kho** với kho + zone + search đã set sẵn.
+- **Các lựa chọn đã xem xét:**
+  1. Nested navigate + merge params xuống `MapMain` — dễ lỗi với bottom tabs và nhiều stack.
+  2. Global event bus — thêm abstraction không cần thiết.
+  3. **`locateIntent` trong `warehouseStore`** — **được chọn**.
+- **Quyết định:** `setLocateIntent({ productName, locationId, zoneId, productColor })`; `MapScreen` đọc khi focus, áp dụng highlight + search + panel expanded, rồi `clearLocateIntent`.
+- **Lý do:** Cross-tab trong React Navigation không truyền params sạch; store đơn giản, một nguồn sự thật, Map tự clear sau xử lý.
+
+---
+
+### Xóa chuyển lô khỏi ProductDetailScreen, giữ ở ZoneDetailSheet
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Gỡ nút **→**, modal chuyển lô, `openMoveLot` / `confirmMoveLot` khỏi `ProductDetailScreen`. Chuyển lô vẫn đầy đủ trong `ZoneDetailSheet` (ngữ cảnh đúng zone trên bản đồ). Slot giữa ✏️ và 🗑️ dùng nút **📍** (vị trí trên Map).
+- **Lý do:** Tránh duplicate UX chuyển lô; tính năng “tìm vị trí hàng trên bản đồ” có giá trị hơn tại màn chi tiết SP.
+- **Thay thế đã xem xét:** Giữ cả hai nơi — từ chối (trùng chức năng, chiếm chỗ UI).

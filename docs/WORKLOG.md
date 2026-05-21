@@ -4,6 +4,24 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs + in progress: KI-041–043, FEATURE-A/B/C
+
+**Trạng thái:** In progress (docs cập nhật trước; code chưa implement đợt này)
+
+| Nhóm | Mô tả ngắn |
+|------|------------|
+| **KI-041** | Keyboard che modal tạo/sửa kho APK — `softwareKeyboardLayoutMode: pan` + KAV trong Modal |
+| **KI-042** | SafeAreaProvider + SafeAreaView 4 màn thiếu + chuẩn hóa `react-native-safe-area-context` |
+| **KI-043** | ZoneDetailSheet modal chuyển lô: ScrollView + margin nút |
+| **FEATURE-A** | AddInventory: 📷 search SP qua `searchByBarcode` + hint |
+| **FEATURE-B** | AddInventory: nút "Tạo mới '[tên]'" inline với suggestion |
+| **FEATURE-C** | ProductDetail: 📍 locate qua `locateIntent` → Map; bỏ chuyển lô tại PDS |
+
+- **Docs:** `KNOWN_ISSUES.md` (KI-041–043), `REQUIREMENTS.md` (F07, F15, §9), `CONTEXT.md` (§2–§5), `DECISIONS.md`, `WORKLOG.md`
+- **Code (planned):** `app.json`, `LocationManagementScreen.tsx`, `App.tsx`, screens SafeArea, `ZoneDetailSheet.tsx`, `AddInventoryScreen.tsx`, `ProductDetailScreen.tsx`, `MapScreen.tsx`, `warehouseStore.ts`, `types/index.ts`
+
+---
+
 ## [tháng 5/2026] — fix: LocationManagementScreen modal keyboard (Android APK)
 
 - **Nguyên nhân:** `KeyboardAvoidingView` trong RN `Modal` không hoạt động trên APK + `edgeToEdgeEnabled`.
