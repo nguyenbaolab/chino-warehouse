@@ -498,7 +498,8 @@
 - **File liên quan:** `screens/MapScreen.tsx`, `stores/warehouseStore.ts`
 - **Mô tả:** Khi tạo zone bị lag hoặc double-tap → zone bị đặt chồng lên zone đã có, phải xóa thủ công và đặt lại.
 - **Hướng fix:** Debounce/lock nút tạo zone; validate server-side không có zone cells trùng tọa độ trước khi INSERT.
-- **Trạng thái:** Open — Phase 3 (A3)
+- **Trạng thái:** Resolved
+- **Đã fix:** `MapScreen` — `isSavingZone` chống double-tap nút Lưu; `hasSelectedCellsOverlap()` kiểm tra client-side trước mở modal và trước `addZone`/`updateZone`.
 
 ---
 

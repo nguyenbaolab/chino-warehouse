@@ -143,6 +143,7 @@ export default function MapScreen() {
   const [zoneName, setZoneName] = useState('')
   const [tierCount, setTierCount] = useState('1')
   const [selectedColor, setSelectedColor] = useState(ZONE_COLORS[0])
+  const [isSavingZone, setIsSavingZone] = useState(false)
   const scannedProductName: string | undefined = route.params?.scannedProductName
   const scannedBarcode: string | undefined = route.params?.scannedBarcode
   const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
@@ -364,9 +365,24 @@ export default function MapScreen() {
     }
   }
 
+  function hasSelectedCellsOverlap(): boolean {
+    const occupiedCells = new Set<string>()
+    for (const zone of zones) {
+      if (editingZone && zone.id === editingZone.id) continue
+      for (const cell of zone.cells ?? []) {
+        occupiedCells.add(`${cell.row},${cell.col}`)
+      }
+    }
+    return selectedCells.some((c) => occupiedCells.has(`${c.row},${c.col}`))
+  }
+
   function confirmSelection() {
     if (selectedCells.length === 0) {
       Alert.alert('Chưa chọn ô', 'Hãy chọn ít nhất 1 ô trên lưới.')
+      return
+    }
+    if (hasSelectedCellsOverlap()) {
+      Alert.alert('Không thể tạo zone', 'Một hoặc nhiều ô đã được zone khác sử dụng.')
       return
     }
     setZoneName(editingZone?.name ?? '')
@@ -376,32 +392,45 @@ export default function MapScreen() {
   }
 
   async function saveZone() {
+    if (isSavingZone) return
     if (!zoneName.trim()) {
       Alert.alert('Lỗi', 'Tên zone không được để trống')
       return
     }
     if (!selectedLocationId) return
-    if (editingZone) {
-      await updateZone(editingZone.id, {
-        name: zoneName.trim(),
-        cells: selectedCells,
-        tier_count: parseInt(tierCount) || 1,
-        has_tiers: parseInt(tierCount) > 1,
-        color: selectedColor,
-      })
-    } else {
-      await addZone({
-        name: zoneName.trim(),
-        cells: selectedCells,
-        tier_count: parseInt(tierCount) || 1,
-        color: selectedColor,
-        location_id: selectedLocationId,
-      })
+    if (hasSelectedCellsOverlap()) {
+      Alert.alert('Không thể tạo zone', 'Một hoặc nhiều ô đã được zone khác sử dụng.')
+      return
     }
-    setNameModal(false)
-    setMode('normal')
-    setSelectedCells([])
-    setEditingZone(null)
+
+    setIsSavingZone(true)
+    try {
+      if (editingZone) {
+        await updateZone(editingZone.id, {
+          name: zoneName.trim(),
+          cells: selectedCells,
+          tier_count: parseInt(tierCount) || 1,
+          has_tiers: parseInt(tierCount) > 1,
+          color: selectedColor,
+        })
+      } else {
+        await addZone({
+          name: zoneName.trim(),
+          cells: selectedCells,
+          tier_count: parseInt(tierCount) || 1,
+          color: selectedColor,
+          location_id: selectedLocationId,
+        })
+      }
+      setNameModal(false)
+      setMode('normal')
+      setSelectedCells([])
+      setEditingZone(null)
+    } catch {
+      Alert.alert('Lỗi', 'Không thể tạo zone, vui lòng thử lại.')
+    } finally {
+      setIsSavingZone(false)
+    }
   }
 
   function handleZoneTap(zone: Zone) {
@@ -848,7 +877,11 @@ export default function MapScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={saveZone}
-                style={[styles.modalSaveBtn, { backgroundColor: colors.accent }]}
+                disabled={isSavingZone}
+                style={[
+                  styles.modalSaveBtn,
+                  { backgroundColor: colors.accent, opacity: isSavingZone ? 0.5 : 1 },
+                ]}
               >
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>Lưu</Text>
               </TouchableOpacity>

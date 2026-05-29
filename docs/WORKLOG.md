@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: A3 / KI-046 — MapScreen zone overlap + anti double-tap
+
+- **Code:** `screens/MapScreen.tsx` — `isSavingZone` + try/catch/finally trong `saveZone`; nút Lưu `disabled` + opacity 0.5; `hasSelectedCellsOverlap()` trong `confirmSelection` và `saveZone`.
+- **Docs:** `KNOWN_ISSUES.md` (KI-046 Resolved), `HANDOFF_3.md` (tick A3).
+
+---
+
 ## [tháng 5/2026] — fix: A2 / KI-045 — ProductsScreen search + clear
 
 - **Code:** `screens/ProductsScreen.tsx` — `clearSearch()` reset `selectedZoneId`; `filteredProducts` match tên hoặc barcode từ `inventoryEntries` trong store.
