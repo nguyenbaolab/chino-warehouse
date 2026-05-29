@@ -15,7 +15,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
+import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { getDisplayColor, getDisplayColorContextFromEntry } from '../utils/statusUtils'
 import { supabase } from '../lib/supabase'
 import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone, AuditLog } from '../types'
 
@@ -57,6 +59,7 @@ export default function ProductDetailScreen() {
   const route = useRoute()
   const { productId, scannedLotBarcode, scannedLotId, scannedLotBarcodeAt } = route.params as ProductDetailRouteParams
   const { colors } = useThemeStore()
+  const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
   const {
     zones,
     locations,
@@ -547,13 +550,13 @@ export default function ProductDetailScreen() {
               1,
               product?.warning_days ?? 30
             )
-            const dotColor = status === 'expired'
-              ? colors.statusExpired
-              : status === 'critical'
-                ? colors.statusCritical
-                : status === 'warning'
-                  ? colors.statusWarning
-                  : colors.statusOk
+            const dotColor = getDisplayColor(
+              status,
+              colors,
+              expiryWarningEnabled,
+              lowStockWarningEnabled,
+              getDisplayColorContextFromEntry(lot, product ?? lot.product),
+            )
             const zoneResolved = (lot.zone as Zone | undefined) ?? zones.find((z) => z.id === lot.zone_id)
             const locationName = zoneResolved?.location_id
               ? locations.find((l) => l.id === zoneResolved.location_id)?.name

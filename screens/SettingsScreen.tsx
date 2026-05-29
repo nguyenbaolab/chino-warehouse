@@ -26,7 +26,6 @@ export default function SettingsScreen() {
   const {
     expiryWarningEnabled,
     lowStockWarningEnabled,
-    loadWarningSettings,
     toggleExpiryWarning,
     toggleLowStockWarning,
   } = useWarningStore()
@@ -49,9 +48,8 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     loadTheme()
-    void loadWarningSettings()
     void fetchLocations()
-  }, [loadTheme, loadWarningSettings, fetchLocations])
+  }, [loadTheme, fetchLocations])
 
   useEffect(() => {
     if (selectedLocationId) fetchZones(selectedLocationId)

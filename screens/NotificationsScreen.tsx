@@ -19,6 +19,12 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 import { formatExpiryDate, getExpiryStatus, InventoryEntry, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
+import {
+  getDisplayColor,
+  getDisplayColorContextFromEntry,
+  getExpiryCardHeaderColors,
+  getExpiryLotSurfaceColors,
+} from '../utils/statusUtils'
 
 const PAGE_SIZE = 10
 
@@ -51,7 +57,6 @@ export default function NotificationsScreen() {
   const {
     expiryWarningEnabled,
     lowStockWarningEnabled,
-    loadWarningSettings,
   } = useWarningStore()
   const {
     locations,
@@ -82,8 +87,7 @@ export default function NotificationsScreen() {
   useEffect(() => {
     fetchLocations()
     fetchProducts()
-    void loadWarningSettings()
-  }, [fetchLocations, fetchProducts, loadWarningSettings])
+  }, [fetchLocations, fetchProducts])
 
   useEffect(() => {
     if (filterLocationId) return
@@ -341,16 +345,10 @@ export default function NotificationsScreen() {
     ({ item }: { item: ExpiryCard }) => {
       const isExpanded = expandedProducts[item.productId] === true
       const hasAnyPriceReduced = item.lots.some((lot) => lot.isPriceReduced)
-      const showExpiryColors = expiryWarningEnabled
-      const bgColor =
-        showExpiryColors && item.hasExpiredLot ? colors.badgeExpiredBg : colors.card
-      const borderColor =
-        showExpiryColors && item.hasExpiredLot ? colors.statusExpired : colors.border
-      const titleDotColor = showExpiryColors
-        ? item.hasExpiredLot
-          ? colors.statusExpired
-          : colors.statusWarning
-        : colors.sub
+      const headerColors = getExpiryCardHeaderColors(item.hasExpiredLot, colors, expiryWarningEnabled)
+      const bgColor = headerColors.backgroundColor
+      const borderColor = headerColors.borderColor
+      const titleDotColor = headerColors.dotColor
       return (
         <View style={[styles.item, { backgroundColor: bgColor, borderColor }]}>
           <TouchableOpacity activeOpacity={0.8} onPress={() => toggleExpanded(item.productId)}>
@@ -381,22 +379,16 @@ export default function NotificationsScreen() {
           {isExpanded && (
             <View style={styles.lotList}>
               {item.lots.map((lot) => {
-                const lotBg = showExpiryColors
-                  ? lot.status === 'expired'
-                    ? colors.badgeExpiredBg
-                    : colors.badgeWarningBg
-                  : colors.bg
-                const lotBorder = showExpiryColors
-                  ? lot.status === 'expired'
-                    ? colors.statusExpired
-                    : colors.statusWarning
-                  : colors.border
+                const lotSurface = getExpiryLotSurfaceColors(lot.status, colors, expiryWarningEnabled)
                 return (
                   <TouchableOpacity
                     key={lot.entryId}
                     activeOpacity={0.75}
                     onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
-                    style={[styles.lotRow, { backgroundColor: lotBg, borderColor: lotBorder }]}
+                    style={[
+                      styles.lotRow,
+                      { backgroundColor: lotSurface.backgroundColor, borderColor: lotSurface.borderColor },
+                    ]}
                   >
                     <View style={styles.lotInfo}>
                       <Text style={[styles.lotText, { color: colors.text }]}>
@@ -430,11 +422,18 @@ export default function NotificationsScreen() {
 
   const renderLowStockItem = useCallback(
     ({ item }: { item: LowStockCard }) => {
-      const titleDotColor = lowStockWarningEnabled
-        ? item.totalBoxes <= 0
-          ? colors.statusCritical
-          : colors.statusWarning
-        : colors.sub
+      const lowStockStatus = item.totalBoxes <= 0 ? 'critical' : 'warning'
+      const titleDotColor = getDisplayColor(
+        lowStockStatus,
+        colors,
+        expiryWarningEnabled,
+        lowStockWarningEnabled,
+        {
+          quantity_boxes: item.totalBoxes,
+          low_warning_boxes: item.lowWarningBoxes,
+          low_critical_boxes: 1,
+        },
+      )
       return (
       <View style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
@@ -470,7 +469,7 @@ export default function NotificationsScreen() {
       </View>
       )
     },
-    [colors, lowStockWarningEnabled, toggleDiscontinued]
+    [colors, expiryWarningEnabled, lowStockWarningEnabled, toggleDiscontinued]
   )
 
   return (

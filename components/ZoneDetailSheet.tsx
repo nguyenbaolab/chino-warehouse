@@ -17,7 +17,9 @@ import {
 } from 'react-native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useWarningStore } from '../stores/warningStore'
 import { formatExpiryDate, getCombinedStatus, getCombinedStatusRank, InventoryEntry, Zone } from '../types'
+import { getDisplayColor, getDisplayColorContextFromEntry } from '../utils/statusUtils'
 import { normalizeText } from '../utils/textUtils'
 
 type ZoneDetailSheetProps = {
@@ -107,6 +109,7 @@ export default function ZoneDetailSheet({
   scrollToProductId,
 }: ZoneDetailSheetProps) {
   const { colors } = useThemeStore()
+  const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
   const insets = useSafeAreaInsets()
   const {
     zones,
@@ -511,13 +514,15 @@ export default function ZoneDetailSheet({
                     worstLot?.product?.low_critical_boxes ?? 1,
                     worstLot?.product?.warning_days ?? 30
                   )
-                  const worstColor = worstStatus === 'expired'
-                    ? colors.statusExpired
-                    : worstStatus === 'critical'
-                      ? colors.statusCritical
-                      : worstStatus === 'warning'
-                        ? colors.statusWarning
-                        : colors.statusOk
+                  const worstColor = getDisplayColor(
+                    worstStatus,
+                    colors,
+                    expiryWarningEnabled,
+                    lowStockWarningEnabled,
+                    worstLot
+                      ? getDisplayColorContextFromEntry(worstLot, worstLot.product)
+                      : undefined,
+                  )
 
                   const isEditingProductName = editingProductId === group.productId
                   const productNameHasChanges =
@@ -576,13 +581,13 @@ export default function ZoneDetailSheet({
                             lot.product?.low_critical_boxes ?? 1,
                             lot.product?.warning_days ?? 30
                           )
-                          const lotColor = lotStatus === 'expired'
-                            ? colors.statusExpired
-                            : lotStatus === 'critical'
-                              ? colors.statusCritical
-                              : lotStatus === 'warning'
-                                ? colors.statusWarning
-                                : colors.statusOk
+                          const lotColor = getDisplayColor(
+                            lotStatus,
+                            colors,
+                            expiryWarningEnabled,
+                            lowStockWarningEnabled,
+                            getDisplayColorContextFromEntry(lot, lot.product),
+                          )
                           const lotExpiry = formatExpiryDate(lot.expiry_date)
                           return (
                             <View key={lot.id}>

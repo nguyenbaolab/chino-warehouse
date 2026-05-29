@@ -162,7 +162,7 @@ README.md
 
 **Actions:** `loadWarningSettings`, `toggleExpiryWarning`, `toggleLowStockWarning`.
 
-**UI:** `SettingsScreen` (2 `Switch`); `NotificationsScreen` tắt màu cảnh báo + ẩn count trên checkbox filter khi setting tương ứng tắt (danh sách SP vẫn hiện).
+**UI:** `SettingsScreen` (2 `Switch`); `loadWarningSettings()` gọi một lần trong `App.tsx`. Màu cảnh báo qua `utils/statusUtils.ts` → `getDisplayColor` / `getDisplayColorForEntry` trên **ProductsScreen**, **MapScreen** (highlight zone + chấm auto), **ZoneDetailSheet**, **ProductDetailScreen**, **NotificationsScreen** (ẩn count filter khi tắt; danh sách SP vẫn hiện).
 
 ---
 

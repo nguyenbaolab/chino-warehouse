@@ -81,7 +81,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [x] **B5** — Hint text AddInventoryScreen
 - [x] **B6** — Sửa tên SP inline tại ZoneDetailSheet (nút ✏️/✕/✓ trên hàng lô; lưu bằng ✓)
 - [x] **B7** — Map search/locate → mở ZoneDetailSheet + scroll/highlight SP
-- [x] **B8** — Global toggle cảnh báo hết hạn/hết hàng (Settings + AsyncStorage)
+- [x] **B8** — Toggle cảnh báo global (Settings + `warningStore` → toàn app qua `statusUtils`)
 
 ### Group C — Realtime
 

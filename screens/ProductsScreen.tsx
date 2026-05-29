@@ -18,7 +18,13 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useWarningStore } from '../stores/warningStore'
 import { CombinedStatus, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, Product, Zone } from '../types'
+import {
+  getDisplayColor,
+  getDisplayColorContextFromEntry,
+  getWorstDisplayColorForEntries,
+} from '../utils/statusUtils'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
 
@@ -40,6 +46,7 @@ export default function ProductsScreen() {
     fetchCategories,
   } = useWarehouseStore()
   const { colors } = useThemeStore()
+  const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
   const [searchQuery, setSearchQuery] = useState('')
   /** null = Tất cả zone (chỉ khi đã chọn kho cụ thể) */
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
@@ -282,15 +289,14 @@ export default function ProductsScreen() {
 
   function renderProductItem({ item: product }: { item: Product }) {
     const groupedLots = getGroupedLotsByExpiry(product.id)
-    const worstStatus = getWorstStatusForProduct(product.id)
     const categoryLine = getProductCategoryLine(product)
-    const productDotColor = worstStatus === 'expired'
-      ? colors.statusExpired
-      : worstStatus === 'critical'
-        ? colors.statusCritical
-        : worstStatus === 'warning'
-          ? colors.statusWarning
-          : colors.statusOk
+    const productDotColor = getWorstDisplayColorForEntries(
+      groupedLots,
+      product,
+      colors,
+      expiryWarningEnabled,
+      lowStockWarningEnabled,
+    )
     return (
       <TouchableOpacity
         style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -346,13 +352,13 @@ export default function ProductsScreen() {
                 product.low_critical_boxes ?? 1,
                 product.warning_days ?? 30
               )
-              const dotColor = lotStatus === 'expired'
-                ? colors.statusExpired
-                : lotStatus === 'critical'
-                  ? colors.statusCritical
-                  : lotStatus === 'warning'
-                    ? colors.statusWarning
-                    : colors.statusOk
+              const dotColor = getDisplayColor(
+                lotStatus,
+                colors,
+                expiryWarningEnabled,
+                lowStockWarningEnabled,
+                getDisplayColorContextFromEntry(lot, product),
+              )
               return (
                 <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
                   <View style={[styles.lotDot, { backgroundColor: dotColor }]} />

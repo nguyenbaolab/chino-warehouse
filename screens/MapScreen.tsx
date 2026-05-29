@@ -8,6 +8,8 @@ import { useFocusEffect, useIsFocused, useNavigation, useRoute } from '@react-na
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore, type ThemeColors } from '../stores/themeStore'
 import { Zone, ZoneCell, InventoryEntry, Product, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
+import { useWarningStore } from '../stores/warningStore'
+import { getDisplayColorForEntry } from '../utils/statusUtils'
 import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
 const CELL_SIZE = 56
@@ -53,6 +55,8 @@ type SearchLocationGroup = {
 function buildHighlightMapFromEntries(
   entries: InventoryEntry[],
   colors: ThemeColors,
+  expiryWarningEnabled: boolean,
+  lowStockWarningEnabled: boolean,
 ): Map<string, string> {
   const map = new Map<string, string>()
   const worstRankByZone = new Map<string, number>()
@@ -62,28 +66,14 @@ function buildHighlightMapFromEntries(
     const prevWorst = worstRankByZone.get(entry.zone_id) ?? Infinity
     if (rank < prevWorst) {
       worstRankByZone.set(entry.zone_id, rank)
-      map.set(entry.zone_id, getEntryHighlightColor(entry, entry.product, colors))
+      const product = entry.product
+      map.set(
+        entry.zone_id,
+        getDisplayColorForEntry(entry, product, colors, expiryWarningEnabled, lowStockWarningEnabled),
+      )
     }
   }
   return map
-}
-
-function getEntryHighlightColor(
-  entry: InventoryEntry,
-  product: Product | undefined,
-  colors: ThemeColors,
-): string {
-  const status = getCombinedStatus(
-    entry.quantity_boxes,
-    entry.expiry_date,
-    product?.low_warning_boxes ?? 3,
-    product?.low_critical_boxes ?? 1,
-    product?.warning_days ?? 30,
-  )
-  if (status === 'expired') return colors.statusExpired
-  if (status === 'critical') return colors.statusCritical
-  if (status === 'warning') return colors.statusWarning
-  return colors.statusOk
 }
 
 /** Rank thấp = tệ hơn (1 expired … 4 ok) — dùng ascending để đỏ → vàng → xanh. */
@@ -123,6 +113,7 @@ export default function MapScreen() {
     fetchLocations, fetchProducts, fetchInventoryByLocation, setSelectedLocation, clearLocateIntent, addZone, updateZone, deleteZone, searchProducts, searchInventoryByBarcode
   } = useWarehouseStore()
   const { colors, loadTheme } = useThemeStore()
+  const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InventoryEntry[]>([])
@@ -196,7 +187,9 @@ export default function MapScreen() {
           setSearchQuery(scannedBarcode)
           setSearchResults(results)
           setIsSearchPanelExpanded(false)
-          setHighlightedZones(buildHighlightMapFromEntries(results, colors))
+          setHighlightedZones(
+            buildHighlightMapFromEntries(results, colors, expiryWarningEnabled, lowStockWarningEnabled),
+          )
         }
       } else if (scannedProductName) {
         if (!cancelled) {
@@ -254,7 +247,9 @@ export default function MapScreen() {
     const results = sortSearchResultsByStatusRank(merged)
     setSearchResults(results)
     setIsSearchPanelExpanded(false)
-    setHighlightedZones(buildHighlightMapFromEntries(results, colors))
+    setHighlightedZones(
+      buildHighlightMapFromEntries(results, colors, expiryWarningEnabled, lowStockWarningEnabled),
+    )
   }
 
   useFocusEffect(
@@ -343,7 +338,9 @@ export default function MapScreen() {
     }
     searchRequestRef.current += 1
     setSelectedLocation(locationId)
-    setHighlightedZones(buildHighlightMapFromEntries([entry], colors))
+    setHighlightedZones(
+      buildHighlightMapFromEntries([entry], colors, expiryWarningEnabled, lowStockWarningEnabled),
+    )
     setSearchResults([])
     setSearchQuery('')
 
@@ -535,17 +532,39 @@ export default function MapScreen() {
         }
       }
       if (worstStatus !== 'ok') {
-        const dotColor = worstStatus === 'expired'
-          ? colors.statusExpired
-          : worstStatus === 'critical'
-            ? colors.statusCritical
-            : colors.statusWarning
-        map.set(zone.id, dotColor)
+        let worstEntry: InventoryEntry | undefined
+        for (const entry of zoneEntries) {
+          const product = entry.product ?? products.find((p) => p.id === entry.product_id)
+          const status = getCombinedStatus(
+            entry.quantity_boxes,
+            entry.expiry_date,
+            product?.low_warning_boxes ?? 3,
+            product?.low_critical_boxes ?? 1,
+            product?.warning_days ?? 30,
+          )
+          if (status === worstStatus) {
+            worstEntry = entry
+            break
+          }
+        }
+        if (worstEntry) {
+          const product = worstEntry.product ?? products.find((p) => p.id === worstEntry!.product_id)
+          map.set(
+            zone.id,
+            getDisplayColorForEntry(
+              worstEntry,
+              product,
+              colors,
+              expiryWarningEnabled,
+              lowStockWarningEnabled,
+            ),
+          )
+        }
       }
     }
 
     return map
-  }, [zones, inventoryEntries, products, colors.statusCritical, colors.statusExpired, colors.statusWarning])
+  }, [zones, inventoryEntries, products, colors, expiryWarningEnabled, lowStockWarningEnabled])
 
   function renderGrid() {
     const rows = []
@@ -786,7 +805,13 @@ export default function MapScreen() {
                 </Text>
                 {group.entries.map((entry) => {
                   const product = entry.product
-                  const dotColor = getEntryHighlightColor(entry, product, colors)
+                  const dotColor = getDisplayColorForEntry(
+                    entry,
+                    product,
+                    colors,
+                    expiryWarningEnabled,
+                    lowStockWarningEnabled,
+                  )
                   return (
                     <TouchableOpacity
                       key={entry.id}

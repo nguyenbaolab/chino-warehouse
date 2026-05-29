@@ -8,6 +8,7 @@ import { Text, View, ActivityIndicator, StyleSheet, AppState, Alert } from 'reac
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import type { Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { useWarningStore } from './stores/warningStore'
 import ConfigErrorScreen from './components/ConfigErrorScreen'
 import LoginScreen from './screens/LoginScreen'
 
@@ -204,6 +205,10 @@ export default function App() {
       clearInterval(intervalRef.current)
       intervalRef.current = null
     }
+  }, [])
+
+  useEffect(() => {
+    void useWarningStore.getState().loadWarningSettings()
   }, [])
 
   useEffect(() => {

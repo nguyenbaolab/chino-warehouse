@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — UX: B8 mở rộng warning toggles toàn app
+
+- **Code:** `utils/statusUtils.ts` (`getDisplayColor`, `getDisplayColorForEntry`, …); Products, Map, ZoneDetailSheet, ProductDetail, Notifications; `App.tsx` `loadWarningSettings`.
+- **Docs:** `CONTEXT.md` §4b, `REQUIREMENTS.md`, `HANDOFF_3.md` (mô tả B8).
+
+---
+
 ## [tháng 5/2026] — UX: B7 refine — highlight 1s, reset map khi đóng sheet
 
 - **Code:** `ZoneDetailSheet` highlight nhóm SP 1000ms; `MapScreen.closeZoneDetail` — nếu mở từ search (`autoScrollProductId`) thì xóa highlight zone + panel search khi đóng.
