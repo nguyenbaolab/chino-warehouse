@@ -101,6 +101,7 @@ export default function ZoneLayoutEditorScreen() {
   const { locations, zones, fetchZones, batchUpdateZoneCells } = useWarehouseStore()
 
   const locationId: string | undefined = route.params?.locationId
+  const markOwnMutation: (() => void) | undefined = route.params?.markOwnMutation
   const location = useMemo(
     () => locations.find((l) => l.id === locationId),
     [locations, locationId]
@@ -252,6 +253,7 @@ export default function ZoneLayoutEditorScreen() {
       navigation.goBack()
       return
     }
+    markOwnMutation?.()
     const { error } = await batchUpdateZoneCells(locationId, updates)
     if (error) {
       Alert.alert('Lỗi', error)

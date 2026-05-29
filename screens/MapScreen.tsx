@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
+import { supabase } from '../lib/supabase'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore, type ThemeColors } from '../stores/themeStore'
 import { Zone, ZoneCell, InventoryEntry, Product, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
@@ -14,6 +15,7 @@ import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
 const CELL_SIZE = 56
 const DEFAULT_GRID = 6
+const REALTIME_DEBOUNCE_MS = 2000
 
 // Tìm ô trung tâm của zone để hiện tên
 function getCenterCell(cells: ZoneCell[]): ZoneCell {
@@ -110,7 +112,17 @@ export default function MapScreen() {
   const isFocused = useIsFocused()
   const {
     locations, selectedLocationId, zones, products, inventoryEntries, isLoading,
-    fetchLocations, fetchProducts, fetchInventoryByLocation, setSelectedLocation, clearLocateIntent, addZone, updateZone, deleteZone, searchProducts, searchInventoryByBarcode
+    fetchLocations,
+    fetchProducts,
+    fetchZones,
+    fetchInventoryByLocation,
+    setSelectedLocation,
+    clearLocateIntent,
+    addZone,
+    updateZone,
+    deleteZone,
+    searchProducts,
+    searchInventoryByBarcode,
   } = useWarehouseStore()
   const { colors, loadTheme } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
@@ -121,6 +133,18 @@ export default function MapScreen() {
   const [isSearchPanelExpanded, setIsSearchPanelExpanded] = useState(false)
   const searchRequestRef = useRef(0)
   const lastLocateAtRef = useRef<number | undefined>(undefined)
+  const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const ownMutationRef = useRef(false)
+  const ownMutationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const markOwnMutation = useCallback(() => {
+    ownMutationRef.current = true
+    if (ownMutationTimerRef.current) clearTimeout(ownMutationTimerRef.current)
+    ownMutationTimerRef.current = setTimeout(() => {
+      ownMutationRef.current = false
+      ownMutationTimerRef.current = null
+    }, 3000)
+  }, [])
 
   const [mode, setMode] = useState<'normal' | 'selecting'>('normal')
   const [selectedCells, setSelectedCells] = useState<ZoneCell[]>([])
@@ -221,6 +245,44 @@ export default function MapScreen() {
     // Đồng bộ lot hiện tại của các zone để auto hiển thị chấm đỏ/vàng (1 query / kho)
     void fetchInventoryByLocation(selectedLocationId)
   }, [isFocused, selectedLocationId, zones, fetchInventoryByLocation])
+
+  useEffect(() => {
+    if (!selectedLocationId) return
+
+    const scheduleRefresh = () => {
+      if (ownMutationRef.current) return
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
+      realtimeDebounceRef.current = setTimeout(() => {
+        realtimeDebounceRef.current = null
+        void fetchZones(selectedLocationId)
+        void fetchInventoryByLocation(selectedLocationId)
+      }, REALTIME_DEBOUNCE_MS)
+    }
+
+    const channel = supabase
+      .channel(`map-realtime-${selectedLocationId}-${Date.now()}`, {
+        config: { private: true }, // SEC-08
+      })
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'zones' },
+        scheduleRefresh,
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'inventory_entries' },
+        scheduleRefresh,
+      )
+      .subscribe()
+
+    return () => {
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
+      realtimeDebounceRef.current = null
+      if (ownMutationTimerRef.current) clearTimeout(ownMutationTimerRef.current)
+      ownMutationTimerRef.current = null
+      void supabase.removeChannel(channel)
+    }
+  }, [selectedLocationId, fetchZones, fetchInventoryByLocation])
 
   async function handleSearch(text: string) {
     const requestId = ++searchRequestRef.current
@@ -434,6 +496,7 @@ export default function MapScreen() {
 
     setIsSavingZone(true)
     try {
+      markOwnMutation()
       if (editingZone) {
         await updateZone(editingZone.id, {
           name: zoneName.trim(),
@@ -489,6 +552,7 @@ export default function MapScreen() {
       { text: 'Hủy', style: 'cancel' },
       {
         text: 'Xóa', style: 'destructive', onPress: async () => {
+          markOwnMutation()
           const ok = await deleteZone(tappedZone.id)
           if (!ok) Alert.alert('Không thể xóa', 'Zone này vẫn còn hàng.')
         }
@@ -666,7 +730,10 @@ export default function MapScreen() {
               ]}
               onPress={() => {
                 if (!selectedLocationId) return
-                navigation.navigate('ZoneLayoutEditor', { locationId: selectedLocationId })
+                navigation.navigate('ZoneLayoutEditor', {
+                  locationId: selectedLocationId,
+                  markOwnMutation,
+                })
               }}
               disabled={!selectedLocationId}
             >
@@ -973,6 +1040,7 @@ export default function MapScreen() {
         visible={zoneDetailVisible}
         zone={tappedZone}
         onClose={closeZoneDetail}
+        onBeforeMutation={markOwnMutation}
         navigation={navigation}
         scannedLotBarcode={scannedZoneLotBarcode}
         scannedLotId={scannedZoneLotId}

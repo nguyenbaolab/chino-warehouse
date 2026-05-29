@@ -10,7 +10,7 @@ Phase 3 tập trung vào **ổn định vận hành multi-user** và **hoàn thi
 
 - **Bug fixes (A1–A5):** format hạn DD/MM/YYYY, ProductsScreen barcode/search, zone overlap khi tạo zone, Map search theo barcode text, conflict detection (`updated_at`).
 - **UX (B1–B8):** badge giảm giá, chuyển lô cùng zone, `normalizeText`, MM/YYYY→ngày 1, hint AddInventory, sửa tên tại ZoneDetail, Map scan→sheet scroll, toggle cảnh báo global trong Settings.
-- **Realtime (C1):** subscribe `zones` — Map tự cập nhật khi user khác thêm/sửa/xóa zone.
+- **Realtime (C1):** subscribe `zones` + `inventory_entries` trên Map; migration `zones` vào `supabase_realtime`; bỏ qua refetch 3s sau mutation local.
 - **Hoàn thiện Phase 2:** F27 (2 tab + PDF), F28 (`discontinued_reason`), F08 (ảnh SP + Storage).
 - **Tính năng mới:** F23 Dashboard, F24 RBAC (`user_profiles`).
 - **Security:** SEC-05 (`maxLength`), SEC-06 (generic errors).
@@ -32,7 +32,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 | File | Mô tả |
 |------|-------|
-| *(Điền dần khi tạo migration)* | |
+| `20260528120000_add_zones_to_realtime.sql` | `ALTER PUBLICATION supabase_realtime ADD TABLE zones` (C1) |
 
 ---
 
@@ -85,7 +85,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 ### Group C — Realtime
 
-- [ ] **C1** — Realtime zones trên MapScreen (`private: true`)
+- [x] **C1** — Realtime `zones` + `inventory_entries` trên MapScreen (`private: true`, debounce 2s); migration publication `zones`; `markOwnMutation` skip self-refresh
 
 ### Group D — Feature Completion
 

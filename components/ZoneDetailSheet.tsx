@@ -26,6 +26,8 @@ type ZoneDetailSheetProps = {
   visible: boolean
   zone: Zone | null
   onClose: () => void
+  /** Gọi trước mutation (MapScreen C1 — bỏ qua Realtime self-refresh) */
+  onBeforeMutation?: () => void
   navigation: any
   scannedLotBarcode?: string
   scannedLotId?: string
@@ -102,6 +104,7 @@ export default function ZoneDetailSheet({
   visible,
   zone,
   onClose,
+  onBeforeMutation,
   navigation,
   scannedLotBarcode,
   scannedLotId,
@@ -304,6 +307,7 @@ export default function ZoneDetailSheet({
       Alert.alert('Thiếu thông tin', 'Vui lòng chọn zone đích và tầng đích.')
       return
     }
+    onBeforeMutation?.()
     await updateInventoryEntry(moveLot.id, { zone_id: targetZoneId, tier: targetTier })
     setMoveLot(null)
     await reloadCurrentZoneInventory()

@@ -4,6 +4,21 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — C1 fix — zones publication migration + skip self-refresh
+
+- **Migration:** `supabase/migrations/20260528120000_add_zones_to_realtime.sql` — `ALTER PUBLICATION supabase_realtime ADD TABLE zones;` (zone changes không fire Realtime trước đây vì bảng chưa trong publication; `inventory_entries` đã có).
+- **Code:** `MapScreen` — `ownMutationRef` + `markOwnMutation()` (3s) bỏ qua `scheduleRefresh` khi mutation local; gọi trước `saveZone` / `deleteZone`; truyền `markOwnMutation` sang `ZoneLayoutEditor` và `ZoneDetailSheet` (`onBeforeMutation` trước `confirmMoveLot`).
+- **Docs:** `HANDOFF_3.md` note C1.
+
+---
+
+## [tháng 5/2026] — Realtime: C1 — MapScreen zones + inventory_entries
+
+- **Code:** `screens/MapScreen.tsx` — Supabase Realtime (`private: true`), debounce 2s, refetch `fetchZones` + `fetchInventoryByLocation` khi đổi kho / có event.
+- **Docs:** `CONTEXT.md` §3, `HANDOFF_3.md` (tick C1). Ghi chú: không có KI riêng cho C1 (xem WORKLOG).
+
+---
+
 ## [tháng 5/2026] — UX: B8 mở rộng warning toggles toàn app
 
 - **Code:** `utils/statusUtils.ts` (`getDisplayColor`, `getDisplayColorForEntry`, …); Products, Map, ZoneDetailSheet, ProductDetail, Notifications; `App.tsx` `loadWarningSettings`.

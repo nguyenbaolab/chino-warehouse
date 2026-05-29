@@ -1,8 +1,11 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 2.5 | Tháng 5/2026
+-- Phiên bản: 2.6 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v2.5:
+--   - C1: thêm zones vào supabase_realtime publication
+--     để Realtime postgres_changes hoạt động trên bảng zones
 -- Thay đổi so với v2.4:
 --   - SEC-11 v2: audit_trigger_fn() nhúng _product_name, _zone_name,
 --     _location_name vào JSONB (prefix _ = metadata display, không phải
@@ -207,6 +210,26 @@ ON realtime.messages
 FOR INSERT
 TO authenticated
 WITH CHECK (true);
+
+
+-- ============================================================
+-- REALTIME PUBLICATION
+-- ============================================================
+
+-- Cho phép postgres_changes subscribe trên các bảng cần Realtime
+-- inventory_entries: đã có sẵn từ trước (Settings/Discontinued dùng)
+-- zones: thêm mới (C1 — MapScreen realtime update cho multi-user)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND tablename = 'zones'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE zones;
+  END IF;
+END;
+$$;
 
 
 -- ============================================================

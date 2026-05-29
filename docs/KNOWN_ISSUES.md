@@ -108,6 +108,7 @@
 - **Hướng fix:** Kiểm tra spec F17; thêm `supabase.channel(...).on('postgres_changes', ...)` và cập nhật Zustand khi có sự kiện.
 - **Trạng thái:** Resolved
 - **Đã fix:** Supabase Realtime hoạt động đúng — thiết bị B tự cập nhật trong vài giây khi thiết bị A thay đổi dữ liệu, không cần reload.
+- **Ghi chú (Phase 3 / C1):** `MapScreen` — subscription `zones` + `inventory_entries` (`private: true`, debounce 2s → `fetchZones` + `fetchInventoryByLocation`). Không có mã KI riêng cho C1; xem `WORKLOG.md`.
 
 ---
 
