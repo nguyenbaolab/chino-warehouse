@@ -79,7 +79,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [x] **B3** — `normalizeText` bỏ qua ký tự đặc biệt (`utils/textUtils.ts`)
 - [ ] **B4** — MM/YYYY → ngày 1 (`ZoneDetailSheet`, `AddInventoryScreen`)
 - [x] **B5** — Hint text AddInventoryScreen
-- [x] **B6** — Sửa tên SP inline tại ZoneDetailSheet
+- [x] **B6** — Sửa tên SP inline tại ZoneDetailSheet (nút ✏️/✕/✓ trên hàng lô; lưu bằng ✓)
 - [ ] **B7** — Map barcode → mở ZoneDetailSheet + scroll tới SP
 - [x] **B8** — Global toggle cảnh báo hết hạn/hết hàng (Settings + AsyncStorage)
 

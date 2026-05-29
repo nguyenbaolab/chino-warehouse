@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — UX: B6 refine — đổi UX nút sửa tên SP
+
+- **Code:** `ZoneDetailSheet` — nút ✏️/✕/✓ trên hàng action mỗi lô; tên SP header chỉ `Text`/`TextInput`; lưu chỉ khi bấm ✓ (không blur).
+- **Docs:** `HANDOFF_3.md` (mô tả B6).
+
+---
+
 ## [tháng 5/2026] — UX: B6 — sửa tên SP inline tại ZoneDetailSheet
 
 - **Code:** `warehouseStore.updateProductName`; `ZoneDetailSheet` — long-press tên SP → `TextInput`, blur/submit lưu; hint ✏️.

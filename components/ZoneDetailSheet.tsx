@@ -128,6 +128,7 @@ export default function ZoneDetailSheet({
   const [showTierOptions, setShowTierOptions] = useState(false)
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [productNameInput, setProductNameInput] = useState('')
+  const [originalProductName, setOriginalProductName] = useState('')
 
   useEffect(() => {
     if (!visible || !zone) return
@@ -295,6 +296,30 @@ export default function ZoneDetailSheet({
     await reloadCurrentZoneInventory()
   }
 
+  function startEditProductName(productId: string, productName: string) {
+    setEditingProductId(productId)
+    setProductNameInput(productName)
+    setOriginalProductName(productName)
+  }
+
+  function cancelEditProductName() {
+    setProductNameInput(originalProductName)
+    setEditingProductId(null)
+  }
+
+  function handleProductNameEditButtonPress(productId: string, productName: string) {
+    const isEditingThis = editingProductId === productId
+    if (!isEditingThis) {
+      startEditProductName(productId, productName)
+      return
+    }
+    if (productNameInput !== originalProductName) {
+      void handleSaveProductName(productId)
+    } else {
+      cancelEditProductName()
+    }
+  }
+
   useEffect(() => {
     if (!visible || !scannedLotBarcodeAt || !scannedLotId) return
     const target = entries.find((entry) => entry.id === scannedLotId)
@@ -441,17 +466,24 @@ export default function ZoneDetailSheet({
                         ? colors.statusWarning
                         : colors.statusOk
 
+                  const isEditingProductName = editingProductId === group.productId
+                  const productNameHasChanges =
+                    isEditingProductName && productNameInput !== originalProductName
+                  const productNameEditIcon = !isEditingProductName
+                    ? '✏️'
+                    : productNameHasChanges
+                      ? '✓'
+                      : '✕'
+
                   return (
                     <View key={group.productId} style={[styles.groupWrap, { borderBottomColor: colors.border }]}>
                       <View style={styles.itemRow}>
                         <View style={styles.itemMain}>
-                          {editingProductId === group.productId ? (
+                          {isEditingProductName ? (
                             <TextInput
                               value={productNameInput}
                               onChangeText={setProductNameInput}
                               autoFocus
-                              onBlur={() => void handleSaveProductName(group.productId)}
-                              onSubmitEditing={() => void handleSaveProductName(group.productId)}
                               style={[
                                 styles.itemName,
                                 styles.itemNameInput,
@@ -459,20 +491,9 @@ export default function ZoneDetailSheet({
                               ]}
                             />
                           ) : (
-                            <TouchableOpacity
-                              onPress={() => navigation.navigate('ProductDetail', { productId: group.productId })}
-                              onLongPress={() => {
-                                setEditingProductId(group.productId)
-                                setProductNameInput(group.productName)
-                              }}
-                              activeOpacity={0.7}
-                              style={styles.itemNameTouchable}
-                            >
-                              <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                                {group.productName}
-                              </Text>
-                              <Text style={[styles.itemNameEditHint, { color: colors.sub }]}>✏️</Text>
-                            </TouchableOpacity>
+                            <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                              {group.productName}
+                            </Text>
                           )}
                           <Text style={[styles.itemQty, { color: colors.sub }]}>{group.totalBoxes} thùng</Text>
                         </View>
@@ -510,6 +531,21 @@ export default function ZoneDetailSheet({
                                 </View>
                                 <View style={styles.lotRight}>
                                   <View style={[styles.expiryDot, { backgroundColor: lotColor }]} />
+                                  <TouchableOpacity
+                                    style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                    onPress={() =>
+                                      handleProductNameEditButtonPress(group.productId, group.productName)
+                                    }
+                                  >
+                                    <Text
+                                      style={[
+                                        styles.deleteLotBtnText,
+                                        productNameHasChanges ? { color: '#22C55E' } : null,
+                                      ]}
+                                    >
+                                      {productNameEditIcon}
+                                    </Text>
+                                  </TouchableOpacity>
                                   <TouchableOpacity
                                     style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
                                     onPress={() => openMoveLot(lot)}
@@ -815,16 +851,6 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 14,
     fontWeight: '600',
-  },
-  itemNameTouchable: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-    minWidth: 0,
-  },
-  itemNameEditHint: {
-    fontSize: 12,
   },
   itemNameInput: {
     borderBottomWidth: 1,
