@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — ProductDetailScreen B6: ngưỡng ✏️/✕/✓
+
+- **Code:** Section Chi tiết — `warning_days` + `low_warning_boxes` chỉ sửa khi bấm ✏️; một nút ✕/✓ lưu cả hai; bỏ 2 nút Lưu riêng và `isSavingProduct`.
+
+---
+
 ## [tháng 5/2026] — fix: expiry TextInput keyboardType default
 
 - **Code:** `ZoneDetailSheet`, `ProductDetailScreen` — ô hạn DD/MM/YYYY dùng `keyboardType="default"` (bỏ numeric). `AddInventoryScreen` ô hạn không có numeric, không đổi.

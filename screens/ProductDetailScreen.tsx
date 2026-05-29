@@ -82,7 +82,9 @@ export default function ProductDetailScreen() {
   const [editLotBarcode, setEditLotBarcode] = useState('')
   const [editWarningDays, setEditWarningDays] = useState('30')
   const [editLowWarningBoxes, setEditLowWarningBoxes] = useState('3')
-  const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const [isEditingThresholds, setIsEditingThresholds] = useState(false)
+  const [originalWarningDays, setOriginalWarningDays] = useState('')
+  const [originalLowWarningBoxes, setOriginalLowWarningBoxes] = useState('')
   const [detailsExpanded, setDetailsExpanded] = useState(false)
 
   const [showIssuesOnly, setShowIssuesOnly] = useState(false)
@@ -95,6 +97,10 @@ export default function ProductDetailScreen() {
     () => lots.reduce((sum, lot) => sum + lot.quantity_boxes, 0),
     [lots]
   )
+
+  const hasThresholdChanged =
+    editWarningDays !== originalWarningDays ||
+    editLowWarningBoxes !== originalLowWarningBoxes
 
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
@@ -176,9 +182,32 @@ export default function ProductDetailScreen() {
 
   function handleConflictReview() {
     setEditingLotId(null)
+    setIsEditingThresholds(false)
     setShowCategoryL1Picker(false)
     setShowCategoryL2Picker(false)
     void loadData()
+  }
+
+  async function handleThresholdEditButtonPress() {
+    if (!isEditingThresholds) {
+      setOriginalWarningDays(editWarningDays)
+      setOriginalLowWarningBoxes(editLowWarningBoxes)
+      setIsEditingThresholds(true)
+      return
+    }
+    if (!hasThresholdChanged) {
+      setEditWarningDays(originalWarningDays)
+      setEditLowWarningBoxes(originalLowWarningBoxes)
+      setIsEditingThresholds(false)
+      return
+    }
+    const okWarning = await handleSaveWarningDays()
+    const okLow = await handleSaveLowWarningBoxes()
+    if (okWarning && okLow) {
+      setOriginalWarningDays(editWarningDays)
+      setOriginalLowWarningBoxes(editLowWarningBoxes)
+      setIsEditingThresholds(false)
+    }
   }
 
   function openInlineEdit(lot: InventoryEntry) {
@@ -281,18 +310,17 @@ export default function ProductDetailScreen() {
     ])
   }
 
-  async function handleSaveWarningDays() {
-    if (!product) return
+  async function handleSaveWarningDays(): Promise<boolean> {
+    if (!product) return false
     const productId = product.id
     const warningDays = Number(editWarningDays)
     if (!Number.isFinite(warningDays) || warningDays <= 0) {
       Alert.alert('Ngưỡng cảnh báo không hợp lệ', 'Ngưỡng cảnh báo (ngày) phải lớn hơn 0.')
-      return
+      return false
     }
     const nextWarningDays = Math.floor(warningDays)
 
     async function doSaveWarningDays() {
-      setIsSavingProduct(true)
       const { data: updated } = await supabase
         .from('products')
         .update({ warning_days: nextWarningDays })
@@ -306,7 +334,6 @@ export default function ProductDetailScreen() {
           products: s.products.map((p) => (p.id === updated.id ? updated : p)),
         }))
       }
-      setIsSavingProduct(false)
     }
 
     const { hasConflict, changedByName } = await checkConflict(
@@ -324,24 +351,24 @@ export default function ProductDetailScreen() {
           { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveWarningDays() },
         ],
       )
-      return
+      return false
     }
 
     await doSaveWarningDays()
+    return true
   }
 
-  async function handleSaveLowWarningBoxes() {
-    if (!product) return
+  async function handleSaveLowWarningBoxes(): Promise<boolean> {
+    if (!product) return false
     const productId = product.id
     const lowWarningBoxes = Number(editLowWarningBoxes)
     if (!Number.isFinite(lowWarningBoxes) || lowWarningBoxes < 1) {
       Alert.alert('Ngưỡng không hợp lệ', 'Ngưỡng cảnh báo sắp hết (thùng) phải lớn hơn hoặc bằng 1.')
-      return
+      return false
     }
     const nextLowWarningBoxes = Math.floor(lowWarningBoxes)
 
     async function doSaveLowWarningBoxes() {
-      setIsSavingProduct(true)
       const updated = await updateProductStockThresholds(productId, {
         low_warning_boxes: nextLowWarningBoxes,
       })
@@ -349,7 +376,6 @@ export default function ProductDetailScreen() {
         setProduct(updated)
         setProductSnapshot(updated.updated_at ?? productSnapshot)
       }
-      setIsSavingProduct(false)
     }
 
     const { hasConflict, changedByName } = await checkConflict(
@@ -367,10 +393,11 @@ export default function ProductDetailScreen() {
           { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveLowWarningBoxes() },
         ],
       )
-      return
+      return false
     }
 
     await doSaveLowWarningBoxes()
+    return true
   }
 
   async function applyCategoryL1(level1Id: string | null) {
@@ -563,38 +590,64 @@ export default function ProductDetailScreen() {
           </TouchableOpacity>
           {detailsExpanded && (
             <>
+              <View style={styles.thresholdsHeaderRow}>
+                <Text style={[styles.infoText, { color: colors.sub, marginTop: 0, flex: 1 }]}>
+                  Ngưỡng cảnh báo · sắp hết
+                </Text>
+                <TouchableOpacity
+                  style={[styles.thresholdEditBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => void handleThresholdEditButtonPress()}
+                >
+                  <Text
+                    style={[
+                      styles.thresholdEditBtnText,
+                      isEditingThresholds && hasThresholdChanged ? { color: '#22C55E' } : null,
+                    ]}
+                  >
+                    {!isEditingThresholds ? '✏️' : hasThresholdChanged ? '✓' : '✕'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               <Text style={[styles.infoText, { color: colors.sub }]}>
                 Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
               </Text>
-              <View style={styles.warningEditRow}>
-                <TextInput
-                  style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-                  value={editWarningDays}
-                  onChangeText={setEditWarningDays}
-                  keyboardType="numeric"
-                  placeholder="30"
-                  placeholderTextColor={colors.sub}
-                />
-                <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveWarningDays}>
-                  <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={[
+                  styles.warningInput,
+                  {
+                    backgroundColor: colors.bg,
+                    color: colors.text,
+                    borderColor: colors.border,
+                    opacity: isEditingThresholds ? 1 : 0.65,
+                  },
+                ]}
+                value={editWarningDays}
+                onChangeText={setEditWarningDays}
+                editable={isEditingThresholds}
+                keyboardType="numeric"
+                placeholder="30"
+                placeholderTextColor={colors.sub}
+              />
               <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
                 Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
               </Text>
-              <View style={styles.warningEditRow}>
-                <TextInput
-                  style={[styles.warningInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
-                  value={editLowWarningBoxes}
-                  onChangeText={setEditLowWarningBoxes}
-                  keyboardType="numeric"
-                  placeholder="3"
-                  placeholderTextColor={colors.sub}
-                />
-                <TouchableOpacity style={[styles.warningSaveBtn, { backgroundColor: colors.accent }]} onPress={handleSaveLowWarningBoxes}>
-                  <Text style={{ color: colors.card, fontWeight: '700' }}>{isSavingProduct ? '...' : 'Lưu'}</Text>
-                </TouchableOpacity>
-              </View>
+              <TextInput
+                style={[
+                  styles.warningInput,
+                  {
+                    backgroundColor: colors.bg,
+                    color: colors.text,
+                    borderColor: colors.border,
+                    opacity: isEditingThresholds ? 1 : 0.65,
+                  },
+                ]}
+                value={editLowWarningBoxes}
+                onChangeText={setEditLowWarningBoxes}
+                editable={isEditingThresholds}
+                keyboardType="numeric"
+                placeholder="3"
+                placeholderTextColor={colors.sub}
+              />
 
               <Text style={[styles.infoText, { color: colors.sub, marginTop: 12 }]}>Nhóm (Cấp 1)</Text>
               <Pressable
@@ -947,8 +1000,23 @@ const styles = StyleSheet.create({
   issuesToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   productName: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
   infoText: { fontSize: 13, marginTop: 2 },
-  warningEditRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
-  warningInput: { flex: 1, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  thresholdsHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  thresholdEditBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thresholdEditBtnText: { fontSize: 11 },
+  warningInput: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, marginTop: 8 },
   scanBarcodeBtn: {
     width: 40,
     height: 36,
@@ -959,7 +1027,6 @@ const styles = StyleSheet.create({
   scanBarcodeText: { fontSize: 16 },
   lotBarcodeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   lotBarcodeInput: { flex: 1, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
-  warningSaveBtn: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9 },
   addLotBtn: { borderRadius: 10, paddingVertical: 12, alignItems: 'center', marginBottom: 14 },
   addLotBtnText: { fontWeight: '700' },
   lotWrap: { borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 10 },
