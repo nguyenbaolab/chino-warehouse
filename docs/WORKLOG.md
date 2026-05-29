@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix(ZoneDetailSheet): KAV behavior padding + bottom inset
+
+- **Code:** `KeyboardAvoidingView` `behavior="padding"` (bỏ `height` trên Android trong Modal); `paddingBottom: Math.max(insets.bottom + 8, 24)`.
+
+---
+
 ## [tháng 5/2026] — .cursorrules: Quy tắc Schema (migration + schema.sql)
 
 - **Rule:** Mỗi migration mới trong `supabase/migrations/` bắt buộc đồng bộ `schema.sql` (DDL/section, bump version, changelog đầu file).

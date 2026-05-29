@@ -5,7 +5,6 @@ import {
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -449,10 +448,10 @@ export default function ZoneDetailSheet({
             {
               backgroundColor: colors.card,
               borderColor: colors.border,
-              paddingBottom: Math.max(insets.bottom, 12),
+              paddingBottom: Math.max(insets.bottom + 8, 24),
             },
           ]}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior="padding"
         >
           <View style={[styles.zoneColorBar, { backgroundColor: zone?.color ?? colors.accent }]} />
 
