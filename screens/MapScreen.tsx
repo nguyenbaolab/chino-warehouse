@@ -231,13 +231,26 @@ export default function MapScreen() {
   async function handleSearch(text: string) {
     const requestId = ++searchRequestRef.current
     setSearchQuery(text)
-    if (text.trim().length < 2) {
+    const trimmed = text.trim()
+    if (trimmed.length < 2) {
       setSearchResults([])
       setHighlightedZones(new Map())
       return
     }
-    const results = sortSearchResultsByStatusRank(await searchProducts(text))
+
+    const [nameResults, barcodeResults] = await Promise.all([
+      searchProducts(trimmed),
+      searchInventoryByBarcode(trimmed),
+    ])
     if (requestId !== searchRequestRef.current) return
+
+    const seen = new Set<string>()
+    const merged = [...(nameResults ?? []), ...(barcodeResults ?? [])].filter((e) => {
+      if (seen.has(e.id)) return false
+      seen.add(e.id)
+      return true
+    })
+    const results = sortSearchResultsByStatusRank(merged)
     setSearchResults(results)
     setIsSearchPanelExpanded(false)
     setHighlightedZones(buildHighlightMapFromEntries(results, colors))

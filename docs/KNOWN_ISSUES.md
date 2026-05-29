@@ -509,7 +509,8 @@
 - **File liên quan:** `screens/MapScreen.tsx`, `stores/warehouseStore.ts`
 - **Mô tả:** Thanh search trên MapScreen chỉ tìm theo tên SP (`normalizeText`). Gõ mã vạch không trả về kết quả.
 - **Hướng fix:** Trong `searchProducts`, nếu query khớp `inventory_entries.barcode` thì cũng trả về SP/lô tương ứng.
-- **Trạng thái:** Open — Phase 3 (A4)
+- **Trạng thái:** Resolved
+- **Đã fix:** `handleSearch` merge `searchProducts` + `searchInventoryByBarcode` (dedupe theo entry id); `searchInventoryByBarcode` dùng `ilike` partial match.
 
 ---
 

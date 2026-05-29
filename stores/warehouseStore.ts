@@ -500,7 +500,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     const { data } = await supabase
       .from('inventory_entries')
       .select('*, product:products(*), zone:zones(*)')
-      .eq('barcode', normalized)
+      .ilike('barcode', `%${normalized}%`)
 
     return (data || []) as InventoryEntry[]
   },

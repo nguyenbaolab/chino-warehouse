@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: A4 / KI-047 — MapScreen search theo barcode text
+
+- **Code:** `screens/MapScreen.tsx` — `handleSearch` merge kết quả tên + barcode, dedupe theo `entry.id`; `stores/warehouseStore.ts` — `searchInventoryByBarcode` dùng `ilike` partial.
+- **Docs:** `KNOWN_ISSUES.md` (KI-047 Resolved), `HANDOFF_3.md` (tick A4).
+
+---
+
 ## [tháng 5/2026] — fix: A3 / KI-046 — MapScreen zone overlap + anti double-tap
 
 - **Code:** `screens/MapScreen.tsx` — `isSavingZone` + try/catch/finally trong `saveZone`; nút Lưu `disabled` + opacity 0.5; `hasSelectedCellsOverlap()` trong `confirmSelection` và `saveZone`.

@@ -57,7 +57,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | KI-044 | Format nhập hạn DD/MM/YYYY ở ZoneDetailSheet inline edit | Medium | Resolved |
 | KI-045 | ProductsScreen: barcode X clear + barcode text search | High | Resolved |
 | KI-046 | Zone overlap race condition khi tạo zone | High | Resolved |
-| KI-047 | MapScreen text search không hỗ trợ barcode | Medium | Open — Phase 3 (A4) |
+| KI-047 | MapScreen text search không hỗ trợ barcode | Medium | Resolved |
 | KI-048 | Thiếu conflict detection khi nhiều user cùng sửa | Medium | Open — Phase 3 (A5) |
 
 ---
@@ -69,7 +69,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [x] **A1** — Format nhập hạn DD/MM/YYYY (`ZoneDetailSheet`) — KI-044
 - [x] **A2** — ProductsScreen barcode: X restore + incremental search + barcode text — KI-045
 - [x] **A3** — Zone overlap race condition (`MapScreen`, store) — KI-046
-- [ ] **A4** — MapScreen search barcode text — KI-047
+- [x] **A4** — MapScreen search barcode text — KI-047
 - [ ] **A5** — Conflict detection optimistic locking — KI-048
 
 ### Group B — UX Improvements
