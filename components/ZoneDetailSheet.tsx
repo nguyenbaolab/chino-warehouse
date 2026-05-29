@@ -550,9 +550,15 @@ export default function ZoneDetailSheet({
                               ]}
                             />
                           ) : (
-                            <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                              {group.productName}
-                            </Text>
+                            <TouchableOpacity
+                              onPress={() =>
+                                navigation.navigate('ProductDetail', { productId: group.productId })
+                              }
+                            >
+                              <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                                {group.productName}
+                              </Text>
+                            </TouchableOpacity>
                           )}
                           <Text style={[styles.itemQty, { color: colors.sub }]}>{group.totalBoxes} thùng</Text>
                         </View>

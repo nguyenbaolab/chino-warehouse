@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   KeyboardAvoidingView,
@@ -57,7 +57,6 @@ export default function ProductDetailScreen() {
     fetchLocations,
     updateInventoryEntry,
     deleteInventoryEntry,
-    updateProductStockThresholds,
     productCategoriesL1,
     productCategoriesL2,
     fetchCategories,
@@ -72,8 +71,8 @@ export default function ProductDetailScreen() {
   const [isLoading, setIsLoading] = useState(false)
 
   // A5: snapshot used for optimistic locking (conflict detection)
-  const [lotSnapshots, setLotSnapshots] = useState<Record<string, string>>({})
-  const [productSnapshot, setProductSnapshot] = useState<string>('')
+  const lotSnapshotsRef = useRef<Record<string, string>>({})
+  const productSnapshotRef = useRef('')
 
   const [editingLotId, setEditingLotId] = useState<string | null>(null)
   const [editQuantity, setEditQuantity] = useState('')
@@ -148,8 +147,8 @@ export default function ProductDetailScreen() {
 
     setProduct(nextProduct)
     setLots(nextLots)
-    setProductSnapshot(nextProduct?.updated_at ?? '')
-    setLotSnapshots(Object.fromEntries(nextLots.map((l) => [l.id, l.updated_at ?? ''])))
+    productSnapshotRef.current = nextProduct?.updated_at ?? ''
+    lotSnapshotsRef.current = Object.fromEntries(nextLots.map((l) => [l.id, l.updated_at ?? '']))
 
     setEditWarningDays(String(nextProduct?.warning_days ?? 30))
     setEditLowWarningBoxes(String(nextProduct?.low_warning_boxes ?? 3))
@@ -201,9 +200,8 @@ export default function ProductDetailScreen() {
       setIsEditingThresholds(false)
       return
     }
-    const okWarning = await handleSaveWarningDays()
-    const okLow = await handleSaveLowWarningBoxes()
-    if (okWarning && okLow) {
+    const ok = await handleSaveThresholds()
+    if (ok) {
       setOriginalWarningDays(editWarningDays)
       setOriginalLowWarningBoxes(editLowWarningBoxes)
       setIsEditingThresholds(false)
@@ -256,7 +254,7 @@ export default function ProductDetailScreen() {
         // keep fallback
       }
 
-      setLotSnapshots((prev) => ({ ...prev, [lotId]: nextUpdatedAt }))
+      lotSnapshotsRef.current = { ...lotSnapshotsRef.current, [lotId]: nextUpdatedAt }
       setLots((prev) =>
         prev.map((item) =>
           item.id === lotId
@@ -277,7 +275,7 @@ export default function ProductDetailScreen() {
     const { hasConflict, changedByName } = await checkConflict(
       'inventory_entries',
       lot.id,
-      lotSnapshots[lot.id],
+      lotSnapshotsRef.current[lot.id],
     )
 
     if (hasConflict) {
@@ -310,94 +308,76 @@ export default function ProductDetailScreen() {
     ])
   }
 
-  async function handleSaveWarningDays(): Promise<boolean> {
+  async function doSaveThresholds(days: number, boxes: number): Promise<boolean> {
     if (!product) return false
     const productId = product.id
-    const warningDays = Number(editWarningDays)
-    if (!Number.isFinite(warningDays) || warningDays <= 0) {
-      Alert.alert('Ngưỡng cảnh báo không hợp lệ', 'Ngưỡng cảnh báo (ngày) phải lớn hơn 0.')
-      return false
-    }
-    const nextWarningDays = Math.floor(warningDays)
 
-    async function doSaveWarningDays() {
-      const { data: updated } = await supabase
-        .from('products')
-        .update({ warning_days: nextWarningDays })
-        .eq('id', productId)
-        .select('*')
-        .single()
-      if (updated) {
-        setProduct(updated)
-        setProductSnapshot(updated.updated_at ?? productSnapshot)
-        useWarehouseStore.setState((s) => ({
-          products: s.products.map((p) => (p.id === updated.id ? updated : p)),
-        }))
-      }
-    }
+    const { data: updated, error } = await supabase
+      .from('products')
+      .update({ warning_days: days, low_warning_boxes: boxes })
+      .eq('id', productId)
+      .select('*')
+      .single()
 
-    const { hasConflict, changedByName } = await checkConflict(
-      'products',
-      productId,
-      productSnapshot,
-    )
-
-    if (hasConflict) {
-      Alert.alert(
-        'Có xung đột',
-        `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
-        [
-          { text: 'Xem lại', style: 'cancel', onPress: handleConflictReview },
-          { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveWarningDays() },
-        ],
-      )
+    if (error || !updated) {
+      Alert.alert('Lỗi', 'Không thể lưu, vui lòng thử lại.')
       return false
     }
 
-    await doSaveWarningDays()
+    setProduct(updated)
+    productSnapshotRef.current = updated.updated_at ?? productSnapshotRef.current
+    useWarehouseStore.setState((s) => ({
+      products: s.products.map((p) => (p.id === productId ? { ...p, ...updated } : p)),
+    }))
     return true
   }
 
-  async function handleSaveLowWarningBoxes(): Promise<boolean> {
+  async function handleSaveThresholds(): Promise<boolean> {
     if (!product) return false
     const productId = product.id
-    const lowWarningBoxes = Number(editLowWarningBoxes)
-    if (!Number.isFinite(lowWarningBoxes) || lowWarningBoxes < 1) {
-      Alert.alert('Ngưỡng không hợp lệ', 'Ngưỡng cảnh báo sắp hết (thùng) phải lớn hơn hoặc bằng 1.')
+    const days = parseInt(editWarningDays, 10)
+    const boxes = parseInt(editLowWarningBoxes, 10)
+
+    if (Number.isNaN(days) || days < 1) {
+      Alert.alert('Lỗi', 'Ngưỡng cảnh báo hạn phải là số nguyên dương.')
       return false
     }
-    const nextLowWarningBoxes = Math.floor(lowWarningBoxes)
-
-    async function doSaveLowWarningBoxes() {
-      const updated = await updateProductStockThresholds(productId, {
-        low_warning_boxes: nextLowWarningBoxes,
-      })
-      if (updated) {
-        setProduct(updated)
-        setProductSnapshot(updated.updated_at ?? productSnapshot)
-      }
+    if (Number.isNaN(boxes) || boxes < 1) {
+      Alert.alert('Lỗi', 'Ngưỡng cảnh báo tồn phải là số nguyên dương.')
+      return false
     }
 
     const { hasConflict, changedByName } = await checkConflict(
       'products',
       productId,
-      productSnapshot,
+      productSnapshotRef.current,
     )
-
     if (hasConflict) {
       Alert.alert(
         'Có xung đột',
-        `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
+        `Sản phẩm vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
         [
           { text: 'Xem lại', style: 'cancel', onPress: handleConflictReview },
-          { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveLowWarningBoxes() },
+          {
+            text: 'Ghi đè',
+            style: 'destructive',
+            onPress: () => {
+              void (async () => {
+                const ok = await doSaveThresholds(days, boxes)
+                if (ok) {
+                  setOriginalWarningDays(editWarningDays)
+                  setOriginalLowWarningBoxes(editLowWarningBoxes)
+                  setIsEditingThresholds(false)
+                }
+              })()
+            },
+          },
         ],
       )
       return false
     }
 
-    await doSaveLowWarningBoxes()
-    return true
+    return doSaveThresholds(days, boxes)
   }
 
   async function applyCategoryL1(level1Id: string | null) {
@@ -423,14 +403,14 @@ export default function ProductDetailScreen() {
       }
       if (res.product) {
         setProduct(res.product)
-        setProductSnapshot(res.product.updated_at ?? productSnapshot)
+        productSnapshotRef.current = res.product.updated_at ?? productSnapshotRef.current
       }
     }
 
     const { hasConflict, changedByName } = await checkConflict(
       'products',
       productId,
-      productSnapshot,
+      productSnapshotRef.current,
     )
 
     if (hasConflict) {
@@ -470,14 +450,14 @@ export default function ProductDetailScreen() {
       }
       if (res.product) {
         setProduct(res.product)
-        setProductSnapshot(res.product.updated_at ?? productSnapshot)
+        productSnapshotRef.current = res.product.updated_at ?? productSnapshotRef.current
       }
     }
 
     const { hasConflict, changedByName } = await checkConflict(
       'products',
       productId,
-      productSnapshot,
+      productSnapshotRef.current,
     )
 
     if (hasConflict) {

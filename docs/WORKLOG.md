@@ -4,6 +4,24 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — ZoneDetailSheet: tap tên SP → ProductDetail
+
+- **Code:** Header group — `TouchableOpacity` navigate `ProductDetail` + `productId` (khi không edit tên); nút ✏️ giữ nguyên.
+
+---
+
+## [tháng 5/2026] — fix(ProductDetailScreen): snapshot useRef + Ghi đè đóng edit
+
+- **Code:** `productSnapshotRef`, `lotSnapshotsRef` thay `useState`; `checkConflict` đọc ref mới; Ghi đè ngưỡng đóng edit mode khi save OK.
+
+---
+
+## [tháng 5/2026] — fix(ProductDetailScreen): handleSaveThresholds 1 query
+
+- **Code:** Gộp `warning_days` + `low_warning_boxes` → `handleSaveThresholds` / `doSaveThresholds` (1 `checkConflict`, 1 UPDATE); fix false positive conflict khi save tuần tự.
+
+---
+
 ## [tháng 5/2026] — ProductDetailScreen B6: ngưỡng ✏️/✕/✓
 
 - **Code:** Section Chi tiết — `warning_days` + `low_warning_boxes` chỉ sửa khi bấm ✏️; một nút ✕/✓ lưu cả hai; bỏ 2 nút Lưu riêng và `isSavingProduct`.
