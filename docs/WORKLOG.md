@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: A2 / KI-045 — ProductsScreen search + clear
+
+- **Code:** `screens/ProductsScreen.tsx` — `clearSearch()` reset `selectedZoneId`; `filteredProducts` match tên hoặc barcode từ `inventoryEntries` trong store.
+- **Docs:** `KNOWN_ISSUES.md` (KI-045 Resolved), `HANDOFF_3.md` (tick A2).
+
+---
+
 ## [tháng 5/2026] — fix: A1 / KI-044 — ZoneDetailSheet hạn DD/MM/YYYY
 
 - **Code:** `components/ZoneDetailSheet.tsx` — inline edit lô: helper `isoExpiryToDisplay`, `parseDisplayDateToIso` (DD/MM/YYYY + MM/YYYY→ngày 1), `isValidDisplayDate`; lưu ISO qua `updateInventoryEntry`; xóa `isValidIsoDate`.

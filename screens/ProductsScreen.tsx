@@ -137,6 +137,7 @@ export default function ProductsScreen() {
   function clearSearch() {
     setSearchQuery('')
     setScannedLotId(null)
+    setSelectedZoneId(null)
   }
 
   function openEditProduct(productId: string) {
@@ -239,8 +240,21 @@ export default function ProductsScreen() {
     const normalizedQuery = normalizeText(searchQuery.trim())
     const hasZoneFilter = selectedZoneId != null
 
+    const barcodeMatchedProductIds = new Set(
+      inventoryEntries
+        .filter(
+          (e) =>
+            e.barcode &&
+            normalizeText(e.barcode).includes(normalizedQuery),
+        )
+        .map((e) => e.product_id),
+    )
+
     return products.filter((product) => {
-      const matchSearch = normalizedQuery.length === 0 || normalizeText(product.name).includes(normalizedQuery)
+      const matchSearch =
+        normalizedQuery.length === 0 ||
+        normalizeText(product.name).includes(normalizedQuery) ||
+        barcodeMatchedProductIds.has(product.id)
       if (!matchSearch) return false
       if (locationZoneSet) {
         const inLoc = inventoryEntries.some(

@@ -487,7 +487,8 @@
 - **File liên quan:** `screens/ProductsScreen.tsx`, `stores/warehouseStore.ts`
 - **Mô tả:** (1) Sau khi quét barcode lọc ra SP, bấm X → list không restore về đầy đủ. (2) Khi xóa từng ký tự, list không mở dần ra. (3) Ô search chưa hỗ trợ gõ mã vạch để tìm SP (chỉ tìm theo tên).
 - **Hướng fix:** Fix clear state khi X; incremental restore khi xóa ký tự; thêm barcode text search (so với `inventory_entries.barcode`).
-- **Trạng thái:** Open — Phase 3 (A2)
+- **Trạng thái:** Resolved
+- **Đã fix:** `clearSearch` thêm `setSelectedZoneId(null)`; `filteredProducts` match tên hoặc `inventoryEntries.barcode` (store đã load qua `fetchAllInventoryEntries` / `fetchInventoryByZone`).
 
 ---
 
