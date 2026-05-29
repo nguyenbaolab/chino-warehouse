@@ -33,6 +33,8 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | File | Mô tả |
 |------|-------|
 | `20260528120000_add_zones_to_realtime.sql` | `ALTER PUBLICATION supabase_realtime ADD TABLE zones` (C1) |
+| `20260529122000_add_updated_at_to_products.sql` | Thêm `products.updated_at` + trigger auto-update (A5) |
+| `20260529123000_add_updated_at_triggers.sql` | `BEFORE UPDATE` auto-update `updated_at` cho `inventory_entries` + `zones` (A5 fix) |
 
 ---
 
@@ -58,7 +60,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | KI-045 | ProductsScreen: barcode X clear + barcode text search | High | Resolved |
 | KI-046 | Zone overlap race condition khi tạo zone | High | Resolved |
 | KI-047 | MapScreen text search không hỗ trợ barcode | Medium | Resolved |
-| KI-048 | Thiếu conflict detection khi nhiều user cùng sửa | Medium | Open — Phase 3 (A5) |
+| KI-048 | Thiếu conflict detection khi nhiều user cùng sửa | Medium | Resolved — A5 (optimistic locking `updated_at`) |
 
 ---
 
@@ -70,7 +72,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [x] **A2** — ProductsScreen barcode: X restore + incremental search + barcode text — KI-045
 - [x] **A3** — Zone overlap race condition (`MapScreen`, store) — KI-046
 - [x] **A4** — MapScreen search barcode text — KI-047
-- [ ] **A5** — Conflict detection optimistic locking — KI-048
+- [x] **A5** — Conflict detection optimistic locking — KI-048
 
 ### Group B — UX Improvements
 

@@ -521,6 +521,9 @@
 - **File liên quan:** `stores/warehouseStore.ts`, `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`
 - **Mô tả:** Không có cơ chế phát hiện khi 2 user cùng sửa 1 record (`inventory_entries`, `zones`, `products`). User sau ghi đè mà không biết.
 - **Hướng fix:** Optimistic locking với `updated_at` — so sánh khi Save, Alert nếu có người sửa trước.
-- **Trạng thái:** Open — Phase 3 (A5)
+- **Trạng thái:** Resolved
+- **Đã fix:** Thêm `products.updated_at` + trigger auto-update; tạo helper `utils/conflictUtils.ts` để so sánh snapshot `updated_at` khi Save và Alert “Có xung đột” trước khi ghi đè. Áp dụng cho:
+  - `components/ZoneDetailSheet.tsx` (lưu lô `inventory_entries`)
+  - `screens/ProductDetailScreen.tsx` (lưu lô + warning_days/threshold/category trên `products`)
 
 ---

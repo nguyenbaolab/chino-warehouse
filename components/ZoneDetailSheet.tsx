@@ -21,6 +21,7 @@ import { useWarningStore } from '../stores/warningStore'
 import { formatExpiryDate, getCombinedStatus, getCombinedStatusRank, InventoryEntry, Zone } from '../types'
 import { getDisplayColor, getDisplayColorContextFromEntry } from '../utils/statusUtils'
 import { normalizeText } from '../utils/textUtils'
+import { checkConflict } from '../utils/conflictUtils'
 
 type ZoneDetailSheetProps = {
   visible: boolean
@@ -131,6 +132,7 @@ export default function ZoneDetailSheet({
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editLotBarcode, setEditLotBarcode] = useState('')
+  const [lotSnapshotUpdatedAt, setLotSnapshotUpdatedAt] = useState<string>('')
   const [moveLot, setMoveLot] = useState<InventoryEntry | null>(null)
   const [targetZoneId, setTargetZoneId] = useState<string | null>(null)
   const [targetTier, setTargetTier] = useState<number | null>(null)
@@ -245,6 +247,7 @@ export default function ZoneDetailSheet({
       return
     }
     setEditingLotId(entry.id)
+    setLotSnapshotUpdatedAt(entry.updated_at ?? '')
     setEditQuantity(String(entry.quantity_boxes))
     setEditExpiryDate(isoExpiryToDisplay(entry.expiry_date))
     setEditNotes(entry.notes ?? '')
@@ -262,15 +265,42 @@ export default function ZoneDetailSheet({
       return
     }
 
-    // Lưu lot đang sửa vào Supabase qua store
-    await updateInventoryEntry(entry.id, {
+    const payload = {
       quantity_boxes: quantity,
       expiry_date: parseDisplayDateToIso(editExpiryDate),
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
-    })
-    setEditingLotId(null)
-    await reloadCurrentZoneInventory()
+    }
+
+    async function doSaveLot(entryId: string, payloadToSend: Partial<InventoryEntry>) {
+      await updateInventoryEntry(entryId, payloadToSend)
+      setEditingLotId(null)
+      await reloadCurrentZoneInventory()
+    }
+
+    const { hasConflict, changedByName } = await checkConflict(
+      'inventory_entries',
+      entry.id,
+      lotSnapshotUpdatedAt,
+    )
+
+    if (hasConflict) {
+      Alert.alert(
+        'Có xung đột',
+        `Lô này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
+        [
+          { text: 'Xem lại', style: 'cancel' },
+          {
+            text: 'Ghi đè',
+            style: 'destructive',
+            onPress: () => void doSaveLot(entry.id, payload),
+          },
+        ],
+      )
+      return
+    }
+
+    await doSaveLot(entry.id, payload)
   }
 
   function handleDeleteLot(entry: InventoryEntry) {

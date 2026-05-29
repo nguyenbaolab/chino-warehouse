@@ -1,8 +1,13 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 2.6 | Tháng 5/2026
+-- Phiên bản: 2.8 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v2.7:
+--   - A5 fix: thêm BEFORE UPDATE trigger auto-update updated_at
+--     cho inventory_entries và zones
+-- Thay đổi so với v2.6:
+--   - A5: thêm updated_at + trigger auto-update cho bảng products
 -- Thay đổi so với v2.5:
 --   - C1: thêm zones vào supabase_realtime publication
 --     để Realtime postgres_changes hoạt động trên bảng zones
@@ -84,7 +89,8 @@ CREATE TABLE products (
   low_critical_boxes  INTEGER     NOT NULL DEFAULT 1,
   category_level1_id  UUID        REFERENCES product_categories_l1(id) ON DELETE SET NULL,
   category_level2_id  UUID        REFERENCES product_categories_l2(id) ON DELETE SET NULL,
-  created_at          TIMESTAMPTZ DEFAULT now()
+  created_at          TIMESTAMPTZ DEFAULT now(),
+  updated_at          TIMESTAMPTZ DEFAULT now()
 );
 
 -- 5. Inventory entries (lô hàng)
@@ -279,6 +285,49 @@ CREATE TRIGGER audit_inventory_entries
 CREATE TRIGGER audit_products
   AFTER INSERT OR UPDATE OR DELETE ON products
   FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
+
+-- ============================================================
+-- AUTO-UPDATE TRIGGERS (A5)
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION update_products_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS products_updated_at_trigger ON products;
+CREATE TRIGGER products_updated_at_trigger
+  BEFORE UPDATE ON products
+  FOR EACH ROW EXECUTE FUNCTION update_products_updated_at();
+
+CREATE OR REPLACE FUNCTION update_inventory_entries_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS inventory_entries_updated_at_trigger ON inventory_entries;
+CREATE TRIGGER inventory_entries_updated_at_trigger
+  BEFORE UPDATE ON inventory_entries
+  FOR EACH ROW EXECUTE FUNCTION update_inventory_entries_updated_at();
+
+CREATE OR REPLACE FUNCTION update_zones_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS zones_updated_at_trigger ON zones;
+CREATE TRIGGER zones_updated_at_trigger
+  BEFORE UPDATE ON zones
+  FOR EACH ROW EXECUTE FUNCTION update_zones_updated_at();
 
 
 -- ============================================================

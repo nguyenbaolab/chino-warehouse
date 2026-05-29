@@ -20,6 +20,7 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 import { getDisplayColor, getDisplayColorContextFromEntry } from '../utils/statusUtils'
 import { supabase } from '../lib/supabase'
 import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone, AuditLog } from '../types'
+import { checkConflict } from '../utils/conflictUtils'
 
 type ProductDetailRouteParams = {
   productId: string
@@ -79,6 +80,10 @@ export default function ProductDetailScreen() {
   const [product, setProduct] = useState<Product | null>(null)
   const [lots, setLots] = useState<InventoryEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
+
+  // A5: snapshot used for optimistic locking (conflict detection)
+  const [lotSnapshots, setLotSnapshots] = useState<Record<string, string>>({})
+  const [productSnapshot, setProductSnapshot] = useState<string>('')
 
   const [editingLotId, setEditingLotId] = useState<string | null>(null)
   const [editQuantity, setEditQuantity] = useState('')
@@ -142,10 +147,16 @@ export default function ProductDetailScreen() {
         .select('*, zone:zones(*)')
         .eq('product_id', productId),
     ])
-    setProduct(productData ?? null)
-    setLots((lotData as InventoryEntry[]) ?? [])
-    setEditWarningDays(String(productData?.warning_days ?? 30))
-    setEditLowWarningBoxes(String(productData?.low_warning_boxes ?? 3))
+    const nextProduct = productData ?? null
+    const nextLots = (lotData as InventoryEntry[]) ?? []
+
+    setProduct(nextProduct)
+    setLots(nextLots)
+    setProductSnapshot(nextProduct?.updated_at ?? '')
+    setLotSnapshots(Object.fromEntries(nextLots.map((l) => [l.id, l.updated_at ?? ''])))
+
+    setEditWarningDays(String(nextProduct?.warning_days ?? 30))
+    setEditLowWarningBoxes(String(nextProduct?.low_warning_boxes ?? 3))
     setIsLoading(false)
   }, [productId])
 
@@ -196,25 +207,66 @@ export default function ProductDetailScreen() {
       return
     }
 
-    // Lưu chỉnh sửa lot ngay tại màn chi tiết sản phẩm
-    await updateInventoryEntry(lot.id, {
+    const payload = {
       quantity_boxes: quantity,
       expiry_date: editExpiryDate.trim() || undefined,
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
-    })
-    setLots((prev) => prev.map((item) => (
-      item.id === lot.id
-        ? {
-            ...item,
-            quantity_boxes: quantity,
-            expiry_date: editExpiryDate.trim() || undefined,
-            notes: editNotes.trim() || undefined,
-            barcode: editLotBarcode.trim() || undefined,
-          }
-        : item
-    )))
-    setEditingLotId(null)
+    }
+
+    async function doSaveLot(lotId: string, payloadToSend: Partial<InventoryEntry>) {
+      await updateInventoryEntry(lotId, payloadToSend)
+
+      // Lấy updated_at mới để update snapshot, tránh prompt conflict lặp khi user bấm edit lại
+      let nextUpdatedAt = new Date().toISOString()
+      try {
+        const { data: row } = await supabase
+          .from('inventory_entries')
+          .select('updated_at')
+          .eq('id', lotId)
+          .maybeSingle()
+        if (row?.updated_at) nextUpdatedAt = row.updated_at
+      } catch {
+        // keep fallback
+      }
+
+      setLotSnapshots((prev) => ({ ...prev, [lotId]: nextUpdatedAt }))
+      setLots((prev) =>
+        prev.map((item) =>
+          item.id === lotId
+            ? {
+                ...item,
+                quantity_boxes: quantity,
+                expiry_date: payload.expiry_date,
+                notes: payload.notes,
+                barcode: payload.barcode,
+                updated_at: nextUpdatedAt,
+              }
+            : item,
+        ),
+      )
+      setEditingLotId(null)
+    }
+
+    const { hasConflict, changedByName } = await checkConflict(
+      'inventory_entries',
+      lot.id,
+      lotSnapshots[lot.id],
+    )
+
+    if (hasConflict) {
+      Alert.alert(
+        'Có xung đột',
+        `Lô này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
+        [
+          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveLot(lot.id, payload) },
+        ],
+      )
+      return
+    }
+
+    await doSaveLot(lot.id, payload)
   }
 
   function handleDeleteLot(lot: InventoryEntry) {
@@ -234,44 +286,99 @@ export default function ProductDetailScreen() {
 
   async function handleSaveWarningDays() {
     if (!product) return
+    const productId = product.id
     const warningDays = Number(editWarningDays)
     if (!Number.isFinite(warningDays) || warningDays <= 0) {
       Alert.alert('Ngưỡng cảnh báo không hợp lệ', 'Ngưỡng cảnh báo (ngày) phải lớn hơn 0.')
       return
     }
-    setIsSavingProduct(true)
-    const { data: updated } = await supabase
-      .from('products')
-      .update({ warning_days: Math.floor(warningDays) })
-      .eq('id', product.id)
-      .select('*')
-      .single()
-    if (updated) {
-      setProduct(updated)
-      useWarehouseStore.setState((s) => ({
-        products: s.products.map((p) => (p.id === updated.id ? updated : p)),
-      }))
+    const nextWarningDays = Math.floor(warningDays)
+
+    async function doSaveWarningDays() {
+      setIsSavingProduct(true)
+      const { data: updated } = await supabase
+        .from('products')
+        .update({ warning_days: nextWarningDays })
+        .eq('id', productId)
+        .select('*')
+        .single()
+      if (updated) {
+        setProduct(updated)
+        setProductSnapshot(updated.updated_at ?? productSnapshot)
+        useWarehouseStore.setState((s) => ({
+          products: s.products.map((p) => (p.id === updated.id ? updated : p)),
+        }))
+      }
+      setIsSavingProduct(false)
     }
-    setIsSavingProduct(false)
+
+    const { hasConflict, changedByName } = await checkConflict(
+      'products',
+      productId,
+      productSnapshot,
+    )
+
+    if (hasConflict) {
+      Alert.alert(
+        'Có xung đột',
+        `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
+        [
+          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveWarningDays() },
+        ],
+      )
+      return
+    }
+
+    await doSaveWarningDays()
   }
 
   async function handleSaveLowWarningBoxes() {
     if (!product) return
+    const productId = product.id
     const lowWarningBoxes = Number(editLowWarningBoxes)
     if (!Number.isFinite(lowWarningBoxes) || lowWarningBoxes < 1) {
       Alert.alert('Ngưỡng không hợp lệ', 'Ngưỡng cảnh báo sắp hết (thùng) phải lớn hơn hoặc bằng 1.')
       return
     }
-    setIsSavingProduct(true)
-    const updated = await updateProductStockThresholds(product.id, {
-      low_warning_boxes: Math.floor(lowWarningBoxes),
-    })
-    if (updated) setProduct(updated)
-    setIsSavingProduct(false)
+    const nextLowWarningBoxes = Math.floor(lowWarningBoxes)
+
+    async function doSaveLowWarningBoxes() {
+      setIsSavingProduct(true)
+      const updated = await updateProductStockThresholds(productId, {
+        low_warning_boxes: nextLowWarningBoxes,
+      })
+      if (updated) {
+        setProduct(updated)
+        setProductSnapshot(updated.updated_at ?? productSnapshot)
+      }
+      setIsSavingProduct(false)
+    }
+
+    const { hasConflict, changedByName } = await checkConflict(
+      'products',
+      productId,
+      productSnapshot,
+    )
+
+    if (hasConflict) {
+      Alert.alert(
+        'Có xung đột',
+        `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
+        [
+          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveLowWarningBoxes() },
+        ],
+      )
+      return
+    }
+
+    await doSaveLowWarningBoxes()
   }
 
   async function applyCategoryL1(level1Id: string | null) {
     if (!product) return
+    const productId = product.id
     setShowCategoryL1Picker(false)
     const prevL1 = product.category_level1_id ?? null
     const nextL1 = level1Id
@@ -279,35 +386,89 @@ export default function ProductDetailScreen() {
     if (nextL1 === prevL1 && (product.category_level2_id ?? null) === (nextL2 ?? null)) {
       return
     }
-    setCategorySaving(true)
-    const res = await updateProductCategory(product.id, {
-      category_level1_id: nextL1,
-      category_level2_id: nextL2,
-    })
-    setCategorySaving(false)
-    if (res.error) {
-      Alert.alert('Lỗi', res.error)
+    async function doApplyCategoryL1() {
+      setCategorySaving(true)
+      const res = await updateProductCategory(productId, {
+        category_level1_id: nextL1,
+        category_level2_id: nextL2,
+      })
+      setCategorySaving(false)
+      if (res.error) {
+        Alert.alert('Lỗi', res.error)
+        return
+      }
+      if (res.product) {
+        setProduct(res.product)
+        setProductSnapshot(res.product.updated_at ?? productSnapshot)
+      }
+    }
+
+    const { hasConflict, changedByName } = await checkConflict(
+      'products',
+      productId,
+      productSnapshot,
+    )
+
+    if (hasConflict) {
+      Alert.alert(
+        'Có xung đột',
+        `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
+        [
+          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Ghi đè', style: 'destructive', onPress: () => void doApplyCategoryL1() },
+        ],
+      )
       return
     }
-    if (res.product) setProduct(res.product)
+
+    await doApplyCategoryL1()
   }
 
   async function applyCategoryL2(level2Id: string | null) {
-    if (!product?.category_level1_id) return
+    if (!product) return
+    if (!product.category_level1_id) return
+    const productId = product.id
+    const categoryLevel1Id = product.category_level1_id
     setShowCategoryL2Picker(false)
     const prevL2 = product.category_level2_id ?? null
     if ((level2Id ?? null) === (prevL2 ?? null)) return
-    setCategorySaving(true)
-    const res = await updateProductCategory(product.id, {
-      category_level1_id: product.category_level1_id,
-      category_level2_id: level2Id,
-    })
-    setCategorySaving(false)
-    if (res.error) {
-      Alert.alert('Lỗi', res.error)
+
+    async function doApplyCategoryL2() {
+      setCategorySaving(true)
+      const res = await updateProductCategory(productId, {
+        category_level1_id: categoryLevel1Id,
+        category_level2_id: level2Id,
+      })
+      setCategorySaving(false)
+      if (res.error) {
+        Alert.alert('Lỗi', res.error)
+        return
+      }
+      if (res.product) {
+        setProduct(res.product)
+        setProductSnapshot(res.product.updated_at ?? productSnapshot)
+      }
+    }
+
+    const { hasConflict, changedByName } = await checkConflict(
+      'products',
+      productId,
+      productSnapshot,
+    )
+
+    if (hasConflict) {
+      Alert.alert(
+        'Có xung đột',
+        `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
+        [
+          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Ghi đè', style: 'destructive', onPress: () => void doApplyCategoryL2() },
+        ],
+      )
       return
     }
-    if (res.product) setProduct(res.product)
+
+    await doApplyCategoryL2()
   }
 
   function handleLocateLot(lot: InventoryEntry) {

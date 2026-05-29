@@ -48,6 +48,8 @@ export type Product = {
   low_warning_boxes: number
   low_critical_boxes: number
   is_archived: boolean
+  /** A5 — thời điểm cập nhật gần nhất của record products */
+  updated_at?: string
   /** Tab Thông báo: đánh dấu Để sau (Supabase `products.is_deferred`). */
   is_deferred?: boolean
   /** Tab Sắp hết hàng: không nhập nữa. */

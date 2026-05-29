@@ -4,11 +4,29 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — A5 fix — trigger auto-update updated_at cho inventory_entries + zones
+
+- **Migration:** `supabase/migrations/20260529123000_add_updated_at_triggers.sql` — `BEFORE UPDATE` trigger gán `updated_at = now()` cho `inventory_entries` và `zones` (bổ sung cho A5; `products` đã có từ migration trước).
+- **Schema:** `supabase/migrations/schema.sql` v2.8 — đồng bộ 2 trigger trong section AUTO-UPDATE TRIGGERS (A5).
+- **Kiểm tra:** `utils/conflictUtils.ts` — so sánh `new Date(...).getTime()` với ISO từ DB đã đúng; không đổi code.
+
+---
+
 ## [tháng 5/2026] — C1 fix — zones publication migration + skip self-refresh
 
 - **Migration:** `supabase/migrations/20260528120000_add_zones_to_realtime.sql` — `ALTER PUBLICATION supabase_realtime ADD TABLE zones;` (zone changes không fire Realtime trước đây vì bảng chưa trong publication; `inventory_entries` đã có).
 - **Code:** `MapScreen` — `ownMutationRef` + `markOwnMutation()` (3s) bỏ qua `scheduleRefresh` khi mutation local; gọi trước `saveZone` / `deleteZone`; truyền `markOwnMutation` sang `ZoneLayoutEditor` và `ZoneDetailSheet` (`onBeforeMutation` trước `confirmMoveLot`).
 - **Docs:** `HANDOFF_3.md` note C1.
+
+---
+
+## [tháng 5/2026] — A5: conflict detection optimistic locking (updated_at)
+
+- **Migration:** `supabase/migrations/20260529122000_add_updated_at_to_products.sql` — thêm `products.updated_at` + trigger auto-update.
+- **Code:** `utils/conflictUtils.ts` (`checkConflict`) — so sánh snapshot `updated_at` với DB và tra `audit_logs` để lấy `changed_by_name`.
+- **UI:** 
+  - `components/ZoneDetailSheet.tsx` — check conflict khi lưu lô (`inventory_entries`).
+  - `screens/ProductDetailScreen.tsx` — check conflict khi lưu lô (`inventory_entries`) và khi lưu thông tin sản phẩm (`warning_days`, `low_warning_boxes`, category).
 
 ---
 
