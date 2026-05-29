@@ -4,6 +4,39 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs: Tạo skeleton docs/phases/phase-3/ (HANDOFF_3, SUMMARY_3, TESTCASES_3, USER_GUIDE_3)
+
+- **Tạo:** `HANDOFF_3.md` (skeleton + checklist A1–E2 + KI open + §8 local từ HANDOFF_2), `SUMMARY_3.md`, `TESTCASES_3.md` (TC-301 → TC-365, 58 cases), `USER_GUIDE_3.md` (tính năng mới Phase 3, tiếng Việt)
+- **Đã có:** `PLAN_3.md`
+- **Cập nhật:** `CONTEXT.md` §2 — `phase-3/` đủ 5 file
+
+---
+
+## [tháng 5/2026] — docs: Khởi động Phase 3 — tạo PLAN_3.md, cập nhật toàn bộ docs
+
+- **Tạo:** `docs/phases/phase-3/PLAN_3.md`
+- **Cập nhật:** `REQUIREMENTS.md` (v1.3.7), `DECISIONS.md` (5 entry mới), `CONTEXT.md` (screens + store + nav), `KNOWN_ISSUES.md` (KI-044 → KI-048)
+
+**Phase 3 scope:** 5 bugs (A1–A5), 8 UX (B1–B8), Realtime + conflict (C1), F27/F28/F08 hoàn thiện, F23 Dashboard, F24 RBAC; **F19 Dropped**; F21/F25/F26 → Phase 4.
+
+| Group | Tasks |
+|-------|-------|
+| **A — Bug Fixes** | 5 (KI-044 → KI-048) |
+| **B — UX** | 8 |
+| **C — Realtime** | 1 |
+| **D — Feature Completion** | 3 (F27, F28, F08) |
+| **E — New Features** | 2 (F23, F24) |
+| **Security** | 2 (SEC-05, SEC-06) |
+
+---
+
+## [tháng 5/2026] — docs: Tạo PLAN_3.md — khởi động Phase 3 (bản nháp đầu)
+
+- **File mới:** `docs/phases/phase-3/PLAN_3.md` — kế hoạch Phase 3 (In progress).
+- *(Superseded bởi entry trên — giữ lại để trace.)*
+
+---
+
 ## [tháng 5/2026] — Đợt 1: KI-043 + KI-041 + FEATURE-B (Done)
 
 | Nhóm | Trạng thái |

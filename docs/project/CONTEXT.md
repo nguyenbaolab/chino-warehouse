@@ -19,7 +19,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - RLS bật trên tất cả 8 bảng với policy `authenticated_only` (`auth.uid() IS NOT NULL`).
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
-- RBAC (phân quyền manager/nhân viên) → Phase 3, F24.
+- RBAC (F24) → Phase 3 **In progress**: `user_profiles`, `UserManagementScreen`, guard theo role.
 
 **Build & phân phối APK:** hướng dẫn vận hành đầy đủ (EAS Cloud + EAS Local qua WSL2, cache Gradle, lỗi thường gặp, script `build.sh`) → **`docs/BUILD_APK_GUIDE.md`**. Checklist go-live: `docs/phases/phase-2/GOLIVE_CHECKLIST_2.md`. Tổng quan kiến trúc EAS (phase 2): `docs/phases/phase-2/EAS_BUILD_GUIDE.md`.
 
@@ -51,6 +51,12 @@ docs/
       SUMMARY_2.md
       TESTCASES_2.md
       USER_GUIDE_2.md
+    phase-3/
+      PLAN_3.md
+      HANDOFF_3.md
+      SUMMARY_3.md
+      TESTCASES_3.md
+      USER_GUIDE_3.md
   DECISIONS.md
   WORKLOG.md
   BLOCKERS.md
@@ -65,6 +71,7 @@ screens/
   AuditLogScreen.tsx
   BarcodeScannerScreen.tsx
   CategoryManagementScreen.tsx
+  DashboardScreen.tsx          # F23 — tổng quan kho (Phase 3)
   DiscontinuedProductsScreen.tsx
   LocationManagementScreen.tsx
   LoginScreen.tsx
@@ -76,10 +83,14 @@ screens/
   ProductDetailScreen.tsx
   ProductsScreen.tsx
   SettingsScreen.tsx
+  UserManagementScreen.tsx     # F24 — quản lý người dùng (admin/super_admin, Phase 3)
 stores/
   themeStore.ts
-  warehouseStore.ts   # + locateIntent (cross-tab Map locate từ ProductDetail)
+  warehouseStore.ts   # + locateIntent; Phase 3: user RBAC, warning settings
 supabase/migrations/
+  # ... (hiện có)
+  # [timestamp]_add_user_profiles.sql      # F24 — Phase 3
+  # [timestamp]_add_discontinued_reason.sql # F28 — Phase 3
 types/
   index.ts
 App.tsx
@@ -104,7 +115,7 @@ README.md
 - **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
 - **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail`).
 - **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
-- **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `CategoryManagement` → `DiscontinuedProducts` → `AuditLog`). `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount.
+- **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `CategoryManagement` → `DiscontinuedProducts` → `Dashboard` → `UserManagement` → `AuditLog`). `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount. **`DashboardScreen`** (F23): card **Tổng quan kho** trên Settings. **`UserManagementScreen`** (F24): card **Quản lý người dùng** — chỉ hiện với role `admin` và `super_admin` (guard trên Settings card).
 - **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng. Sheet: `paddingBottom` động (`useSafeAreaInsets().bottom`). Modal **Chuyển lô hàng**: nội dung zone/tầng trong `ScrollView`; nút Hủy/Xác nhận fixed dưới (`marginTop` 16).
 - **Cross-tab locate:** `ProductDetailScreen` bấm **📍** trên lô → `setLocateIntent` trong `warehouseStore` → chuyển tab **Kho**; `MapScreen` `useFocusEffect` đọc intent → `setSelectedLocation` · `handleSearch(productName)` (highlight zone qua kết quả) · panel kết quả expanded → `clearLocateIntent`. Không truyền qua navigation params (xem `DECISIONS.md`).
 
@@ -124,9 +135,13 @@ README.md
 
 ## §4 Store — `warehouseStore.ts`
 
-**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, `orderLists`, `orderItems`, `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail).
+**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, `orderLists`, `orderItems`, `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail). **Phase 3 (planned):** `currentUserRole` (role user đang đăng nhập), `users` (danh sách cho admin/super_admin).
 
 **Actions — locate:** `setLocateIntent`, `clearLocateIntent`.
+
+**Actions — user management (Phase 3, F24):** `fetchUsers`, `createUser`, `updateUserRole`, `toggleUserDisabled`, `toggleUserGuest`, `fetchCurrentUserRole`.
+
+**Actions — settings (Phase 3, B8):** `fetchWarningSettings`, `updateWarningSettings` (`expiryWarningEnabled`, `lowStockWarningEnabled` — lưu AsyncStorage).
 
 **Actions — kho & zone:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `fetchInventoryByLocation` (một query `.in('zone_id', …)` cho cả kho, một lần `set` store), `fetchAllInventoryEntries`, `searchProducts` (filter `products` trong store bằng `normalizeText`, sau đó query `inventory_entries` theo `product_id` — không `ilike` DB), `searchInventoryByBarcode`, `searchByBarcode`, `addProduct`, `deleteProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
 
@@ -176,6 +191,7 @@ Tóm tắt nhanh:
 - **Không** tự thêm npm package mới khi chưa được yêu cầu
 - **Tìm kiếm / filter text:** LUÔN dùng `normalizeText()` từ `utils/textUtils.ts`, không dùng `.toLowerCase().includes()` trực tiếp. Áp dụng cho cả query lẫn data khi so sánh. `normalizeText()` xử lý: tiếng Việt không dấu, Phần Lan (ö, ä, å), và dấu Latin khác.
 - Khi bí hoặc thiếu thông tin → ghi vào **`docs/BLOCKERS.md`**, dừng lại hỏi người dùng
+- **Guard role (Phase 3, F24):** Kiểm tra `currentUserRole` trước khi render nút thêm/sửa/xóa; dùng helper `isReadOnly()` (`role === 'guest'`) thay vì hardcode role ở từng màn.
 
 ---
 

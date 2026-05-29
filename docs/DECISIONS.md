@@ -393,3 +393,44 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 - **Quyết định:** Gỡ nút **→**, modal chuyển lô, `openMoveLot` / `confirmMoveLot` khỏi `ProductDetailScreen`. Chuyển lô vẫn đầy đủ trong `ZoneDetailSheet` (ngữ cảnh đúng zone trên bản đồ). Slot giữa ✏️ và 🗑️ dùng nút **📍** (vị trí trên Map).
 - **Lý do:** Tránh duplicate UX chuyển lô; tính năng “tìm vị trí hàng trên bản đồ” có giá trị hơn tại màn chi tiết SP.
 - **Thay thế đã xem xét:** Giữ cả hai nơi — từ chối (trùng chức năng, chiếm chỗ UI).
+
+---
+
+### F19 Dropped — không implement chuyển hàng giữa khu vực
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Tính năng F19 "chuyển hàng giữa khu vực" bị loại bỏ hoàn toàn khỏi roadmap.
+- **Lý do:** Nghiệp vụ thực tế không cần — khi chuyển hàng lên tầng trên thì chỉ cần xóa lô ở kho là đủ; không cần theo dõi hàng ở siêu thị theo lô.
+
+---
+
+### Conflict Detection — Optimistic Locking với `updated_at`
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Dùng optimistic locking (so sánh `updated_at`) để phát hiện khi 2 user cùng sửa cùng 1 record (`inventory_entries`, `zones`, `products`). Khi user A load record → ghi nhớ `updated_at`. Khi A bấm Save → so sánh `updated_at` local với DB. Nếu DB mới hơn → Alert cảnh báo có người sửa trước với tên người đó (`changed_by_name` từ `audit_logs`). User chọn: **Ghi đè** hoặc **Xem lại**.
+- **Lý do:** Tránh mất dữ liệu trong môi trường multi-user; đơn giản hơn pessimistic locking, phù hợp app nội bộ quy mô nhỏ.
+- **Thay thế đã xem xét:** Pessimistic locking (lock record khi edit) — từ chối vì phức tạp và có thể gây deadlock nếu user không lưu.
+
+---
+
+### RBAC — 5 Role hierarchy
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** 5 role: **super_admin** (owner — cứng, không thể bị tắt, tạo account trong app, cấp quyền), **admin** (quản lý user, không tạo account), **staff** (full CRUD, default khi tạo), **guest** (read-only, có xem AuditLog và Dashboard), **disabled** (bị block tại login). Thông tin role lưu trong bảng `user_profiles`. Guard client-side (ẩn/disable UI) + RLS server-side.
+- **Lý do:** Phân tầng quyền hạn phù hợp cửa hàng nhỏ với chủ và nhân viên; guest hữu ích khi muốn cho người xem tạm thời không chỉnh được gì; disabled cần cho trường hợp nhân viên nghỉ việc.
+
+---
+
+### Global Warning Toggles — 2 toggle riêng, lưu AsyncStorage
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Thêm 2 toggle trong Settings để bật/tắt cảnh báo hết hạn và cảnh báo hết hàng. Global (áp dụng toàn app, không per user, không per sản phẩm). Lưu vào AsyncStorage để persist. Khi tắt cảnh báo: vẫn hiện sản phẩm trong tab tương ứng nhưng không tô màu đỏ/vàng cảnh báo, không hiện count badge cảnh báo.
+- **Lý do:** Cho phép tắt thông báo theo mùa hoặc khi cần focus vào công việc khác mà không bị nhiễu.
+
+---
+
+### Format nhập hạn — DD/MM/YYYY text input
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Ô nhập hạn sử dụng dùng text input format **DD/MM/YYYY** thay vì date picker native. Validate format trước khi lưu. Nếu nhập **MM/YYYY** (thiếu ngày) → tự điền ngày = 1.
+- **Lý do:** Linh hoạt hơn date picker native (không phụ thuộc OS), nhập nhanh hơn cho user quen thao tác.

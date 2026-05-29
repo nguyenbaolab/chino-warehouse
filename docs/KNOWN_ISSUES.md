@@ -469,3 +469,53 @@
 - **Đã fix:** Nội dung chọn zone/tầng trong `ScrollView` (`maxHeight` 360); `editActions` fixed dưới modal với `marginTop: 16`.
 
 ---
+
+### [KI-044] Format nhập hạn chưa DD/MM/YYYY ở ZoneDetailSheet
+
+- **Mức độ:** Medium
+- **File liên quan:** `components/ZoneDetailSheet.tsx`
+- **Mô tả:** Ô nhập hạn sử dụng trong ZoneDetailSheet chưa dùng format DD/MM/YYYY text input. User bị nhầm format.
+- **Hướng fix:** Đổi sang TextInput với placeholder DD/MM/YYYY, validate format, auto-fill ngày 1 nếu chỉ nhập MM/YYYY.
+- **Trạng thái:** Open — Phase 3 (A1)
+
+---
+
+### [KI-045] ProductsScreen: barcode scan X clear không restore + thiếu barcode text search
+
+- **Mức độ:** High
+- **File liên quan:** `screens/ProductsScreen.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** (1) Sau khi quét barcode lọc ra SP, bấm X → list không restore về đầy đủ. (2) Khi xóa từng ký tự, list không mở dần ra. (3) Ô search chưa hỗ trợ gõ mã vạch để tìm SP (chỉ tìm theo tên).
+- **Hướng fix:** Fix clear state khi X; incremental restore khi xóa ký tự; thêm barcode text search (so với `inventory_entries.barcode`).
+- **Trạng thái:** Open — Phase 3 (A2)
+
+---
+
+### [KI-046] Zone overlap race condition khi tạo zone
+
+- **Mức độ:** High
+- **File liên quan:** `screens/MapScreen.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** Khi tạo zone bị lag hoặc double-tap → zone bị đặt chồng lên zone đã có, phải xóa thủ công và đặt lại.
+- **Hướng fix:** Debounce/lock nút tạo zone; validate server-side không có zone cells trùng tọa độ trước khi INSERT.
+- **Trạng thái:** Open — Phase 3 (A3)
+
+---
+
+### [KI-047] MapScreen text search không hỗ trợ barcode
+
+- **Mức độ:** Medium
+- **File liên quan:** `screens/MapScreen.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** Thanh search trên MapScreen chỉ tìm theo tên SP (`normalizeText`). Gõ mã vạch không trả về kết quả.
+- **Hướng fix:** Trong `searchProducts`, nếu query khớp `inventory_entries.barcode` thì cũng trả về SP/lô tương ứng.
+- **Trạng thái:** Open — Phase 3 (A4)
+
+---
+
+### [KI-048] Thiếu conflict detection khi nhiều user cùng sửa
+
+- **Mức độ:** Medium
+- **File liên quan:** `stores/warehouseStore.ts`, `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`
+- **Mô tả:** Không có cơ chế phát hiện khi 2 user cùng sửa 1 record (`inventory_entries`, `zones`, `products`). User sau ghi đè mà không biết.
+- **Hướng fix:** Optimistic locking với `updated_at` — so sánh khi Save, Alert nếu có người sửa trước.
+- **Trạng thái:** Open — Phase 3 (A5)
+
+---
