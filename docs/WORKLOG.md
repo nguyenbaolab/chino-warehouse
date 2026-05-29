@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: A1 / KI-044 — ZoneDetailSheet hạn DD/MM/YYYY
+
+- **Code:** `components/ZoneDetailSheet.tsx` — inline edit lô: helper `isoExpiryToDisplay`, `parseDisplayDateToIso` (DD/MM/YYYY + MM/YYYY→ngày 1), `isValidDisplayDate`; lưu ISO qua `updateInventoryEntry`; xóa `isValidIsoDate`.
+- **Docs:** `KNOWN_ISSUES.md` (KI-044 Resolved), `HANDOFF_3.md` (tick A1).
+
+---
+
 ## [tháng 5/2026] — docs: Tạo skeleton docs/phases/phase-3/ (HANDOFF_3, SUMMARY_3, TESTCASES_3, USER_GUIDE_3)
 
 - **Tạo:** `HANDOFF_3.md` (skeleton + checklist A1–E2 + KI open + §8 local từ HANDOFF_2), `SUMMARY_3.md`, `TESTCASES_3.md` (TC-301 → TC-365, 58 cases), `USER_GUIDE_3.md` (tính năng mới Phase 3, tiếng Việt)

@@ -54,7 +54,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 |----|-------|--------|-----------|
 | KI-017 | SEC-05: Input validation thiếu (`maxLength`) | High | Open |
 | KI-018 | SEC-06: Error message lộ schema | High | Open |
-| KI-044 | Format nhập hạn chưa DD/MM/YYYY ở ZoneDetailSheet | Medium | Open — Phase 3 (A1) |
+| KI-044 | Format nhập hạn DD/MM/YYYY ở ZoneDetailSheet inline edit | Medium | Resolved |
 | KI-045 | ProductsScreen: barcode X clear + thiếu barcode text search | High | Open — Phase 3 (A2) |
 | KI-046 | Zone overlap race condition khi tạo zone | High | Open — Phase 3 (A3) |
 | KI-047 | MapScreen text search không hỗ trợ barcode | Medium | Open — Phase 3 (A4) |
@@ -66,7 +66,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 ### Group A — Bug Fixes
 
-- [ ] **A1** — Format nhập hạn DD/MM/YYYY (`ZoneDetailSheet`) — KI-044
+- [x] **A1** — Format nhập hạn DD/MM/YYYY (`ZoneDetailSheet`) — KI-044
 - [ ] **A2** — ProductsScreen barcode: X restore + incremental search + barcode text — KI-045
 - [ ] **A3** — Zone overlap race condition (`MapScreen`, store) — KI-046
 - [ ] **A4** — MapScreen search barcode text — KI-047

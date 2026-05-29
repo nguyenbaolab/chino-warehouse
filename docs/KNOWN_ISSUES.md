@@ -476,7 +476,8 @@
 - **File liên quan:** `components/ZoneDetailSheet.tsx`
 - **Mô tả:** Ô nhập hạn sử dụng trong ZoneDetailSheet chưa dùng format DD/MM/YYYY text input. User bị nhầm format.
 - **Hướng fix:** Đổi sang TextInput với placeholder DD/MM/YYYY, validate format, auto-fill ngày 1 nếu chỉ nhập MM/YYYY.
-- **Trạng thái:** Open — Phase 3 (A1)
+- **Trạng thái:** Resolved
+- **Đã fix:** Inline edit lô: `isoExpiryToDisplay` / `parseDisplayDateToIso` / `isValidDisplayDate`; label DD/MM/YYYY; MM/YYYY → lưu ngày 01; xóa `isValidIsoDate` (YYYY-MM-DD).
 
 ---
 

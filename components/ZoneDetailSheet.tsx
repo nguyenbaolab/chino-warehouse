@@ -30,6 +30,59 @@ type ZoneDetailSheetProps = {
   scannedLotBarcodeAt?: number
 }
 
+/** ISO YYYY-MM-DD → DD/MM/YYYY cho ô edit (rỗng nếu không có hạn). */
+function isoExpiryToDisplay(iso?: string): string {
+  if (!iso?.trim()) return ''
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim())
+  if (!match) return ''
+  return `${match[3]}/${match[2]}/${match[1]}`
+}
+
+/** DD/MM/YYYY hoặc MM/YYYY → YYYY-MM-DD; rỗng → undefined; không hợp lệ → undefined. */
+function parseDisplayDateToIso(raw: string): string | undefined {
+  const value = raw.trim()
+  if (!value) return undefined
+
+  const fullMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value)
+  if (fullMatch) {
+    const day = Number(fullMatch[1])
+    const month = Number(fullMatch[2])
+    const year = Number(fullMatch[3])
+    const date = new Date(year, month - 1, day)
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
+      return undefined
+    }
+    const mm = String(month).padStart(2, '0')
+    const dd = String(day).padStart(2, '0')
+    return `${year}-${mm}-${dd}`
+  }
+
+  const monthYearMatch = /^(\d{2})\/(\d{4})$/.exec(value)
+  if (monthYearMatch) {
+    const month = Number(monthYearMatch[1])
+    const year = Number(monthYearMatch[2])
+    if (month < 1 || month > 12) return undefined
+    const date = new Date(year, month - 1, 1)
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1) {
+      return undefined
+    }
+    const mm = String(month).padStart(2, '0')
+    return `${year}-${mm}-01`
+  }
+
+  return undefined
+}
+
+function isValidDisplayDate(display: string): boolean {
+  const value = display.trim()
+  if (!value) return true
+  return parseDisplayDateToIso(value) !== undefined
+}
+
 // Chuyển HEX sang RGBA để làm lớp phủ trong suốt theo theme
 function hexToRgba(hex: string, alpha: number): string {
   const normalized = hex.replace('#', '')
@@ -96,22 +149,6 @@ export default function ZoneDetailSheet({
     }
   }, [fetchInventoryByZone, visible, zone?.id])
 
-  // Validate định dạng YYYY-MM-DD
-  function isValidIsoDate(raw: string): boolean {
-    if (!raw.trim()) return true
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim())
-    if (!match) return false
-    const year = Number(match[1])
-    const month = Number(match[2])
-    const day = Number(match[3])
-    const date = new Date(year, month - 1, day)
-    return (
-      date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day
-    )
-  }
-
   async function reloadCurrentZoneInventory() {
     if (!zone) return
     const data = await fetchInventoryByZone(zone.id)
@@ -172,7 +209,7 @@ export default function ZoneDetailSheet({
     }
     setEditingLotId(entry.id)
     setEditQuantity(String(entry.quantity_boxes))
-    setEditExpiryDate(entry.expiry_date ?? '')
+    setEditExpiryDate(isoExpiryToDisplay(entry.expiry_date))
     setEditNotes(entry.notes ?? '')
     setEditLotBarcode(entry.barcode ?? '')
   }
@@ -183,15 +220,15 @@ export default function ZoneDetailSheet({
       Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn hoặc bằng 0.')
       return
     }
-    if (!isValidIsoDate(editExpiryDate)) {
-      Alert.alert('Hạn không hợp lệ', 'Hạn sử dụng phải theo định dạng YYYY-MM-DD.')
+    if (!isValidDisplayDate(editExpiryDate)) {
+      Alert.alert('Hạn không hợp lệ', 'Hạn sử dụng phải theo định dạng DD/MM/YYYY hoặc MM/YYYY.')
       return
     }
 
     // Lưu lot đang sửa vào Supabase qua store
     await updateInventoryEntry(entry.id, {
       quantity_boxes: quantity,
-      expiry_date: editExpiryDate.trim() || undefined,
+      expiry_date: parseDisplayDateToIso(editExpiryDate),
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
     })
@@ -244,7 +281,7 @@ export default function ZoneDetailSheet({
     if (!target) return
     setEditingLotId(target.id)
     setEditQuantity(String(target.quantity_boxes))
-    setEditExpiryDate(target.expiry_date ?? '')
+    setEditExpiryDate(isoExpiryToDisplay(target.expiry_date))
     setEditNotes(target.notes ?? '')
     setEditLotBarcode(scannedLotBarcode ?? '')
     navigation.setParams({
@@ -459,13 +496,14 @@ export default function ZoneDetailSheet({
                                     placeholderTextColor={colors.sub}
                                   />
 
-                                  <Text style={[styles.editLabel, { color: colors.sub }]}>Hạn sử dụng (YYYY-MM-DD)</Text>
+                                  <Text style={[styles.editLabel, { color: colors.sub }]}>Hạn sử dụng (DD/MM/YYYY)</Text>
                                   <TextInput
                                     style={[styles.editInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
                                     value={editExpiryDate}
                                     onChangeText={setEditExpiryDate}
-                                    placeholder="2026-12-30"
+                                    placeholder="30/12/2026"
                                     placeholderTextColor={colors.sub}
+                                    keyboardType="numeric"
                                   />
 
                                   <Text style={[styles.editLabel, { color: colors.sub }]}>Ghi chú</Text>
