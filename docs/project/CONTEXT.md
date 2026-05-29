@@ -66,6 +66,7 @@ lib/
   supabase.ts
 utils/
   textUtils.ts          # normalizeText() — tìm kiếm / filter text toàn app
+  dateUtils.ts          # isoExpiryToDisplay / parseDisplayDateToIso / isValidDisplayDate (nhập hạn lô)
   conflictUtils.ts     # A5 checkConflict optimistic locking (updated_at + audit_logs)
 screens/
   AddInventoryScreen.tsx

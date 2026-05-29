@@ -4,6 +4,36 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: expiry TextInput keyboardType default
+
+- **Code:** `ZoneDetailSheet`, `ProductDetailScreen` — ô hạn DD/MM/YYYY dùng `keyboardType="default"` (bỏ numeric). `AddInventoryScreen` ô hạn không có numeric, không đổi.
+
+---
+
+## [tháng 5/2026] — ProductDetailScreen: hạn lô DD/MM/YYYY (dateUtils)
+
+- **Code:** Tách `utils/dateUtils.ts` từ ZoneDetailSheet; `ProductDetailScreen` inline edit lô dùng pattern A1 (display/parse/validate); ZoneDetailSheet import chung.
+
+---
+
+## [tháng 5/2026] — fix(ProductDetailScreen): Xem lai dong edit + loadData
+
+- **Code:** 5 Alert conflict — "Xem lại" đóng `editingLotId`/category pickers và gọi `loadData()` (bỏ fetch supabase thủ công).
+
+---
+
+## [tháng 5/2026] — fix(ZoneDetailSheet): Xem lai dong edit + reload zone
+
+- **Code:** Alert conflict `handleSaveLot` — "Xem lại" đóng inline edit và gọi `reloadCurrentZoneInventory()` (bỏ fetch supabase thủ công).
+
+---
+
+## [tháng 5/2026] — fix(conflict): Xem lai tu dong load data moi nhat
+
+- **Code:** `ZoneDetailSheet`, `ProductDetailScreen` — nút "Xem lại" trong Alert conflict fetch DB và cập nhật form/snapshot (lỗi mạng → Alert nhỏ).
+
+---
+
 ## [tháng 5/2026] — fix(ZoneDetailSheet): KAV behavior padding + bottom inset
 
 - **Code:** `KeyboardAvoidingView` `behavior="padding"` (bỏ `height` trên Android trong Modal); `paddingBottom: Math.max(insets.bottom + 8, 24)`.

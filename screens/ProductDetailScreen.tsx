@@ -21,23 +21,13 @@ import { getDisplayColor, getDisplayColorContextFromEntry } from '../utils/statu
 import { supabase } from '../lib/supabase'
 import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone, AuditLog } from '../types'
 import { checkConflict } from '../utils/conflictUtils'
+import { isoExpiryToDisplay, isValidDisplayDate, parseDisplayDateToIso } from '../utils/dateUtils'
 
 type ProductDetailRouteParams = {
   productId: string
   scannedLotBarcode?: string
   scannedLotId?: string
   scannedLotBarcodeAt?: number
-}
-
-function isValidIsoDate(raw: string): boolean {
-  if (!raw.trim()) return true
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim())
-  if (!match) return false
-  const year = Number(match[1])
-  const month = Number(match[2])
-  const day = Number(match[3])
-  const date = new Date(year, month - 1, day)
-  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
 }
 
 function isExpiredBeforeToday(expiryDate?: string): boolean {
@@ -174,7 +164,7 @@ export default function ProductDetailScreen() {
     if (!lot) return
     setEditingLotId(lot.id)
     setEditQuantity(String(lot.quantity_boxes))
-    setEditExpiryDate(lot.expiry_date ?? '')
+    setEditExpiryDate(isoExpiryToDisplay(lot.expiry_date))
     setEditNotes(lot.notes ?? '')
     setEditLotBarcode(scannedLotBarcode.trim())
     navigation.setParams({
@@ -184,6 +174,13 @@ export default function ProductDetailScreen() {
     })
   }, [scannedLotBarcode, scannedLotId, scannedLotBarcodeAt, lots, navigation])
 
+  function handleConflictReview() {
+    setEditingLotId(null)
+    setShowCategoryL1Picker(false)
+    setShowCategoryL2Picker(false)
+    void loadData()
+  }
+
   function openInlineEdit(lot: InventoryEntry) {
     if (editingLotId === lot.id) {
       setEditingLotId(null)
@@ -191,7 +188,7 @@ export default function ProductDetailScreen() {
     }
     setEditingLotId(lot.id)
     setEditQuantity(String(lot.quantity_boxes))
-    setEditExpiryDate(lot.expiry_date ?? '')
+    setEditExpiryDate(isoExpiryToDisplay(lot.expiry_date))
     setEditNotes(lot.notes ?? '')
     setEditLotBarcode(lot.barcode ?? '')
   }
@@ -202,14 +199,14 @@ export default function ProductDetailScreen() {
       Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn hoặc bằng 0.')
       return
     }
-    if (!isValidIsoDate(editExpiryDate)) {
-      Alert.alert('Hạn không hợp lệ', 'Hạn sử dụng phải theo định dạng YYYY-MM-DD.')
+    if (!isValidDisplayDate(editExpiryDate)) {
+      Alert.alert('Hạn không hợp lệ', 'Hạn sử dụng phải theo định dạng DD/MM/YYYY hoặc MM/YYYY.')
       return
     }
 
     const payload = {
       quantity_boxes: quantity,
-      expiry_date: editExpiryDate.trim() || undefined,
+      expiry_date: parseDisplayDateToIso(editExpiryDate),
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
     }
@@ -259,7 +256,7 @@ export default function ProductDetailScreen() {
         'Có xung đột',
         `Lô này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
         [
-          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Xem lại', style: 'cancel', onPress: handleConflictReview },
           { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveLot(lot.id, payload) },
         ],
       )
@@ -323,7 +320,7 @@ export default function ProductDetailScreen() {
         'Có xung đột',
         `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
         [
-          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Xem lại', style: 'cancel', onPress: handleConflictReview },
           { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveWarningDays() },
         ],
       )
@@ -366,7 +363,7 @@ export default function ProductDetailScreen() {
         'Có xung đột',
         `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
         [
-          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Xem lại', style: 'cancel', onPress: handleConflictReview },
           { text: 'Ghi đè', style: 'destructive', onPress: () => void doSaveLowWarningBoxes() },
         ],
       )
@@ -414,7 +411,7 @@ export default function ProductDetailScreen() {
         'Có xung đột',
         `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
         [
-          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Xem lại', style: 'cancel', onPress: handleConflictReview },
           { text: 'Ghi đè', style: 'destructive', onPress: () => void doApplyCategoryL1() },
         ],
       )
@@ -461,7 +458,7 @@ export default function ProductDetailScreen() {
         'Có xung đột',
         `Sản phẩm này vừa được ${changedByName ?? 'người khác'} cập nhật.\nBạn có muốn ghi đè không?`,
         [
-          { text: 'Xem lại', style: 'cancel' },
+          { text: 'Xem lại', style: 'cancel', onPress: handleConflictReview },
           { text: 'Ghi đè', style: 'destructive', onPress: () => void doApplyCategoryL2() },
         ],
       )
@@ -789,13 +786,14 @@ export default function ProductDetailScreen() {
                       placeholderTextColor={colors.sub}
                     />
 
-                    <Text style={[styles.editLabel, { color: colors.sub }]}>Hạn sử dụng (YYYY-MM-DD)</Text>
+                    <Text style={[styles.editLabel, { color: colors.sub }]}>Hạn sử dụng (DD/MM/YYYY)</Text>
                     <TextInput
                       style={[styles.editInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
                       value={editExpiryDate}
                       onChangeText={setEditExpiryDate}
-                      placeholder="2026-12-30"
+                      placeholder="30/12/2026"
                       placeholderTextColor={colors.sub}
+                      keyboardType="default"
                     />
 
                     <Text style={[styles.editLabel, { color: colors.sub }]}>Ghi chú</Text>
