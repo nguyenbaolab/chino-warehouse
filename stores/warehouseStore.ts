@@ -66,6 +66,7 @@ type WarehouseStore = {
     productId: string,
     data: { category_level1_id: string | null; category_level2_id: string | null }
   ) => Promise<{ error: string | null; product: Product | null }>
+  updateProductName: (productId: string, name: string) => Promise<void>
   fetchCategories: () => Promise<{ error: string | null }>
   addCategoryL1: (name: string) => Promise<{ error: string | null; category?: ProductCategoryL1 }>
   updateCategoryL1: (id: string, data: { name: string }) => Promise<{ error: string | null }>
@@ -643,6 +644,27 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       return { error: null, product: updated }
     }
     return { error: 'Không cập nhật được.', product: null }
+  },
+
+  updateProductName: async (productId, name) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+
+    const { data: updated, error } = await supabase
+      .from('products')
+      .update({ name: trimmed })
+      .eq('id', productId)
+      .select('*')
+      .single()
+
+    if (error || !updated) return
+
+    set((s) => ({
+      products: s.products.map((p) => (p.id === productId ? updated : p)),
+      inventoryEntries: s.inventoryEntries.map((entry) =>
+        entry.product_id === productId ? { ...entry, product: updated } : entry
+      ),
+    }))
   },
 
   addZone: async (data) => {

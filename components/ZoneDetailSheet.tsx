@@ -104,7 +104,13 @@ export default function ZoneDetailSheet({
 }: ZoneDetailSheetProps) {
   const { colors } = useThemeStore()
   const insets = useSafeAreaInsets()
-  const { zones, fetchInventoryByZone, updateInventoryEntry, deleteInventoryEntry } = useWarehouseStore()
+  const {
+    zones,
+    fetchInventoryByZone,
+    updateInventoryEntry,
+    deleteInventoryEntry,
+    updateProductName,
+  } = useWarehouseStore()
 
   const [entries, setEntries] = useState<InventoryEntry[]>([])
   const [selectedTier, setSelectedTier] = useState(1)
@@ -120,6 +126,8 @@ export default function ZoneDetailSheet({
   const [targetTier, setTargetTier] = useState<number | null>(null)
   const [showZoneOptions, setShowZoneOptions] = useState(false)
   const [showTierOptions, setShowTierOptions] = useState(false)
+  const [editingProductId, setEditingProductId] = useState<string | null>(null)
+  const [productNameInput, setProductNameInput] = useState('')
 
   useEffect(() => {
     if (!visible || !zone) return
@@ -275,6 +283,18 @@ export default function ZoneDetailSheet({
     await reloadCurrentZoneInventory()
   }
 
+  async function handleSaveProductName(productId: string) {
+    if (editingProductId !== productId) return
+    const trimmed = productNameInput.trim()
+    if (!trimmed) {
+      setEditingProductId(null)
+      return
+    }
+    await updateProductName(productId, trimmed)
+    setEditingProductId(null)
+    await reloadCurrentZoneInventory()
+  }
+
   useEffect(() => {
     if (!visible || !scannedLotBarcodeAt || !scannedLotId) return
     const target = entries.find((entry) => entry.id === scannedLotId)
@@ -425,14 +445,35 @@ export default function ZoneDetailSheet({
                     <View key={group.productId} style={[styles.groupWrap, { borderBottomColor: colors.border }]}>
                       <View style={styles.itemRow}>
                         <View style={styles.itemMain}>
-                          <TouchableOpacity
-                            onPress={() => navigation.navigate('ProductDetail', { productId: group.productId })}
-                            activeOpacity={0.7}
-                          >
-                            <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                              {group.productName}
-                            </Text>
-                          </TouchableOpacity>
+                          {editingProductId === group.productId ? (
+                            <TextInput
+                              value={productNameInput}
+                              onChangeText={setProductNameInput}
+                              autoFocus
+                              onBlur={() => void handleSaveProductName(group.productId)}
+                              onSubmitEditing={() => void handleSaveProductName(group.productId)}
+                              style={[
+                                styles.itemName,
+                                styles.itemNameInput,
+                                { color: colors.text, borderColor: colors.accent },
+                              ]}
+                            />
+                          ) : (
+                            <TouchableOpacity
+                              onPress={() => navigation.navigate('ProductDetail', { productId: group.productId })}
+                              onLongPress={() => {
+                                setEditingProductId(group.productId)
+                                setProductNameInput(group.productName)
+                              }}
+                              activeOpacity={0.7}
+                              style={styles.itemNameTouchable}
+                            >
+                              <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
+                                {group.productName}
+                              </Text>
+                              <Text style={[styles.itemNameEditHint, { color: colors.sub }]}>✏️</Text>
+                            </TouchableOpacity>
+                          )}
                           <Text style={[styles.itemQty, { color: colors.sub }]}>{group.totalBoxes} thùng</Text>
                         </View>
                         <View style={[styles.expiryDot, { backgroundColor: worstColor }]} />
@@ -774,6 +815,21 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  itemNameTouchable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+    minWidth: 0,
+  },
+  itemNameEditHint: {
+    fontSize: 12,
+  },
+  itemNameInput: {
+    borderBottomWidth: 1,
+    paddingVertical: 2,
+    marginBottom: 2,
   },
   itemQty: {
     marginTop: 2,

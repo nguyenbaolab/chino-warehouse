@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — UX: B6 — sửa tên SP inline tại ZoneDetailSheet
+
+- **Code:** `warehouseStore.updateProductName`; `ZoneDetailSheet` — long-press tên SP → `TextInput`, blur/submit lưu; hint ✏️.
+- **Docs:** `CONTEXT.md` (§4 action), `HANDOFF_3.md` (tick B6).
+
+---
+
 ## [tháng 5/2026] — UX: B8 — toggle cảnh báo hết hạn/hết hàng (Settings + Notifications)
 
 - **Code:** `stores/warningStore.ts` (AsyncStorage); `SettingsScreen` section Cảnh báo + 2 `Switch`; `NotificationsScreen` neutral màu + ẩn count filter khi tắt.
