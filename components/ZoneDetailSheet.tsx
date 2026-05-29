@@ -259,7 +259,7 @@ export default function ZoneDetailSheet({
     setShowTierOptions(false)
   }
 
-  const availableTargetZones = zones.filter((z) => z.id !== moveLot?.zone_id)
+  const availableTargetZones = zones
   const selectedTargetZone = zones.find((z) => z.id === targetZoneId) ?? null
   const availableTargetTiers = selectedTargetZone
     ? Array.from({ length: Math.max(selectedTargetZone.tier_count || 1, 1) }, (_, idx) => idx + 1)

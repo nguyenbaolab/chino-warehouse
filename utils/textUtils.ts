@@ -18,6 +18,7 @@ const MANUAL_CHAR_REPLACEMENTS: ReadonlyArray<readonly [string, string]> = [
 
 export function normalizeText(text: string): string {
   let s = text.toLowerCase()
+  s = s.replace(/[,'\-_.\s!?@#$%^&*()+=\[\]{}|\\/<>~`"]/g, '')
   for (const [from, to] of MANUAL_CHAR_REPLACEMENTS) {
     s = s.replaceAll(from, to)
   }

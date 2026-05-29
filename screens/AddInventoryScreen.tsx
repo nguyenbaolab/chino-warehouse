@@ -457,6 +457,9 @@ export default function AddInventoryScreen() {
         </View>
 
         <Text style={[styles.label, { color: colors.sub }]}>Tìm/chọn sản phẩm *</Text>
+        <Text style={[styles.searchNoteAbove, { color: colors.sub }]}>
+          Quét mã / tra tên sản phẩm trước để kiểm tra đã có chưa
+        </Text>
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
             <TextInput
@@ -490,7 +493,7 @@ export default function AddInventoryScreen() {
           </TouchableOpacity>
         </View>
         <Text style={[styles.searchHintMuted, { color: colors.sub }]}>
-          Hỏi anh/chị chủ xem hàng đã được nhập chưa để tránh tạo trùng tên sản phẩm
+          Hỏi anh/chị chủ xem hàng đã từng được nhập chưa để tránh tạo thừa tên cho cùng 1 sản phẩm
         </Text>
         {barcodeSearchWarning ? (
           <Text style={[styles.barcodeSearchWarning, { color: colors.statusWarning }]}>{barcodeSearchWarning}</Text>
@@ -901,6 +904,11 @@ const styles = StyleSheet.create({
   },
   scanBtnText: {
     fontSize: 16,
+  },
+  searchNoteAbove: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 4,
   },
   searchHintMuted: {
     fontSize: 12,

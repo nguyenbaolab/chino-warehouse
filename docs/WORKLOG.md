@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — UX: B2 + B3 + B5 — quick fixes
+
+- **B2:** `ZoneDetailSheet` — `availableTargetZones = zones` (cho phép chuyển lô cùng zone, khác tầng).
+- **B3:** `utils/textUtils.ts` — `normalizeText` loại ký tự đặc biệt sau `toLowerCase()`.
+- **B5:** `AddInventoryScreen` — cập nhật hint muted + note phía trên ô tìm SP.
+- **Docs:** `HANDOFF_3.md` (tick B2, B3, B5).
+
+---
+
 ## [tháng 5/2026] — fix: A4 / KI-047 — MapScreen search theo barcode text
 
 - **Code:** `screens/MapScreen.tsx` — `handleSearch` merge kết quả tên + barcode, dedupe theo `entry.id`; `stores/warehouseStore.ts` — `searchInventoryByBarcode` dùng `ilike` partial.
