@@ -356,7 +356,13 @@ export default function MapScreen() {
   }
 
   function closeZoneDetail() {
+    const wasSearchFlow = autoScrollProductId !== null
     setZoneDetailVisible(false)
+    if (wasSearchFlow) {
+      setHighlightedZones(new Map())
+      setSearchResults([])
+      setSearchQuery('')
+    }
     setAutoScrollProductId(null)
   }
 

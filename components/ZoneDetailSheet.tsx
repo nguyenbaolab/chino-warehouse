@@ -381,7 +381,7 @@ export default function ZoneDetailSheet({
 
   useEffect(() => {
     if (!highlightedProductId) return
-    const timer = setTimeout(() => setHighlightedProductId(null), 1500)
+    const timer = setTimeout(() => setHighlightedProductId(null), 1000)
     return () => clearTimeout(timer)
   }, [highlightedProductId])
 

@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — UX: B7 refine — highlight 1s, reset map khi đóng sheet
+
+- **Code:** `ZoneDetailSheet` highlight nhóm SP 1000ms; `MapScreen.closeZoneDetail` — nếu mở từ search (`autoScrollProductId`) thì xóa highlight zone + panel search khi đóng.
+
+---
+
 ## [tháng 5/2026] — UX: B7 — Map search result → tự mở ZoneDetailSheet + scroll SP
 
 - **Code:** `MapScreen` — `autoScrollProductId`, `focusSearchResultLot` mở sheet; `ZoneDetailSheet` — `scrollToProductId`, scroll + highlight 1.5s.
