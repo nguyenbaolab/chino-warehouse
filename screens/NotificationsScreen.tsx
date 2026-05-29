@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
+import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { formatExpiryDate, getExpiryStatus, InventoryEntry, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
@@ -48,6 +49,11 @@ export default function NotificationsScreen() {
   const navigation = useNavigation<any>()
   const { colors } = useThemeStore()
   const {
+    expiryWarningEnabled,
+    lowStockWarningEnabled,
+    loadWarningSettings,
+  } = useWarningStore()
+  const {
     locations,
     products,
     inventoryEntries,
@@ -76,7 +82,8 @@ export default function NotificationsScreen() {
   useEffect(() => {
     fetchLocations()
     fetchProducts()
-  }, [fetchLocations, fetchProducts])
+    void loadWarningSettings()
+  }, [fetchLocations, fetchProducts, loadWarningSettings])
 
   useEffect(() => {
     if (filterLocationId) return
@@ -334,8 +341,16 @@ export default function NotificationsScreen() {
     ({ item }: { item: ExpiryCard }) => {
       const isExpanded = expandedProducts[item.productId] === true
       const hasAnyPriceReduced = item.lots.some((lot) => lot.isPriceReduced)
-      const bgColor = item.hasExpiredLot ? colors.badgeExpiredBg : colors.card
-      const borderColor = item.hasExpiredLot ? colors.statusExpired : colors.border
+      const showExpiryColors = expiryWarningEnabled
+      const bgColor =
+        showExpiryColors && item.hasExpiredLot ? colors.badgeExpiredBg : colors.card
+      const borderColor =
+        showExpiryColors && item.hasExpiredLot ? colors.statusExpired : colors.border
+      const titleDotColor = showExpiryColors
+        ? item.hasExpiredLot
+          ? colors.statusExpired
+          : colors.statusWarning
+        : colors.sub
       return (
         <View style={[styles.item, { backgroundColor: bgColor, borderColor }]}>
           <TouchableOpacity activeOpacity={0.8} onPress={() => toggleExpanded(item.productId)}>
@@ -344,7 +359,7 @@ export default function NotificationsScreen() {
                 <View
                   style={[
                     styles.titleDot,
-                    { backgroundColor: item.hasExpiredLot ? colors.statusExpired : colors.statusWarning },
+                    { backgroundColor: titleDotColor },
                   ]}
                 />
                 <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
@@ -366,8 +381,16 @@ export default function NotificationsScreen() {
           {isExpanded && (
             <View style={styles.lotList}>
               {item.lots.map((lot) => {
-                const lotBg = lot.status === 'expired' ? colors.badgeExpiredBg : colors.badgeWarningBg
-                const lotBorder = lot.status === 'expired' ? colors.statusExpired : colors.statusWarning
+                const lotBg = showExpiryColors
+                  ? lot.status === 'expired'
+                    ? colors.badgeExpiredBg
+                    : colors.badgeWarningBg
+                  : colors.bg
+                const lotBorder = showExpiryColors
+                  ? lot.status === 'expired'
+                    ? colors.statusExpired
+                    : colors.statusWarning
+                  : colors.border
                 return (
                   <TouchableOpacity
                     key={lot.entryId}
@@ -402,18 +425,24 @@ export default function NotificationsScreen() {
         </View>
       )
     },
-    [colors, expandedProducts, navigation, togglePriceReduced]
+    [colors, expandedProducts, expiryWarningEnabled, navigation, togglePriceReduced]
   )
 
   const renderLowStockItem = useCallback(
-    ({ item }: { item: LowStockCard }) => (
+    ({ item }: { item: LowStockCard }) => {
+      const titleDotColor = lowStockWarningEnabled
+        ? item.totalBoxes <= 0
+          ? colors.statusCritical
+          : colors.statusWarning
+        : colors.sub
+      return (
       <View style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.headerRow}>
           <View style={styles.leftWrap}>
             <View
               style={[
                 styles.titleDot,
-                { backgroundColor: item.totalBoxes <= 0 ? colors.statusCritical : colors.statusWarning },
+                { backgroundColor: titleDotColor },
               ]}
             />
             <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
@@ -439,8 +468,9 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
         </View>
       </View>
-    ),
-    [colors, toggleDiscontinued]
+      )
+    },
+    [colors, lowStockWarningEnabled, toggleDiscontinued]
   )
 
   return (
@@ -573,7 +603,9 @@ export default function NotificationsScreen() {
             <View style={[styles.tickBox, { borderColor: colors.border, backgroundColor: showExpiredFilter ? colors.accent : colors.bg }]}>
               {showExpiredFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
             </View>
-            <Text style={[styles.filterText, { color: colors.text }]}>Hết hạn ({countExpired})</Text>
+            <Text style={[styles.filterText, { color: colors.text }]}>
+              Hết hạn{expiryWarningEnabled ? ` (${countExpired})` : ''}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.filterItem}
@@ -583,7 +615,9 @@ export default function NotificationsScreen() {
             <View style={[styles.tickBox, { borderColor: colors.border, backgroundColor: showWarningFilter ? colors.accent : colors.bg }]}>
               {showWarningFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
             </View>
-            <Text style={[styles.filterText, { color: colors.text }]}>Sắp hết hạn ({countWarning})</Text>
+            <Text style={[styles.filterText, { color: colors.text }]}>
+              Sắp hết hạn{expiryWarningEnabled ? ` (${countWarning})` : ''}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
@@ -603,7 +637,9 @@ export default function NotificationsScreen() {
             >
               {showOutOfStockFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
             </View>
-            <Text style={[styles.filterText, { color: colors.text }]}>Hết hàng ({countOutOfStock})</Text>
+            <Text style={[styles.filterText, { color: colors.text }]}>
+              Hết hàng{lowStockWarningEnabled ? ` (${countOutOfStock})` : ''}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.filterItem}
@@ -618,7 +654,9 @@ export default function NotificationsScreen() {
             >
               {showLowStockFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
             </View>
-            <Text style={[styles.filterText, { color: colors.text }]}>Sắp hết hàng ({countLowStock})</Text>
+            <Text style={[styles.filterText, { color: colors.text }]}>
+              Sắp hết hàng{lowStockWarningEnabled ? ` (${countLowStock})` : ''}
+            </Text>
           </TouchableOpacity>
         </View>
       )}

@@ -7,7 +7,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 ## §1 Tech Stack
 
 - **React Native** (Expo SDK), **TypeScript**
-- **Zustand** — state client (`warehouseStore`, `themeStore`)
+- **Zustand** — state client (`warehouseStore`, `themeStore`, `warningStore`)
 - **Supabase** — PostgreSQL + Realtime (backend)
 - **React Navigation** — Bottom Tabs + Native Stack
 - **expo-camera** — `CameraView`, quét barcode
@@ -86,7 +86,8 @@ screens/
   UserManagementScreen.tsx     # F24 — quản lý người dùng (admin/super_admin, Phase 3)
 stores/
   themeStore.ts
-  warehouseStore.ts   # + locateIntent; Phase 3: user RBAC, warning settings
+  warningStore.ts     # expiryWarningEnabled, lowStockWarningEnabled (AsyncStorage)
+  warehouseStore.ts   # + locateIntent; Phase 3: user RBAC
 supabase/migrations/
   # ... (hiện có)
   # [timestamp]_add_user_profiles.sql      # F24 — Phase 3
@@ -141,8 +142,6 @@ README.md
 
 **Actions — user management (Phase 3, F24):** `fetchUsers`, `createUser`, `updateUserRole`, `toggleUserDisabled`, `toggleUserGuest`, `fetchCurrentUserRole`.
 
-**Actions — settings (Phase 3, B8):** `fetchWarningSettings`, `updateWarningSettings` (`expiryWarningEnabled`, `lowStockWarningEnabled` — lưu AsyncStorage).
-
 **Actions — kho & zone:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `fetchInventoryByLocation` (một query `.in('zone_id', …)` cho cả kho, một lần `set` store), `fetchAllInventoryEntries`, `searchProducts` (filter `products` trong store bằng `normalizeText`, sau đó query `inventory_entries` theo `product_id` — không `ilike` DB), `searchInventoryByBarcode`, `searchByBarcode`, `addProduct`, `deleteProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
 
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
@@ -152,6 +151,18 @@ README.md
 **Actions — đặt hàng:** `fetchOrderLists`, `createOrderList`, `updateOrderList`, `deleteOrderList`, `addOrderItem`, `updateOrderItem`, `deleteOrderItem`, `confirmOrderList`, `markOrderPlaced`.
 
 **Actions — audit log:** `fetchAuditLogs` (cursor-based, filter kho + loại + người + sản phẩm), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`.
+
+---
+
+## §4b Store — `warningStore.ts`
+
+**State:** `expiryWarningEnabled`, `lowStockWarningEnabled` (mặc định `true`).
+
+**Persist:** AsyncStorage `warning_expiry`, `warning_low_stock` (giá trị `'true'` / `'false'`; thiếu key = bật).
+
+**Actions:** `loadWarningSettings`, `toggleExpiryWarning`, `toggleLowStockWarning`.
+
+**UI:** `SettingsScreen` (2 `Switch`); `NotificationsScreen` tắt màu cảnh báo + ẩn count trên checkbox filter khi setting tương ứng tắt (danh sách SP vẫn hiện).
 
 ---
 

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useWarningStore } from '../stores/warningStore'
 import { supabase } from '../lib/supabase'
 
 export default function SettingsScreen() {
@@ -22,6 +23,13 @@ export default function SettingsScreen() {
     fetchLatestAuditEntry,
   } = useWarehouseStore()
   const { isDark, colors, loadTheme, toggleTheme } = useThemeStore()
+  const {
+    expiryWarningEnabled,
+    lowStockWarningEnabled,
+    loadWarningSettings,
+    toggleExpiryWarning,
+    toggleLowStockWarning,
+  } = useWarningStore()
 
   const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
   const lastFetchedAt = useRef(0)
@@ -41,8 +49,9 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     loadTheme()
+    void loadWarningSettings()
     void fetchLocations()
-  }, [loadTheme, fetchLocations])
+  }, [loadTheme, loadWarningSettings, fetchLocations])
 
   useEffect(() => {
     if (selectedLocationId) fetchZones(selectedLocationId)
@@ -189,6 +198,38 @@ export default function SettingsScreen() {
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
 
+      <Text style={[styles.sectionTitle, { color: colors.sub }]}>Cảnh báo</Text>
+
+      <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.settingRowLabel}>
+          <Text style={[styles.settingLabel, { color: colors.text }]}>Cảnh báo hết hạn</Text>
+          <Text style={[styles.settingDesc, { color: colors.sub }]}>
+            Hiện màu cảnh báo cho sản phẩm sắp/đã hết hạn
+          </Text>
+        </View>
+        <Switch
+          value={expiryWarningEnabled}
+          onValueChange={toggleExpiryWarning}
+          trackColor={{ false: '#ccc', true: colors.accent }}
+          thumbColor="#fff"
+        />
+      </View>
+
+      <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.settingRowLabel}>
+          <Text style={[styles.settingLabel, { color: colors.text }]}>Cảnh báo hết hàng</Text>
+          <Text style={[styles.settingDesc, { color: colors.sub }]}>
+            Hiện màu cảnh báo cho sản phẩm sắp/đã hết hàng
+          </Text>
+        </View>
+        <Switch
+          value={lowStockWarningEnabled}
+          onValueChange={toggleLowStockWarning}
+          trackColor={{ false: '#ccc', true: colors.accent }}
+          thumbColor="#fff"
+        />
+      </View>
+
       {/* Theme toggle */}
       <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View>
@@ -257,11 +298,21 @@ const styles = StyleSheet.create({
   linkTitle: { fontSize: 15, fontWeight: '600' },
   linkSub: { fontSize: 13, marginTop: 4 },
   chevron: { fontSize: 22, fontWeight: '300', marginLeft: 8 },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    marginTop: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   settingRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginHorizontal: 16, marginBottom: 12,
     padding: 16, borderRadius: 12, borderWidth: 1,
   },
+  settingRowLabel: { flex: 1, marginRight: 12 },
   settingLabel: { fontSize: 15, fontWeight: '600' },
   settingDesc: { fontSize: 12, marginTop: 2 },
   infoBox: { marginHorizontal: 16, borderRadius: 12, padding: 16, borderWidth: 1 },

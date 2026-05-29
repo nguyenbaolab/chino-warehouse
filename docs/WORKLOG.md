@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — UX: B8 — toggle cảnh báo hết hạn/hết hàng (Settings + Notifications)
+
+- **Code:** `stores/warningStore.ts` (AsyncStorage); `SettingsScreen` section Cảnh báo + 2 `Switch`; `NotificationsScreen` neutral màu + ẩn count filter khi tắt.
+- **Docs:** `CONTEXT.md` (§4b `warningStore`), `HANDOFF_3.md` (tick B8).
+
+---
+
 ## [tháng 5/2026] — UX: B1 — badge "Đã giảm giá" trên header card (NotificationsScreen)
 
 - **Code:** `screens/NotificationsScreen.tsx` — `hasAnyPriceReduced` trên header card tab Sắp hết hạn; toggle từng lô khi expand giữ nguyên.
