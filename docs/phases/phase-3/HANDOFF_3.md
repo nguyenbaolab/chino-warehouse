@@ -35,6 +35,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `20260528120000_add_zones_to_realtime.sql` | `ALTER PUBLICATION supabase_realtime ADD TABLE zones` (C1) |
 | `20260529122000_add_updated_at_to_products.sql` | Thêm `products.updated_at` + trigger auto-update (A5) |
 | `20260529123000_add_updated_at_triggers.sql` | `BEFORE UPDATE` auto-update `updated_at` cho `inventory_entries` + `zones` (A5 fix) |
+| `[timestamp]_f08_product_images_storage.sql` | **F08 — cần tạo:** bucket `product-images` + RLS (public read, authenticated write/delete) |
 
 ---
 
@@ -93,7 +94,13 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 - [ ] **D1 / F27** — 2 tab trong list + active list + PDF tổng hợp + flow Confirm
 - [ ] **D2 / F28** — `discontinued_reason` migration + UI
-- [ ] **D3 / F08** — Ảnh sản phẩm (Storage + camera/picker)
+- [ ] **D3 / F08** — Supabase Storage bucket + migration RLS
+- [ ] **D3 / F08** — Cài `expo-image-picker` + `react-native-image-viewing`
+- [ ] **D3 / F08** — `utils/imageUtils.ts`: `uploadProductImage`, `deleteProductImage`, compress
+- [ ] **D3 / F08** — `warehouseStore`: `updateProductImage`, `removeProductImage`; `deleteProduct` xóa Storage
+- [ ] **D3 / F08** — `ProductsScreen`: thumbnail 64×64 + zoom + upload; xóa nút ✏️ card
+- [ ] **D3 / F08** — `ProductDetailScreen`: image block + zoom + upload + xóa ảnh
+- [ ] **D3 / F08** — `AddInventoryScreen`: ô ảnh optional khi tạo SP mới
 
 ### Group E — New Features
 

@@ -137,8 +137,59 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 
 ### D3 — F08: Hình ảnh sản phẩm
 
-- **Files:** `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `stores/warehouseStore.ts`, supabase (Storage bucket)
-- **Mô tả:** Thêm/xem ảnh sản phẩm. Chụp trực tiếp (`expo-camera`) hoặc chọn từ thư viện (`expo-image-picker`). Upload lên Supabase Storage bucket `product-images`. Lưu URL vào `products.image_url`. Hiển thị ảnh trong `ProductDetailScreen`. Xóa ảnh cũ khi upload ảnh mới.
+**Package mới cần thêm:**
+
+- `expo-image-picker`: camera + chọn từ thư viện
+- `react-native-image-viewing`: pinch-to-zoom full-screen
+
+**Supabase Storage:**
+
+- Bucket: `product-images` (public read, authenticated write/delete)
+- File path: `product-images/{productId}.jpg` (ghi đè khi upload mới)
+- Cần migration SQL: tạo bucket + RLS policies
+- Khi xóa ảnh hoặc xóa sản phẩm: xóa file trên Storage luôn
+
+**Upload flow (3 màn):**
+
+- Bấm ảnh/placeholder → ActionSheet/Alert: "Chụp ảnh" / "Chọn từ thư viện" / "Hủy"
+- Compress: 80% JPEG, resize max 1200px cạnh dài
+- Upload → Supabase Storage → lưu URL vào `products.image_url`
+
+**Quyền:** staff / admin / super_admin upload/xóa; guest chỉ xem
+
+**ProductsScreen card:**
+
+- Thêm ảnh vuông 64×64px bên trái card
+- Chưa có ảnh: placeholder xám + icon 📷 → bấm → upload
+- Đã có ảnh: bấm → full-screen zoom (pinch) + nút đóng
+- Xóa nút ✏️ khỏi card (không cần nữa)
+
+**ProductDetailScreen:**
+
+- Ảnh vuông vừa, căn giữa, trong `ScrollView` phía trên tên SP
+- Chưa có ảnh: placeholder xám + icon 📷 → bấm → upload
+- Đã có ảnh: bấm → full-screen zoom + nút đóng
+- Nút ✏️ đổi ảnh + nút 🗑️ xóa ảnh (confirm dialog trước khi xóa)
+- Xóa ảnh: xóa file Storage + set `image_url = null` trong DB
+
+**AddInventoryScreen (tạo SP mới):**
+
+- Ô ảnh vuông nhỏ sau field tên SP mới (optional)
+- Flow: tạo SP trước (lấy `productId`) → upload ảnh → update `image_url`
+
+**Files:** `utils/imageUtils.ts`, `screens/ProductsScreen.tsx`, `screens/ProductDetailScreen.tsx`, `screens/AddInventoryScreen.tsx`, `stores/warehouseStore.ts`, `supabase/migrations/[timestamp]_f08_product_images_storage.sql`
+
+**Tasks:**
+
+- [ ] Tạo Supabase Storage bucket + migration RLS
+- [ ] Cài `expo-image-picker` + `react-native-image-viewing`
+- [ ] Helper `uploadProductImage(productId, uri)`: compress + upload + return URL
+- [ ] Helper `deleteProductImage(productId)`: xóa file Storage
+- [ ] `warehouseStore`: `updateProductImage(productId, url)`, `removeProductImage(productId)`
+- [ ] `ProductsScreen`: thêm ảnh 64×64 + zoom modal + upload; xóa nút ✏️
+- [ ] `ProductDetailScreen`: thêm image block + zoom + upload + xóa
+- [ ] `AddInventoryScreen`: thêm ô ảnh khi tạo SP mới
+- [ ] `deleteProduct`: xóa ảnh Storage trước khi xóa SP
 
 ---
 

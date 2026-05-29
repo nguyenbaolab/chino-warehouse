@@ -4,6 +4,46 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Xóa nút ✏️ khỏi ProductsScreen card
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Bỏ nút edit (✏️) trên card sản phẩm trong `ProductsScreen`. Mọi chỉnh sửa SP thực hiện qua `ProductDetailScreen`.
+- **Lý do:** Card thêm ảnh thumbnail → không đủ chỗ; UX gọn hơn khi tập trung edit tại 1 màn duy nhất.
+
+---
+
+### F08 — Upload từ 3 màn (Products, Detail, AddInventory)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Upload ảnh được từ `ProductsScreen` (tap thumbnail card), `ProductDetailScreen` (image block), `AddInventoryScreen` (khi tạo SP mới). AddInventory: tạo SP trước lấy `productId`, rồi mới upload ảnh.
+- **Lý do:** Linh hoạt — không bắt buộc phải vào Detail mới đổi ảnh được.
+
+---
+
+### F08 — Xóa ảnh xóa luôn trên Storage
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Khi user xóa ảnh hoặc xóa sản phẩm → xóa file trên Supabase Storage trước, sau đó xóa/update DB.
+- **Lý do:** Giữ Storage sạch; tránh file mồ côi tích lũy dài hạn.
+
+---
+
+### F08 — 1 ảnh/SP, path `{productId}.jpg` (ghi đè)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Mỗi SP 1 ảnh, lưu tại `product-images/{productId}.jpg`. Upload mới ghi đè file cũ — không tích lũy file thừa.
+- **Lý do:** Đơn giản, không cần quản lý nhiều file per SP.
+
+---
+
+### F08 — Compress ảnh 80% JPEG max 1200px client-side
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Compress trước khi upload — 80% quality, resize về max 1200px cạnh dài. File ~100–300KB/ảnh.
+- **Lý do:** Supabase free tier 1GB Storage; cửa hàng nhỏ ~100–500 SP = 30–150MB, không lo hết dung lượng. Ảnh đủ rõ để đọc nhãn.
+
+---
+
 ### Tìm kiếm / filter text: `normalizeText()` client-side
 
 - **Ngày:** tháng 5/2026

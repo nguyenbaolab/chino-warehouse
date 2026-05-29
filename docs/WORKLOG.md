@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — docs: F08 design confirmed + cập nhật PLAN_3, REQUIREMENTS, DECISIONS, CONTEXT, HANDOFF_3
+
+- **Docs:** F08 ảnh SP — Storage `product-images`, 3 màn upload, compress, zoom; checklist D3; 5 DECISIONS entries; chưa implement code.
+
+---
+
 ## [tháng 5/2026] — ZoneDetailSheet: tap tên SP → ProductDetail
 
 - **Code:** Header group — `TouchableOpacity` navigate `ProductDetail` + `productId` (khi không edit tên); nút ✏️ giữ nguyên.

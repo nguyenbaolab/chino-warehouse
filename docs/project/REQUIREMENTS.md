@@ -93,7 +93,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F05 | Zone nhiều tầng kệ | Zone có nhiều tầng kệ (Tầng 1 = thấp nhất). Tap vào zone → tabs từng tầng. | P1 | MVP | Done |
 | F06 | Danh sách sản phẩm trong zone | Tap vào zone → danh sách tên sản phẩm + số thùng + chấm màu. Tap tên → mở chi tiết (F07). | P1 | MVP | Done |
 | F07 | Màn hình chi tiết sản phẩm | Tên, mã vạch, tất cả zone+tầng đang chứa, số thùng, hạn (màu), ghi chú, ảnh (Phase 2). Mỗi lô: **✏️** sửa inline · **📍** vị trí trên bản đồ (cross-tab Map qua `locateIntent` store — highlight zone + search expanded) · **🗑️** xóa (khi còn thùng). **Không** chuyển lô tại màn này (chuyển lô chỉ ở `ZoneDetailSheet`). | P1 | MVP | Done |
-| F08 | Hình ảnh sản phẩm | Thêm/xem ảnh sản phẩm. Chụp trực tiếp hoặc chọn từ thư viện. Upload Supabase Storage bucket `product-images`, lưu `products.image_url`. | P2 | Phase 3 | In progress |
+| F08 | Hình ảnh sản phẩm | Thêm/xem ảnh SP: chụp (`expo-image-picker`) hoặc chọn thư viện; compress 80% JPEG, max 1200px cạnh dài; upload bucket `product-images`, path `{productId}.jpg` (ghi đè); lưu public URL vào `products.image_url`; xóa ảnh / xóa SP → xóa file Storage; zoom pinch full-screen (`react-native-image-viewing`); 3 màn: **ProductsScreen** (thumbnail 64×64), **ProductDetailScreen** (block ảnh + đổi/xóa), **AddInventoryScreen** (optional khi tạo SP mới — tạo SP trước rồi upload). | P2 | Phase 3 | In progress |
 | F09 | Tìm kiếm sản phẩm | Tìm theo tên. Kết quả hiện thẻ sản phẩm + bản đồ tự highlight zone. Tap vào thẻ → mở chi tiết. Tìm kiếm không phân biệt dấu: gõ không dấu vẫn ra kết quả (ví dụ: `mi` → `mì`); hỗ trợ ký tự Phần Lan ö/ä/å → o/a/a. Áp dụng toàn bộ app. | P1 | MVP | Done |
 | F10 | Quét mã vạch | Camera quét mã vạch → kết quả như tìm kiếm tên. Không nhận ra → nút 'Thêm thủ công'. 3 mode: search / assign / locate. | P1 | MVP | Done |
 | F11 | Quản lý tồn kho theo thùng | Đơn vị: thùng nguyên. Thùng đang dở vẫn tính 1. Chỉ cập nhật khi bỏ hẳn. Một sản phẩm có thể ở nhiều zone. | P1 | MVP | Done |
@@ -196,7 +196,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 |--------|------|-------|
 | id | UUID | Khoá chính |
 | name | String | Tên sản phẩm |
-| image_url | String | URL ảnh (Phase 2, Supabase Storage) |
+| image_url | String | Public URL ảnh từ Supabase Storage bucket `product-images` (`product-images/{productId}.jpg`); null nếu chưa có ảnh |
 | notes | String | Ghi chú chung |
 | warning_days | Integer | Ngưỡng cảnh báo hạn (mặc định 30) |
 | low_warning_boxes | Integer | Ngưỡng cảnh báo tồn (mặc định 3) |
