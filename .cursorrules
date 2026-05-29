@@ -123,3 +123,13 @@ F21 offline → deferred Phase 3.
 - Với Supabase query (ilike): filter store local thay vì ilike DB 
   nếu data đã có sẵn trong store; nếu bắt buộc phải query DB thì 
   normalize query trước khi truyền vào.
+
+## Quy tắc Schema
+
+Mỗi khi tạo file migration mới trong supabase/migrations/,
+BẮT BUỘC phải cập nhật supabase/migrations/schema.sql:
+1. Thêm thay đổi tương ứng vào đúng bảng/section trong schema
+2. Bump version (ví dụ 3.0 → 3.1)
+3. Thêm dòng changelog mô tả thay đổi ở đầu file
+
+Không tạo migration mà không cập nhật schema.sql.

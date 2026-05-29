@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — .cursorrules: Quy tắc Schema (migration + schema.sql)
+
+- **Rule:** Mỗi migration mới trong `supabase/migrations/` bắt buộc đồng bộ `schema.sql` (DDL/section, bump version, changelog đầu file).
+
+---
+
+## [tháng 5/2026] — schema: re-number v2.x → v3.x
+
+- **Docs:** `supabase/migrations/schema.sql` — header `3.3`; changelog Phase 3 (v3.0–v3.3) tách khỏi nhãn v2.5–v2.8; mốc Phase 3 bắt đầu = SEC-11 v2.
+
+---
+
 ## [tháng 5/2026] — A5 fix — trigger auto-update updated_at cho inventory_entries + zones
 
 - **Migration:** `supabase/migrations/20260529123000_add_updated_at_triggers.sql` — `BEFORE UPDATE` trigger gán `updated_at = now()` cho `inventory_entries` và `zones` (bổ sung cho A5; `products` đã có từ migration trước).

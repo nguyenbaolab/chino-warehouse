@@ -1,20 +1,21 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 2.8 | Tháng 5/2026
+-- Phiên bản: 3.3 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
--- Thay đổi so với v2.7:
+-- Thay đổi so với v3.2:
 --   - A5 fix: thêm BEFORE UPDATE trigger auto-update updated_at
 --     cho inventory_entries và zones
--- Thay đổi so với v2.6:
---   - A5: thêm updated_at + trigger auto-update cho bảng products
--- Thay đổi so với v2.5:
+-- Thay đổi so với v3.1:
+--   - A5: thêm updated_at + BEFORE UPDATE trigger cho products
+--     (optimistic locking conflict detection)
+-- Thay đổi so với v3.0:
 --   - C1: thêm zones vào supabase_realtime publication
---     để Realtime postgres_changes hoạt động trên bảng zones
--- Thay đổi so với v2.4:
---   - SEC-11 v2: audit_trigger_fn() nhúng _product_name, _zone_name,
---     _location_name vào JSONB (prefix _ = metadata display, không phải
---     data gốc); xử lý riêng old_zone_name khi UPDATE đổi zone
+--     (MapScreen realtime multi-user update)
+-- Thay đổi so với v2.4 (Phase 2 kết thúc) → v3.0 (Phase 3 bắt đầu):
+--   - SEC-11 v2: audit_trigger_fn() nhúng _product_name,
+--     _zone_name, _location_name vào JSONB (prefix _ = metadata display,
+--     không phải data gốc); xử lý riêng old_zone_name khi UPDATE đổi zone
 -- Thay đổi so với v2.3:
 --   - SEC-11: thêm bảng audit_logs, trigger function, và trigger
 --     trên inventory_entries và products
