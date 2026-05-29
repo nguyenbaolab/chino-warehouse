@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — UX: B1 — badge "Đã giảm giá" trên header card (NotificationsScreen)
+
+- **Code:** `screens/NotificationsScreen.tsx` — `hasAnyPriceReduced` trên header card tab Sắp hết hạn; toggle từng lô khi expand giữ nguyên.
+- **Docs:** `HANDOFF_3.md` (tick B1).
+
+---
+
 ## [tháng 5/2026] — UX: B2 + B3 + B5 — quick fixes
 
 - **B2:** `ZoneDetailSheet` — `availableTargetZones = zones` (cho phép chuyển lô cùng zone, khác tầng).

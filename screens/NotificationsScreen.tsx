@@ -333,6 +333,7 @@ export default function NotificationsScreen() {
   const renderExpiryItem = useCallback(
     ({ item }: { item: ExpiryCard }) => {
       const isExpanded = expandedProducts[item.productId] === true
+      const hasAnyPriceReduced = item.lots.some((lot) => lot.isPriceReduced)
       const bgColor = item.hasExpiredLot ? colors.badgeExpiredBg : colors.card
       const borderColor = item.hasExpiredLot ? colors.statusExpired : colors.border
       return (
@@ -350,6 +351,11 @@ export default function NotificationsScreen() {
                   {item.productName}
                 </Text>
               </View>
+              {hasAnyPriceReduced && (
+                <View style={styles.priceReducedBadge}>
+                  <Text style={styles.priceReducedBadgeText}>Đã giảm giá</Text>
+                </View>
+              )}
               <Text style={[styles.expandHint, { color: colors.sub }]}>
                 {isExpanded ? 'Thu gọn ▴' : 'Chi tiết ▾'}
               </Text>
@@ -803,6 +809,13 @@ const styles = StyleSheet.create({
   expandHint: { fontSize: 12, fontWeight: '600' },
   titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'flex-start', marginTop: 2 },
   name: { fontSize: 15, fontWeight: '700', flex: 1, minWidth: 0 },
+  priceReducedBadge: {
+    backgroundColor: '#22C55E',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  priceReducedBadgeText: { color: 'white', fontSize: 11, fontWeight: '600' },
   lotList: { marginTop: 10, gap: 8 },
   lotRow: {
     borderWidth: 1,
