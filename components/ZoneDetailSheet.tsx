@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   ActivityIndicator,
@@ -28,7 +28,10 @@ type ZoneDetailSheetProps = {
   scannedLotBarcode?: string
   scannedLotId?: string
   scannedLotBarcodeAt?: number
+  scrollToProductId?: string | null
 }
+
+const GROUP_SCROLL_ESTIMATE_HEIGHT = 140
 
 /** ISO YYYY-MM-DD → DD/MM/YYYY cho ô edit (rỗng nếu không có hạn). */
 function isoExpiryToDisplay(iso?: string): string {
@@ -101,6 +104,7 @@ export default function ZoneDetailSheet({
   scannedLotBarcode,
   scannedLotId,
   scannedLotBarcodeAt,
+  scrollToProductId,
 }: ZoneDetailSheetProps) {
   const { colors } = useThemeStore()
   const insets = useSafeAreaInsets()
@@ -129,13 +133,31 @@ export default function ZoneDetailSheet({
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [productNameInput, setProductNameInput] = useState('')
   const [originalProductName, setOriginalProductName] = useState('')
+  const [highlightedProductId, setHighlightedProductId] = useState<string | null>(null)
+  const productListScrollRef = useRef<ScrollView>(null)
+  const pendingScrollProductIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!visible || !zone) return
 
-    // Mỗi lần mở sheet theo zone mới thì reset về tầng 1
-    setSelectedTier(1)
-  }, [visible, zone?.id])
+    // Mở sheet thủ công → reset tầng 1; mở từ search (scrollToProductId) → giữ để effect scroll chọn đúng tầng
+    if (!scrollToProductId) {
+      setSelectedTier(1)
+      pendingScrollProductIdRef.current = null
+    }
+    setHighlightedProductId(null)
+  }, [visible, zone?.id, scrollToProductId])
+
+  useEffect(() => {
+    if (!visible) {
+      setHighlightedProductId(null)
+      pendingScrollProductIdRef.current = null
+      return
+    }
+    if (scrollToProductId) {
+      pendingScrollProductIdRef.current = scrollToProductId
+    }
+  }, [visible, scrollToProductId])
 
   useEffect(() => {
     if (!visible || !zone) return
@@ -336,6 +358,33 @@ export default function ZoneDetailSheet({
     })
   }, [visible, scannedLotBarcodeAt, scannedLotId, scannedLotBarcode, entries, navigation])
 
+  useEffect(() => {
+    if (!visible || isLoading || !pendingScrollProductIdRef.current) return
+
+    const productId = pendingScrollProductIdRef.current
+    const targetEntry = entries.find((e) => e.product_id === productId)
+    if (targetEntry && targetEntry.tier !== selectedTier) {
+      setSelectedTier(targetEntry.tier)
+      return
+    }
+
+    const index = filteredGroupedProducts.findIndex((g) => g.productId === productId)
+    if (index < 0) return
+
+    pendingScrollProductIdRef.current = null
+    const scrollY = index * GROUP_SCROLL_ESTIMATE_HEIGHT
+    requestAnimationFrame(() => {
+      productListScrollRef.current?.scrollTo({ y: scrollY, animated: true })
+      setHighlightedProductId(productId)
+    })
+  }, [visible, isLoading, entries, selectedTier, filteredGroupedProducts])
+
+  useEffect(() => {
+    if (!highlightedProductId) return
+    const timer = setTimeout(() => setHighlightedProductId(null), 1500)
+    return () => clearTimeout(timer)
+  }, [highlightedProductId])
+
   function handlePressAddInventory() {
     if (!zone) return
     onClose()
@@ -428,7 +477,11 @@ export default function ZoneDetailSheet({
                 </TouchableOpacity>
               </View>
             ) : (
-              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <ScrollView
+                ref={productListScrollRef}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
                 {filteredGroupedProducts.length === 0 ? (
                   <View style={styles.emptyWrap}>
                     <Text style={[styles.emptyText, { color: colors.sub }]}>Không tìm thấy sản phẩm phù hợp</Text>
@@ -475,8 +528,21 @@ export default function ZoneDetailSheet({
                       ? '✓'
                       : '✕'
 
+                  const isHighlighted = highlightedProductId === group.productId
+
                   return (
-                    <View key={group.productId} style={[styles.groupWrap, { borderBottomColor: colors.border }]}>
+                    <View
+                      key={group.productId}
+                      style={[
+                        styles.groupWrap,
+                        { borderBottomColor: colors.border },
+                        isHighlighted && {
+                          backgroundColor: hexToRgba(colors.accent, 0.18),
+                          borderRadius: 8,
+                          paddingHorizontal: 6,
+                        },
+                      ]}
+                    >
                       <View style={styles.itemRow}>
                         <View style={styles.itemMain}>
                           {isEditingProductName ? (

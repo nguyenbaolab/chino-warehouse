@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — UX: B7 — Map search result → tự mở ZoneDetailSheet + scroll SP
+
+- **Code:** `MapScreen` — `autoScrollProductId`, `focusSearchResultLot` mở sheet; `ZoneDetailSheet` — `scrollToProductId`, scroll + highlight 1.5s.
+- **Docs:** `CONTEXT.md` §3, `HANDOFF_3.md` (tick B7).
+
+---
+
 ## [tháng 5/2026] — UX: B6 refine — đổi UX nút sửa tên SP
 
 - **Code:** `ZoneDetailSheet` — nút ✏️/✕/✓ trên hàng action mỗi lô; tên SP header chỉ `Text`/`TextInput`; lưu chỉ khi bấm ✓ (không blur).

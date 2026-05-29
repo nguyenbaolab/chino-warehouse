@@ -139,6 +139,7 @@ export default function MapScreen() {
   const [actionModal, setActionModal] = useState(false)
   const [zoneDetailVisible, setZoneDetailVisible] = useState(false)
   const [tappedZone, setTappedZone] = useState<Zone | null>(null)
+  const [autoScrollProductId, setAutoScrollProductId] = useState<string | null>(null)
   const [locationSheetOpen, setLocationSheetOpen] = useState(false)
   const [zoneName, setZoneName] = useState('')
   const [tierCount, setTierCount] = useState('1')
@@ -345,6 +346,18 @@ export default function MapScreen() {
     setHighlightedZones(buildHighlightMapFromEntries([entry], colors))
     setSearchResults([])
     setSearchQuery('')
+
+    const targetZone = entry.zone ?? zones.find((z) => z.id === entry.zone_id) ?? null
+    if (targetZone) {
+      setTappedZone(targetZone)
+      setAutoScrollProductId(entry.product_id ?? null)
+      setZoneDetailVisible(true)
+    }
+  }
+
+  function closeZoneDetail() {
+    setZoneDetailVisible(false)
+    setAutoScrollProductId(null)
   }
 
   function startAddZone() {
@@ -928,11 +941,12 @@ export default function MapScreen() {
       <ZoneDetailSheet
         visible={zoneDetailVisible}
         zone={tappedZone}
-        onClose={() => setZoneDetailVisible(false)}
+        onClose={closeZoneDetail}
         navigation={navigation}
         scannedLotBarcode={scannedZoneLotBarcode}
         scannedLotId={scannedZoneLotId}
         scannedLotBarcodeAt={scannedZoneLotBarcodeAt}
+        scrollToProductId={autoScrollProductId}
       />
     </SafeAreaView>
   )
