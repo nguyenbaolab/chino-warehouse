@@ -1,8 +1,11 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.3 | Tháng 5/2026
+-- Phiên bản: 3.4 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.3:
+--   - F08: Storage bucket product-images (public read),
+--     RLS authenticated insert/update/delete trên storage.objects
 -- Thay đổi so với v3.2:
 --   - A5 fix: thêm BEFORE UPDATE trigger auto-update updated_at
 --     cho inventory_entries và zones
@@ -329,6 +332,35 @@ DROP TRIGGER IF EXISTS zones_updated_at_trigger ON zones;
 CREATE TRIGGER zones_updated_at_trigger
   BEFORE UPDATE ON zones
   FOR EACH ROW EXECUTE FUNCTION update_zones_updated_at();
+
+
+-- ============================================================
+-- STORAGE BUCKETS (F08)
+-- Bucket product-images: public read; authenticated write/update/delete
+-- ============================================================
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public read product images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'product-images');
+
+CREATE POLICY "Authenticated upload product images"
+ON storage.objects FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'product-images');
+
+CREATE POLICY "Authenticated update product images"
+ON storage.objects FOR UPDATE
+TO authenticated
+USING (bucket_id = 'product-images');
+
+CREATE POLICY "Authenticated delete product images"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (bucket_id = 'product-images');
 
 
 -- ============================================================

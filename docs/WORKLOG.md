@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F08: cài packages ảnh + migration Storage
+
+- **Packages:** `expo-image-picker`, `react-native-image-viewing` (expo install).
+- **Migration:** `20260530001000_f08_product_images_storage.sql` — bucket `product-images` (public read) + RLS authenticated insert/update/delete.
+- **Schema:** `schema.sql` v3.4 — section Storage Buckets.
+
+---
+
 ## [tháng 5/2026] — ProductDetailScreen: gộp nút Ẩn/Xóa SP thành 1 hàng
 
 - **Layout:** `productActionsRow` — Ẩn/Khôi phục + Xóa SP cạnh nhau `flex: 1`, gap 10.
