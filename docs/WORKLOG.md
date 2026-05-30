@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: layout card ProductsScreen + camera crop vuông
+
+- **ProductsScreen:** ảnh `flex: 1` fit chiều cao card; tổng thùng xuống dòng riêng; barcode lô tách dòng.
+- **imageUtils:** `launchCameraAsync` dùng `cameraPickerOptions` (`allowsEditing`, `aspect: [1,1]`, `quality: 1`).
+
+---
+
 ## [tháng 5/2026] — F08: AddInventoryScreen ô ảnh optional khi tạo SP mới
 
 - **AddInventoryScreen:** preview ảnh local trong form tạo SP; sau `addProduct` upload + `updateProductImage`; `ImageViewerModal` preview.

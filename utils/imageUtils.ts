@@ -7,7 +7,14 @@ const BUCKET = 'product-images'
 const MAX_IMAGE_SIDE = 1200
 const JPEG_COMPRESS = 0.8
 
-const pickerOptions: ImagePicker.ImagePickerOptions = {
+const libraryPickerOptions: ImagePicker.ImagePickerOptions = {
+  mediaTypes: ['images'],
+  allowsEditing: true,
+  aspect: [1, 1],
+  quality: 1,
+}
+
+const cameraPickerOptions: ImagePicker.ImagePickerOptions = {
   mediaTypes: ['images'],
   allowsEditing: true,
   aspect: [1, 1],
@@ -31,8 +38,8 @@ export async function pickImage(source: 'camera' | 'library'): Promise<string | 
 
   const result =
     source === 'camera'
-      ? await ImagePicker.launchCameraAsync(pickerOptions)
-      : await ImagePicker.launchImageLibraryAsync(pickerOptions)
+      ? await ImagePicker.launchCameraAsync(cameraPickerOptions)
+      : await ImagePicker.launchImageLibraryAsync(libraryPickerOptions)
 
   if (result.canceled || !result.assets[0]?.uri) return null
   return result.assets[0].uri

@@ -284,13 +284,13 @@ export default function ProductsScreen() {
             }}
           >
             {isUploading ? (
-              <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+              <View style={[styles.thumbnailFill, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
                 <ActivityIndicator />
               </View>
             ) : product.image_url ? (
-              <Image source={{ uri: product.image_url }} style={styles.thumbnail} resizeMode="cover" />
+              <Image source={{ uri: product.image_url }} style={styles.thumbnailFill} resizeMode="cover" />
             ) : (
-              <View style={[styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+              <View style={[styles.thumbnailFill, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
                 <Text style={{ fontSize: 24 }}>📷</Text>
               </View>
             )}
@@ -301,23 +301,20 @@ export default function ProductsScreen() {
             activeOpacity={0.8}
             onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
           >
-            <View style={styles.itemHeader}>
-              <View style={styles.itemTitleRow}>
-                <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
-                <Text
-                  style={[
-                    styles.itemName,
-                    { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
-                  ]}
-                  numberOfLines={1}
-                >
-                  {product.name}
-                </Text>
-              </View>
-              <Text style={[styles.totalBoxesLabel, { color: colors.sub }]}>
-                Tổng {totalBoxesByProduct.get(product.id) ?? 0} thùng
+            <View style={styles.itemTitleRow}>
+              <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
+              <Text
+                style={[
+                  styles.itemName,
+                  { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
+                ]}
+              >
+                {product.name}
               </Text>
             </View>
+            <Text style={[styles.totalBoxesLine, { color: colors.sub }]}>
+              Tổng {totalBoxesByProduct.get(product.id) ?? 0} thùng
+            </Text>
             {categoryLine ? (
               <Text style={[styles.itemCategoryLine, { color: colors.sub }]} numberOfLines={2}>
                 {categoryLine}
@@ -352,10 +349,15 @@ export default function ProductsScreen() {
                     getDisplayColorContextFromEntry(lot, product),
                   )
                   return (
-                    <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
-                      <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
-                      <Text style={[styles.lotText, { color: colors.sub }]}>
-                        Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng · {lot.barcode?.trim() || '—'}
+                    <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotGroupItem}>
+                      <View style={styles.lotRow}>
+                        <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
+                        <Text style={[styles.lotText, { color: colors.sub }]}>
+                          Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng
+                        </Text>
+                      </View>
+                      <Text style={[styles.lotBarcodeLine, { color: colors.sub }]}>
+                        {lot.barcode?.trim() || '—'}
                       </Text>
                     </View>
                   )
@@ -739,24 +741,22 @@ const styles = StyleSheet.create({
   itemRow: { flexDirection: 'row' },
   itemContent: { flex: 1, paddingLeft: 10 },
   thumbnailContainer: { width: 64, alignSelf: 'stretch' },
-  thumbnail: { width: 64, height: 64, borderRadius: 8 },
+  thumbnailFill: { flex: 1, borderRadius: 8 },
   thumbnailPlaceholder: {
-    width: 64,
-    height: 64,
-    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
-  itemTitleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 4, minWidth: 0 },
-  totalBoxesLabel: { fontSize: 12, fontWeight: '600', flexShrink: 0, maxWidth: '28%' },
-  itemName: { fontSize: 15, fontWeight: '700' },
+  itemTitleRow: { flexDirection: 'row', alignItems: 'flex-start', marginRight: 4, minWidth: 0 },
+  totalBoxesLine: { fontSize: 12, marginTop: 4 },
+  itemName: { fontSize: 15, fontWeight: '700', flex: 1, flexShrink: 1 },
   archivedTag: { fontSize: 11, marginTop: 4, fontStyle: 'italic' },
   itemSub: { fontSize: 12, marginTop: 3 },
   noLotText: { fontSize: 12, marginTop: 8 },
-  lotGroupWrap: { marginTop: 8, gap: 4 },
+  lotGroupWrap: { marginTop: 8, gap: 6 },
+  lotGroupItem: { gap: 2 },
   lotRow: { flexDirection: 'row', alignItems: 'center' },
-  lotText: { fontSize: 12, marginLeft: 6 },
-  titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'center' },
+  lotText: { fontSize: 12, marginLeft: 6, flex: 1 },
+  lotBarcodeLine: { fontSize: 12, paddingLeft: 14 },
+  titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, marginTop: 2 },
   lotDot: { width: 8, height: 8, borderRadius: 4 },
 })
