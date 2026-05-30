@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: thumbnail vuông 64×64, meta line, crop sau chụp
+
+- **ProductsScreen:** thumbnail cố định 64×64; gộp tổng thùng + category một dòng; `itemRow` `alignItems: 'center'`.
+- **imageUtils:** crop vuông center sau `launchCameraAsync` (`manipulateAsync`).
+
+---
+
 ## [tháng 5/2026] — fix: layout card ProductsScreen + camera crop vuông
 
 - **ProductsScreen:** ảnh `flex: 1` fit chiều cao card; tổng thùng xuống dòng riêng; barcode lô tách dòng.

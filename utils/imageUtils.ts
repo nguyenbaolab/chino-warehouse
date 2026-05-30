@@ -1,5 +1,5 @@
 import * as ImagePicker from 'expo-image-picker'
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
+import { ImageManipulator, SaveFormat, manipulateAsync } from 'expo-image-manipulator'
 import * as FileSystem from 'expo-file-system/legacy'
 import { supabase } from '../lib/supabase'
 
@@ -36,13 +36,26 @@ export async function pickImage(source: 'camera' | 'library'): Promise<string | 
 
   if (!permission.granted) return null
 
-  const result =
-    source === 'camera'
-      ? await ImagePicker.launchCameraAsync(cameraPickerOptions)
-      : await ImagePicker.launchImageLibraryAsync(libraryPickerOptions)
+  if (source === 'library') {
+    const result = await ImagePicker.launchImageLibraryAsync(libraryPickerOptions)
+    if (result.canceled || !result.assets[0]?.uri) return null
+    return result.assets[0].uri
+  }
 
+  const result = await ImagePicker.launchCameraAsync(cameraPickerOptions)
   if (result.canceled || !result.assets[0]?.uri) return null
-  return result.assets[0].uri
+
+  const { width, height, uri } = result.assets[0]
+  const size = Math.min(width, height)
+  const originX = (width - size) / 2
+  const originY = (height - size) / 2
+
+  const cropped = await manipulateAsync(
+    uri,
+    [{ crop: { originX, originY, width: size, height: size } }],
+    { compress: 1, format: SaveFormat.JPEG },
+  )
+  return cropped.uri
 }
 
 async function compressImage(uri: string): Promise<string> {

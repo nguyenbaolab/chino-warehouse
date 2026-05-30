@@ -267,6 +267,10 @@ export default function ProductsScreen() {
       lowStockWarningEnabled,
     )
     const isUploading = uploadingProductId === product.id
+    const totalBoxes = totalBoxesByProduct.get(product.id) ?? 0
+    const metaLine = categoryLine
+      ? `Tổng ${totalBoxes} thùng · ${categoryLine}`
+      : `Tổng ${totalBoxes} thùng`
     return (
       <View style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.itemRow}>
@@ -284,13 +288,13 @@ export default function ProductsScreen() {
             }}
           >
             {isUploading ? (
-              <View style={[styles.thumbnailFill, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+              <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
                 <ActivityIndicator />
               </View>
             ) : product.image_url ? (
-              <Image source={{ uri: product.image_url }} style={styles.thumbnailFill} resizeMode="cover" />
+              <Image source={{ uri: product.image_url }} style={styles.thumbnail} resizeMode="cover" />
             ) : (
-              <View style={[styles.thumbnailFill, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+              <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
                 <Text style={{ fontSize: 24 }}>📷</Text>
               </View>
             )}
@@ -312,14 +316,9 @@ export default function ProductsScreen() {
                 {product.name}
               </Text>
             </View>
-            <Text style={[styles.totalBoxesLine, { color: colors.sub }]}>
-              Tổng {totalBoxesByProduct.get(product.id) ?? 0} thùng
+            <Text style={[styles.itemMetaLine, { color: colors.sub }]} numberOfLines={2}>
+              {metaLine}
             </Text>
-            {categoryLine ? (
-              <Text style={[styles.itemCategoryLine, { color: colors.sub }]} numberOfLines={2}>
-                {categoryLine}
-              </Text>
-            ) : null}
             {product.is_archived && (
               <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
             )}
@@ -722,7 +721,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanBtnText: { fontSize: 16 },
-  itemCategoryLine: { fontSize: 12, marginTop: 6, paddingHorizontal: 0 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listWrap: { flex: 1 },
   list: { paddingHorizontal: 16, paddingBottom: 20 },
@@ -738,16 +736,16 @@ const styles = StyleSheet.create({
   pageBtnText: { fontSize: 20, fontWeight: '700' },
   pageLabel: { fontSize: 13 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
-  itemRow: { flexDirection: 'row' },
+  itemRow: { flexDirection: 'row', alignItems: 'center' },
   itemContent: { flex: 1, paddingLeft: 10 },
-  thumbnailContainer: { width: 64, alignSelf: 'stretch' },
-  thumbnailFill: { flex: 1, borderRadius: 8 },
+  thumbnailContainer: { width: 64, height: 64 },
+  thumbnail: { width: 64, height: 64, borderRadius: 8 },
   thumbnailPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   itemTitleRow: { flexDirection: 'row', alignItems: 'flex-start', marginRight: 4, minWidth: 0 },
-  totalBoxesLine: { fontSize: 12, marginTop: 4 },
+  itemMetaLine: { fontSize: 12, marginTop: 4 },
   itemName: { fontSize: 15, fontWeight: '700', flex: 1, flexShrink: 1 },
   archivedTag: { fontSize: 11, marginTop: 4, fontStyle: 'italic' },
   itemSub: { fontSize: 12, marginTop: 3 },
