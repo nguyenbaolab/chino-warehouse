@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat(Notifications): tap tên SP → ProductDetail cả 2 tab
+
+- **renderLowStockItem / renderExpiryItem:** tên SP bọc `TouchableOpacity` → `ProductDetail` với `productId`.
+
+---
+
 ## [tháng 5/2026] — fix(AuditLog): fetch zones trước inventory khi chọn kho
 
 - **AuditLogScreen:** `fetchZones` rồi `fetchInventoryByLocation` khi `filterLocationId` đổi.

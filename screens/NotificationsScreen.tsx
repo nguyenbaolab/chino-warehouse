@@ -351,30 +351,39 @@ export default function NotificationsScreen() {
       const titleDotColor = headerColors.dotColor
       return (
         <View style={[styles.item, { backgroundColor: bgColor, borderColor }]}>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => toggleExpanded(item.productId)}>
-            <View style={styles.headerRow}>
-              <View style={styles.leftWrap}>
-                <View
-                  style={[
-                    styles.titleDot,
-                    { backgroundColor: titleDotColor },
-                  ]}
-                />
-                <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-                  {item.productName}
-                </Text>
+          <View style={styles.headerRow}>
+            <View style={[styles.leftWrap, { flex: 1 }]}>
+              <View
+                style={[
+                  styles.titleDot,
+                  { backgroundColor: titleDotColor },
+                ]}
+              />
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
+                  style={{ flex: 1 }}
+                >
+                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
+                    {item.productName}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => toggleExpanded(item.productId)}>
+                  <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} thùng</Text>
+                </TouchableOpacity>
               </View>
-              {hasAnyPriceReduced && (
-                <View style={styles.priceReducedBadge}>
-                  <Text style={styles.priceReducedBadgeText}>Đã giảm giá</Text>
-                </View>
-              )}
+            </View>
+            {hasAnyPriceReduced && (
+              <View style={styles.priceReducedBadge}>
+                <Text style={styles.priceReducedBadgeText}>Đã giảm giá</Text>
+              </View>
+            )}
+            <TouchableOpacity onPress={() => toggleExpanded(item.productId)}>
               <Text style={[styles.expandHint, { color: colors.sub }]}>
                 {isExpanded ? 'Thu gọn ▴' : 'Chi tiết ▾'}
               </Text>
-            </View>
-            <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} thùng</Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
 
           {isExpanded && (
             <View style={styles.lotList}>
@@ -444,9 +453,11 @@ export default function NotificationsScreen() {
                 { backgroundColor: titleDotColor },
               ]}
             />
-            <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-              {item.productName}
-            </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}>
+              <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
+                {item.productName}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
         <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} thùng</Text>
@@ -469,7 +480,7 @@ export default function NotificationsScreen() {
       </View>
       )
     },
-    [colors, expiryWarningEnabled, lowStockWarningEnabled, toggleDiscontinued]
+    [colors, expiryWarningEnabled, lowStockWarningEnabled, navigation, toggleDiscontinued]
   )
 
   return (
