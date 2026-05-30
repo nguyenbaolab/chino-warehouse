@@ -514,6 +514,48 @@ export default function ProductDetailScreen() {
     return String(st.routes[st.index]?.name ?? 'Products')
   }
 
+  function handleArchiveToggle() {
+    if (!product) return
+    const nextArchived = !product.is_archived
+    const isHiding = nextArchived
+
+    Alert.alert(
+      isHiding ? 'Ẩn sản phẩm?' : 'Khôi phục sản phẩm?',
+      isHiding
+        ? 'Sản phẩm sẽ không hiện trong danh sách. Bạn có thể khôi phục bất cứ lúc nào.'
+        : 'Sản phẩm sẽ hiện lại trong danh sách sản phẩm.',
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        {
+          text: isHiding ? 'Ẩn' : 'Khôi phục',
+          style: isHiding ? 'destructive' : 'default',
+          onPress: () => {
+            void (async () => {
+              const { data: updated, error } = await supabase
+                .from('products')
+                .update({ is_archived: nextArchived })
+                .eq('id', product.id)
+                .select('*')
+                .single()
+
+              if (error || !updated) {
+                Alert.alert('Có lỗi xảy ra', 'Không thể cập nhật trạng thái sản phẩm. Vui lòng thử lại.')
+                return
+              }
+
+              useWarehouseStore.setState((s) => ({
+                products: nextArchived
+                  ? s.products.filter((p) => p.id !== updated.id)
+                  : s.products.map((p) => (p.id === updated.id ? updated : p)),
+              }))
+              navigation.goBack()
+            })()
+          },
+        },
+      ],
+    )
+  }
+
   function handleDeleteProduct() {
     if (!product) return
     Alert.alert(
@@ -918,6 +960,26 @@ export default function ProductDetailScreen() {
         )}
 
         <TouchableOpacity
+          style={[
+            styles.archiveProductBtn,
+            {
+              borderColor: product?.is_archived ? colors.statusOk : colors.statusWarning,
+              backgroundColor: colors.card,
+            },
+          ]}
+          onPress={handleArchiveToggle}
+        >
+          <Text
+            style={[
+              styles.archiveProductBtnText,
+              { color: product?.is_archived ? colors.statusOk : colors.statusWarning },
+            ]}
+          >
+            {product?.is_archived ? 'Khôi phục sản phẩm' : 'Ẩn sản phẩm'}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.deleteProductBtn, { borderColor: colors.statusExpired, backgroundColor: colors.card }]}
           onPress={handleDeleteProduct}
         >
@@ -942,6 +1004,18 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700' },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   content: { padding: 16, paddingBottom: 20 },
+  archiveProductBtn: {
+    marginTop: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  archiveProductBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
   deleteProductBtn: {
     marginTop: 20,
     borderWidth: 1,

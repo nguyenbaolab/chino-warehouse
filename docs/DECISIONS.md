@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Ẩn/Khôi phục SP chuyển sang ProductDetailScreen — xóa khỏi modal ProductsScreen
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Ẩn/khôi phục (`is_archived`) chỉ từ `ProductDetailScreen` (nút outlined + Alert xác nhận). Xóa modal Sửa sản phẩm và nút ✏️ trên card `ProductsScreen`.
+- **Lý do:** Logic tương tự trước đây trong modal; tập trung chỉnh sửa/ẩn tại màn chi tiết; card gọn hơn (chuẩn bị F08 thumbnail).
+
+---
+
 ### Xóa nút ✏️ khỏi ProductsScreen card
 
 - **Ngày:** tháng 5/2026

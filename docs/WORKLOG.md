@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — Ẩn/Khôi phục SP tại ProductDetail; xóa edit modal ProductsScreen
+
+- **ProductDetailScreen:** nút Ẩn/Khôi phục (trước Xóa SP), `handleArchiveToggle` + Alert xác nhận, `supabase` + sync store, `goBack()` sau khi ok.
+- **ProductsScreen:** xóa nút ✏️ card + modal Sửa sản phẩm (edit/archive trong modal).
+
+---
+
 ## [tháng 5/2026] — docs: F08 design confirmed + cập nhật PLAN_3, REQUIREMENTS, DECISIONS, CONTEXT, HANDOFF_3
 
 - **Docs:** F08 ảnh SP — Storage `product-images`, 3 màn upload, compress, zoom; checklist D3; 5 DECISIONS entries; chưa implement code.

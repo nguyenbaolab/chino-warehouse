@@ -98,7 +98,8 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [ ] **D3 / F08** — Cài `expo-image-picker` + `react-native-image-viewing`
 - [ ] **D3 / F08** — `utils/imageUtils.ts`: `uploadProductImage`, `deleteProductImage`, compress
 - [ ] **D3 / F08** — `warehouseStore`: `updateProductImage`, `removeProductImage`; `deleteProduct` xóa Storage
-- [ ] **D3 / F08** — `ProductsScreen`: thumbnail 64×64 + zoom + upload; xóa nút ✏️ card
+- [x] **D3 / F08** — `ProductsScreen`: xóa nút ✏️ card (edit chuyển ProductDetail)
+- [ ] **D3 / F08** — `ProductsScreen`: thumbnail 64×64 + zoom + upload
 - [ ] **D3 / F08** — `ProductDetailScreen`: image block + zoom + upload + xóa ảnh
 - [ ] **D3 / F08** — `AddInventoryScreen`: ô ảnh optional khi tạo SP mới
 
