@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — ProductDetailScreen: gộp nút Ẩn/Xóa SP thành 1 hàng
+
+- **Layout:** `productActionsRow` — Ẩn/Khôi phục + Xóa SP cạnh nhau `flex: 1`, gap 10.
+
+---
+
 ## [tháng 5/2026] — Ẩn/Khôi phục SP tại ProductDetail; xóa edit modal ProductsScreen
 
 - **ProductDetailScreen:** nút Ẩn/Khôi phục (trước Xóa SP), `handleArchiveToggle` + Alert xác nhận, `supabase` + sync store, `goBack()` sau khi ok.

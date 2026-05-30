@@ -959,32 +959,34 @@ export default function ProductDetailScreen() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={[
-            styles.archiveProductBtn,
-            {
-              borderColor: product?.is_archived ? colors.statusOk : colors.statusWarning,
-              backgroundColor: colors.card,
-            },
-          ]}
-          onPress={handleArchiveToggle}
-        >
-          <Text
+        <View style={styles.productActionsRow}>
+          <TouchableOpacity
             style={[
-              styles.archiveProductBtnText,
-              { color: product?.is_archived ? colors.statusOk : colors.statusWarning },
+              styles.archiveProductBtn,
+              {
+                borderColor: product?.is_archived ? colors.statusOk : colors.statusWarning,
+                backgroundColor: colors.card,
+              },
             ]}
+            onPress={handleArchiveToggle}
           >
-            {product?.is_archived ? 'Khôi phục sản phẩm' : 'Ẩn sản phẩm'}
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.archiveProductBtnText,
+                { color: product?.is_archived ? colors.statusOk : colors.statusWarning },
+              ]}
+            >
+              {product?.is_archived ? 'Khôi phục sản phẩm' : 'Ẩn sản phẩm'}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.deleteProductBtn, { borderColor: colors.statusExpired, backgroundColor: colors.card }]}
-          onPress={handleDeleteProduct}
-        >
-          <Text style={[styles.deleteProductBtnText, { color: colors.statusExpired }]}>Xóa sản phẩm</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.deleteProductBtn, { borderColor: colors.statusExpired, backgroundColor: colors.card }]}
+            onPress={handleDeleteProduct}
+          >
+            <Text style={[styles.deleteProductBtnText, { color: colors.statusExpired }]}>Xóa sản phẩm</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -1004,9 +1006,14 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700' },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   content: { padding: 16, paddingBottom: 20 },
+  productActionsRow: {
+    flexDirection: 'row',
+    marginTop: 20,
+    marginBottom: 16,
+    gap: 10,
+  },
   archiveProductBtn: {
-    marginTop: 12,
-    marginBottom: 8,
+    flex: 1,
     borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 14,
@@ -1017,7 +1024,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   deleteProductBtn: {
-    marginTop: 20,
+    flex: 1,
     borderWidth: 1,
     borderRadius: 12,
     paddingVertical: 14,
