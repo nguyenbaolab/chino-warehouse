@@ -4,6 +4,36 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — verify drift: DB khớp schema.sql (dump 20260530_185715)
+
+- **KI-049 → Resolved:** so sánh logic public schema sau apply migration; drift đã sạch (nhóm 4 ngoài phạm vi dump).
+
+---
+
+## [tháng 5/2026] — KI-049 Phần 4: giữ is_deferred (hướng A)
+
+- **Quyết định:** giữ cột `products.is_deferred` (DECISIONS); apply `20260511_add_product_is_deferred.sql` trên Supabase.
+- **Migration** đã idempotent (`ADD COLUMN IF NOT EXISTS`); không sửa `schema.sql`.
+- **KI-050:** ghi nhận `toggleDeferred` dead path (UI không gọi).
+
+---
+
+## [tháng 5/2026] — đồng bộ schema sau audit drift (KI-049, Phần 1–3)
+
+- **schema.sql v3.8:** correction body `audit_trigger_fn` v2 enrich (SEC-11).
+- **Migration** `20260530190000_sync_missing_indexes.sql` — 3 index thiếu trên DB.
+- **Migration** `20260530190100_products_is_archived_not_null.sql` — `is_archived NOT NULL`.
+- **Phần 4 (is_deferred):** grep codebase — chờ quyết định (xem báo cáo chat).
+
+---
+
+## [tháng 5/2026] — audit schema: drift giữa DB thật và schema.sql (dump 20260530)
+
+- **So sánh** `schema_dump_20260530_183554.sql` vs `supabase/migrations/schema.sql` (public only).
+- **Drift:** `audit_trigger_fn` v2 trên DB vs v1 trong schema.sql; thiếu trên DB: `products.is_deferred`, 3 index; xem KI-049.
+
+---
+
 ## [tháng 5/2026] — fix: escape ngoặc trong dump_schema.bat
 
 - **dump_schema.bat:** `^(` / `^)` trong `echo` bên trong khối `if` — tránh lỗi cmd ". was unexpected at this time."

@@ -528,3 +528,25 @@
   - `screens/ProductDetailScreen.tsx` (lưu lô + warning_days/threshold/category trên `products`)
 
 ---
+
+### [KI-049] schema.sql lệch DB production (pg_dump audit 2026-05-30)
+
+- **Mức độ:** Medium
+- **File liên quan:** `supabase/migrations/schema.sql`, `supabase/db_dump_schema/schema_dump_20260530_185715.sql`, migrations KI-049
+- **Mô tả:** Drift giữa DB và `schema.sql` (audit function, index, nullable, is_deferred).
+- **Trạng thái:** **Resolved** (verify dump `20260530_185715` — public schema khớp logic)
+- **Đã xử lý:**
+  - Repo: `schema.sql` v3.8 correction + migrations index / is_archived / is_deferred.
+  - Supabase: apply migration → dump mới xác nhận 4 điểm drift đã khớp.
+- **Verify:** `schema_dump_20260530_185715.sql` vs `schema.sql` — không còn lệch nhóm 1/2/3 trong `public`.
+
+---
+
+### [KI-050] toggleDeferred — dead path (is_deferred)
+
+- **Mức độ:** Low
+- **File liên quan:** `stores/warehouseStore.ts`, `types/index.ts`, `20260511_add_product_is_deferred.sql`
+- **Mô tả:** `toggleDeferred` vẫn ghi `products.is_deferred` qua Supabase nhưng UI không gọi (tab Để sau đã bỏ) — dead path; dọn khi nào quyết retire feature.
+- **Trạng thái:** Open (chấp nhận tạm — giữ store/type theo DECISIONS)
+
+---
