@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix(AuditLog): fetch zones trước inventory khi chọn kho
+
+- **AuditLogScreen:** `fetchZones` rồi `fetchInventoryByLocation` khi `filterLocationId` đổi.
+
+---
+
+## [tháng 5/2026] — fix(AuditLog): fetch inventory khi chọn kho để dropdown SP có dữ liệu
+
+- **AuditLogScreen:** gọi `fetchInventoryByLocation(filterLocationId)` khi chọn kho.
+
+---
+
 ## [tháng 5/2026] — refactor(AuditLog): bỏ filter Loại; layout 2 hàng; fix query kho+SP
 
 - **AuditLogScreen:** xóa dropdown Loại; hàng 1 Kho+Người, hàng 2 Sản phẩm full width.
