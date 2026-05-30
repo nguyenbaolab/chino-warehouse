@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix(statusUtils): SP không có lô → màu xám
+
+- **getWorstDisplayColorForEntries:** `entries.length === 0` trả `colors.sub` thay vì `colors.statusOk`.
+
+---
+
 ## [tháng 5/2026] — fix(statusUtils): getDisplayColor context ok → statusOk
 
 - **statusUtils:** lô không có issue visible (`visible.length === 0`) trả `colors.statusOk` thay vì `colors.sub`.

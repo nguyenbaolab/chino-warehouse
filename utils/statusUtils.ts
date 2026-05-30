@@ -168,7 +168,7 @@ export function getWorstDisplayColorForEntries(
   expiryWarningEnabled: boolean,
   lowStockWarningEnabled: boolean,
 ): string {
-  if (entries.length === 0) return colors.statusOk
+  if (entries.length === 0) return colors.sub
 
   let worstRank = 99
   let worstColor = colors.statusOk
