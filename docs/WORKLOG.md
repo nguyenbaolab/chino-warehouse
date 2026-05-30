@@ -4,6 +4,20 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — chốt DECISIONS SEC-10: backup anon + user login
+
+- **DECISIONS:** entry chính thức — anon + `signInWithPassword`, không `service_role`; thay thế hướng fix cũ KI-021.
+
+---
+
+## [tháng 5/2026] — fix(backup.ts): phân trang Data API + timestamp file + docs
+
+- **backup.ts:** `.range` page 1000, order `id`; `backup_YYYYMMDD_HHmmss.json`; comment phạm vi (không Storage) + kỷ luật mảng `tables`.
+- **KI-021:** Mitigated — giữ anon+user login; caveat RBAC.
+- **DECISIONS:** entry SEC-10 backup (chính thức).
+
+---
+
 ## [tháng 5/2026] — verify drift: DB khớp schema.sql (dump 20260530_185715)
 
 - **KI-049 → Resolved:** so sánh logic public schema sau apply migration; drift đã sạch (nhóm 4 ngoài phạm vi dump).

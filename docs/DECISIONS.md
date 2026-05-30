@@ -4,6 +4,20 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### SEC-10 — Backup script dùng anon key + user login
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Script `backup.ts` dùng **`EXPO_PUBLIC_SUPABASE_ANON_KEY`** + **`signInWithPassword`** (tài khoản user thật / app), **KHÔNG** dùng `service_role` key trong repo hay `.env` local.
+- **Lý do:**
+  - Tránh ôm key full-quyền trong `.env` trên máy dev.
+  - Login bằng tài khoản thật — backup phản ánh quyền user thực tế, dễ audit.
+  - RLS hiện tại (`allow_all` cho mọi bảng app với `authenticated`) → user đăng nhập vẫn **SELECT đủ** mọi row; kèm phân trang `.range()` (page 1000, order `id`) để vượt giới hạn Data API ~1000 row/request.
+- **Caveat (kích hoạt khi RBAC):** Khi triển khai **SEC-09 / RBAC (Phase 3)**, user thường có thể **không thấy hết row** theo policy → backup có thể thiếu. Khi đó: chạy backup bằng **tài khoản full-quyền** (admin), hoặc **cân nhắc lại `service_role`** chạy server-side (không commit key vào repo).
+- **Phạm vi:** Chỉ **DB tables** trong mảng `tables` của `backup.ts` → JSON (`backup_YYYYMMDD_HHmmss.json`); **KHÔNG** backup Supabase Storage (bucket **`product-images`**, F08).
+- **Thay thế KI-021:** Entry này **thay thế** hướng fix cũ của KI-021 (“dùng `service_role` key”) — quyết định chính thức là anon + user login; KI-021 ghi **Mitigated**, không còn mâu thuẫn với DECISIONS.
+
+---
+
 ### Ẩn/Khôi phục SP chuyển sang ProductDetailScreen — xóa khỏi modal ProductsScreen
 
 - **Ngày:** tháng 5/2026

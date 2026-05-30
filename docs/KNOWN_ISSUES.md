@@ -307,14 +307,19 @@
 
 ---
 
-### [KI-021] SEC-10 — Backup script cần bảo mật
+### [KI-021] SEC-10 — Backup script (`backup.ts`)
 
 - **Mức độ:** Medium
-- **File liên quan:** `backup.mjs` (hoặc `backup.ts`), `dump_schema.bat`
-- **Mô tả:** `backup.mjs` sau khi fix SEC-01 cần dùng `service_role` key (không phải anon key) và chỉ chạy server-side — không bao giờ bundle vào app.
-- **Trạng thái:** Open
-- **Hướng fix:** Dùng `process.env.SUPABASE_SERVICE_KEY` trong backup script; thêm vào `.gitignore` nếu cần.
-- **Ghi chú (dump schema):** `dump_schema.bat` là tooling snapshot schema (`pg_dump --schema=public`), tách khỏi backup dữ liệu. Đã chuyển sang **Session Pooler** (port 5432) thay direct connection — tránh timeout IPv6 trên mạng IPv4. Vẫn cần password DB từ Dashboard; không commit password vào repo.
+- **File liên quan:** `backup.ts`, `dump_schema.bat`
+- **Mô tả:** Script backup JSON local cho bảng public qua Supabase Data API.
+- **Trạng thái:** **Mitigated** — auth và phân trang đã fix; caveat RBAC khi SEC-09.
+- **Quyết định auth (đã chốt):** Giữ **anon key + `signInWithPassword`** — xem **DECISIONS § SEC-10** (thay thế hướng fix cũ “dùng service_role”).
+- **Đã fix:**
+  - Phân trang `.range(from, from+999)` + `order('id')`, page 1000 — tránh giới hạn ~1000 row/request (audit_logs, inventory_entries…).
+  - Tên file `backup_YYYYMMDD_HHmmss.json` — không ghi đè khi chạy nhiều lần/ngày.
+  - Comment: bổ sung bảng mới vào mảng `tables`; phạm vi không gồm Storage F08.
+- **Caveat:** Khi **RBAC (SEC-09)** — user không full SELECT có thể backup thiếu; cần tài khoản admin hoặc cân nhắc lại service_role server-side.
+- **Ghi chú (dump schema):** `dump_schema.bat` — snapshot DDL qua Session Pooler; tách khỏi backup dữ liệu.
 
 ---
 
