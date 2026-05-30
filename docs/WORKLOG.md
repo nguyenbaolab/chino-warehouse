@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F08: warehouseStore image actions
+
+- **Store:** `updateProductImage`, `removeProductImage`; `deleteProduct` gọi `deleteProductImage` trước khi xóa DB.
+
+---
+
 ## [tháng 5/2026] — F08: tạo utils/imageUtils.ts
 
 - **Code:** `pickImage`, `uploadProductImage`, `deleteProductImage` — picker, compress (expo-image-manipulator), Storage bucket `product-images`.

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { deleteProductImage } from '../utils/imageUtils'
 import { normalizeText } from '../utils/textUtils'
 import {
   Location,
@@ -67,6 +68,8 @@ type WarehouseStore = {
     data: { category_level1_id: string | null; category_level2_id: string | null }
   ) => Promise<{ error: string | null; product: Product | null }>
   updateProductName: (productId: string, name: string) => Promise<void>
+  updateProductImage: (productId: string, url: string) => Promise<void>
+  removeProductImage: (productId: string) => Promise<void>
   fetchCategories: () => Promise<{ error: string | null }>
   addCategoryL1: (name: string) => Promise<{ error: string | null; category?: ProductCategoryL1 }>
   updateCategoryL1: (id: string, data: { name: string }) => Promise<{ error: string | null }>
@@ -538,6 +541,12 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   deleteProduct: async (productId) => {
+    try {
+      await deleteProductImage(productId)
+    } catch (_) {
+      /* bo qua neu khong co anh */
+    }
+
     const { data: linked } = await supabase
       .from('inventory_entries')
       .select('id')
@@ -663,6 +672,36 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       products: s.products.map((p) => (p.id === productId ? updated : p)),
       inventoryEntries: s.inventoryEntries.map((entry) =>
         entry.product_id === productId ? { ...entry, product: updated } : entry
+      ),
+    }))
+  },
+
+  updateProductImage: async (productId, url) => {
+    const { error } = await supabase
+      .from('products')
+      .update({ image_url: url })
+      .eq('id', productId)
+
+    if (error) throw error
+
+    set((s) => ({
+      products: s.products.map((p) =>
+        p.id === productId ? { ...p, image_url: url } : p
+      ),
+    }))
+  },
+
+  removeProductImage: async (productId) => {
+    const { error } = await supabase
+      .from('products')
+      .update({ image_url: null })
+      .eq('id', productId)
+
+    if (error) throw error
+
+    set((s) => ({
+      products: s.products.map((p) =>
+        p.id === productId ? { ...p, image_url: undefined } : p
       ),
     }))
   },
