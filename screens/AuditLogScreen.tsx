@@ -181,7 +181,7 @@ export default function AuditLogScreen() {
   const route = useRoute()
   const params = (route.params as RouteParams) ?? {}
   const { colors } = useThemeStore()
-  const { fetchAuditLogs, products, locations, searchByBarcode } = useWarehouseStore()
+  const { fetchAuditLogs, products, locations, inventoryEntries, searchByBarcode } = useWarehouseStore()
 
   const [pages, setPages] = useState<Record<number, AuditLog[]>>({})
   const [currentPage, setCurrentPage] = useState(0)
@@ -195,10 +195,20 @@ export default function AuditLogScreen() {
 
   const locationDisabled = filterType === 'products'
 
-  const productOptions = useMemo(
-    () => products.filter((p) => !p.is_archived).map((p) => ({ id: p.id, name: p.name })),
-    [products],
-  )
+  const productOptions = useMemo(() => {
+    const base = products.filter((p) => !p.is_archived)
+    if (!filterLocationId) {
+      return base.map((p) => ({ id: p.id, name: p.name }))
+    }
+    const productIdsInLocation = new Set(
+      inventoryEntries
+        .filter((e) => e.zone?.location_id === filterLocationId)
+        .map((e) => e.product_id)
+    )
+    return base
+      .filter((p) => productIdsInLocation.has(p.id))
+      .map((p) => ({ id: p.id, name: p.name }))
+  }, [products, inventoryEntries, filterLocationId])
 
   const currentEntries = pages[currentPage] ?? []
   const canGoOlder = currentEntries.length >= 10

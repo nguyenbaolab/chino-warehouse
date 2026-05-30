@@ -54,6 +54,8 @@ export type Product = {
   is_deferred?: boolean
   /** Tab Sắp hết hàng: không nhập nữa. */
   is_discontinued?: boolean
+  /** F28 — lý do không nhập nữa (tách khỏi notes). */
+  discontinued_reason?: string
   created_at: string
   /** F30 — optional FK → product_categories_l1 */
   category_level1_id?: string | null

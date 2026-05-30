@@ -93,7 +93,7 @@ type WarehouseStore = {
   deleteZone: (id: string) => Promise<boolean>
   toggleDeferred: (productId: string) => Promise<void>
   togglePriceReduced: (entryId: string) => Promise<void>
-  setProductDiscontinued: (productId: string, isDiscontinued: boolean) => Promise<void>
+  setProductDiscontinued: (productId: string, isDiscontinued: boolean, reason?: string) => Promise<void>
   toggleDiscontinued: (productId: string) => Promise<void>
   fetchDiscontinuedProducts: () => Promise<void>
   refreshDiscontinuedContext: () => Promise<void>
@@ -807,10 +807,17 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }))
   },
 
-  setProductDiscontinued: async (productId, isDiscontinued) => {
+  setProductDiscontinued: async (productId, isDiscontinued, reason) => {
+    const updatePayload: Record<string, unknown> = { is_discontinued: isDiscontinued }
+    if (isDiscontinued && reason !== undefined) {
+      updatePayload.discontinued_reason = reason.trim() || null
+    }
+    if (!isDiscontinued) {
+      updatePayload.discontinued_reason = null
+    }
     const { data: updated } = await supabase
       .from('products')
-      .update({ is_discontinued: isDiscontinued })
+      .update(updatePayload)
       .eq('id', productId)
       .select('*')
       .single()

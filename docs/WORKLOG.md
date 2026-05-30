@@ -4,6 +4,20 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F28: migration discontinued_reason; type Product; store setProductDiscontinued nhận reason
+
+- **Migration** `20260530002000_f28_add_discontinued_reason.sql`; `schema.sql` v3.5.
+- **types/index.ts:** `Product.discontinued_reason?`.
+- **warehouseStore:** `setProductDiscontinued(productId, isDiscontinued, reason?)` — ghi/clear `discontinued_reason`; `toggleDiscontinued` giữ signature (chưa truyền reason).
+
+---
+
+## [tháng 5/2026] — fix(AuditLog): dropdown SP lọc theo kho đã chọn
+
+- **AuditLogScreen:** `productOptions` khi có `filterLocationId` — chỉ SP có ≥1 lô trong kho (`entry.zone.location_id`).
+
+---
+
 ## [tháng 5/2026] — fix(AuditLog): lọc kho chỉ inventory_entries
 
 - **fetchAuditLogs:** bỏ OR với `products` khi `filterLocationId` + loại Tất cả; chỉ `inventory_entries` theo `location_id`.

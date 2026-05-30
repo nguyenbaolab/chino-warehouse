@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.4 | Tháng 5/2026
+-- Phiên bản: 3.5 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.4:
+--   - F28: products.discontinued_reason TEXT (nullable) — lý do không nhập nữa
 -- Thay đổi so với v3.3:
 --   - F08: Storage bucket product-images (public read),
 --     RLS authenticated insert/update/delete trên storage.objects
@@ -88,6 +90,7 @@ CREATE TABLE products (
   is_archived         BOOLEAN     NOT NULL DEFAULT false,
   is_deferred         BOOLEAN     NOT NULL DEFAULT false,
   is_discontinued     BOOLEAN     NOT NULL DEFAULT false,
+  discontinued_reason TEXT,
   warning_days        INTEGER     NOT NULL DEFAULT 30,
   low_warning_boxes   INTEGER     NOT NULL DEFAULT 3,
   low_critical_boxes  INTEGER     NOT NULL DEFAULT 1,
