@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F08: tạo utils/imageUtils.ts
+
+- **Code:** `pickImage`, `uploadProductImage`, `deleteProductImage` — picker, compress (expo-image-manipulator), Storage bucket `product-images`.
+- **Package:** thêm `expo-image-manipulator` (compress JPEG 80%, max 1200px).
+
+---
+
 ## [tháng 5/2026] — F08: cài packages ảnh + migration Storage
 
 - **Packages:** `expo-image-picker`, `react-native-image-viewing` (expo install).

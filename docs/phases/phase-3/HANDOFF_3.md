@@ -96,7 +96,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [ ] **D2 / F28** — `discontinued_reason` migration + UI
 - [x] **D3 / F08** — Supabase Storage bucket + migration RLS
 - [x] **D3 / F08** — Cài `expo-image-picker` + `react-native-image-viewing`
-- [ ] **D3 / F08** — `utils/imageUtils.ts`: `uploadProductImage`, `deleteProductImage`, compress
+- [x] **D3 / F08** — `utils/imageUtils.ts`: `uploadProductImage`, `deleteProductImage`, compress
 - [ ] **D3 / F08** — `warehouseStore`: `updateProductImage`, `removeProductImage`; `deleteProduct` xóa Storage
 - [x] **D3 / F08** — `ProductsScreen`: xóa nút ✏️ card (edit chuyển ProductDetail)
 - [ ] **D3 / F08** — `ProductsScreen`: thumbnail 64×64 + zoom + upload
