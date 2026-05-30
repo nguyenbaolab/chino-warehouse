@@ -4,6 +4,22 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix F08: KI-051 cache-bust + KI-052 đảo thứ tự xóa ảnh
+
+- **KI-051:** `uploadProductImage` return `${publicUrl}?v=${Date.now()}` → URL đổi mỗi upload, invalidate CDN/cache.
+- **KI-052:** `ProductDetailScreen.handleDeleteImage` — `removeProductImage` (null DB) trước, `deleteProductImage` (Storage) sau.
+- **Store:** `updateProductImage` / `removeProductImage` sync `inventoryEntries[].product.image_url`.
+- `deleteProduct` giữ nguyên (xóa row, không broken URL).
+
+---
+
+## [tháng 5/2026] — audit F08 product images (read-only)
+
+- Rà soát cache-busting, egress thumbnail, xóa ảnh, upload, RLS, crop, UX lỗi.
+- Phát hiện: **KI-051** (cache stale sau đổi ảnh), **KI-052** (thứ tự xóa Storage/DB).
+
+---
+
 ## [tháng 5/2026] — chốt DECISIONS SEC-10: backup anon + user login
 
 - **DECISIONS:** entry chính thức — anon + `signInWithPassword`, không `service_role`; thay thế hướng fix cũ KI-021.

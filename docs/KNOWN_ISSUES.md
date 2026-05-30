@@ -555,3 +555,23 @@
 - **Trạng thái:** Open (chấp nhận tạm — giữ store/type theo DECISIONS)
 
 ---
+
+### [KI-051] F08 — image_url không cache-bust sau upload ghi đè
+
+- **Mức độ:** Medium
+- **File liên quan:** `utils/imageUtils.ts`, `stores/warehouseStore.ts`, `screens/ProductsScreen.tsx`, `screens/ProductDetailScreen.tsx`
+- **Mô tả:** Path Storage cố định `{productId}.jpg`; `getPublicUrl` lưu DB không có query version → sau đổi ảnh CDN + cache RN `Image` có thể vẫn hiện ảnh cũ.
+- **Trạng thái:** **Resolved**
+- **Đã fix:** `uploadProductImage` return `${publicUrl}?v=${Date.now()}`; `updateProductImage` lưu URL đã kèm `?v` vào DB. URL cũ không có `?v` giữ nguyên — lần upload sau tự có.
+
+---
+
+### [KI-052] F08 — xóa ảnh: Storage trước DB (URL hỏng nếu DB fail)
+
+- **Mức độ:** Low
+- **File liên quan:** `screens/ProductDetailScreen.tsx`, `stores/warehouseStore.ts`, `utils/imageUtils.ts`
+- **Mô tả:** `handleDeleteImage` gọi `deleteProductImage` rồi `removeProductImage` — Storage xóa OK nhưng DB update lỗi → `image_url` trỏ file không còn.
+- **Trạng thái:** **Resolved**
+- **Đã fix:** `handleDeleteImage` gọi `removeProductImage` trước, `deleteProductImage` sau. `deleteProduct` giữ nguyên (xóa row SP).
+
+---

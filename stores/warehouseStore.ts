@@ -687,6 +687,11 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       products: s.products.map((p) =>
         p.id === productId ? { ...p, image_url: url } : p
       ),
+      inventoryEntries: s.inventoryEntries.map((entry) =>
+        entry.product_id === productId && entry.product
+          ? { ...entry, product: { ...entry.product, image_url: url } }
+          : entry
+      ),
     }))
   },
 
@@ -701,6 +706,11 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     set((s) => ({
       products: s.products.map((p) =>
         p.id === productId ? { ...p, image_url: undefined } : p
+      ),
+      inventoryEntries: s.inventoryEntries.map((entry) =>
+        entry.product_id === productId && entry.product
+          ? { ...entry, product: { ...entry.product, image_url: undefined } }
+          : entry
       ),
     }))
   },

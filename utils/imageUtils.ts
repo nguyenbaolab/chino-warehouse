@@ -108,7 +108,7 @@ export async function uploadProductImage(productId: string, uri: string): Promis
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
   const publicUrl = data.publicUrl
   console.log('[F08] publicUrl:', publicUrl)
-  return publicUrl
+  return `${publicUrl}?v=${Date.now()}`
 }
 
 /**

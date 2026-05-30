@@ -568,8 +568,8 @@ export default function ProductDetailScreen() {
         onPress: () => {
           void (async () => {
             try {
-              await deleteProductImage(product.id)
               await removeProductImage(product.id)
+              await deleteProductImage(product.id)
               setProduct((prev) => (prev ? { ...prev, image_url: undefined } : prev))
             } catch {
               Alert.alert('Lỗi', 'Có lỗi khi xóa ảnh')
