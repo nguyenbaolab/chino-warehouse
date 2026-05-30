@@ -1006,10 +1006,9 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     } else if (filterType === 'products') {
       query = query.eq('table_name', 'products')
     } else if (filterLocationId) {
-      // Tất cả loại nhưng lọc kho: inventory_entries theo kho OR products (không gắn kho)
-      query = query.or(
-        `and(table_name.eq.inventory_entries,location_id.eq.${filterLocationId}),table_name.eq.products`
-      )
+      query = query
+        .eq('table_name', 'inventory_entries')
+        .eq('location_id', filterLocationId)
     }
 
     if (filterChangedBy) {

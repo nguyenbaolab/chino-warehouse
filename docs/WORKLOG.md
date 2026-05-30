@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix(AuditLog): lọc kho chỉ inventory_entries
+
+- **fetchAuditLogs:** bỏ OR với `products` khi `filterLocationId` + loại Tất cả; chỉ `inventory_entries` theo `location_id`.
+
+---
+
 ## [tháng 5/2026] — fix(AuditLog): loadUserNames select changed_by_name limit 1000
 
 - **AuditLogScreen:** dropdown Người — query `audit_logs` chỉ cột `changed_by_name`, limit 1000; không fetch 50 record đầy đủ qua `fetchAuditLogs`.
