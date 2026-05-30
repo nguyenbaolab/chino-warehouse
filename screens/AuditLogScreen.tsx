@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { supabase } from '../lib/supabase'
 import type { AuditLog } from '../types'
 import { normalizeText } from '../utils/textUtils'
 
@@ -223,10 +224,17 @@ export default function AuditLogScreen() {
   )
 
   const loadUserNames = useCallback(async () => {
-    const data = await fetchAuditLogs({ limit: 50 })
-    const names = [...new Set(data.map((e) => e.changed_by_name).filter(Boolean))] as string[]
+    const { data } = await supabase
+      .from('audit_logs')
+      .select('changed_by_name')
+      .not('changed_by_name', 'is', null)
+      .order('changed_by_name', { ascending: true })
+      .limit(1000)
+
+    if (!data) return
+    const names = [...new Set(data.map((r) => r.changed_by_name).filter(Boolean))] as string[]
     setUniqueUserNames(names)
-  }, [fetchAuditLogs])
+  }, [])
 
   useEffect(() => {
     setPages({})

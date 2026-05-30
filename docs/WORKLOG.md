@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix(AuditLog): loadUserNames select changed_by_name limit 1000
+
+- **AuditLogScreen:** dropdown Người — query `audit_logs` chỉ cột `changed_by_name`, limit 1000; không fetch 50 record đầy đủ qua `fetchAuditLogs`.
+
+---
+
 ## [tháng 5/2026] — fix(statusUtils): SP không có lô → màu xám
 
 - **getWorstDisplayColorForEntries:** `entries.length === 0` trả `colors.sub` thay vì `colors.statusOk`.
