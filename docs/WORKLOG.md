@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F08: ProductDetailScreen image block + upload + xóa ảnh
+
+- **ProductDetailScreen:** block ảnh 120×120 trước infoBox, upload/đổi/xóa ảnh, zoom `ImageViewerModal`; sync store + local state.
+
+---
+
 ## [tháng 5/2026] — F08: fix upload FileSystem.readAsStringAsync (expo-file-system/legacy)
 
 - **imageUtils:** `uploadProductImage` đọc file qua `FileSystem.readAsStringAsync` (`expo-file-system/legacy`) + `Uint8Array` thay `fetch(file://).blob()` — Expo Go Android không hỗ trợ fetch `file://` URI.

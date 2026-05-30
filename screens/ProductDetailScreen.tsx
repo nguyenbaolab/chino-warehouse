@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  ActionSheetIOS,
+  ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,6 +17,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
+import ImageViewerModal from '../components/ImageViewerModal'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -22,6 +26,7 @@ import { supabase } from '../lib/supabase'
 import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone, AuditLog } from '../types'
 import { checkConflict } from '../utils/conflictUtils'
 import { isoExpiryToDisplay, isValidDisplayDate, parseDisplayDateToIso } from '../utils/dateUtils'
+import { pickImage, uploadProductImage, deleteProductImage } from '../utils/imageUtils'
 
 type ProductDetailRouteParams = {
   productId: string
@@ -64,6 +69,8 @@ export default function ProductDetailScreen() {
     fetchAuditLogsForProduct,
     deleteProduct,
     setLocateIntent,
+    updateProductImage,
+    removeProductImage,
   } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
@@ -91,6 +98,8 @@ export default function ProductDetailScreen() {
   const [showCategoryL2Picker, setShowCategoryL2Picker] = useState(false)
   const [categorySaving, setCategorySaving] = useState(false)
   const [auditEntries, setAuditEntries] = useState<AuditLog[]>([])
+  const [viewingImage, setViewingImage] = useState(false)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
 
   const totalLotBoxes = useMemo(
     () => lots.reduce((sum, lot) => sum + lot.quantity_boxes, 0),
@@ -507,11 +516,68 @@ export default function ProductDetailScreen() {
     })
   }
 
-  function getHostTabName(): string {
-    const tabNav = navigation.getParent()?.getParent()
-    const st = tabNav?.getState()
-    if (!st?.routes || st.index === undefined) return 'Products'
-    return String(st.routes[st.index]?.name ?? 'Products')
+  function showImageOptions() {
+    if (!product) return
+
+    const pickAndUpload = async (source: 'camera' | 'library') => {
+      setIsUploadingImage(true)
+      try {
+        const uri = await pickImage(source)
+        if (!uri) {
+          setIsUploadingImage(false)
+          return
+        }
+        const url = await uploadProductImage(product.id, uri)
+        await updateProductImage(product.id, url)
+        setProduct((prev) => (prev ? { ...prev, image_url: url } : prev))
+        setIsUploadingImage(false)
+      } catch {
+        setIsUploadingImage(false)
+        Alert.alert('Lỗi', 'Có lỗi khi tải ảnh lên')
+      }
+    }
+
+    const options = ['Chụp ảnh', 'Chọn từ thư viện', 'Hủy']
+    const cancelButtonIndex = 2
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex },
+        (buttonIndex) => {
+          if (buttonIndex === 0) void pickAndUpload('camera')
+          else if (buttonIndex === 1) void pickAndUpload('library')
+        },
+      )
+    } else {
+      Alert.alert('Chọn ảnh', undefined, [
+        { text: 'Chụp ảnh', onPress: () => void pickAndUpload('camera') },
+        { text: 'Chọn từ thư viện', onPress: () => void pickAndUpload('library') },
+        { text: 'Hủy', style: 'cancel' },
+      ])
+    }
+  }
+
+  function handleDeleteImage() {
+    if (!product) return
+
+    Alert.alert('Xóa ảnh?', 'Ảnh sản phẩm sẽ bị xóa vĩnh viễn.', [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => {
+          void (async () => {
+            try {
+              await deleteProductImage(product.id)
+              await removeProductImage(product.id)
+              setProduct((prev) => (prev ? { ...prev, image_url: undefined } : prev))
+            } catch {
+              Alert.alert('Lỗi', 'Có lỗi khi xóa ảnh')
+            }
+          })()
+        },
+      },
+    ])
   }
 
   function handleArchiveToggle() {
@@ -597,6 +663,41 @@ export default function ProductDetailScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.imageBlock}>
+          {isUploadingImage ? (
+            <View style={[styles.imagePreview, styles.imagePlaceholder, { backgroundColor: colors.border }]}>
+              <ActivityIndicator />
+            </View>
+          ) : product?.image_url ? (
+            <TouchableOpacity activeOpacity={0.85} onPress={() => setViewingImage(true)}>
+              <Image
+                source={{ uri: product.image_url }}
+                style={styles.imagePreview}
+                resizeMode="cover"
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.imagePreview, styles.imagePlaceholder, { backgroundColor: colors.border }]}
+              activeOpacity={0.85}
+              onPress={showImageOptions}
+            >
+              <Text style={{ fontSize: 32 }}>📷</Text>
+            </TouchableOpacity>
+          )}
+
+          {product?.image_url && !isUploadingImage && (
+            <View style={styles.imageActionsRow}>
+              <TouchableOpacity onPress={showImageOptions}>
+                <Text style={{ color: colors.accent, fontSize: 13 }}>✏️ Đổi ảnh</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleDeleteImage}>
+                <Text style={{ color: colors.statusExpired, fontSize: 13 }}>🗑️ Xóa ảnh</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
         <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.productName, { color: colors.text }]}>{product?.name ?? 'Không xác định'}</Text>
           {!!product?.notes && <Text style={[styles.infoText, { color: colors.sub }]}>Ghi chú: {product.notes}</Text>}
@@ -989,6 +1090,15 @@ export default function ProductDetailScreen() {
         </View>
       </ScrollView>
       </KeyboardAvoidingView>
+
+      <ImageViewerModal
+        uri={viewingImage && product?.image_url ? product.image_url : null}
+        onClose={() => setViewingImage(false)}
+        onChangeImage={() => {
+          setViewingImage(false)
+          showImageOptions()
+        }}
+      />
     </SafeAreaView>
   )
 }
@@ -1006,6 +1116,24 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700' },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   content: { padding: 16, paddingBottom: 20 },
+  imageBlock: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  imagePreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+  },
+  imagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageActionsRow: {
+    flexDirection: 'row',
+    marginTop: 8,
+    gap: 12,
+  },
   productActionsRow: {
     flexDirection: 'row',
     marginTop: 20,
