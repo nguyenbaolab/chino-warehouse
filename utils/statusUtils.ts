@@ -72,7 +72,7 @@ export function getDisplayColor(
   const visible = issues.filter((issue) =>
     issue.kind === 'expiry' ? expiryWarningEnabled : lowStockWarningEnabled,
   )
-  if (visible.length === 0) return colors.sub
+  if (visible.length === 0) return colors.statusOk
   visible.sort((a, b) => a.rank - b.rank)
   return visible[0].color
 }

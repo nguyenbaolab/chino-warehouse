@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix(statusUtils): getDisplayColor context ok → statusOk
+
+- **statusUtils:** lô không có issue visible (`visible.length === 0`) trả `colors.statusOk` thay vì `colors.sub`.
+
+---
+
 ## [tháng 5/2026] — fix: thumbnail vuông 64×64, meta line, crop sau chụp
 
 - **ProductsScreen:** thumbnail cố định 64×64; gộp tổng thùng + category một dòng; `itemRow` `alignItems: 'center'`.
