@@ -100,7 +100,6 @@ function formatAuditEntry(entry: AuditLog): string {
   return `${action} · ${TABLE_LABEL[table_name] ?? table_name}`
 }
 
-type FilterType = 'inventory_entries' | 'products' | null
 type DropdownOption = { id: string; label: string }
 
 function SearchableDropdownModal({
@@ -186,14 +185,11 @@ export default function AuditLogScreen() {
   const [pages, setPages] = useState<Record<number, AuditLog[]>>({})
   const [currentPage, setCurrentPage] = useState(0)
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
-  const [filterType, setFilterType] = useState<FilterType>(null)
   const [filterChangedBy, setFilterChangedBy] = useState<string | null>(null)
   const [filterProductId, setFilterProductId] = useState<string | null>(params.filterProductId ?? null)
   const [isLoading, setIsLoading] = useState(false)
   const [uniqueUserNames, setUniqueUserNames] = useState<string[]>([])
   const [activeModal, setActiveModal] = useState<string | null>(null)
-
-  const locationDisabled = filterType === 'products'
 
   const productOptions = useMemo(() => {
     const base = products.filter((p) => !p.is_archived)
@@ -221,7 +217,6 @@ export default function AuditLogScreen() {
         cursor,
         direction,
         filterLocationId: filterLocationId ?? undefined,
-        filterType: filterType ?? undefined,
         filterChangedBy: filterChangedBy ?? undefined,
         filterProductId: filterProductId ?? undefined,
         limit: 10,
@@ -230,7 +225,7 @@ export default function AuditLogScreen() {
       setCurrentPage(pageNum)
       setIsLoading(false)
     },
-    [fetchAuditLogs, filterLocationId, filterType, filterChangedBy, filterProductId],
+    [fetchAuditLogs, filterLocationId, filterChangedBy, filterProductId],
   )
 
   const loadUserNames = useCallback(async () => {
@@ -283,12 +278,6 @@ export default function AuditLogScreen() {
     resetAndReload()
   }
 
-  function applyFilterType(type: FilterType) {
-    if (type === 'products') setFilterLocationId(null)
-    setFilterType(type)
-    resetAndReload()
-  }
-
   function applyFilterUser(name: string | null) {
     setFilterChangedBy(name)
     resetAndReload()
@@ -325,11 +314,6 @@ export default function AuditLogScreen() {
     { id: '__all__', label: 'Tất cả kho' },
     ...locations.map((l) => ({ id: l.id, label: l.name })),
   ]
-  const typeOptions: DropdownOption[] = [
-    { id: '__all__', label: 'Tất cả' },
-    { id: 'inventory_entries', label: 'Lô hàng' },
-    { id: 'products', label: 'Sản phẩm' },
-  ]
   const userOptions: DropdownOption[] = [
     { id: '__all__', label: uniqueUserNames.length === 0 ? 'Tất cả (chưa có lịch sử)' : 'Tất cả' },
     ...uniqueUserNames.map((n) => ({ id: n, label: n })),
@@ -341,7 +325,6 @@ export default function AuditLogScreen() {
 
   // Display labels
   const locationLabel = filterLocationId ? locations.find((l) => l.id === filterLocationId)?.name ?? 'Tất cả kho' : 'Tất cả kho'
-  const typeLabel = filterType ? TABLE_LABEL[filterType] : 'Tất cả'
   const userLabel = filterChangedBy ?? (uniqueUserNames.length === 0 ? 'Tất cả (chưa có lịch sử)' : 'Tất cả')
   const productLabel = filterProductId ? productOptions.find((p) => p.id === filterProductId)?.name ?? 'Tất cả' : 'Tất cả'
 
@@ -355,34 +338,19 @@ export default function AuditLogScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 4 Filters — trigger buttons */}
+      {/* 3 Filters — trigger buttons */}
       <View style={styles.filtersWrap}>
         <View style={styles.filtersRow}>
-          {/* [1] Kho */}
-          <View style={[styles.filterCol, { opacity: locationDisabled ? 0.4 : 1 }]}>
+          <View style={styles.filterCol}>
             <Text style={[styles.filterLabel, { color: colors.sub }]}>Kho</Text>
             <Pressable
               style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => { if (!locationDisabled) setActiveModal('location') }}
+              onPress={() => setActiveModal('location')}
             >
               <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{locationLabel}</Text>
             </Pressable>
           </View>
 
-          {/* [2] Loại */}
-          <View style={styles.filterCol}>
-            <Text style={[styles.filterLabel, { color: colors.sub }]}>Loại</Text>
-            <Pressable
-              style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => setActiveModal('type')}
-            >
-              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{typeLabel}</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.filtersRow}>
-          {/* [3] Người */}
           <View style={styles.filterCol}>
             <Text style={[styles.filterLabel, { color: colors.sub }]}>Người</Text>
             <Pressable
@@ -392,9 +360,10 @@ export default function AuditLogScreen() {
               <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{userLabel}</Text>
             </Pressable>
           </View>
+        </View>
 
-          {/* [4] Sản phẩm + camera */}
-          <View style={styles.filterCol}>
+        <View style={styles.filtersRow}>
+          <View style={styles.filterColFull}>
             <View style={styles.filterLabelRow}>
               <Text style={[styles.filterLabel, { color: colors.sub }]}>Sản phẩm</Text>
               <TouchableOpacity onPress={handleScanBarcode} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -468,14 +437,6 @@ export default function AuditLogScreen() {
         onClose={() => setActiveModal(null)}
       />
       <SearchableDropdownModal
-        visible={activeModal === 'type'}
-        title="Loại thay đổi"
-        options={typeOptions}
-        colors={colors}
-        onSelect={(id) => applyFilterType(id === '__all__' ? null : id as FilterType)}
-        onClose={() => setActiveModal(null)}
-      />
-      <SearchableDropdownModal
         visible={activeModal === 'user'}
         title="Người thay đổi"
         options={userOptions}
@@ -508,8 +469,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 17, fontWeight: 'bold' },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   filtersWrap: { paddingHorizontal: 16, marginBottom: 8 },
-  filtersRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+  filtersRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
   filterCol: { flex: 1 },
+  filterColFull: { flex: 1, width: '100%' },
   filterLabel: { fontSize: 12, marginBottom: 4 },
   filterLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   filterBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },

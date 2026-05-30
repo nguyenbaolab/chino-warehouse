@@ -111,7 +111,6 @@ type WarehouseStore = {
     cursor?: string
     direction?: 'older' | 'newer'
     filterLocationId?: string
-    filterType?: 'inventory_entries' | 'products'
     filterChangedBy?: string
     filterProductId?: string
     limit?: number
@@ -995,7 +994,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return (data as AuditLog) ?? null
   },
 
-  fetchAuditLogs: async ({ cursor, direction = 'older', filterLocationId, filterType, filterChangedBy, filterProductId, limit = 10 }) => {
+  fetchAuditLogs: async ({ cursor, direction = 'older', filterLocationId, filterChangedBy, filterProductId, limit = 10 }) => {
     let query = supabase.from('audit_logs').select('*')
 
     if (cursor) {
@@ -1006,13 +1005,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       }
     }
 
-    // Filter loại + kho kết hợp
-    if (filterType === 'inventory_entries') {
-      query = query.eq('table_name', 'inventory_entries')
-      if (filterLocationId) query = query.eq('location_id', filterLocationId)
-    } else if (filterType === 'products') {
-      query = query.eq('table_name', 'products')
-    } else if (filterLocationId) {
+    if (filterLocationId) {
       query = query
         .eq('table_name', 'inventory_entries')
         .eq('location_id', filterLocationId)
@@ -1024,9 +1017,9 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
     if (filterProductId) {
       query = query.or(
-        `record_id.eq.${filterProductId},` +
         `and(table_name.eq.inventory_entries,new_data->>product_id.eq.${filterProductId}),` +
-        `and(table_name.eq.inventory_entries,old_data->>product_id.eq.${filterProductId})`
+        `and(table_name.eq.inventory_entries,old_data->>product_id.eq.${filterProductId}),` +
+        `and(table_name.eq.products,record_id.eq.${filterProductId})`
       )
     }
 

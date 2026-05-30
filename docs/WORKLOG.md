@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — refactor(AuditLog): bỏ filter Loại; layout 2 hàng; fix query kho+SP
+
+- **AuditLogScreen:** xóa dropdown Loại; hàng 1 Kho+Người, hàng 2 Sản phẩm full width.
+- **fetchAuditLogs:** bỏ `filterType`; fix OR `filterProductId` tách `inventory_entries` / `products`.
+
+---
+
 ## [tháng 5/2026] — F28: migration discontinued_reason; type Product; store setProductDiscontinued nhận reason
 
 - **Migration** `20260530002000_f28_add_discontinued_reason.sql`; `schema.sql` v3.5.
