@@ -4,6 +4,19 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: escape ngoặc trong dump_schema.bat
+
+- **dump_schema.bat:** `^(` / `^)` trong `echo` bên trong khối `if` — tránh lỗi cmd ". was unexpected at this time."
+
+---
+
+## [tháng 5/2026] — ops: dump_schema.bat Session Pooler + ổn định pg_dump
+
+- **dump_schema.bat:** Session Pooler (HOST/USER placeholder + comment Dashboard); tạo `supabase/db_dump_schema/`; timestamp PowerShell; `--schema=public`; check `pg_dump --version`; bỏ echo password gây hiểu nhầm.
+- **Docs:** `CONTEXT.md` §9; `KNOWN_ISSUES.md` ghi chú gần KI-021.
+
+---
+
 ## [tháng 5/2026] — feat(Notifications): tap tên SP → ProductDetail cả 2 tab
 
 - **renderLowStockItem / renderExpiryItem:** tên SP bọc `TouchableOpacity` → `ProductDetail` với `productId`.

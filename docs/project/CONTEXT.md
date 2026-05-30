@@ -96,6 +96,8 @@ supabase/migrations/
   # [timestamp]_add_user_profiles.sql      # F24 — Phase 3
   # [timestamp]_add_discontinued_reason.sql # F28 — Phase 3
   # [timestamp]_f08_product_images_storage.sql # F08 — bucket product-images + RLS
+supabase/db_dump_schema/   # Snapshot pg_dump (script dump_schema.bat — không thay schema.sql)
+dump_schema.bat            # Tiện ích dump schema public qua Session Pooler (xem §9)
 types/
   index.ts
 App.tsx
@@ -215,3 +217,12 @@ Tóm tắt nhanh:
 Xem đầy đủ: **`docs/project/WORKFLOW.md`**.
 
 Tóm tắt: sau mỗi thay đổi có ý nghĩa → cập nhật file tài liệu tương ứng theo vai trò DEV/TEST trong `WORKFLOW.md`.
+
+---
+
+## §9 Ops — snapshot schema (pg_dump)
+
+- **Script:** `dump_schema.bat` → output `supabase/db_dump_schema/schema_dump_<timestamp>.sql`
+- **Mục đích:** snapshot tham khảo / so sánh; **không** thay quy trình maintain `supabase/migrations/schema.sql` thủ công.
+- **Kết nối:** dùng **Session Pooler** (`aws-0-<region>.pooler.supabase.com:5432`, user `postgres.<project_ref>`). Direct `db.<ref>.supabase.co:5432` thường chỉ IPv6 → dễ timeout trên mạng IPv4-only.
+- **Trước khi chạy:** điền `<region>` và `<project_ref>` từ Supabase Dashboard → Connect → Session pooler; `pg_dump` client phải ≥ major version Postgres trên Supabase.

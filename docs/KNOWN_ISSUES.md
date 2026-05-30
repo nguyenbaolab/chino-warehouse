@@ -310,10 +310,11 @@
 ### [KI-021] SEC-10 — Backup script cần bảo mật
 
 - **Mức độ:** Medium
-- **File liên quan:** `backup.mjs` (hoặc `backup.ts`)
+- **File liên quan:** `backup.mjs` (hoặc `backup.ts`), `dump_schema.bat`
 - **Mô tả:** `backup.mjs` sau khi fix SEC-01 cần dùng `service_role` key (không phải anon key) và chỉ chạy server-side — không bao giờ bundle vào app.
 - **Trạng thái:** Open
 - **Hướng fix:** Dùng `process.env.SUPABASE_SERVICE_KEY` trong backup script; thêm vào `.gitignore` nếu cần.
+- **Ghi chú (dump schema):** `dump_schema.bat` là tooling snapshot schema (`pg_dump --schema=public`), tách khỏi backup dữ liệu. Đã chuyển sang **Session Pooler** (port 5432) thay direct connection — tránh timeout IPv6 trên mạng IPv4. Vẫn cần password DB từ Dashboard; không commit password vào repo.
 
 ---
 
