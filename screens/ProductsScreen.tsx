@@ -355,9 +355,6 @@ export default function ProductsScreen() {
                           Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng
                         </Text>
                       </View>
-                      <Text style={[styles.lotBarcodeLine, { color: colors.sub }]}>
-                        {lot.barcode?.trim() || '—'}
-                      </Text>
                     </View>
                   )
                 })}
@@ -754,7 +751,6 @@ const styles = StyleSheet.create({
   lotGroupItem: { gap: 2 },
   lotRow: { flexDirection: 'row', alignItems: 'center' },
   lotText: { fontSize: 12, marginLeft: 6, flex: 1 },
-  lotBarcodeLine: { fontSize: 12, paddingLeft: 14 },
   titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, marginTop: 2 },
   lotDot: { width: 8, height: 8, borderRadius: 4 },
 })

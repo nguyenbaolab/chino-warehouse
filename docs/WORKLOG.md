@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — refactor(ProductsScreen): bỏ dòng barcode khỏi card lô hàng
+
+- Card lô trong `renderProductItem` chỉ còn dòng dot + Hạn + thùng; xóa `lotBarcodeLine`.
+
+---
+
 ## [tháng 5/2026] — fix F08: KI-051 cache-bust + KI-052 đảo thứ tự xóa ảnh
 
 - **KI-051:** `uploadProductImage` return `${publicUrl}?v=${Date.now()}` → URL đổi mỗi upload, invalidate CDN/cache.
