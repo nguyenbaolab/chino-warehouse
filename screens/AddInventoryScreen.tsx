@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
+  ActionSheetIOS,
+  ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,12 +16,14 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRoute, useNavigation } from '@react-navigation/native'
+import ImageViewerModal from '../components/ImageViewerModal'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { Product } from '../types'
 import { supabase } from '../lib/supabase'
 import { navigateToTabMainFromNestedStack } from '../lib/tabNavigation'
 import { normalizeText } from '../utils/textUtils'
+import { pickImage, uploadProductImage } from '../utils/imageUtils'
 
 type AddInventoryRouteParams = {
   zoneId?: string
@@ -85,6 +90,7 @@ export default function AddInventoryScreen() {
     addProduct,
     addInventoryEntry,
     updateInventoryEntry,
+    updateProductImage,
     searchByBarcode,
   } = useWarehouseStore()
 
@@ -110,6 +116,9 @@ export default function AddInventoryScreen() {
   const [newCategoryL2Id, setNewCategoryL2Id] = useState<string | null>(null)
   const [showNewCatL1, setShowNewCatL1] = useState(false)
   const [showNewCatL2, setShowNewCatL2] = useState(false)
+  const [newProductImageUri, setNewProductImageUri] = useState<string | null>(null)
+  const [isUploadingNewProductImage, setIsUploadingNewProductImage] = useState(false)
+  const [viewingNewProductImage, setViewingNewProductImage] = useState(false)
 
   const scrollRef = useRef<ScrollView>(null)
 
@@ -150,6 +159,34 @@ export default function AddInventoryScreen() {
     setNewCategoryL2Id(null)
     setShowNewCatL1(false)
     setShowNewCatL2(false)
+    setNewProductImageUri(null)
+    setViewingNewProductImage(false)
+  }
+
+  function showNewProductImageOptions() {
+    const pick = async (source: 'camera' | 'library') => {
+      const uri = await pickImage(source)
+      if (uri) setNewProductImageUri(uri)
+    }
+
+    const options = ['Chụp ảnh', 'Chọn từ thư viện', 'Hủy']
+    const cancelButtonIndex = 2
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex },
+        (buttonIndex) => {
+          if (buttonIndex === 0) void pick('camera')
+          else if (buttonIndex === 1) void pick('library')
+        },
+      )
+    } else {
+      Alert.alert('Chọn ảnh', undefined, [
+        { text: 'Chụp ảnh', onPress: () => void pick('camera') },
+        { text: 'Chọn từ thư viện', onPress: () => void pick('library') },
+        { text: 'Hủy', style: 'cancel' },
+      ])
+    }
   }
 
   useEffect(() => {
@@ -246,15 +283,32 @@ export default function AddInventoryScreen() {
       category_level1_id: newCategoryL1Id ?? null,
       category_level2_id: newCategoryL1Id ? (newCategoryL2Id ?? null) : null,
     })
-    setIsCreatingProduct(false)
 
     if (!created) {
+      setIsCreatingProduct(false)
       Alert.alert('Lỗi', 'Không thể tạo sản phẩm mới.')
       return
     }
 
+    let productToSelect = created
+    if (newProductImageUri) {
+      try {
+        setIsUploadingNewProductImage(true)
+        const url = await uploadProductImage(created.id, newProductImageUri)
+        await updateProductImage(created.id, url)
+        productToSelect = { ...created, image_url: url }
+      } catch {
+        Alert.alert('Lưu ý', 'Tạo sản phẩm thành công nhưng không thể tải ảnh lên.')
+      } finally {
+        setIsUploadingNewProductImage(false)
+      }
+    }
+
+    setIsCreatingProduct(false)
+    setNewProductImageUri(null)
+
     // Store đã được update trực tiếp trong addProduct
-    setSelectedProduct(created)
+    setSelectedProduct(productToSelect)
     setSearchQuery('')
     setShowCreateProduct(false)
     setNewProductName('')
@@ -720,22 +774,52 @@ export default function AddInventoryScreen() {
               placeholderTextColor={colors.sub}
             />
 
+            <View style={styles.newProductImageWrap}>
+              {newProductImageUri ? (
+                <>
+                  <TouchableOpacity activeOpacity={0.85} onPress={() => setViewingNewProductImage(true)}>
+                    <Image
+                      source={{ uri: newProductImageUri }}
+                      style={styles.newProductImagePreview}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={showNewProductImageOptions} style={styles.newProductChangeImageBtn}>
+                    <Text style={{ color: colors.accent, fontSize: 13 }}>Đổi ảnh</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.newProductImagePreview, styles.newProductImagePlaceholder, { backgroundColor: colors.border }]}
+                  activeOpacity={0.85}
+                  onPress={showNewProductImageOptions}
+                >
+                  <Text style={{ fontSize: 24 }}>📷</Text>
+                  <Text style={{ fontSize: 11, color: colors.sub, marginTop: 4 }}>Thêm ảnh</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             <View style={styles.createFormActions}>
               <TouchableOpacity
                 style={[styles.cancelCreateBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
                 onPress={closeCreateProductForm}
-                disabled={isCreatingProduct}
+                disabled={isCreatingProduct || isUploadingNewProductImage}
               >
                 <Text style={{ color: colors.text, fontWeight: '600' }}>Hủy</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.submitCreateBtn, { backgroundColor: colors.accent, flex: 1 }]}
                 onPress={handleCreateProduct}
-                disabled={isCreatingProduct}
+                disabled={isCreatingProduct || isUploadingNewProductImage}
               >
-                <Text style={[styles.submitCreateText, { color: colors.card }]}>
-                  {isCreatingProduct ? 'Đang tạo...' : 'Tạo và chọn sản phẩm'}
-                </Text>
+                {isUploadingNewProductImage ? (
+                  <ActivityIndicator color={colors.card} />
+                ) : (
+                  <Text style={[styles.submitCreateText, { color: colors.card }]}>
+                    {isCreatingProduct ? 'Đang tạo...' : 'Tạo và chọn sản phẩm'}
+                  </Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -785,6 +869,11 @@ export default function AddInventoryScreen() {
         <Text style={[styles.saveBtnText, { color: colors.card }]}>{isSaving ? 'Đang lưu...' : 'Lưu'}</Text>
       </TouchableOpacity>
       </KeyboardAvoidingView>
+
+      <ImageViewerModal
+        uri={viewingNewProductImage && newProductImageUri ? newProductImageUri : null}
+        onClose={() => setViewingNewProductImage(false)}
+      />
     </SafeAreaView>
   )
 }
@@ -1040,6 +1129,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 12,
+  },
+  newProductImageWrap: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  newProductImagePreview: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  newProductImagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  newProductChangeImageBtn: {
+    marginTop: 6,
   },
   createFormActions: {
     flexDirection: 'row',

@@ -101,7 +101,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [x] **D3 / F08** — `ProductsScreen`: xóa nút ✏️ card (edit chuyển ProductDetail)
 - [x] **D3 / F08** — `ProductsScreen`: thumbnail 64×64 + zoom + upload
 - [x] **D3 / F08** — `ProductDetailScreen`: image block + zoom + upload + xóa ảnh
-- [ ] **D3 / F08** — `AddInventoryScreen`: ô ảnh optional khi tạo SP mới
+- [x] **D3 / F08** — `AddInventoryScreen`: ô ảnh optional khi tạo SP mới
 
 ### Group E — New Features
 
