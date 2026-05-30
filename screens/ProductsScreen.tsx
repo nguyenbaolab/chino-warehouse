@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  ActionSheetIOS,
+  ActivityIndicator,
+  Alert,
   FlatList,
+  Image,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +17,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
+import ImageViewerModal from '../components/ImageViewerModal'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
@@ -23,6 +29,7 @@ import {
 } from '../utils/statusUtils'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
+import { pickImage, uploadProductImage } from '../utils/imageUtils'
 
 const PAGE_SIZE = 10
 
@@ -40,6 +47,7 @@ export default function ProductsScreen() {
     fetchInventoryByZone,
     fetchAllInventoryEntries,
     fetchCategories,
+    updateProductImage,
   } = useWarehouseStore()
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
@@ -50,6 +58,8 @@ export default function ProductsScreen() {
   const [showArchived, setShowArchived] = useState(false)
 
   const [scannedLotId, setScannedLotId] = useState<string | null>(null)
+  const [viewingImage, setViewingImage] = useState<{ uri: string; productId: string } | null>(null)
+  const [uploadingProductId, setUploadingProductId] = useState<string | null>(null)
 
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [locationPickerOpen, setLocationPickerOpen] = useState(false)
@@ -203,6 +213,49 @@ export default function ProductsScreen() {
   const canGoPrev = currentPage > 0
   const canGoNext = currentPage < totalPages - 1
 
+  function showImageOptions(product: Product) {
+    console.log('[F08] showImageOptions called', product.id)
+    const pickAndUpload = async (source: 'camera' | 'library') => {
+      setUploadingProductId(product.id)
+      try {
+        const uri = await pickImage(source)
+        console.log('[F08] pickImage result:', uri)
+        if (!uri) {
+          setUploadingProductId(null)
+          return
+        }
+        const url = await uploadProductImage(product.id, uri)
+        console.log('[F08] uploadProductImage result:', url)
+        await updateProductImage(product.id, url)
+        console.log('[F08] updateProductImage done')
+        setUploadingProductId(null)
+      } catch (e) {
+        console.log('[F08] ERROR:', e)
+        setUploadingProductId(null)
+        Alert.alert('Lỗi', 'Có lỗi khi tải ảnh lên')
+      }
+    }
+
+    const options = ['Chụp ảnh', 'Chọn từ thư viện', 'Hủy']
+    const cancelButtonIndex = 2
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex },
+        (buttonIndex) => {
+          if (buttonIndex === 0) void pickAndUpload('camera')
+          else if (buttonIndex === 1) void pickAndUpload('library')
+        },
+      )
+    } else {
+      Alert.alert('Chọn ảnh', undefined, [
+        { text: 'Chụp ảnh', onPress: () => void pickAndUpload('camera') },
+        { text: 'Chọn từ thư viện', onPress: () => void pickAndUpload('library') },
+        { text: 'Hủy', style: 'cancel' },
+      ])
+    }
+  }
+
   function renderProductItem({ item: product }: { item: Product }) {
     const groupedLots = getGroupedLotsByExpiry(product.id)
     const categoryLine = getProductCategoryLine(product)
@@ -213,74 +266,105 @@ export default function ProductsScreen() {
       expiryWarningEnabled,
       lowStockWarningEnabled,
     )
+    const isUploading = uploadingProductId === product.id
     return (
-      <TouchableOpacity
-        style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
-      >
-        <View style={styles.itemHeader}>
-          <View style={styles.itemTitleRow}>
-            <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
-            <Text
-              style={[
-                styles.itemName,
-                { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
-              ]}
-              numberOfLines={1}
-            >
-              {product.name}
-            </Text>
-          </View>
-          <Text style={[styles.totalBoxesLabel, { color: colors.sub }]}>
-            Tổng {totalBoxesByProduct.get(product.id) ?? 0} thùng
-          </Text>
-        </View>
-        {categoryLine ? (
-          <Text style={[styles.itemCategoryLine, { color: colors.sub }]} numberOfLines={2}>
-            {categoryLine}
-          </Text>
-        ) : null}
-        {product.is_archived && (
-          <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
-        )}
-        {scannedLotId && inventoryEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
-          <Text style={[styles.itemSub, { color: colors.accent }]} numberOfLines={1}>
-            Kết quả quét barcode theo lô
-          </Text>
-        )}
+      <View style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.itemRow}>
+          <TouchableOpacity
+            style={styles.thumbnailContainer}
+            activeOpacity={0.8}
+            disabled={isUploading}
+            onPress={() => {
+              if (isUploading) return
+              if (product.image_url) {
+                setViewingImage({ uri: product.image_url, productId: product.id })
+              } else {
+                showImageOptions(product)
+              }
+            }}
+          >
+            {isUploading ? (
+              <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+                <ActivityIndicator />
+              </View>
+            ) : product.image_url ? (
+              <Image source={{ uri: product.image_url }} style={styles.thumbnail} resizeMode="cover" />
+            ) : (
+              <View style={[styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+                <Text style={{ fontSize: 24 }}>📷</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
-        {groupedLots.length === 0 ? (
-          <Text style={[styles.noLotText, { color: colors.sub }]}>Chưa có lô hàng</Text>
-        ) : (
-          <View style={styles.lotGroupWrap}>
-            {groupedLots.map((lot, index) => {
-              const lotStatus = getCombinedStatus(
-                lot.quantity_boxes,
-                lot.expiry_date,
-                product.low_warning_boxes ?? 3,
-                product.low_critical_boxes ?? 1,
-                product.warning_days ?? 30
-              )
-              const dotColor = getDisplayColor(
-                lotStatus,
-                colors,
-                expiryWarningEnabled,
-                lowStockWarningEnabled,
-                getDisplayColorContextFromEntry(lot, product),
-              )
-              return (
-                <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
-                  <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
-                  <Text style={[styles.lotText, { color: colors.sub }]}>
-                    Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng · {lot.barcode?.trim() || '—'}
-                  </Text>
-                </View>
-              )
-            })}
-          </View>
-        )}
-      </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.itemContent}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+          >
+            <View style={styles.itemHeader}>
+              <View style={styles.itemTitleRow}>
+                <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
+                <Text
+                  style={[
+                    styles.itemName,
+                    { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {product.name}
+                </Text>
+              </View>
+              <Text style={[styles.totalBoxesLabel, { color: colors.sub }]}>
+                Tổng {totalBoxesByProduct.get(product.id) ?? 0} thùng
+              </Text>
+            </View>
+            {categoryLine ? (
+              <Text style={[styles.itemCategoryLine, { color: colors.sub }]} numberOfLines={2}>
+                {categoryLine}
+              </Text>
+            ) : null}
+            {product.is_archived && (
+              <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
+            )}
+            {scannedLotId && inventoryEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
+              <Text style={[styles.itemSub, { color: colors.accent }]} numberOfLines={1}>
+                Kết quả quét barcode theo lô
+              </Text>
+            )}
+
+            {groupedLots.length === 0 ? (
+              <Text style={[styles.noLotText, { color: colors.sub }]}>Chưa có lô hàng</Text>
+            ) : (
+              <View style={styles.lotGroupWrap}>
+                {groupedLots.map((lot, index) => {
+                  const lotStatus = getCombinedStatus(
+                    lot.quantity_boxes,
+                    lot.expiry_date,
+                    product.low_warning_boxes ?? 3,
+                    product.low_critical_boxes ?? 1,
+                    product.warning_days ?? 30
+                  )
+                  const dotColor = getDisplayColor(
+                    lotStatus,
+                    colors,
+                    expiryWarningEnabled,
+                    lowStockWarningEnabled,
+                    getDisplayColorContextFromEntry(lot, product),
+                  )
+                  return (
+                    <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotRow}>
+                      <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
+                      <Text style={[styles.lotText, { color: colors.sub }]}>
+                        Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng · {lot.barcode?.trim() || '—'}
+                      </Text>
+                    </View>
+                  )
+                })}
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
     )
   }
 
@@ -543,6 +627,16 @@ export default function ProductsScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      <ImageViewerModal
+        uri={viewingImage?.uri ?? null}
+        onClose={() => setViewingImage(null)}
+        onChangeImage={() => {
+          const product = products.find((p) => p.id === viewingImage?.productId)
+          setViewingImage(null)
+          if (product) showImageOptions(product)
+        }}
+      />
     </SafeAreaView>
   )
 }
@@ -642,6 +736,17 @@ const styles = StyleSheet.create({
   pageBtnText: { fontSize: 20, fontWeight: '700' },
   pageLabel: { fontSize: 13 },
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
+  itemRow: { flexDirection: 'row' },
+  itemContent: { flex: 1, paddingLeft: 10 },
+  thumbnailContainer: { width: 64, alignSelf: 'stretch' },
+  thumbnail: { width: 64, height: 64, borderRadius: 8 },
+  thumbnailPlaceholder: {
+    width: 64,
+    height: 64,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   itemHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 6 },
   itemTitleRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 4, minWidth: 0 },
   totalBoxesLabel: { fontSize: 12, fontWeight: '600', flexShrink: 0, maxWidth: '28%' },

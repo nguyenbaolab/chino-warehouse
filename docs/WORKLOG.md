@@ -4,6 +4,27 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — F08: fix upload FileSystem.readAsStringAsync (expo-file-system/legacy)
+
+- **imageUtils:** `uploadProductImage` đọc file qua `FileSystem.readAsStringAsync` (`expo-file-system/legacy`) + `Uint8Array` thay `fetch(file://).blob()` — Expo Go Android không hỗ trợ fetch `file://` URI.
+- **Package:** cài thêm `expo-file-system` (chưa có trong project trước đó).
+
+---
+
+## [tháng 5/2026] — F08: custom ImageViewerModal thay react-native-image-viewing
+
+- **Gỡ** `react-native-image-viewing` (package lỗi).
+- **Mới:** `components/ImageViewerModal.tsx` — Modal + Animated + PanResponder (pinch zoom, pan, double-tap reset).
+- **ProductsScreen:** dùng `ImageViewerModal`.
+
+---
+
+## [tháng 5/2026] — F08: ProductsScreen thumbnail 64×64 + upload + zoom
+
+- **ProductsScreen:** thumbnail trái card, upload qua `pickImage`/`uploadProductImage`, zoom `react-native-image-viewing`, đổi ảnh từ viewer.
+
+---
+
 ## [tháng 5/2026] — F08: warehouseStore image actions
 
 - **Store:** `updateProductImage`, `removeProductImage`; `deleteProduct` gọi `deleteProductImage` trước khi xóa DB.

@@ -95,11 +95,11 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [ ] **D1 / F27** — 2 tab trong list + active list + PDF tổng hợp + flow Confirm
 - [ ] **D2 / F28** — `discontinued_reason` migration + UI
 - [x] **D3 / F08** — Supabase Storage bucket + migration RLS
-- [x] **D3 / F08** — Cài `expo-image-picker` + `react-native-image-viewing`
+- [x] **D3 / F08** — Cài `expo-image-picker`, `expo-image-manipulator`, `expo-file-system` (gỡ `react-native-image-viewing` → custom `ImageViewerModal`)
 - [x] **D3 / F08** — `utils/imageUtils.ts`: `uploadProductImage`, `deleteProductImage`, compress
 - [x] **D3 / F08** — `warehouseStore`: `updateProductImage`, `removeProductImage`; `deleteProduct` xóa Storage
 - [x] **D3 / F08** — `ProductsScreen`: xóa nút ✏️ card (edit chuyển ProductDetail)
-- [ ] **D3 / F08** — `ProductsScreen`: thumbnail 64×64 + zoom + upload
+- [x] **D3 / F08** — `ProductsScreen`: thumbnail 64×64 + zoom + upload
 - [ ] **D3 / F08** — `ProductDetailScreen`: image block + zoom + upload + xóa ảnh
 - [ ] **D3 / F08** — `AddInventoryScreen`: ô ảnh optional khi tạo SP mới
 

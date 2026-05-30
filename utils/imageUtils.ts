@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker'
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator'
+import * as FileSystem from 'expo-file-system/legacy'
 import { supabase } from '../lib/supabase'
 
 const BUCKET = 'product-images'
@@ -61,19 +62,33 @@ async function compressImage(uri: string): Promise<string> {
  * Nén ảnh (JPEG 80%, max 1200px cạnh dài), upload lên Storage và trả về public URL.
  */
 export async function uploadProductImage(productId: string, uri: string): Promise<string> {
-  const compressedUri = await compressImage(uri)
-  const blob = await fetch(compressedUri).then((response) => response.blob())
+  console.log('[F08] compress start:', uri)
+  const compressed = { uri: await compressImage(uri) }
+  console.log('[F08] compress done:', compressed.uri)
+  const base64 = await FileSystem.readAsStringAsync(compressed.uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  })
+  const binaryString = atob(base64)
+  const bytes = new Uint8Array(binaryString.length)
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  console.log('[F08] blob size:', bytes.length)
   const path = storagePath(productId)
+  console.log('[F08] upload start to path:', productId + '.jpg')
 
-  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
+  const { data: uploadData, error: uploadError } = await supabase.storage.from(BUCKET).upload(path, bytes.buffer, {
     contentType: 'image/jpeg',
     upsert: true,
   })
+  console.log('[F08] upload result:', uploadData, uploadError)
 
-  if (error) throw new Error('Upload that bai')
+  if (uploadError) throw new Error('Upload that bai')
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
-  return data.publicUrl
+  const publicUrl = data.publicUrl
+  console.log('[F08] publicUrl:', publicUrl)
+  return publicUrl
 }
 
 /**
