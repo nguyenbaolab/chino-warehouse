@@ -54,6 +54,12 @@ type WarehouseStore = {
   /** Mọi lô có barcode khớp (toàn kho) — chỉ return, không ghi store. */
   searchInventoryByBarcode: (barcode: string) => Promise<InventoryEntry[]>
   searchByBarcode: (barcode: string) => Promise<InventoryEntry | null>
+  /** B1: lookup SP qua bảng product_barcodes + tổng tồn toàn kho. */
+  lookupProductByBarcode: (barcode: string) => Promise<{ product: Product; totalStock: number } | null>
+  /** B1: barcode đã thuộc SP khác → trả SP owning; không conflict → null. */
+  checkBarcodeConflict: (barcode: string, currentProductId: string) => Promise<Product | null>
+  /** B1: ghi/ghi lại mã vạch SP (caller phải check conflict trước). */
+  upsertProductBarcode: (productId: string, barcode: string) => Promise<void>
   addProduct: (data: Partial<Product>) => Promise<Product | null>
   deleteProduct: (productId: string) => Promise<void>
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
@@ -523,6 +529,88 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .maybeSingle()
 
     return (data as InventoryEntry) ?? null
+  },
+
+  lookupProductByBarcode: async (barcode) => {
+    const normalized = barcode.trim()
+    if (!normalized) return null
+
+    const { data: row } = await supabase
+      .from('product_barcodes')
+      .select('*, product:products(*)')
+      .eq('barcode', normalized)
+      .maybeSingle()
+
+    const product = row?.product as Product | undefined
+    if (!product) return null
+
+    const { data: entries } = await supabase
+      .from('inventory_entries')
+      .select('quantity_boxes')
+      .eq('product_id', product.id)
+
+    const totalStock = (entries ?? []).reduce(
+      (sum, entry) => sum + (entry.quantity_boxes ?? 0),
+      0,
+    )
+
+    return { product, totalStock }
+  },
+
+  checkBarcodeConflict: async (barcode, currentProductId) => {
+    const normalized = barcode.trim()
+    if (!normalized) return null
+
+    const { data: row } = await supabase
+      .from('product_barcodes')
+      .select('product_id')
+      .eq('barcode', normalized)
+      .maybeSingle()
+
+    if (!row || row.product_id === currentProductId) return null
+
+    const { data: product } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', row.product_id)
+      .maybeSingle()
+
+    return (product as Product) ?? null
+  },
+
+  upsertProductBarcode: async (productId, barcode) => {
+    const normalized = barcode.trim()
+    if (!normalized) return
+
+    const { data: existing } = await supabase
+      .from('product_barcodes')
+      .select('id, product_id')
+      .eq('barcode', normalized)
+      .maybeSingle()
+
+    const now = new Date().toISOString()
+
+    if (existing) {
+      if (existing.product_id !== productId) {
+        throw new Error('Barcode đã thuộc sản phẩm khác')
+      }
+      const { error } = await supabase
+        .from('product_barcodes')
+        .update({ last_scanned_at: now })
+        .eq('id', existing.id)
+      if (error) throw error
+      return
+    }
+
+    const { error } = await supabase
+      .from('product_barcodes')
+      .insert({
+        product_id: productId,
+        barcode: normalized,
+        first_scanned_at: now,
+        last_scanned_at: now,
+      })
+    if (error) throw error
   },
 
   addProduct: async (data) => {

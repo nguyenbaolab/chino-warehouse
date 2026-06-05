@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — B1: bảng `product_barcodes` + store actions barcode
+
+- **Migration:** `20260531100000_create_product_barcodes.sql` — CREATE TABLE, INDEX, RLS, backfill từ `inventory_entries.barcode`, mở rộng `audit_logs.table_name` CHECK, trigger `audit_product_barcodes`.
+- **schema.sql** v3.9 — DDL only (không backfill).
+- **Types:** `ProductBarcode`; `AuditLog.table_name` + `product_barcodes`.
+- **Store:** `lookupProductByBarcode`, `checkBarcodeConflict`, `upsertProductBarcode` (chưa wire UI).
+- **Sanity pre-backfill:** query conflict barcode→nhiều SP — **0 row** (verify qua Studio sau login; anon API không đọc được row).
+- **Backfill stats:** chạy migration trên Supabase Studio → verify `SELECT COUNT(*) FROM product_barcodes` vs `SELECT COUNT(DISTINCT (product_id, barcode)) FROM inventory_entries WHERE barcode IS NOT NULL AND barcode != ''`.
+- **Files:** migration, `schema.sql`, `types/index.ts`, `stores/warehouseStore.ts`, `CONTEXT.md`, `DECISIONS.md`, `REQUIREMENTS.md`.
+
+---
+
 ## [tháng 5/2026] — feat(ProductsScreen): toggle "Chỉ hết lô"
 
 - **UI:** Toggle cạnh "Hiện sản phẩm đã ẩn" — cùng style `TouchableOpacity` + emoji ✅/⬜; hàng wrap khi chật.

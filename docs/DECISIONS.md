@@ -4,6 +4,15 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### B1 — Lịch sử mã vạch per sản phẩm (`product_barcodes`)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Bảng `product_barcodes` lưu mọi mã vạch từng gắn với một SP; **`barcode` UNIQUE toàn hệ thống** (một mã chỉ thuộc một SP). Khi gán mã cho lô/SP mới: **`checkBarcodeConflict`** trước — nếu mã thuộc SP khác → **block** (B2 wire UI). Ghi thành công → **`upsertProductBarcode`** + audit log qua trigger `audit_product_barcodes` (cùng pattern SEC-11). Quét mã không khớp lô hiện tại → **`lookupProductByBarcode`** (B2/F10).
+- **Lý do:** Mã vạch là định danh vật lý sản phẩm, không chỉ của một lô; tránh hai SP cùng mã; lịch sử quét phục vụ audit và lookup khi lô cũ đã hết.
+- **Phạm vi B1:** Migration + backfill từ `inventory_entries.barcode` + types + 3 store actions — **chưa** wire UI.
+
+---
+
 ### SEC-10 — Backup script dùng anon key + user login
 
 - **Ngày:** tháng 5/2026

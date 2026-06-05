@@ -91,6 +91,15 @@ export type LocateIntent = {
   zoneId: string
 }
 
+/** B1 — lịch sử mã vạch per sản phẩm (UNIQUE barcode toàn hệ thống). */
+export interface ProductBarcode {
+  id: string
+  product_id: string
+  barcode: string
+  first_scanned_at: string
+  last_scanned_at: string
+}
+
 export type InventoryEntry = {
   id: string
   product_id: string
@@ -109,7 +118,7 @@ export type InventoryEntry = {
 
 export type AuditLog = {
   id: string
-  table_name: 'inventory_entries' | 'products'
+  table_name: 'inventory_entries' | 'products' | 'product_barcodes'
   action: 'INSERT' | 'UPDATE' | 'DELETE'
   record_id: string | null
   location_id: string | null

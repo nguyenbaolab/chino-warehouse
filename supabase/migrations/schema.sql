@@ -1,8 +1,11 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.8 | Tháng 5/2026
+-- Phiên bản: 3.9 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.8:
+--   - B1: bảng product_barcodes (lịch sử mã vạch per SP, UNIQUE barcode),
+--     audit trigger + mở rộng audit_logs.table_name CHECK
 -- Thay đổi so với v3.7:
 --   - products.is_archived NOT NULL (migration đồng bộ DB production)
 -- Thay đổi so với v3.6:
@@ -122,6 +125,15 @@ CREATE TABLE inventory_entries (
   updated_at       TIMESTAMPTZ DEFAULT now()
 );
 
+-- 5b. Product barcodes (B1 — lịch sử mã vạch per SP, UNIQUE toàn hệ thống)
+CREATE TABLE product_barcodes (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id       UUID        NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  barcode          TEXT        NOT NULL UNIQUE,
+  first_scanned_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_scanned_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 6. Order lists (danh sách đặt hàng)
 CREATE TABLE order_lists (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -149,7 +161,7 @@ CREATE TABLE order_items (
 -- 8. Audit logs (SEC-11)
 CREATE TABLE audit_logs (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products')),
+  table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products', 'product_barcodes')),
   action         TEXT        NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE')),
   record_id      UUID,
   location_id    UUID        REFERENCES locations(id) ON DELETE SET NULL,
@@ -169,6 +181,7 @@ CREATE INDEX ON products(name);
 CREATE INDEX ON inventory_entries(zone_id);
 CREATE INDEX ON inventory_entries(product_id);
 CREATE INDEX ON inventory_entries(barcode);
+CREATE INDEX idx_product_barcodes_product_id ON product_barcodes(product_id);
 CREATE INDEX ON order_items(order_list_id);
 CREATE INDEX ON order_items(product_id);
 CREATE INDEX idx_product_categories_l2_level1 ON product_categories_l2(level1_id);
@@ -190,6 +203,7 @@ ALTER TABLE product_categories_l1 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_categories_l2 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventory_entries     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_barcodes      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
 
@@ -201,6 +215,7 @@ CREATE POLICY "allow_all" ON product_categories_l1 FOR ALL TO authenticated USIN
 CREATE POLICY "allow_all" ON product_categories_l2 FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON products              FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON inventory_entries     FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all" ON product_barcodes      FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON order_lists           FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON order_items           FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
@@ -330,6 +345,10 @@ CREATE TRIGGER audit_inventory_entries
 
 CREATE TRIGGER audit_products
   AFTER INSERT OR UPDATE OR DELETE ON products
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
+
+CREATE TRIGGER audit_product_barcodes
+  AFTER INSERT OR UPDATE OR DELETE ON product_barcodes
   FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
 
 -- ============================================================

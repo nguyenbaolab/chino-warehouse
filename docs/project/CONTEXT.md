@@ -16,7 +16,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 
 **Mô hình bảo mật (client-direct BaaS):**
 - Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.
-- RLS bật trên tất cả 8 bảng với policy `authenticated_only` (`auth.uid() IS NOT NULL`).
+- RLS bật trên tất cả **9 bảng** app với policy `authenticated_only` / `allow_all` (`auth.uid() IS NOT NULL` hoặc tương đương).
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
 - RBAC (F24) → Phase 3 **In progress**: `user_profiles`, `UserManagementScreen`, guard theo role.
@@ -148,7 +148,9 @@ README.md
 
 **Actions — user management (Phase 3, F24):** `fetchUsers`, `createUser`, `updateUserRole`, `toggleUserDisabled`, `toggleUserGuest`, `fetchCurrentUserRole`.
 
-**Actions — kho & zone:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `fetchInventoryByLocation` (một query `.in('zone_id', …)` cho cả kho, một lần `set` store), `fetchAllInventoryEntries`, `searchProducts` (filter `products` trong store bằng `normalizeText`, sau đó query `inventory_entries` theo `product_id` — không `ilike` DB), `searchInventoryByBarcode`, `searchByBarcode`, `addProduct`, `deleteProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
+**Actions — kho & zone:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `fetchInventoryByLocation` (một query `.in('zone_id', …)` cho cả kho, một lần `set` store), `fetchAllInventoryEntries`, `searchProducts` (filter `products` trong store bằng `normalizeText`, sau đó query `inventory_entries` theo `product_id` — không `ilike` DB), `searchInventoryByBarcode`, `searchByBarcode`, **`lookupProductByBarcode`**, **`checkBarcodeConflict`**, **`upsertProductBarcode`** (B1 — chưa wire UI), `addProduct`, `deleteProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
+
+**Schema — `product_barcodes` (B1):** `id`, `product_id` → `products`, `barcode` **UNIQUE**, `first_scanned_at`, `last_scanned_at`; RLS authenticated; audit trigger SEC-11; backfill một lần từ `inventory_entries.barcode` (migration, không có trong `schema.sql` DDL-only).
 
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
 
@@ -174,7 +176,7 @@ README.md
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog`, `OrderList`, `OrderItem`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog`, `OrderList`, `OrderItem`
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 
