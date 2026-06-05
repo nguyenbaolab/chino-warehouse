@@ -56,6 +56,7 @@ export default function ProductsScreen() {
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
   const [showArchived, setShowArchived] = useState(false)
+  const [showOutOfStockOnly, setShowOutOfStockOnly] = useState(false)
 
   const [scannedLotId, setScannedLotId] = useState<string | null>(null)
   const [viewingImage, setViewingImage] = useState<{ uri: string; productId: string } | null>(null)
@@ -123,7 +124,7 @@ export default function ProductsScreen() {
 
   useEffect(() => {
     setCurrentPage(0)
-  }, [searchQuery, filterLocationId, selectedZoneId])
+  }, [searchQuery, filterLocationId, selectedZoneId, showOutOfStockOnly])
 
   useEffect(() => {
     const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
@@ -195,15 +196,20 @@ export default function ProductsScreen() {
         )
         if (!inLoc) return false
       }
-      if (!hasZoneFilter) return true
-
-      return inventoryEntries.some((entry) => (
-        entry.product_id === product.id &&
-        entry.zone_id === selectedZoneId &&
-        (!locationZoneSet || locationZoneSet.has(entry.zone_id))
-      ))
+      if (hasZoneFilter) {
+        const inZone = inventoryEntries.some((entry) => (
+          entry.product_id === product.id &&
+          entry.zone_id === selectedZoneId &&
+          (!locationZoneSet || locationZoneSet.has(entry.zone_id))
+        ))
+        if (!inZone) return false
+      }
+      if (showOutOfStockOnly && (totalBoxesByProduct.get(product.id) ?? 0) !== 0) {
+        return false
+      }
+      return true
     })
-  }, [products, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet])
+  }, [products, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet, showOutOfStockOnly, totalBoxesByProduct])
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE))
   const pagedProducts = useMemo(
@@ -424,14 +430,24 @@ export default function ProductsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <Text style={[styles.title, { color: colors.text }]}>📦 Sản phẩm</Text>
-      <TouchableOpacity
-        style={[styles.archivedToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => setShowArchived((v) => !v)}
-      >
-        <Text style={{ color: colors.sub }}>
-          {showArchived ? '✅ Đang hiện sản phẩm đã ẩn' : '⬜ Hiện sản phẩm đã ẩn'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.toggleRow}>
+        <TouchableOpacity
+          style={[styles.archivedToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setShowArchived((v) => !v)}
+        >
+          <Text style={[styles.toggleLabel, { color: colors.sub }]}>
+            {showArchived ? '✅ Đang hiện sản phẩm đã ẩn' : '⬜ Hiện sản phẩm đã ẩn'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.archivedToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setShowOutOfStockOnly((v) => !v)}
+        >
+          <Text style={[styles.toggleLabel, { color: colors.sub }]}>
+            {showOutOfStockOnly ? '✅ Đang chỉ hết lô' : '⬜ Chỉ hết lô'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -642,14 +658,22 @@ export default function ProductsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 16 },
   title: { fontSize: 18, fontWeight: '700', paddingHorizontal: 16, marginBottom: 12 },
-  archivedToggle: {
-    marginHorizontal: 16,
+  toggleRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 16,
     marginBottom: 8,
+  },
+  archivedToggle: {
+    flexGrow: 1,
+    flexBasis: '45%',
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
+  toggleLabel: { fontSize: 12 },
   locationFilterRow: {
     flexDirection: 'row',
     alignItems: 'center',

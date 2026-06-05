@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat(ProductsScreen): toggle "Chỉ hết lô"
+
+- **UI:** Toggle cạnh "Hiện sản phẩm đã ẩn" — cùng style `TouchableOpacity` + emoji ✅/⬜; hàng wrap khi chật.
+- **Logic:** `showOutOfStockOnly` — sau search/kho/zone, giữ SP có `totalBoxes === 0` trong scope (`totalBoxesByProduct`); reset `currentPage` khi đổi toggle.
+- **Files:** `screens/ProductsScreen.tsx`, `docs/project/CONTEXT.md`, `docs/project/REQUIREMENTS.md`.
+
+---
+
 ## [tháng 5/2026] — fix(MapScreen): Realtime crash do unstable effect dependencies
 
 - **Nguyên nhân:** `useEffect` Realtime deps `[selectedLocationId, fetchZones, fetchInventoryByLocation]` + `useWarehouseStore()` không selector → re-render liên tục (vd. `isLoading`) tear down/rebuild channel; `removeChannel` async → lỗi `cannot add postgres_changes callbacks after subscribe()`.
