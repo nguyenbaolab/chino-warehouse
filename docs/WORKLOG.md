@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix(MapScreen): Realtime crash do unstable effect dependencies
+
+- **Nguyên nhân:** `useEffect` Realtime deps `[selectedLocationId, fetchZones, fetchInventoryByLocation]` + `useWarehouseStore()` không selector → re-render liên tục (vd. `isLoading`) tear down/rebuild channel; `removeChannel` async → lỗi `cannot add postgres_changes callbacks after subscribe()`.
+- **Fix:** `fetchZonesRef` / `fetchInventoryByLocationRef` giữ stable reference; Realtime effect deps chỉ `[selectedLocationId]`.
+- **KI-053** → Resolved.
+
+---
+
 ## [tháng 5/2026] — refactor(ProductsScreen): bỏ dòng barcode khỏi card lô hàng
 
 - Card lô trong `renderProductItem` chỉ còn dòng dot + Hạn + thùng; xóa `lotBarcodeLine`.

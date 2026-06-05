@@ -575,3 +575,13 @@
 - **Đã fix:** `handleDeleteImage` gọi `removeProductImage` trước, `deleteProductImage` sau. `deleteProduct` giữ nguyên (xóa row SP).
 
 ---
+
+### [KI-053] MapScreen — Realtime crash: cannot add postgres_changes callbacks after subscribe()
+
+- **Mức độ:** High
+- **File liên quan:** `screens/MapScreen.tsx`
+- **Mô tả:** Effect Realtime deps gồm `fetchZones`/`fetchInventoryByLocation`; `useWarehouseStore()` không selector → mọi thay đổi store (kể cả `isLoading`) re-render → channel tear down/rebuild liên tục khi app lag; `removeChannel` async → Supabase throw khi ghi đè channel chưa đóng xong.
+- **Trạng thái:** **Resolved**
+- **Đã fix:** `fetchZonesRef` / `fetchInventoryByLocationRef` + effect sync ref mỗi render; Realtime `scheduleRefresh` gọi qua ref; dependency array chỉ `[selectedLocationId]`.
+
+---

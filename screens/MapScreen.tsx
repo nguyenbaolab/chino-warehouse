@@ -124,6 +124,14 @@ export default function MapScreen() {
     searchProducts,
     searchInventoryByBarcode,
   } = useWarehouseStore()
+
+  const fetchZonesRef = useRef(fetchZones)
+  const fetchInventoryByLocationRef = useRef(fetchInventoryByLocation)
+  useEffect(() => {
+    fetchZonesRef.current = fetchZones
+    fetchInventoryByLocationRef.current = fetchInventoryByLocation
+  })
+
   const { colors, loadTheme } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
 
@@ -254,8 +262,8 @@ export default function MapScreen() {
       if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
       realtimeDebounceRef.current = setTimeout(() => {
         realtimeDebounceRef.current = null
-        void fetchZones(selectedLocationId)
-        void fetchInventoryByLocation(selectedLocationId)
+        void fetchZonesRef.current(selectedLocationId)
+        void fetchInventoryByLocationRef.current(selectedLocationId)
       }, REALTIME_DEBOUNCE_MS)
     }
 
@@ -282,7 +290,7 @@ export default function MapScreen() {
       ownMutationTimerRef.current = null
       void supabase.removeChannel(channel)
     }
-  }, [selectedLocationId, fetchZones, fetchInventoryByLocation])
+  }, [selectedLocationId])
 
   async function handleSearch(text: string) {
     const requestId = ++searchRequestRef.current
