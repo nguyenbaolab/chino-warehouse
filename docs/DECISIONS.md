@@ -4,6 +4,17 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+---
+
+### FAB tạo sản phẩm trên ProductsScreen (catalog-only)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** FAB **+** trên `ProductsScreen` mở bottom sheet tạo **chỉ** bản ghi `products` — **không** tạo `inventory_entry`. Sau lưu thành công: **reset filter kho về "Tất cả kho"** để SP mới (0 lô) hiện ngay trong list (filter theo kho ẩn SP không có lô trong kho đó).
+- **Ảnh / barcode:** `addProduct` trước → `uploadProductImage` / `upsertProductBarcode` sau (cùng DECISIONS F08). Quét mã trong form: `BarcodeScanner` + `onScanFillBarcode` (modal giữ mở, không dùng route params search).
+- **Conflict:** `checkBarcodeConflict` với sentinel UUID trước khi tạo SP.
+
+---
+
 ### B2 — Wire barcode UI + audit conflict (RPC)
 
 - **Ngày:** tháng 5/2026

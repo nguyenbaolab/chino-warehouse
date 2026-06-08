@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat(ProductsScreen): FAB tạo sản phẩm catalog-only
+
+- **UI:** FAB + (style LocationManagement); bottom sheet modal — tên, mã vạch (📷 `onScanFillBarcode`), ảnh, ghi chú, L1/L2.
+- **Logic:** `addProduct` → upload ảnh / `upsertProductBarcode`; conflict check sentinel UUID; reset `filterLocationId` → null sau lưu.
+- **Files:** `screens/ProductsScreen.tsx`, CONTEXT, REQUIREMENTS F14, DECISIONS.
+
+---
+
 ## [tháng 5/2026] — B2: wire barcode actions + audit CONFLICT RPC
 
 - **Migration:** `20260531120000_audit_barcode_conflict.sql` — `audit_logs.action` + `CONFLICT`; RPC `log_barcode_conflict` (SECURITY DEFINER).

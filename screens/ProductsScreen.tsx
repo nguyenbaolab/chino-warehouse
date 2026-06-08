@@ -5,6 +5,7 @@ import {
   Alert,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -32,6 +33,8 @@ import { normalizeText } from '../utils/textUtils'
 import { pickImage, uploadProductImage } from '../utils/imageUtils'
 
 const PAGE_SIZE = 10
+/** UUID sentinel — SP chưa tạo; mọi barcode đã gán SP khác đều là conflict. */
+const NEW_PRODUCT_CONFLICT_SENTINEL = '00000000-0000-0000-0000-000000000000'
 
 export default function ProductsScreen() {
   const navigation = useNavigation<any>()
@@ -47,7 +50,11 @@ export default function ProductsScreen() {
     fetchInventoryByZone,
     fetchAllInventoryEntries,
     fetchCategories,
+    addProduct,
     updateProductImage,
+    checkBarcodeConflict,
+    upsertProductBarcode,
+    logBarcodeConflict,
   } = useWarehouseStore()
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
@@ -67,11 +74,30 @@ export default function ProductsScreen() {
   const [zonePickerOpen, setZonePickerOpen] = useState(false)
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
 
+  const [showCreateProductModal, setShowCreateProductModal] = useState(false)
+  const [createName, setCreateName] = useState('')
+  const [createBarcode, setCreateBarcode] = useState('')
+  const [createNotes, setCreateNotes] = useState('')
+  const [createImageUri, setCreateImageUri] = useState<string | null>(null)
+  const [createCategoryL1Id, setCreateCategoryL1Id] = useState<string | null>(null)
+  const [createCategoryL2Id, setCreateCategoryL2Id] = useState<string | null>(null)
+  const [showCreateCatL1, setShowCreateCatL1] = useState(false)
+  const [showCreateCatL2, setShowCreateCatL2] = useState(false)
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false)
+  const [isUploadingCreateImage, setIsUploadingCreateImage] = useState(false)
+
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
       void fetchCategories()
     }
   }, [fetchCategories])
+
+  useEffect(() => {
+    if (!showCreateProductModal) return
+    if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
+      void fetchCategories()
+    }
+  }, [showCreateProductModal, fetchCategories])
 
   useEffect(() => {
     fetchLocations()
@@ -218,6 +244,135 @@ export default function ProductsScreen() {
   )
   const canGoPrev = currentPage > 0
   const canGoNext = currentPage < totalPages - 1
+  const hasPaginationFooter = filteredProducts.length > PAGE_SIZE
+  const fabBottom = hasPaginationFooter ? 80 : 28
+
+  const createCategoryL2Options = useMemo(() => {
+    if (!createCategoryL1Id) return []
+    return productCategoriesL2.filter((c) => c.level1_id === createCategoryL1Id)
+  }, [createCategoryL1Id, productCategoriesL2])
+
+  function resetCreateForm() {
+    setCreateName('')
+    setCreateBarcode('')
+    setCreateNotes('')
+    setCreateImageUri(null)
+    setCreateCategoryL1Id(null)
+    setCreateCategoryL2Id(null)
+    setShowCreateCatL1(false)
+    setShowCreateCatL2(false)
+  }
+
+  function closeCreateProductModal() {
+    setShowCreateProductModal(false)
+    resetCreateForm()
+  }
+
+  function showCreateImageOptions() {
+    const pick = async (source: 'camera' | 'library') => {
+      const uri = await pickImage(source)
+      if (uri) setCreateImageUri(uri)
+    }
+
+    const options = ['Chụp ảnh', 'Chọn từ thư viện', 'Hủy']
+    const cancelButtonIndex = 2
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex },
+        (buttonIndex) => {
+          if (buttonIndex === 0) void pick('camera')
+          else if (buttonIndex === 1) void pick('library')
+        },
+      )
+    } else {
+      Alert.alert('Chọn ảnh', undefined, [
+        { text: 'Chụp ảnh', onPress: () => void pick('camera') },
+        { text: 'Chọn từ thư viện', onPress: () => void pick('library') },
+        { text: 'Hủy', style: 'cancel' },
+      ])
+    }
+  }
+
+  function openCreateBarcodeScanner() {
+    navigation.navigate('BarcodeScanner', {
+      mode: 'search',
+      onScanFillBarcode: (barcode: string) => {
+        setCreateBarcode(barcode.trim())
+      },
+    })
+  }
+
+  async function handleCreateProduct() {
+    const trimmedName = createName.trim()
+    if (!trimmedName) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng nhập tên sản phẩm.')
+      return
+    }
+
+    const trimmedBarcode = createBarcode.trim()
+    if (trimmedBarcode) {
+      const conflicting = await checkBarcodeConflict(trimmedBarcode, NEW_PRODUCT_CONFLICT_SENTINEL)
+      if (conflicting) {
+        Alert.alert(
+          'Mã vạch đã tồn tại',
+          `Mã vạch "${trimmedBarcode}" đã thuộc về sản phẩm "${conflicting.name}".`,
+          [{ text: 'OK' }],
+        )
+        void logBarcodeConflict(
+          trimmedBarcode,
+          NEW_PRODUCT_CONFLICT_SENTINEL,
+          conflicting.id,
+          trimmedName,
+          conflicting.name,
+        )
+        return
+      }
+    }
+
+    setIsCreatingProduct(true)
+    const created = await addProduct({
+      name: trimmedName,
+      notes: createNotes.trim() || undefined,
+      warning_days: 30,
+      is_archived: false,
+      category_level1_id: createCategoryL1Id ?? null,
+      category_level2_id: createCategoryL1Id ? (createCategoryL2Id ?? null) : null,
+    })
+
+    if (!created) {
+      setIsCreatingProduct(false)
+      Alert.alert('Lỗi', 'Không thể tạo sản phẩm mới.')
+      return
+    }
+
+    if (createImageUri) {
+      try {
+        setIsUploadingCreateImage(true)
+        const url = await uploadProductImage(created.id, createImageUri)
+        await updateProductImage(created.id, url)
+      } catch {
+        Alert.alert('Lưu ý', 'Tạo sản phẩm thành công nhưng không thể tải ảnh lên.')
+      } finally {
+        setIsUploadingCreateImage(false)
+      }
+    }
+
+    if (trimmedBarcode) {
+      try {
+        await upsertProductBarcode(created.id, trimmedBarcode)
+      } catch {
+        Alert.alert('Lưu ý', 'Tạo sản phẩm thành công nhưng không thể lưu mã vạch.')
+      }
+    }
+
+    if (filterLocationId !== null) {
+      setFilterLocationId(null)
+    }
+
+    setIsCreatingProduct(false)
+    closeCreateProductModal()
+  }
 
   function showImageOptions(product: Product) {
     console.log('[F08] showImageOptions called', product.id)
@@ -651,6 +806,214 @@ export default function ProductsScreen() {
           if (product) showImageOptions(product)
         }}
       />
+
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.accent, bottom: fabBottom }]}
+        activeOpacity={0.85}
+        onPress={() => setShowCreateProductModal(true)}
+      >
+        <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
+      </TouchableOpacity>
+
+      <Modal
+        visible={showCreateProductModal}
+        transparent
+        animationType="slide"
+        onRequestClose={closeCreateProductModal}
+      >
+        <Pressable style={styles.createModalOverlay} onPress={closeCreateProductModal}>
+          <Pressable
+            style={[styles.createModalBox, { backgroundColor: colors.card }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bounces={false}>
+                <Text style={[styles.createModalTitle, { color: colors.text }]}>Tạo sản phẩm mới</Text>
+
+                <Text style={[styles.createLabel, { color: colors.sub }]}>Tên sản phẩm *</Text>
+                <TextInput
+                  style={[styles.createInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+                  value={createName}
+                  onChangeText={setCreateName}
+                  placeholder="Tên sản phẩm *"
+                  placeholderTextColor={colors.sub}
+                  autoFocus
+                />
+
+                <Text style={[styles.createLabel, { color: colors.sub }]}>Mã vạch</Text>
+                <View style={styles.createBarcodeRow}>
+                  <TextInput
+                    style={[
+                      styles.createBarcodeInput,
+                      { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border },
+                    ]}
+                    value={createBarcode}
+                    onChangeText={setCreateBarcode}
+                    placeholder="Mã vạch (tuỳ chọn)"
+                    placeholderTextColor={colors.sub}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  <TouchableOpacity
+                    style={[styles.createBarcodeScanBtn, { backgroundColor: colors.accent }]}
+                    onPress={openCreateBarcodeScanner}
+                    disabled={isCreatingProduct || isUploadingCreateImage}
+                  >
+                    <Text style={{ color: colors.card, fontSize: 16 }}>📷</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={[styles.createLabel, { color: colors.sub }]}>Ảnh</Text>
+                <View style={styles.createImageWrap}>
+                  {createImageUri ? (
+                    <>
+                      <Image source={{ uri: createImageUri }} style={styles.createImagePreview} resizeMode="cover" />
+                      <View style={styles.createImageActions}>
+                        <TouchableOpacity onPress={showCreateImageOptions}>
+                          <Text style={{ color: colors.accent, fontSize: 13 }}>Đổi ảnh</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setCreateImageUri(null)}>
+                          <Text style={{ color: colors.statusWarning, fontSize: 13 }}>Xóa ảnh</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  ) : (
+                    <TouchableOpacity
+                      style={[styles.createImagePreview, styles.createImagePlaceholder, { backgroundColor: colors.border }]}
+                      activeOpacity={0.85}
+                      onPress={showCreateImageOptions}
+                    >
+                      <Text style={{ fontSize: 24 }}>📷</Text>
+                      <Text style={{ fontSize: 11, color: colors.sub, marginTop: 4 }}>Thêm ảnh</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <Text style={[styles.createLabel, { color: colors.sub }]}>Ghi chú</Text>
+                <TextInput
+                  style={[
+                    styles.createInput,
+                    styles.createNotesInput,
+                    { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border },
+                  ]}
+                  value={createNotes}
+                  onChangeText={setCreateNotes}
+                  placeholder="Ghi chú (tuỳ chọn)"
+                  placeholderTextColor={colors.sub}
+                  multiline
+                />
+
+                <Text style={[styles.createLabel, { color: colors.sub }]}>Nhóm (Cấp 1)</Text>
+                <Pressable
+                  style={[styles.createSelectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                  onPress={() => {
+                    setShowCreateCatL1((v) => !v)
+                    setShowCreateCatL2(false)
+                  }}
+                >
+                  <Text style={{ color: createCategoryL1Id ? colors.text : colors.sub }}>
+                    {!createCategoryL1Id
+                      ? 'Không phân loại'
+                      : productCategoriesL1.find((c) => c.id === createCategoryL1Id)?.name ?? 'Không phân loại'}
+                  </Text>
+                </Pressable>
+                {showCreateCatL1 && (
+                  <View style={[styles.createOptionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                    <TouchableOpacity
+                      style={[styles.createOptionRow, { borderBottomColor: colors.border }]}
+                      onPress={() => {
+                        setCreateCategoryL1Id(null)
+                        setCreateCategoryL2Id(null)
+                        setShowCreateCatL1(false)
+                      }}
+                    >
+                      <Text style={{ color: colors.text }}>Không phân loại</Text>
+                    </TouchableOpacity>
+                    {productCategoriesL1.map((cat) => (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[styles.createOptionRow, { borderBottomColor: colors.border }]}
+                        onPress={() => {
+                          setCreateCategoryL1Id(cat.id)
+                          setCreateCategoryL2Id(null)
+                          setShowCreateCatL1(false)
+                        }}
+                      >
+                        <Text style={{ color: colors.text }}>{cat.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {!!createCategoryL1Id && (
+                  <>
+                    <Text style={[styles.createLabel, { color: colors.sub }]}>Loại (Cấp 2)</Text>
+                    <Pressable
+                      style={[styles.createSelectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                      onPress={() => {
+                        setShowCreateCatL2((v) => !v)
+                        setShowCreateCatL1(false)
+                      }}
+                    >
+                      <Text style={{ color: createCategoryL2Id ? colors.text : colors.sub }}>
+                        {!createCategoryL2Id
+                          ? 'Không phân loại'
+                          : productCategoriesL2.find((c) => c.id === createCategoryL2Id)?.name ?? 'Không phân loại'}
+                      </Text>
+                    </Pressable>
+                    {showCreateCatL2 && (
+                      <View style={[styles.createOptionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                        <TouchableOpacity
+                          style={[styles.createOptionRow, { borderBottomColor: colors.border }]}
+                          onPress={() => {
+                            setCreateCategoryL2Id(null)
+                            setShowCreateCatL2(false)
+                          }}
+                        >
+                          <Text style={{ color: colors.text }}>Không phân loại</Text>
+                        </TouchableOpacity>
+                        {createCategoryL2Options.map((cat) => (
+                          <TouchableOpacity
+                            key={cat.id}
+                            style={[styles.createOptionRow, { borderBottomColor: colors.border }]}
+                            onPress={() => {
+                              setCreateCategoryL2Id(cat.id)
+                              setShowCreateCatL2(false)
+                            }}
+                          >
+                            <Text style={{ color: colors.text }}>{cat.name}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <View style={styles.createFormActions}>
+                  <TouchableOpacity
+                    style={[styles.createCancelBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                    onPress={closeCreateProductModal}
+                    disabled={isCreatingProduct || isUploadingCreateImage}
+                  >
+                    <Text style={{ color: colors.text, fontWeight: '600' }}>Huỷ</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.createSaveBtn, { backgroundColor: colors.accent }]}
+                    onPress={() => void handleCreateProduct()}
+                    disabled={isCreatingProduct || isUploadingCreateImage}
+                  >
+                    {isCreatingProduct || isUploadingCreateImage ? (
+                      <ActivityIndicator color={colors.card} />
+                    ) : (
+                      <Text style={{ color: colors.card, fontWeight: '700' }}>Lưu</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -777,4 +1140,85 @@ const styles = StyleSheet.create({
   lotText: { fontSize: 12, marginLeft: 6, flex: 1 },
   titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, marginTop: 2 },
   lotDot: { width: 8, height: 8, borderRadius: 4 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  fabText: { fontSize: 28, fontWeight: '300', marginTop: -2 },
+  createModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  createModalBox: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    padding: 20,
+    paddingBottom: 28,
+    maxHeight: '92%',
+  },
+  createModalTitle: { fontSize: 17, fontWeight: '700', marginBottom: 14 },
+  createLabel: { fontSize: 12, marginBottom: 6, marginTop: 10 },
+  createInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  createNotesInput: { minHeight: 72, textAlignVertical: 'top' },
+  createBarcodeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  createBarcodeInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  createBarcodeScanBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createImageWrap: { marginTop: 4 },
+  createImagePreview: { width: 96, height: 96, borderRadius: 10 },
+  createImagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  createImageActions: { flexDirection: 'row', gap: 16, marginTop: 8 },
+  createSelectBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  createOptionsWrap: { borderWidth: 1, borderRadius: 10, marginTop: 6, overflow: 'hidden' },
+  createOptionRow: { paddingHorizontal: 12, paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth },
+  createFormActions: { flexDirection: 'row', gap: 10, marginTop: 20, marginBottom: 8 },
+  createCancelBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  createSaveBtn: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 })
