@@ -92,6 +92,9 @@ export default function AddInventoryScreen() {
     updateInventoryEntry,
     updateProductImage,
     searchByBarcode,
+    checkBarcodeConflict,
+    upsertProductBarcode,
+    logBarcodeConflict,
   } = useWarehouseStore()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -348,6 +351,26 @@ export default function AddInventoryScreen() {
 
     setIsSaving(true)
 
+    if (lotBarcode.trim()) {
+      const conflicting = await checkBarcodeConflict(lotBarcode.trim(), selectedProduct.id)
+      if (conflicting) {
+        Alert.alert(
+          'Mã vạch đã tồn tại',
+          `Mã vạch "${lotBarcode.trim()}" đã thuộc về sản phẩm "${conflicting.name}".`,
+          [{ text: 'OK' }],
+        )
+        void logBarcodeConflict(
+          lotBarcode.trim(),
+          selectedProduct.id,
+          conflicting.id,
+          selectedProduct.name,
+          conflicting.name,
+        )
+        setIsSaving(false)
+        return
+      }
+    }
+
     // Kiểm tra trùng lot theo product + zone + tier + expiry trước khi insert
     let duplicateQuery = supabase
       .from('inventory_entries')
@@ -406,6 +429,9 @@ export default function AddInventoryScreen() {
       expiry_date: expiryDateIso ?? undefined,
       notes: batchNote.trim() || undefined,
     })
+    if (lotBarcode.trim()) {
+      await upsertProductBarcode(selectedProduct.id, lotBarcode.trim())
+    }
     setIsSaving(false)
     navigation.goBack()
   }

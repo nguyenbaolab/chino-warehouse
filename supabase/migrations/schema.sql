@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.9 | Tháng 5/2026
+-- Phiên bản: 3.10 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.9:
+--   - B2: audit_logs.action thêm CONFLICT; RPC log_barcode_conflict
 -- Thay đổi so với v3.8:
 --   - B1: bảng product_barcodes (lịch sử mã vạch per SP, UNIQUE barcode),
 --     audit trigger + mở rộng audit_logs.table_name CHECK
@@ -162,7 +164,7 @@ CREATE TABLE order_items (
 CREATE TABLE audit_logs (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products', 'product_barcodes')),
-  action         TEXT        NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE')),
+  action         TEXT        NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE', 'CONFLICT')),
   record_id      UUID,
   location_id    UUID        REFERENCES locations(id) ON DELETE SET NULL,
   changed_by     UUID,
@@ -350,6 +352,33 @@ CREATE TRIGGER audit_products
 CREATE TRIGGER audit_product_barcodes
   AFTER INSERT OR UPDATE OR DELETE ON product_barcodes
   FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
+
+-- B2: RPC ghi audit khi user bị block gán barcode trùng SP khác
+CREATE OR REPLACE FUNCTION log_barcode_conflict(
+  p_barcode TEXT,
+  p_attempted_product_id UUID,
+  p_conflicting_product_id UUID,
+  p_attempted_product_name TEXT,
+  p_conflicting_product_name TEXT
+) RETURNS void AS $$
+BEGIN
+  INSERT INTO audit_logs (
+    table_name, action, record_id,
+    changed_by, changed_by_name,
+    old_data, new_data
+  ) VALUES (
+    'product_barcodes',
+    'CONFLICT',
+    p_conflicting_product_id,
+    auth.uid(),
+    NULLIF(split_part(auth.jwt() ->> 'email', '@', 1), ''),
+    jsonb_build_object('barcode', p_barcode, 'current_owner', p_conflicting_product_name),
+    jsonb_build_object('barcode', p_barcode, 'attempted_owner', p_attempted_product_name)
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION log_barcode_conflict(TEXT, UUID, UUID, TEXT, TEXT) TO authenticated;
 
 -- ============================================================
 -- AUTO-UPDATE TRIGGERS (A5)

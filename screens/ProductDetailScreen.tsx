@@ -62,6 +62,9 @@ export default function ProductDetailScreen() {
     fetchLocations,
     updateInventoryEntry,
     deleteInventoryEntry,
+    checkBarcodeConflict,
+    upsertProductBarcode,
+    logBarcodeConflict,
     productCategoriesL1,
     productCategoriesL2,
     fetchCategories,
@@ -249,6 +252,9 @@ export default function ProductDetailScreen() {
 
     async function doSaveLot(lotId: string, payloadToSend: Partial<InventoryEntry>) {
       await updateInventoryEntry(lotId, payloadToSend)
+      if (payloadToSend.barcode) {
+        await upsertProductBarcode(lot.product_id, payloadToSend.barcode)
+      }
 
       // Lấy updated_at mới để update snapshot, tránh prompt conflict lặp khi user bấm edit lại
       let nextUpdatedAt = new Date().toISOString()
@@ -279,6 +285,25 @@ export default function ProductDetailScreen() {
         ),
       )
       setEditingLotId(null)
+    }
+
+    if (editLotBarcode.trim()) {
+      const conflicting = await checkBarcodeConflict(editLotBarcode.trim(), lot.product_id)
+      if (conflicting) {
+        Alert.alert(
+          'Mã vạch đã tồn tại',
+          `Mã vạch "${editLotBarcode.trim()}" đã thuộc về sản phẩm "${conflicting.name}".`,
+          [{ text: 'OK' }],
+        )
+        void logBarcodeConflict(
+          editLotBarcode.trim(),
+          lot.product_id,
+          conflicting.id,
+          lot.product?.name ?? '',
+          conflicting.name,
+        )
+        return
+      }
     }
 
     const { hasConflict, changedByName } = await checkConflict(

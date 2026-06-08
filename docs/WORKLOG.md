@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — B2: wire barcode actions + audit CONFLICT RPC
+
+- **Migration:** `20260531120000_audit_barcode_conflict.sql` — `audit_logs.action` + `CONFLICT`; RPC `log_barcode_conflict` (SECURITY DEFINER).
+- **Store:** normalize `.trim().toLowerCase()` cho 3 actions B1; thêm `logBarcodeConflict`.
+- **UI:** `BarcodeScannerScreen` — `lookupProductByBarcode` → Alert "Hàng đã hết"; `AddInventoryScreen` / `ProductDetailScreen` / `ZoneDetailSheet` — `checkBarcodeConflict` + `logBarcodeConflict` + `upsertProductBarcode`.
+- **schema.sql** v3.10.
+- **Files:** migration, schema, store, types, 4 UI files, CONTEXT, DECISIONS, REQUIREMENTS.
+
+---
+
 ## [tháng 5/2026] — B1: bảng `product_barcodes` + store actions barcode
 
 - **Migration:** `20260531100000_create_product_barcodes.sql` — CREATE TABLE, INDEX, RLS, backfill từ `inventory_entries.barcode`, mở rộng `audit_logs.table_name` CHECK, trigger `audit_product_barcodes`.

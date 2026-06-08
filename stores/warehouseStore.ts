@@ -60,6 +60,14 @@ type WarehouseStore = {
   checkBarcodeConflict: (barcode: string, currentProductId: string) => Promise<Product | null>
   /** B1: ghi/ghi lại mã vạch SP (caller phải check conflict trước). */
   upsertProductBarcode: (productId: string, barcode: string) => Promise<void>
+  /** B2: ghi audit CONFLICT qua RPC khi block gán barcode trùng SP khác. */
+  logBarcodeConflict: (
+    barcode: string,
+    attemptedProductId: string,
+    conflictingProductId: string,
+    attemptedProductName: string,
+    conflictingProductName: string,
+  ) => Promise<void>
   addProduct: (data: Partial<Product>) => Promise<Product | null>
   deleteProduct: (productId: string) => Promise<void>
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
@@ -532,7 +540,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   lookupProductByBarcode: async (barcode) => {
-    const normalized = barcode.trim()
+    const normalized = barcode.trim().toLowerCase()
     if (!normalized) return null
 
     const { data: row } = await supabase
@@ -558,7 +566,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   checkBarcodeConflict: async (barcode, currentProductId) => {
-    const normalized = barcode.trim()
+    const normalized = barcode.trim().toLowerCase()
     if (!normalized) return null
 
     const { data: row } = await supabase
@@ -579,7 +587,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   upsertProductBarcode: async (productId, barcode) => {
-    const normalized = barcode.trim()
+    const normalized = barcode.trim().toLowerCase()
     if (!normalized) return
 
     const { data: existing } = await supabase
@@ -611,6 +619,25 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         last_scanned_at: now,
       })
     if (error) throw error
+  },
+
+  logBarcodeConflict: async (
+    barcode,
+    attemptedProductId,
+    conflictingProductId,
+    attemptedProductName,
+    conflictingProductName,
+  ) => {
+    const normalized = barcode.trim().toLowerCase()
+    if (!normalized) return
+
+    await supabase.rpc('log_barcode_conflict', {
+      p_barcode: normalized,
+      p_attempted_product_id: attemptedProductId,
+      p_conflicting_product_id: conflictingProductId,
+      p_attempted_product_name: attemptedProductName,
+      p_conflicting_product_name: conflictingProductName,
+    })
   },
 
   addProduct: async (data) => {

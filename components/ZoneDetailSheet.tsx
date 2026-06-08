@@ -67,6 +67,9 @@ export default function ZoneDetailSheet({
     fetchInventoryByZone,
     updateInventoryEntry,
     deleteInventoryEntry,
+    checkBarcodeConflict,
+    upsertProductBarcode,
+    logBarcodeConflict,
     updateProductName,
   } = useWarehouseStore()
 
@@ -221,8 +224,30 @@ export default function ZoneDetailSheet({
 
     async function doSaveLot(entryId: string, payloadToSend: Partial<InventoryEntry>) {
       await updateInventoryEntry(entryId, payloadToSend)
+      if (payloadToSend.barcode) {
+        await upsertProductBarcode(entry.product_id, payloadToSend.barcode)
+      }
       setEditingLotId(null)
       await reloadCurrentZoneInventory()
+    }
+
+    if (editLotBarcode.trim()) {
+      const conflicting = await checkBarcodeConflict(editLotBarcode.trim(), entry.product_id)
+      if (conflicting) {
+        Alert.alert(
+          'Mã vạch đã tồn tại',
+          `Mã vạch "${editLotBarcode.trim()}" đã thuộc về sản phẩm "${conflicting.name}".`,
+          [{ text: 'OK' }],
+        )
+        void logBarcodeConflict(
+          editLotBarcode.trim(),
+          entry.product_id,
+          conflicting.id,
+          entry.product?.name ?? '',
+          conflicting.name,
+        )
+        return
+      }
     }
 
     const { hasConflict, changedByName } = await checkConflict(

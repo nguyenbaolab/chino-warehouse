@@ -5,6 +5,7 @@ import { CameraView, Camera } from 'expo-camera'
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { Product } from '../types'
 import { tabsParamsForReturnTabMain } from '../lib/tabNavigation'
 
 type BarcodeScannerParams = {
@@ -46,7 +47,7 @@ export default function BarcodeScannerScreen() {
     productDetailParams,
   } = (route.params || {}) as BarcodeScannerParams
   const { colors } = useThemeStore()
-  const { searchByBarcode } = useWarehouseStore()
+  const { searchByBarcode, lookupProductByBarcode } = useWarehouseStore()
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -136,6 +137,51 @@ export default function BarcodeScannerScreen() {
     )
   }
 
+  function openProductOutOfStockAlert(product: Product, totalStock: number) {
+    processingRef.current = false
+    const message =
+      totalStock === 0
+        ? `${product.name} hiện không còn lô nào trong kho.`
+        : `${product.name} không có lô nào với mã vạch này, nhưng vẫn còn ${totalStock} thùng ở lô khác.`
+
+    Alert.alert(
+      'Hàng đã hết',
+      message,
+      [
+        {
+          text: 'Xem chi tiết',
+          onPress: () => {
+            navigateTabsThenCloseModal({
+              screen: 'Products',
+              params: {
+                screen: 'ProductDetail',
+                params: { productId: product.id },
+              },
+            })
+          },
+        },
+        {
+          text: 'Đóng',
+          style: 'cancel',
+          onPress: () => {
+            processingRef.current = false
+            setIsScanLocked(false)
+          },
+        },
+      ],
+      { cancelable: true },
+    )
+  }
+
+  async function tryLookupOrNotFound(barcode: string, fallbackTab: string) {
+    const lookup = await lookupProductByBarcode(barcode)
+    if (lookup) {
+      openProductOutOfStockAlert(lookup.product, lookup.totalStock)
+      return
+    }
+    openBarcodeNotFoundAlert(fallbackTab)
+  }
+
   async function processConfirmedBarcode(barcode: string) {
     processingRef.current = true
     setIsScanLocked(true)
@@ -207,7 +253,7 @@ export default function BarcodeScannerScreen() {
         })
       } else {
         console.log('[BarcodeScanner][locate] product not found for barcode')
-        openBarcodeNotFoundAlert(returnTab || 'Map')
+        await tryLookupOrNotFound(barcode, returnTab || 'Map')
       }
       return
     }
@@ -227,7 +273,7 @@ export default function BarcodeScannerScreen() {
       return
     }
 
-    openBarcodeNotFoundAlert(returnTab || 'Products')
+    await tryLookupOrNotFound(barcode, returnTab || 'Products')
   }
 
   function beginSuccessOverlayThenProcess(barcode: string) {

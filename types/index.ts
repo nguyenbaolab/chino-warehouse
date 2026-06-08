@@ -119,7 +119,7 @@ export type InventoryEntry = {
 export type AuditLog = {
   id: string
   table_name: 'inventory_entries' | 'products' | 'product_barcodes'
-  action: 'INSERT' | 'UPDATE' | 'DELETE'
+  action: 'INSERT' | 'UPDATE' | 'DELETE' | 'CONFLICT'
   record_id: string | null
   location_id: string | null
   changed_by: string | null
