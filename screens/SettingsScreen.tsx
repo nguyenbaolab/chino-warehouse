@@ -46,6 +46,11 @@ export default function SettingsScreen() {
     [productCategoriesL1.length, productCategoriesL2.length]
   )
 
+  const dashboardSubtitle = useMemo(() => {
+    const skuCount = products.filter((p) => !p.is_archived).length
+    return `${skuCount} SKU · ${locations.length} kho`
+  }, [products, locations.length])
+
   useEffect(() => {
     loadTheme()
     void fetchLocations()
@@ -167,6 +172,18 @@ export default function SettingsScreen() {
           <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('Dashboard')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>Tổng quan kho</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>{dashboardSubtitle}</Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}

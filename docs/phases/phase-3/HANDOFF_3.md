@@ -47,7 +47,13 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 ## 5. Files quan trọng đã thêm/sửa
 
-*(Điền dần khi implement)*
+| File | Mô tả |
+|------|-------|
+| `screens/DashboardScreen.tsx` | F23 — tổng quan kho: filter Kho/Zone, stat cards, pie chart, Realtime |
+| `components/SimplePieChart.tsx` | Pie chart + legend (`react-native-svg`) |
+| `utils/dashboardStats.ts` | Tính metric client-side (reuse logic NotificationsScreen) |
+| `screens/SettingsScreen.tsx` | Card **Tổng quan kho** |
+| `App.tsx` | Route `Dashboard` trong SettingsStack |
 
 ---
 
@@ -105,7 +111,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 ### Group E — New Features
 
-- [ ] **E1 / F23** — DashboardScreen + entry Settings
+- [x] **E1 / F23** — DashboardScreen + entry Settings
 - [ ] **E2 / F24** — RBAC `user_profiles` + UserManagementScreen + guards
 
 ### Security

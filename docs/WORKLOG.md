@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: E1/F23 — DashboardScreen + card Settings
+
+- **`DashboardScreen`:** filter Kho/Zone; 8 stat cards (2 cột); pie chart 2 chế độ (tồn kho / hạn dùng) qua `SimplePieChart` + `react-native-svg`; logic `utils/dashboardStats.ts` (reuse `getExpiryStatus` như NotificationsScreen); `useFocusEffect` fetch + Realtime `products`/`inventory_entries` (debounce 2s).
+- **Settings:** card **Tổng quan kho** subtitle `{SKU} · {kho}` → navigate `Dashboard`.
+- **App.tsx:** route `Dashboard` trong `SettingsStack`.
+- **Dep:** `react-native-svg` (Expo SDK 54).
+
+---
+
 ## [tháng 5/2026] — feat(ProductsScreen, AddInventory): gợi ý tên + barcode lookup thông minh
 
 - **ProductsScreen** bottom sheet tạo SP: gợi ý tên khi gõ (`normalizeText`, max 8); chọn SP đã có → cảnh báo + disable **Lưu**; hint text (tra tên/mã trước); **📷** mã vạch → `lookupProductByBarcode` → cảnh báo mã trùng.

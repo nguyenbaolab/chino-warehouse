@@ -26,6 +26,7 @@ import OrderListScreen from './screens/OrderListScreen'
 import OrderDetailScreen from './screens/OrderDetailScreen'
 import ZoneLayoutEditorScreen from './screens/ZoneLayoutEditorScreen'
 import AuditLogScreen from './screens/AuditLogScreen'
+import DashboardScreen from './screens/DashboardScreen'
 
 const Tab = createBottomTabNavigator()
 const RootStack = createNativeStackNavigator()
@@ -85,6 +86,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="LocationManagement" component={LocationManagementScreen} />
       <SettingsStack.Screen name="CategoryManagement" component={CategoryManagementScreen} />
       <SettingsStack.Screen name="DiscontinuedProducts" component={DiscontinuedProductsScreen} />
+      <SettingsStack.Screen name="Dashboard" component={DashboardScreen} />
       <SettingsStack.Screen name="AuditLog" component={AuditLogScreen} />
     </SettingsStack.Navigator>
   )
