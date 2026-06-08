@@ -90,12 +90,13 @@ export default function DashboardScreen() {
       showOutOfStockFilter?: boolean
       showLowStockFilter?: boolean
     }) => {
-      navigation.getParent()?.navigate('Notifications', {
-        screen: 'NotificationsMain',
-        params,
+      navigation.push('NotificationsFromDashboard', {
+        ...params,
+        filterLocationId,
+        filterZoneId: selectedZoneId,
       })
     },
-    [navigation],
+    [navigation, filterLocationId, selectedZoneId],
   )
 
   const statCards: StatCard[] = useMemo(
@@ -139,7 +140,7 @@ export default function DashboardScreen() {
         label: 'Không nhập nữa',
         value: stats.discontinuedProducts,
         color: colors.text,
-        onPress: () => navigation.navigate('DiscontinuedProducts'),
+        onPress: () => navigation.push('DiscontinuedProducts'),
       },
       { key: 'locations', label: 'Tổng số kho', value: stats.locationCount, color: COLOR_OK },
     ],

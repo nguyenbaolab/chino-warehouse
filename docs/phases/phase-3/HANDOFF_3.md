@@ -49,8 +49,9 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 | File | Mô tả |
 |------|-------|
-| `screens/DashboardScreen.tsx` | F23 — tổng quan kho: filter Kho/Zone, stat cards (navigate), pie chart, Realtime |
-| `screens/NotificationsScreen.tsx` | Nhận route params `initialTab` + filter từ Dashboard |
+| `App.tsx` | SettingsStack: `NotificationsFromDashboard` (reuse NotificationsScreen) |
+| `screens/DashboardScreen.tsx` | F23 — `push` stat cards → NotificationsFromDashboard / DiscontinuedProducts + filter params |
+| `screens/NotificationsScreen.tsx` | Route params tab/filter/kho/zone; dropdown Zone |
 | `components/SimplePieChart.tsx` | Pie chart + legend (`react-native-svg`) |
 | `utils/dashboardStats.ts` | Metric client-side; `totalProducts` filter theo kho |
 | `screens/SettingsScreen.tsx` | Card **Tổng quan kho** |

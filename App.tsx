@@ -87,6 +87,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="CategoryManagement" component={CategoryManagementScreen} />
       <SettingsStack.Screen name="DiscontinuedProducts" component={DiscontinuedProductsScreen} />
       <SettingsStack.Screen name="Dashboard" component={DashboardScreen} />
+      <SettingsStack.Screen name="NotificationsFromDashboard" component={NotificationsScreen} />
       <SettingsStack.Screen name="AuditLog" component={AuditLogScreen} />
     </SettingsStack.Navigator>
   )

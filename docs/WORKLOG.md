@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: F23 Dashboard navigation + Notifications thêm filter zone
+
+- **SettingsStack:** route `NotificationsFromDashboard` (reuse `NotificationsScreen`); Dashboard stat cards dùng `push` (Notifications + Discontinued) — `goBack()` về Dashboard.
+- **Dashboard → Notifications:** truyền `filterLocationId` / `filterZoneId` kèm tab + filter params.
+- **NotificationsScreen:** dropdown Zone khi đã chọn kho; lọc `inventoryEntries` theo zone; đọc filter từ route params.
+
+---
+
 ## [tháng 5/2026] — feat: F23 Dashboard — navigate stat cards + filter tổng SP theo kho
 
 - **DashboardScreen:** 5 stat cards bấm được → `Notifications` (cross-tab `getParent`) hoặc `DiscontinuedProducts`; 3 card còn lại giữ `View`.

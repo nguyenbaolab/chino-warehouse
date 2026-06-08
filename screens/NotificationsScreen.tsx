@@ -57,6 +57,8 @@ type NotificationsRouteParams = {
   showWarningFilter?: boolean
   showOutOfStockFilter?: boolean
   showLowStockFilter?: boolean
+  filterLocationId?: string | null
+  filterZoneId?: string | null
 }
 
 export default function NotificationsScreen() {
@@ -81,7 +83,9 @@ export default function NotificationsScreen() {
   } = useWarehouseStore()
 
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
+  const [filterZoneId, setFilterZoneId] = useState<string | null>(null)
   const [locationPickerOpen, setLocationPickerOpen] = useState(false)
+  const [zonePickerOpen, setZonePickerOpen] = useState(false)
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -100,12 +104,16 @@ export default function NotificationsScreen() {
     if (routeParams.showWarningFilter === true) setShowWarningFilter(true)
     if (routeParams.showOutOfStockFilter === true) setShowOutOfStockFilter(true)
     if (routeParams.showLowStockFilter === true) setShowLowStockFilter(true)
+    if (routeParams.filterLocationId !== undefined) setFilterLocationId(routeParams.filterLocationId)
+    if (routeParams.filterZoneId !== undefined) setFilterZoneId(routeParams.filterZoneId)
   }, [
     routeParams.initialTab,
     routeParams.showExpiredFilter,
     routeParams.showWarningFilter,
     routeParams.showOutOfStockFilter,
     routeParams.showLowStockFilter,
+    routeParams.filterLocationId,
+    routeParams.filterZoneId,
   ])
 
   useEffect(() => {
@@ -121,6 +129,7 @@ export default function NotificationsScreen() {
   useEffect(() => {
     if (!filterLocationId) {
       setZonesForFilterLoc([])
+      setFilterZoneId(null)
       return
     }
     let cancelled = false
@@ -148,6 +157,7 @@ export default function NotificationsScreen() {
   }, [
     searchQuery,
     filterLocationId,
+    filterZoneId,
     showExpiredFilter,
     showWarningFilter,
     showOutOfStockFilter,
@@ -166,9 +176,14 @@ export default function NotificationsScreen() {
   )
 
   const inventoryEntriesForNotify = useMemo(() => {
-    if (!locationZoneSet) return inventoryEntries
-    return inventoryEntries.filter((e) => locationZoneSet.has(e.zone_id))
-  }, [inventoryEntries, locationZoneSet])
+    if (filterZoneId) {
+      return inventoryEntries.filter((e) => e.zone_id === filterZoneId)
+    }
+    if (locationZoneSet) {
+      return inventoryEntries.filter((e) => locationZoneSet.has(e.zone_id))
+    }
+    return inventoryEntries
+  }, [inventoryEntries, locationZoneSet, filterZoneId])
 
   const productIdToEntries = useMemo(() => {
     const map = new Map<string, InventoryEntry[]>()
@@ -525,6 +540,29 @@ export default function NotificationsScreen() {
         <Text style={[styles.locationFilterChevron, { color: colors.sub }]}>▾</Text>
       </TouchableOpacity>
 
+      {filterLocationId ? (
+        <TouchableOpacity
+          style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setZonePickerOpen(true)}
+          activeOpacity={0.75}
+        >
+          <Text style={[styles.locationFilterLabel, { color: colors.sub }]}>Zone</Text>
+          <Text style={[styles.locationFilterValue, { color: colors.text }]} numberOfLines={1}>
+            {filterZoneId
+              ? zonesForFilterLoc.find((z) => z.id === filterZoneId)?.name ?? '…'
+              : 'Tất cả zone'}
+          </Text>
+          <Text style={[styles.locationFilterChevron, { color: colors.sub }]}>▾</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.locationFilterLabel, { color: colors.sub }]}>Zone</Text>
+          <Text style={[styles.locationFilterValue, { color: colors.statusWarning }]} numberOfLines={1}>
+            Vui lòng chọn kho trước
+          </Text>
+        </View>
+      )}
+
       <View style={styles.searchWrap}>
         <View style={styles.searchRow}>
           <View style={styles.searchInputWrap}>
@@ -562,6 +600,7 @@ export default function NotificationsScreen() {
                 ]}
                 onPress={() => {
                   setFilterLocationId(null)
+                  setFilterZoneId(null)
                   setLocationPickerOpen(false)
                 }}
               >
@@ -581,11 +620,61 @@ export default function NotificationsScreen() {
                     ]}
                     onPress={() => {
                       setFilterLocationId(loc.id)
+                      setFilterZoneId(null)
                       setLocationPickerOpen(false)
                     }}
                   >
                     <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]} numberOfLines={2}>
                       {loc.name}
+                    </Text>
+                    {sel && <Text style={{ color: colors.accent }}>✓</Text>}
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={zonePickerOpen} transparent animationType="fade" onRequestClose={() => setZonePickerOpen(false)}>
+        <Pressable style={styles.locationModalOverlay} onPress={() => setZonePickerOpen(false)}>
+          <Pressable style={[styles.locationModalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.locationModalTitle, { color: colors.text }]}>Chọn zone</Text>
+            <ScrollView style={styles.locationModalList} keyboardShouldPersistTaps="handled">
+              <TouchableOpacity
+                style={[
+                  styles.locationOption,
+                  { borderColor: colors.border, backgroundColor: filterZoneId ? colors.bg : colors.accent + '22' },
+                ]}
+                onPress={() => {
+                  setFilterZoneId(null)
+                  setZonePickerOpen(false)
+                }}
+              >
+                <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: filterZoneId ? '500' : '700' }]}>
+                  Tất cả zone
+                </Text>
+                {!filterZoneId && <Text style={{ color: colors.accent }}>✓</Text>}
+              </TouchableOpacity>
+              {zonesForFilterLoc.map((zone) => {
+                const sel = filterZoneId === zone.id
+                return (
+                  <TouchableOpacity
+                    key={zone.id}
+                    style={[
+                      styles.locationOption,
+                      { borderColor: colors.border, backgroundColor: sel ? colors.accent + '22' : colors.bg },
+                    ]}
+                    onPress={() => {
+                      setFilterZoneId(zone.id)
+                      setZonePickerOpen(false)
+                    }}
+                  >
+                    <Text
+                      style={[styles.locationOptionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]}
+                      numberOfLines={2}
+                    >
+                      {zone.name}
                     </Text>
                     {sel && <Text style={{ color: colors.accent }}>✓</Text>}
                   </TouchableOpacity>
