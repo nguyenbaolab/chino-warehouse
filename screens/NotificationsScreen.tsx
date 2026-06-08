@@ -129,7 +129,6 @@ export default function NotificationsScreen() {
   useEffect(() => {
     if (!filterLocationId) {
       setZonesForFilterLoc([])
-      setFilterZoneId(null)
       return
     }
     let cancelled = false

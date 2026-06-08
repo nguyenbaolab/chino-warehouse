@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: NotificationsScreen — race condition wipe filterZoneId từ Dashboard params
+
+- Bỏ `setFilterZoneId(null)` khỏi effect `[filterLocationId]` (tránh ghi đè params cùng commit mount).
+- Reset zone chỉ khi user đổi kho qua modal (handler đã có sẵn).
+
+---
+
 ## [tháng 5/2026] — fix: F23 Dashboard navigation + Notifications thêm filter zone
 
 - **SettingsStack:** route `NotificationsFromDashboard` (reuse `NotificationsScreen`); Dashboard stat cards dùng `push` (Notifications + Discontinued) — `goBack()` về Dashboard.
