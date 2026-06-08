@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNavigation } from '@react-navigation/native'
+import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -51,8 +51,18 @@ type LowStockCard = {
   lowWarningBoxes: number
 }
 
+type NotificationsRouteParams = {
+  initialTab?: 'expiry' | 'lowStock'
+  showExpiredFilter?: boolean
+  showWarningFilter?: boolean
+  showOutOfStockFilter?: boolean
+  showLowStockFilter?: boolean
+}
+
 export default function NotificationsScreen() {
   const navigation = useNavigation<any>()
+  const route = useRoute()
+  const routeParams = (route.params as NotificationsRouteParams | undefined) ?? {}
   const { colors } = useThemeStore()
   const {
     expiryWarningEnabled,
@@ -83,6 +93,20 @@ export default function NotificationsScreen() {
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({})
   const [currentPageExpiry, setCurrentPageExpiry] = useState(0)
   const [currentPageLowStock, setCurrentPageLowStock] = useState(0)
+
+  useEffect(() => {
+    if (routeParams.initialTab) setActiveTab(routeParams.initialTab)
+    if (routeParams.showExpiredFilter === true) setShowExpiredFilter(true)
+    if (routeParams.showWarningFilter === true) setShowWarningFilter(true)
+    if (routeParams.showOutOfStockFilter === true) setShowOutOfStockFilter(true)
+    if (routeParams.showLowStockFilter === true) setShowLowStockFilter(true)
+  }, [
+    routeParams.initialTab,
+    routeParams.showExpiredFilter,
+    routeParams.showWarningFilter,
+    routeParams.showOutOfStockFilter,
+    routeParams.showLowStockFilter,
+  ])
 
   useEffect(() => {
     fetchLocations()

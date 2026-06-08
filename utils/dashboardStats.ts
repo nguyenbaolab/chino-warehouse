@@ -50,7 +50,15 @@ export function computeDashboardStats(
 ): DashboardStats {
   const filteredEntries = filterInventoryEntries(inventoryEntries, zoneIdsInLocation, selectedZoneId)
 
-  const totalProducts = products.filter((p) => !p.is_archived).length
+  let totalProducts: number
+  if (zoneIdsInLocation === null) {
+    totalProducts = products.filter((p) => !p.is_archived).length
+  } else {
+    const entriesInLocation = filterInventoryEntries(inventoryEntries, zoneIdsInLocation, null)
+    const productIdsInLocation = new Set(entriesInLocation.map((e) => e.product_id))
+    totalProducts = products.filter((p) => !p.is_archived && productIdsInLocation.has(p.id)).length
+  }
+
   const discontinuedProducts = products.filter((p) => !p.is_archived && p.is_discontinued === true).length
 
   const productIdToEntries = new Map<string, InventoryEntry[]>()

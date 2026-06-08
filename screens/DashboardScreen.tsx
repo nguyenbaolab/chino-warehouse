@@ -33,6 +33,7 @@ type StatCard = {
   label: string
   value: number
   color: string
+  onPress?: () => void
 }
 
 export default function DashboardScreen() {
@@ -81,23 +82,68 @@ export default function DashboardScreen() {
     [products, inventoryEntries, locations.length, locationZoneSet, selectedZoneId],
   )
 
+  const navigateToNotifications = useCallback(
+    (params: {
+      initialTab: 'expiry' | 'lowStock'
+      showExpiredFilter?: boolean
+      showWarningFilter?: boolean
+      showOutOfStockFilter?: boolean
+      showLowStockFilter?: boolean
+    }) => {
+      navigation.getParent()?.navigate('Notifications', {
+        screen: 'NotificationsMain',
+        params,
+      })
+    },
+    [navigation],
+  )
+
   const statCards: StatCard[] = useMemo(
     () => [
       { key: 'totalProducts', label: 'Tổng sản phẩm', value: stats.totalProducts, color: colors.text },
       { key: 'activeSku', label: 'SKU có lô', value: stats.activeSkuCount, color: COLOR_OK },
-      { key: 'outOfStock', label: 'SP hết hàng', value: stats.outOfStockProducts, color: COLOR_DANGER },
-      { key: 'lowStock', label: 'SP sắp hết', value: stats.lowStockProducts, color: COLOR_WARN },
-      { key: 'expiredLots', label: 'Lô hết hạn', value: stats.expiredLots, color: COLOR_DANGER },
-      { key: 'warningLots', label: 'Lô sắp hết hạn', value: stats.warningLots, color: COLOR_WARN },
+      {
+        key: 'outOfStock',
+        label: 'SP hết hàng',
+        value: stats.outOfStockProducts,
+        color: COLOR_DANGER,
+        onPress: () =>
+          navigateToNotifications({ initialTab: 'lowStock', showOutOfStockFilter: true }),
+      },
+      {
+        key: 'lowStock',
+        label: 'SP sắp hết',
+        value: stats.lowStockProducts,
+        color: COLOR_WARN,
+        onPress: () =>
+          navigateToNotifications({ initialTab: 'lowStock', showLowStockFilter: true }),
+      },
+      {
+        key: 'expiredLots',
+        label: 'Lô hết hạn',
+        value: stats.expiredLots,
+        color: COLOR_DANGER,
+        onPress: () =>
+          navigateToNotifications({ initialTab: 'expiry', showExpiredFilter: true }),
+      },
+      {
+        key: 'warningLots',
+        label: 'Lô sắp hết hạn',
+        value: stats.warningLots,
+        color: COLOR_WARN,
+        onPress: () =>
+          navigateToNotifications({ initialTab: 'expiry', showWarningFilter: true }),
+      },
       {
         key: 'discontinued',
         label: 'Không nhập nữa',
         value: stats.discontinuedProducts,
         color: colors.text,
+        onPress: () => navigation.navigate('DiscontinuedProducts'),
       },
       { key: 'locations', label: 'Tổng số kho', value: stats.locationCount, color: COLOR_OK },
     ],
-    [stats, colors.text],
+    [stats, colors.text, navigateToNotifications, navigation],
   )
 
   const stockPieSlices: PieSlice[] = useMemo(
@@ -254,15 +300,32 @@ export default function DashboardScreen() {
         )}
 
         <View style={styles.grid}>
-          {statCards.map((card) => (
-            <View
-              key={card.key}
-              style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-            >
-              <Text style={[styles.statValue, { color: card.color }]}>{card.value}</Text>
-              <Text style={[styles.statLabel, { color: colors.sub }]}>{card.label}</Text>
-            </View>
-          ))}
+          {statCards.map((card) => {
+            const cardStyle = [styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]
+            const cardContent = (
+              <>
+                <Text style={[styles.statValue, { color: card.color }]}>{card.value}</Text>
+                <Text style={[styles.statLabel, { color: colors.sub }]}>{card.label}</Text>
+              </>
+            )
+            if (card.onPress) {
+              return (
+                <TouchableOpacity
+                  key={card.key}
+                  style={cardStyle}
+                  activeOpacity={0.75}
+                  onPress={card.onPress}
+                >
+                  {cardContent}
+                </TouchableOpacity>
+              )
+            }
+            return (
+              <View key={card.key} style={cardStyle}>
+                {cardContent}
+              </View>
+            )
+          })}
         </View>
 
         <View style={[styles.chartSection, { backgroundColor: colors.card, borderColor: colors.border }]}>

@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: F23 Dashboard — navigate stat cards + filter tổng SP theo kho
+
+- **DashboardScreen:** 5 stat cards bấm được → `Notifications` (cross-tab `getParent`) hoặc `DiscontinuedProducts`; 3 card còn lại giữ `View`.
+- **NotificationsScreen:** nhận route params `initialTab` + filter booleans; `useEffect` apply khi có params.
+- **dashboardStats:** `totalProducts` theo kho — khi chọn kho chỉ đếm SP có lô trong kho đó.
+
+---
+
 ## [tháng 5/2026] — feat: E1/F23 — DashboardScreen + card Settings
 
 - **`DashboardScreen`:** filter Kho/Zone; 8 stat cards (2 cột); pie chart 2 chế độ (tồn kho / hạn dùng) qua `SimplePieChart` + `react-native-svg`; logic `utils/dashboardStats.ts` (reuse `getExpiryStatus` như NotificationsScreen); `useFocusEffect` fetch + Realtime `products`/`inventory_entries` (debounce 2s).
