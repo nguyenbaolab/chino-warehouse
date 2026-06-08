@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix(ProductsScreen): scroll FlatList về đầu khi đổi trang pagination
+
+- `flatListRef` + `useEffect([currentPage])` → `scrollToOffset({ offset: 0, animated: true })`.
+
+---
+
 ## [tháng 5/2026] — feat(ProductsScreen): FAB tạo sản phẩm catalog-only
 
 - **UI:** FAB + (style LocationManagement); bottom sheet modal — tên, mã vạch (📷 `onScanFillBarcode`), ảnh, ghi chú, L1/L2.

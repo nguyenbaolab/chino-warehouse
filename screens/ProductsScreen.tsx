@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -85,6 +85,7 @@ export default function ProductsScreen() {
   const [showCreateCatL2, setShowCreateCatL2] = useState(false)
   const [isCreatingProduct, setIsCreatingProduct] = useState(false)
   const [isUploadingCreateImage, setIsUploadingCreateImage] = useState(false)
+  const flatListRef = useRef<FlatList<Product>>(null)
 
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
@@ -151,6 +152,10 @@ export default function ProductsScreen() {
   useEffect(() => {
     setCurrentPage(0)
   }, [searchQuery, filterLocationId, selectedZoneId, showOutOfStockOnly])
+
+  useEffect(() => {
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+  }, [currentPage])
 
   useEffect(() => {
     const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
@@ -675,6 +680,7 @@ export default function ProductsScreen() {
       ) : (
         <View style={styles.listWrap}>
           <FlatList
+            ref={flatListRef}
             data={pagedProducts}
             keyExtractor={(item) => item.id}
             renderItem={renderProductItem}
