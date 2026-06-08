@@ -55,6 +55,7 @@ export default function ProductsScreen() {
     checkBarcodeConflict,
     upsertProductBarcode,
     logBarcodeConflict,
+    lookupProductByBarcode,
   } = useWarehouseStore()
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
@@ -85,6 +86,8 @@ export default function ProductsScreen() {
   const [showCreateCatL2, setShowCreateCatL2] = useState(false)
   const [isCreatingProduct, setIsCreatingProduct] = useState(false)
   const [isUploadingCreateImage, setIsUploadingCreateImage] = useState(false)
+  const [existingProductWarning, setExistingProductWarning] = useState<string | null>(null)
+  const [createBarcodeWarning, setCreateBarcodeWarning] = useState<string | null>(null)
   const flatListRef = useRef<FlatList<Product>>(null)
 
   useEffect(() => {
@@ -257,6 +260,14 @@ export default function ProductsScreen() {
     return productCategoriesL2.filter((c) => c.level1_id === createCategoryL1Id)
   }, [createCategoryL1Id, productCategoriesL2])
 
+  const createNameSuggestions = useMemo(() => {
+    const query = normalizeText(createName.trim())
+    if (!query) return []
+    return products.filter((p) => normalizeText(p.name).includes(query)).slice(0, 8)
+  }, [products, createName])
+
+  const createSaveBlocked = !!existingProductWarning || !!createBarcodeWarning
+
   function resetCreateForm() {
     setCreateName('')
     setCreateBarcode('')
@@ -266,6 +277,8 @@ export default function ProductsScreen() {
     setCreateCategoryL2Id(null)
     setShowCreateCatL1(false)
     setShowCreateCatL2(false)
+    setExistingProductWarning(null)
+    setCreateBarcodeWarning(null)
   }
 
   function closeCreateProductModal() {
@@ -303,7 +316,16 @@ export default function ProductsScreen() {
     navigation.navigate('BarcodeScanner', {
       mode: 'search',
       onScanFillBarcode: (barcode: string) => {
-        setCreateBarcode(barcode.trim())
+        void (async () => {
+          const trimmed = barcode.trim()
+          setCreateBarcode(trimmed)
+          const lookup = await lookupProductByBarcode(trimmed)
+          if (lookup) {
+            setCreateBarcodeWarning(`Sản phẩm "${lookup.product.name}" đã có mã vạch này.`)
+          } else {
+            setCreateBarcodeWarning(null)
+          }
+        })()
       },
     })
   }
@@ -314,6 +336,7 @@ export default function ProductsScreen() {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập tên sản phẩm.')
       return
     }
+    if (existingProductWarning || createBarcodeWarning) return
 
     const trimmedBarcode = createBarcode.trim()
     if (trimmedBarcode) {
@@ -837,14 +860,41 @@ export default function ProductsScreen() {
                 <Text style={[styles.createModalTitle, { color: colors.text }]}>Tạo sản phẩm mới</Text>
 
                 <Text style={[styles.createLabel, { color: colors.sub }]}>Tên sản phẩm *</Text>
+                <Text style={[styles.createSearchNoteAbove, { color: colors.sub }]}>
+                  Quét mã / tra tên sản phẩm trước để kiểm tra đã có chưa
+                </Text>
                 <TextInput
                   style={[styles.createInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
                   value={createName}
-                  onChangeText={setCreateName}
+                  onChangeText={(text) => {
+                    setCreateName(text)
+                    setExistingProductWarning(null)
+                  }}
                   placeholder="Tên sản phẩm *"
                   placeholderTextColor={colors.sub}
                   autoFocus
                 />
+                {createName.trim().length > 0 && !existingProductWarning && createNameSuggestions.length > 0 && (
+                  <View style={[styles.createProductList, { borderColor: colors.border, backgroundColor: colors.bg }]}>
+                    {createNameSuggestions.map((product) => (
+                      <TouchableOpacity
+                        key={product.id}
+                        style={[styles.createProductRow, { borderBottomColor: colors.border }]}
+                        onPress={() => {
+                          setCreateName(product.name)
+                          setExistingProductWarning(product.name)
+                        }}
+                      >
+                        <Text style={{ color: colors.text, fontSize: 14 }}>{product.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                {existingProductWarning ? (
+                  <Text style={[styles.createWarningText, { color: colors.statusWarning }]}>
+                    Sản phẩm này đã có trong hệ thống, không thể tạo thêm.
+                  </Text>
+                ) : null}
 
                 <Text style={[styles.createLabel, { color: colors.sub }]}>Mã vạch</Text>
                 <View style={styles.createBarcodeRow}>
@@ -854,7 +904,10 @@ export default function ProductsScreen() {
                       { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border },
                     ]}
                     value={createBarcode}
-                    onChangeText={setCreateBarcode}
+                    onChangeText={(text) => {
+                      setCreateBarcode(text)
+                      setCreateBarcodeWarning(null)
+                    }}
                     placeholder="Mã vạch (tuỳ chọn)"
                     placeholderTextColor={colors.sub}
                     autoCapitalize="none"
@@ -868,6 +921,12 @@ export default function ProductsScreen() {
                     <Text style={{ color: colors.card, fontSize: 16 }}>📷</Text>
                   </TouchableOpacity>
                 </View>
+                {createBarcodeWarning ? (
+                  <Text style={[styles.createWarningText, { color: colors.statusWarning }]}>{createBarcodeWarning}</Text>
+                ) : null}
+                <Text style={[styles.createSearchHintMuted, { color: colors.sub }]}>
+                  Hỏi anh/chị chủ xem hàng đã từng được nhập chưa để tránh tạo thừa tên cho cùng 1 sản phẩm
+                </Text>
 
                 <Text style={[styles.createLabel, { color: colors.sub }]}>Ảnh</Text>
                 <View style={styles.createImageWrap}>
@@ -1006,7 +1065,7 @@ export default function ProductsScreen() {
                   <TouchableOpacity
                     style={[styles.createSaveBtn, { backgroundColor: colors.accent }]}
                     onPress={() => void handleCreateProduct()}
-                    disabled={isCreatingProduct || isUploadingCreateImage}
+                    disabled={isCreatingProduct || isUploadingCreateImage || createSaveBlocked}
                   >
                     {isCreatingProduct || isUploadingCreateImage ? (
                       <ActivityIndicator color={colors.card} />
@@ -1226,5 +1285,31 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  createSearchNoteAbove: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 4,
+  },
+  createSearchHintMuted: {
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  createProductList: {
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  createProductRow: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  createWarningText: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
   },
 })

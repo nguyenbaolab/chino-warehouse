@@ -92,6 +92,7 @@ export default function AddInventoryScreen() {
     updateInventoryEntry,
     updateProductImage,
     searchByBarcode,
+    lookupProductByBarcode,
     checkBarcodeConflict,
     upsertProductBarcode,
     logBarcodeConflict,
@@ -133,6 +134,14 @@ export default function AddInventoryScreen() {
       setSearchQuery(productName)
       return
     }
+
+    const lookup = await lookupProductByBarcode(barcode)
+    if (lookup) {
+      setBarcodeSearchWarning(null)
+      setSearchQuery(lookup.product.name)
+      return
+    }
+
     setBarcodeSearchWarning('Chưa có sản phẩm với mã này')
   }
 

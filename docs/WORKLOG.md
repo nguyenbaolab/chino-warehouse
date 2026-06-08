@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat(ProductsScreen, AddInventory): gợi ý tên + barcode lookup thông minh
+
+- **ProductsScreen** bottom sheet tạo SP: gợi ý tên khi gõ (`normalizeText`, max 8); chọn SP đã có → cảnh báo + disable **Lưu**; hint text (tra tên/mã trước); **📷** mã vạch → `lookupProductByBarcode` → cảnh báo mã trùng.
+- **AddInventoryScreen:** `handleProductBarcodeScan` fallback `lookupProductByBarcode` sau `searchByBarcode` — nhận SP qua `product_barcodes` kể cả hết lô; chỉ fill `searchQuery`, không auto-chọn.
+- Docs: `CONTEXT.md` §ProductsScreen / §AddInventoryScreen; `REQUIREMENTS.md` F14, F15.
+
+---
+
 ## [tháng 5/2026] — fix(ProductsScreen): scroll FlatList về đầu khi đổi trang pagination
 
 - `flatListRef` + `useEffect([currentPage])` → `scrollToOffset({ offset: 0, animated: true })`.
