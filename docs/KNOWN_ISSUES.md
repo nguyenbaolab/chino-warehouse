@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-054] F24 — RLS infinite recursion trên `user_profiles` (login fail)
+
+- **Mức độ:** Critical (runtime / auth)
+- **File liên quan:** `supabase/migrations/20260601000000_add_user_profiles.sql`, `stores/authStore.ts`, `App.tsx`
+- **Mô tả:** Policy `user_profiles_select_admin` (và UPDATE policies) dùng `EXISTS (SELECT 1 FROM user_profiles …)` → PostgreSQL báo infinite recursion → client query fail / empty → Alert "Không tìm thấy hồ sơ tài khoản" dù row tồn tại trong DB.
+- **Cách tái hiện:** Apply migration Task 1 gốc → login user `staff` → spinner rồi Alert lỗi profile.
+- **Hướng fix:** Helper `is_current_user_admin()` / `is_current_user_super_admin()` SECURITY DEFINER; recreate policies gọi helper thay subquery.
+- **Trạng thái:** Resolved
+- **Đã fix:** Migration `20260601000200_fix_user_profiles_rls_recursion.sql`; `schema.sql` v3.12.
+
+---
+
 ### [KI-029] Android crash on launch (màn đen, "has stopped working")
 
 - **Mức độ:** Critical (runtime)

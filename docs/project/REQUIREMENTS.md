@@ -109,7 +109,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F21 | Chế độ offline | Lưu dữ liệu cục bộ, queue thay đổi khi mất mạng, tự đồng bộ khi có mạng trở lại. | P3 | Phase 4 | Not started |
 | F22 | Lịch sử cập nhật | Log: ai cập nhật gì, lúc nào. (Đã có SEC-11 Audit Log implement chức năng này — xem `KNOWN_ISSUES.md` KI-022 và `DECISIONS.md`) | P3 | Phase 3 | Partial |
 | F23 | Trang tổng quan | Màn hình tổng quan truy cập từ Settings. Hiển thị: tổng SKU, tổng kho, số SP sắp hết hàng/hết hàng, số lô sắp hết hạn/đã hết hạn, số SP không nhập nữa. Không có biểu đồ — số text đơn giản với màu status. | P3 | Phase 3 | Not started |
-| F24 | Auth & RBAC | Phase 2: auth cơ bản (email/password, auto-logout). Phase 3 RBAC đầy đủ: 5 role (`super_admin` / `admin` / `staff` / `guest` / `disabled`); `super_admin` tạo tài khoản trong app; màn **User Management** trong Settings; guard theo role (guest read-only, ẩn nút CRUD); guest được xem AuditLog + Dashboard; `disabled` bị block ngay tại login. Bảng `user_profiles`. Client guard + RLS server-side. | P4 | Phase 3 | In progress |
+| F24 | Auth & RBAC | Phase 2: auth cơ bản (email/password, auto-logout). Phase 3 RBAC đầy đủ: 5 role (`super_admin` / `admin` / `staff` / `guest` / `disabled`); `super_admin` tạo tài khoản trong app; màn **User Management** trong Settings; guard theo role (guest read-only, ẩn nút CRUD); guest được xem AuditLog + Dashboard; `disabled` bị block ngay tại login. Bảng `user_profiles`. Client guard + RLS server-side. **Task 1 done:** migration `user_profiles`, `authStore`, guard `is_disabled` + load role. | P4 | Phase 3 | In progress (Task 1 done) |
 | F25 | Báo cáo / Xuất dữ liệu | Xuất dữ liệu tồn kho, lịch sử. | P4 | Phase 4 | Not started |
 | F26 | Kiểm kho | Cho phép nhân viên đối chiếu và cập nhật lại số lượng thực tế trong kho. Chọn zone → đi từng tầng → nhập số thùng đếm được → lưu lại. Có thể hiện diff so với số hiện tại trước khi confirm. | P2 | Phase 4 | Not started |
 | F27 | Tab Đặt hàng | **Phần đã giao (Phase 1+):** quản lý nhiều list, CRUD item, trạng thái draft/confirmed/placed. **Mở rộng (design v1.3.3 — Phase 3):** List đặt hàng có 2 loại: list **active** (hàng trong kho — sản phẩm tự nhảy vào từ tab Sắp hết hàng) và list **tự tạo** (hàng mới — chị tự ghi tay). Trong mỗi list có 2 tab: **Hàng trong kho** (trái) / **Hàng mới** (phải). Chỉ tồn tại **1 list active** tại một thời điểm; nếu chưa có → app tự tạo, hiện popup đặt tên (mặc định theo ngày, cho đổi). Sản phẩm nhảy vào list: ô số thùng **để trống**, bắt buộc điền hết trước khi Confirm. Nhóm sản phẩm theo **category** trong list; sản phẩm chưa phân loại → nhóm **Chưa phân loại**. Xuất **PDF tổng hợp** cả 2 tab (Hàng trong kho + Hàng mới). Luồng trạng thái: **Draft → Confirm → Xuất PDF → Đã đặt** (cả list chuyển trạng thái). Tab Hàng mới: fields gồm tên sản phẩm, phân loại, số thùng, ghi chú. | P1 | Phase 1+ | Partial *(mở rộng: 2 tab + PDF — Phase 3)* |
@@ -254,7 +254,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | last_login_at | TIMESTAMP | Cập nhật khi login thành công |
 | created_at | TIMESTAMP | Tự sinh |
 
-> Migration dự kiến: `[timestamp]_add_user_profiles.sql`. Cột `discontinued_reason` trên `products` (F28): `[timestamp]_add_discontinued_reason.sql`.
+> Migration: `20260601000000_add_user_profiles.sql`, `20260601000100_add_user_profiles_to_audit.sql`. Cột `discontinued_reason` trên `products` (F28): `20260530002000_f28_add_discontinued_reason.sql`.
 
 ---
 

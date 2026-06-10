@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import type { Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { useWarningStore } from './stores/warningStore'
+import { useAuthStore } from './stores/authStore'
 import ConfigErrorScreen from './components/ConfigErrorScreen'
 import LoginScreen from './screens/LoginScreen'
 
@@ -173,6 +174,12 @@ const INACTIVITY_LIMIT_MS = 20 * 60 * 1000   // 20 phút
 const CHECK_INTERVAL_MS = 30 * 1000           // check mỗi 30 giây
 
 export default function App() {
+  const fetchCurrentUserProfile = useAuthStore((s) => s.fetchCurrentUserProfile)
+  const clearCurrentUserProfile = useAuthStore((s) => s.clearCurrentUserProfile)
+  const updateLastLogin = useAuthStore((s) => s.updateLastLogin)
+  const isLoadingProfile = useAuthStore((s) => s.isLoadingProfile)
+  const currentUserProfile = useAuthStore((s) => s.currentUserProfile)
+
   const [session, setSession] = useState<Session | null>(null)
   // null = chưa kiểm tra xong, true = đã kiểm tra
   const [isReady, setIsReady] = useState(false)
@@ -277,6 +284,43 @@ export default function App() {
     return () => stopTimer()
   }, [session, updateActivity, startTimer, stopTimer])
 
+  // F24: load user_profiles sau khi có session; guard disabled / thiếu profile
+  useEffect(() => {
+    if (!session) {
+      clearCurrentUserProfile()
+      return
+    }
+
+    let cancelled = false
+
+    const loadProfile = async () => {
+      const profile = await fetchCurrentUserProfile()
+      if (cancelled) return
+
+      if (!profile) {
+        Alert.alert('Lỗi', 'Không tìm thấy hồ sơ tài khoản')
+        await supabase.auth.signOut()
+        clearCurrentUserProfile()
+        return
+      }
+
+      if (profile.is_disabled) {
+        Alert.alert('Tài khoản đã bị vô hiệu hóa')
+        await supabase.auth.signOut()
+        clearCurrentUserProfile()
+        return
+      }
+
+      void updateLastLogin()
+    }
+
+    void loadProfile()
+
+    return () => {
+      cancelled = true
+    }
+  }, [session, fetchCurrentUserProfile, clearCurrentUserProfile, updateLastLogin])
+
   // AppState: check inactivity khi app quay lại foreground, dừng timer khi background
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
@@ -332,7 +376,17 @@ export default function App() {
     )
   }
 
-  // Đã đăng nhập → wrap navigator trong View bắt touch để reset timer
+  // Đã có session — chờ fetch profile (F24)
+  if (isLoadingProfile || !currentUserProfile) {
+    return (
+      <View style={authStyles.loadingContainer}>
+        <StatusBar style="light" />
+        <ActivityIndicator size="large" color="#22C55E" />
+      </View>
+    )
+  }
+
+  // Đã đăng nhập + profile OK → wrap navigator trong View bắt touch để reset timer
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1 }} onTouchStart={updateActivity} onTouchEnd={updateActivity}>

@@ -36,6 +36,8 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `20260529122000_add_updated_at_to_products.sql` | Thêm `products.updated_at` + trigger auto-update (A5) |
 | `20260529123000_add_updated_at_triggers.sql` | `BEFORE UPDATE` auto-update `updated_at` cho `inventory_entries` + `zones` (A5 fix) |
 | `20260530001000_f08_product_images_storage.sql` | F08: bucket `product-images` + RLS (public read, authenticated write/delete) |
+| `20260601000000_add_user_profiles.sql` | F24 Task 1: `user_profiles` + RLS + trigger auth + RPC `update_my_last_login` |
+| `20260601000100_add_user_profiles_to_audit.sql` | F24: audit trigger `user_profiles` (UPDATE/DELETE) |
 
 ---
 
@@ -58,6 +60,9 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `utils/dashboardStats.ts` | Metric client-side; `totalProducts` filter theo kho |
 | `screens/SettingsScreen.tsx` | Card **Tổng quan kho** |
 | `App.tsx` | Route `Dashboard` trong SettingsStack |
+| `stores/authStore.ts` | F24 Task 1 — `currentUserProfile`, fetch/clear, `updateLastLogin` |
+| `App.tsx` | F24 — guard `is_disabled`, spinner fetch profile |
+| `types/index.ts` | `UserRole`, `UserProfile`; `AuditLog.table_name` + `user_profiles` |
 
 ---
 
@@ -117,6 +122,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 - [x] **E1 / F23** — DashboardScreen + entry Settings
 - [ ] **E2 / F24** — RBAC `user_profiles` + UserManagementScreen + guards
+  - [x] **E2 / F24 Task 1** — migration `user_profiles` + `authStore` + guard `is_disabled` + load role
 
 ### Security
 

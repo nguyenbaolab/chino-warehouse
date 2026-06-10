@@ -1,8 +1,14 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.10 | Tháng 5/2026
+-- Phiên bản: 3.12 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.11:
+--   - F24: RLS user_profiles — helper SECURITY DEFINER is_current_user_admin /
+--     is_current_user_super_admin (tránh infinite recursion)
+-- Thay đổi so với v3.10:
+--   - F24 Task 1: bảng user_profiles + RLS + trigger auth.users + RPC
+--     update_my_last_login; audit trigger trên user_profiles
 -- Thay đổi so với v3.9:
 --   - B2: audit_logs.action thêm CONFLICT; RPC log_barcode_conflict
 -- Thay đổi so với v3.8:
@@ -160,10 +166,20 @@ CREATE TABLE order_items (
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 8. Audit logs (SEC-11)
+-- 8. User profiles (F24 RBAC)
+CREATE TABLE user_profiles (
+  id              UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  role            TEXT        NOT NULL DEFAULT 'staff'
+                              CHECK (role IN ('super_admin', 'admin', 'staff', 'guest')),
+  is_disabled     BOOLEAN     NOT NULL DEFAULT false,
+  last_login_at   TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 9. Audit logs (SEC-11)
 CREATE TABLE audit_logs (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products', 'product_barcodes')),
+  table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products', 'product_barcodes', 'user_profiles')),
   action         TEXT        NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE', 'CONFLICT')),
   record_id      UUID,
   location_id    UUID        REFERENCES locations(id) ON DELETE SET NULL,
@@ -187,6 +203,8 @@ CREATE INDEX idx_product_barcodes_product_id ON product_barcodes(product_id);
 CREATE INDEX ON order_items(order_list_id);
 CREATE INDEX ON order_items(product_id);
 CREATE INDEX idx_product_categories_l2_level1 ON product_categories_l2(level1_id);
+CREATE INDEX idx_user_profiles_role ON user_profiles(role);
+CREATE INDEX idx_user_profiles_is_disabled ON user_profiles(is_disabled);
 
 -- Indexes cho audit_logs (SEC-11)
 CREATE INDEX ON audit_logs(changed_at DESC);
@@ -208,6 +226,7 @@ ALTER TABLE inventory_entries     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_barcodes      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles         ENABLE ROW LEVEL SECURITY;
 
 -- Phase 1+: cho phép tất cả user đã đăng nhập
 -- Phase 3: thay bằng policy kiểm tra user role (F24 / SEC-09)
@@ -220,6 +239,65 @@ CREATE POLICY "allow_all" ON inventory_entries     FOR ALL TO authenticated USIN
 CREATE POLICY "allow_all" ON product_barcodes      FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON order_lists           FOR ALL TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all" ON order_items           FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- F24: helpers bypass RLS khi check role (tránh infinite recursion trong policy)
+CREATE OR REPLACE FUNCTION public.is_current_user_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_profiles
+    WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_current_user_super_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_profiles
+    WHERE id = auth.uid() AND role = 'super_admin'
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_current_user_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_current_user_super_admin() TO authenticated;
+
+-- F24: user_profiles — SELECT own + admin/super_admin; UPDATE theo role; không INSERT/DELETE client
+CREATE POLICY user_profiles_select_own ON user_profiles
+  FOR SELECT TO authenticated
+  USING (id = auth.uid());
+
+CREATE POLICY user_profiles_select_admin ON user_profiles
+  FOR SELECT TO authenticated
+  USING (public.is_current_user_admin());
+
+CREATE POLICY user_profiles_update_super_admin ON user_profiles
+  FOR UPDATE TO authenticated
+  USING (public.is_current_user_super_admin())
+  WITH CHECK (public.is_current_user_super_admin());
+
+CREATE POLICY user_profiles_update_admin ON user_profiles
+  FOR UPDATE TO authenticated
+  USING (
+    public.is_current_user_admin()
+    AND role IN ('staff', 'guest')
+  )
+  WITH CHECK (
+    public.is_current_user_admin()
+    AND role IN ('staff', 'guest')
+  );
 
 -- RLS audit_logs (SEC-11): chỉ authenticated SELECT, không INSERT/UPDATE/DELETE từ client
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
@@ -352,6 +430,38 @@ CREATE TRIGGER audit_products
 CREATE TRIGGER audit_product_barcodes
   AFTER INSERT OR UPDATE OR DELETE ON product_barcodes
   FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
+
+CREATE TRIGGER audit_user_profiles
+  AFTER UPDATE OR DELETE ON user_profiles
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
+
+-- F24: auto-insert user_profiles khi tạo auth.users
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.user_profiles (id, role)
+  VALUES (NEW.id, 'staff');
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- F24: RPC cập nhật last_login_at sau login
+CREATE OR REPLACE FUNCTION update_my_last_login()
+RETURNS void AS $$
+BEGIN
+  UPDATE user_profiles SET last_login_at = now() WHERE id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION update_my_last_login() TO authenticated;
 
 -- B2: RPC ghi audit khi user bị block gán barcode trùng SP khác
 CREATE OR REPLACE FUNCTION log_barcode_conflict(

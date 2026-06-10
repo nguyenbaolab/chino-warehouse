@@ -91,6 +91,16 @@ export type LocateIntent = {
   zoneId: string
 }
 
+export type UserRole = 'super_admin' | 'admin' | 'staff' | 'guest'
+
+export type UserProfile = {
+  id: string
+  role: UserRole
+  is_disabled: boolean
+  last_login_at: string | null
+  created_at: string
+}
+
 /** B1 — lịch sử mã vạch per sản phẩm (UNIQUE barcode toàn hệ thống). */
 export interface ProductBarcode {
   id: string
@@ -118,7 +128,7 @@ export type InventoryEntry = {
 
 export type AuditLog = {
   id: string
-  table_name: 'inventory_entries' | 'products' | 'product_barcodes'
+  table_name: 'inventory_entries' | 'products' | 'product_barcodes' | 'user_profiles'
   action: 'INSERT' | 'UPDATE' | 'DELETE' | 'CONFLICT'
   record_id: string | null
   location_id: string | null

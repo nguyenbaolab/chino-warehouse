@@ -7,7 +7,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 ## §1 Tech Stack
 
 - **React Native** (Expo SDK), **TypeScript**
-- **Zustand** — state client (`warehouseStore`, `themeStore`, `warningStore`)
+- **Zustand** — state client (`warehouseStore`, `themeStore`, `warningStore`, `authStore`)
 - **Supabase** — PostgreSQL + Realtime (backend)
 - **React Navigation** — Bottom Tabs + Native Stack
 - **expo-camera** — `CameraView`, quét barcode
@@ -16,10 +16,10 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 
 **Mô hình bảo mật (client-direct BaaS):**
 - Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.
-- RLS bật trên tất cả **9 bảng** app với policy `authenticated_only` / `allow_all` (`auth.uid() IS NOT NULL` hoặc tương đương).
+- RLS bật trên tất cả **10 bảng** app (`user_profiles` có policy theo role F24; các bảng còn lại `authenticated_only` / `allow_all`).
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
-- RBAC (F24) → Phase 3 **In progress**: `user_profiles`, `UserManagementScreen`, guard theo role.
+- RBAC (F24) → Phase 3 **đang implement Task 1** (xong): `user_profiles`, `authStore`, guard `is_disabled` ở `App.tsx`. Task 2/3: `UserManagementScreen`, guard theo role.
 
 **Build & phân phối APK:** hướng dẫn vận hành đầy đủ (EAS Cloud + EAS Local qua WSL2, cache Gradle, lỗi thường gặp, script `build.sh`) → **`docs/BUILD_APK_GUIDE.md`**. Checklist go-live: `docs/phases/phase-2/GOLIVE_CHECKLIST_2.md`. Tổng quan kiến trúc EAS (phase 2): `docs/phases/phase-2/EAS_BUILD_GUIDE.md`.
 
@@ -88,12 +88,14 @@ screens/
   SettingsScreen.tsx
   UserManagementScreen.tsx     # F24 — quản lý người dùng (admin/super_admin, Phase 3)
 stores/
+  authStore.ts        # F24 — currentUserProfile, fetch/clear, updateLastLogin RPC
   themeStore.ts
   warningStore.ts     # expiryWarningEnabled, lowStockWarningEnabled (AsyncStorage)
-  warehouseStore.ts   # + locateIntent; Phase 3: user RBAC
+  warehouseStore.ts   # + locateIntent
 supabase/migrations/
   # ... (hiện có)
-  # [timestamp]_add_user_profiles.sql      # F24 — Phase 3
+  20260601000000_add_user_profiles.sql      # F24 Task 1
+  20260601000100_add_user_profiles_to_audit.sql
   # [timestamp]_add_discontinued_reason.sql # F28 — Phase 3
   # [timestamp]_f08_product_images_storage.sql # F08 — bucket product-images + RLS
 supabase/db_dump_schema/   # Snapshot pg_dump (script dump_schema.bat — không thay schema.sql)
@@ -114,7 +116,7 @@ README.md
 
 ## §3 Navigation structure
 
-- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading → `<ActivityIndicator />`; có session → `SafeAreaProvider` → `NavigationContainer` + navigation bên dưới.
+- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading bootstrap / **đang fetch `user_profiles`** → `<ActivityIndicator />`; có session + profile OK → `SafeAreaProvider` → `NavigationContainer`. **F24:** sau login gọi `authStore.fetchCurrentUserProfile()`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC `update_my_last_login()`.
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar. **Flow quét (search/locate):** `searchByBarcode` (lô) → nếu không có → `lookupProductByBarcode` (`product_barcodes`) → Alert **"Hàng đã hết"** (tổng tồn / không còn lô với mã này) + nút **Xem chi tiết** → `Products` → `ProductDetail`; nếu vẫn không có → Alert **Không tìm thấy** (Thử lại / Thêm thủ công / Huỷ).
 - **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
@@ -141,13 +143,23 @@ README.md
 
 ---
 
-## §4 Store — `warehouseStore.ts`
+## §4 Store — `authStore.ts` (F24)
 
-**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, `orderLists`, `orderItems`, `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail). **Phase 3 (planned):** `currentUserRole` (role user đang đăng nhập), `users` (danh sách cho admin/super_admin).
+**State:** `currentUserProfile` (`UserProfile | null`), `currentUserEmail`, `isLoadingProfile`.
+
+**Actions:** `fetchCurrentUserProfile` (query `user_profiles` theo `session.user.id`), `clearCurrentUserProfile`, `updateLastLogin` (RPC `update_my_last_login`).
+
+**Gọi từ:** `App.tsx` — fetch sau khi có session; clear khi logout; guard `is_disabled`.
+
+---
+
+## §4a Store — `warehouseStore.ts`
+
+**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, `orderLists`, `orderItems`, `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail). **F24 Task 2+ (planned):** `users` (danh sách cho admin/super_admin).
 
 **Actions — locate:** `setLocateIntent`, `clearLocateIntent`.
 
-**Actions — user management (Phase 3, F24):** `fetchUsers`, `createUser`, `updateUserRole`, `toggleUserDisabled`, `toggleUserGuest`, `fetchCurrentUserRole`.
+**Actions — user management (F24 Task 2+):** `fetchUsers`, `createUser`, `updateUserRole`, `toggleUserDisabled`, `toggleUserGuest`.
 
 **Actions — kho & zone:** `setSelectedLocation`, `fetchLocations`, `addLocation`, `updateLocation`, `deleteLocation`, `fetchZones`, `fetchProducts`, `fetchInventoryByZone`, `fetchInventoryByLocation` (một query `.in('zone_id', …)` cho cả kho, một lần `set` store), `fetchAllInventoryEntries`, `searchProducts` (filter `products` trong store bằng `normalizeText`, sau đó query `inventory_entries` theo `product_id` — không `ilike` DB), `searchInventoryByBarcode`, `searchByBarcode`, **`lookupProductByBarcode`**, **`checkBarcodeConflict`**, **`upsertProductBarcode`** (optional `reassign` sau confirm conflict), **`fetchProductBarcodes`**, **`deleteProductBarcode`**, **`updateProductBarcode`**, **`logBarcodeConflict`** (RPC `log_barcode_conflict`), `addProduct`, `deleteProduct`, `addInventoryEntry`, `updateInventoryEntry`, `deleteInventoryEntry`, `updateProductStockThresholds`, `addZone`, `updateZone`, `batchUpdateZoneCells`, `deleteZone`.
 
@@ -163,7 +175,7 @@ README.md
 
 ---
 
-## §4b Store — `warningStore.ts`
+## §4c Store — `warningStore.ts`
 
 **State:** `expiryWarningEnabled`, `lowStockWarningEnabled` (mặc định `true`).
 
@@ -177,7 +189,7 @@ README.md
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog`, `OrderList`, `OrderItem`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (gồm `table_name: 'user_profiles'`), `OrderList`, `OrderItem`
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 

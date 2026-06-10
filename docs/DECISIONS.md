@@ -512,6 +512,22 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### RBAC Task 1 — Kiến trúc nền (authStore + migration + guard disabled)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Bảng `user_profiles` (role, `is_disabled`, `last_login_at`); trigger `AFTER INSERT ON auth.users` tạo row `staff`; backfill user cũ. **Store riêng `authStore`** (`currentUserProfile`, `currentUserEmail`) — tách khỏi `warehouseStore`. **`App.tsx`:** sau session → `fetchCurrentUserProfile`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC **`update_my_last_login()`** (SECURITY DEFINER, không UPDATE trực tiếp qua RLS). **Audit:** trigger `audit_user_profiles` (UPDATE/DELETE) reuse `audit_trigger_fn()` ELSE branch (JSONB thuần). RLS: SELECT own + admin/super_admin all; UPDATE role/is_disabled theo role; không INSERT/DELETE client.
+- **Lý do:** Profile auth là cross-cutting concern; RPC last_login tránh mở UPDATE rộng cho mọi user; audit role/disabled quan trọng cho compliance nội bộ.
+
+---
+
+### RLS role check — SECURITY DEFINER helpers (tránh recursion)
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Mọi RLS policy cần đọc `user_profiles` để kiểm tra role của caller **không** dùng `EXISTS (SELECT 1 FROM user_profiles …)` trực tiếp trong policy (gây infinite recursion). Dùng helper **`is_current_user_admin()`** / **`is_current_user_super_admin()`** — `SECURITY DEFINER`, `SET search_path = public`, bypass RLS khi đọc row caller. Áp dụng cho `user_profiles` SELECT admin + UPDATE policies; pattern tái dùng cho RLS role-based sau này.
+- **Lý do:** PostgreSQL re-evaluate RLS trên subquery cùng bảng → staff không đọc được profile dù có policy `select_own`; app login fail với Alert "Không tìm thấy hồ sơ".
+
+---
+
 ### Global Warning Toggles — 2 toggle riêng, lưu AsyncStorage
 
 - **Ngày:** tháng 5/2026

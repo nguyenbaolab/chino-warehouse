@@ -4,6 +4,21 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: F24 Task 1 — RLS recursion trên user_profiles (SECURITY DEFINER helper)
+
+- Migration `20260601000200_fix_user_profiles_rls_recursion.sql`: `is_current_user_admin()`, `is_current_user_super_admin()`; recreate SELECT/UPDATE policies.
+- `schema.sql` v3.12.
+
+---
+
+## [tháng 5/2026] — feat: F24 RBAC Task 1 — user_profiles migration + authStore + guard disabled
+
+- Migration `user_profiles` + RLS + trigger `auth.users` + RPC `update_my_last_login`; audit `user_profiles`.
+- `stores/authStore.ts`; `App.tsx` load profile, block `is_disabled`, spinner khi fetch.
+- Types `UserRole`, `UserProfile`; `schema.sql` v3.11.
+
+---
+
 ## [tháng 5/2026] — chore: ProductDetail — section mã vạch chuyển accordion (mặc định đóng)
 
 - Header toggle `Mã vạch đã dùng (N)` + chevron ⌄/⌃; state `barcodeSectionExpanded` mặc định `false`.
