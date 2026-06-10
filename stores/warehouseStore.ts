@@ -15,6 +15,7 @@ import {
   OrderListStatus,
   AuditLog,
   LocateIntent,
+  ProductBarcode,
 } from '../types'
 
 type WarehouseStore = {
@@ -58,8 +59,11 @@ type WarehouseStore = {
   lookupProductByBarcode: (barcode: string) => Promise<{ product: Product; totalStock: number } | null>
   /** B1: barcode đã thuộc SP khác → trả SP owning; không conflict → null. */
   checkBarcodeConflict: (barcode: string, currentProductId: string) => Promise<Product | null>
-  /** B1: ghi/ghi lại mã vạch SP (caller phải check conflict trước). */
-  upsertProductBarcode: (productId: string, barcode: string) => Promise<void>
+  /** B1: ghi/ghi lại mã vạch SP (caller phải check conflict trước). `reassign` sau khi user xác nhận ghi đè SP khác. */
+  upsertProductBarcode: (productId: string, barcode: string, options?: { reassign?: boolean }) => Promise<void>
+  fetchProductBarcodes: (productId: string) => Promise<ProductBarcode[]>
+  deleteProductBarcode: (barcodeId: string) => Promise<void>
+  updateProductBarcode: (barcodeId: string, newBarcode: string) => Promise<{ error?: string }>
   /** B2: ghi audit CONFLICT qua RPC khi block gán barcode trùng SP khác. */
   logBarcodeConflict: (
     barcode: string,
@@ -586,7 +590,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return (product as Product) ?? null
   },
 
-  upsertProductBarcode: async (productId, barcode) => {
+  upsertProductBarcode: async (productId, barcode, options) => {
     const normalized = barcode.trim().toLowerCase()
     if (!normalized) return
 
@@ -600,6 +604,14 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
     if (existing) {
       if (existing.product_id !== productId) {
+        if (options?.reassign) {
+          const { error } = await supabase
+            .from('product_barcodes')
+            .update({ product_id: productId, last_scanned_at: now })
+            .eq('id', existing.id)
+          if (error) throw error
+          return
+        }
         throw new Error('Barcode đã thuộc sản phẩm khác')
       }
       const { error } = await supabase
@@ -619,6 +631,55 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         last_scanned_at: now,
       })
     if (error) throw error
+  },
+
+  fetchProductBarcodes: async (productId) => {
+    const { data, error } = await supabase
+      .from('product_barcodes')
+      .select('*')
+      .eq('product_id', productId)
+      .order('last_scanned_at', { ascending: false })
+    if (error) throw error
+    return (data as ProductBarcode[]) ?? []
+  },
+
+  deleteProductBarcode: async (barcodeId) => {
+    const { error } = await supabase.from('product_barcodes').delete().eq('id', barcodeId)
+    if (error) throw error
+  },
+
+  updateProductBarcode: async (barcodeId, newBarcode) => {
+    const normalized = newBarcode.trim().toLowerCase()
+    if (!normalized) return { error: 'Mã vạch không được để trống.' }
+
+    const { data: row, error: fetchError } = await supabase
+      .from('product_barcodes')
+      .select('id, product_id, barcode')
+      .eq('id', barcodeId)
+      .maybeSingle()
+
+    if (fetchError) return { error: fetchError.message }
+    if (!row) return { error: 'Không tìm thấy mã vạch.' }
+    if (row.barcode === normalized) return {}
+
+    const { data: duplicate } = await supabase
+      .from('product_barcodes')
+      .select('id')
+      .eq('barcode', normalized)
+      .maybeSingle()
+
+    if (duplicate && duplicate.id !== barcodeId) {
+      return { error: 'Mã vạch đã tồn tại trong hệ thống.' }
+    }
+
+    const now = new Date().toISOString()
+    const { error } = await supabase
+      .from('product_barcodes')
+      .update({ barcode: normalized, last_scanned_at: now })
+      .eq('id', barcodeId)
+
+    if (error) return { error: error.message }
+    return {}
   },
 
   logBarcodeConflict: async (

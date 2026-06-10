@@ -52,6 +52,8 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `App.tsx` | SettingsStack: `NotificationsFromDashboard` (reuse NotificationsScreen) |
 | `screens/DashboardScreen.tsx` | F23 — `push` stat cards → NotificationsFromDashboard / DiscontinuedProducts + filter params |
 | `screens/NotificationsScreen.tsx` | Route params tab/filter/kho/zone; dropdown Zone |
+| `screens/ProductDetailScreen.tsx` | Đổi tên inline; section mã vạch đã dùng (CRUD) |
+| `stores/warehouseStore.ts` | `fetchProductBarcodes`, `deleteProductBarcode`, `updateProductBarcode` |
 | `components/SimplePieChart.tsx` | Pie chart + legend (`react-native-svg`) |
 | `utils/dashboardStats.ts` | Metric client-side; `totalProducts` filter theo kho |
 | `screens/SettingsScreen.tsx` | Card **Tổng quan kho** |

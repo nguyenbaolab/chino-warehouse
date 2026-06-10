@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: ProductDetail — đổi tên inline + section mã vạch đã dùng (thêm/sửa/xóa)
+
+- **Đổi tên SP:** ✏️/✅/❌ inline trong `infoBox` → `updateProductName`.
+- **Section Mã vạch đã dùng:** list `product_barcodes`, thêm (quét/nhập tay), sửa, xóa; conflict → `checkBarcodeConflict` + confirm + `logBarcodeConflict`.
+- **Store:** `fetchProductBarcodes`, `deleteProductBarcode`, `updateProductBarcode`; `upsertProductBarcode` thêm option `reassign`.
+
+---
+
 ## [tháng 5/2026] — fix: NotificationsScreen — race condition wipe filterZoneId từ Dashboard params
 
 - Bỏ `setFilterZoneId(null)` khỏi effect `[filterLocationId]` (tránh ghi đè params cùng commit mount).

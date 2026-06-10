@@ -5,6 +5,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -23,7 +24,15 @@ import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { getDisplayColor, getDisplayColorContextFromEntry } from '../utils/statusUtils'
 import { supabase } from '../lib/supabase'
-import { formatExpiryDate, getCombinedStatus, InventoryEntry, Product, Zone, AuditLog } from '../types'
+import {
+  formatExpiryDate,
+  getCombinedStatus,
+  InventoryEntry,
+  Product,
+  ProductBarcode,
+  Zone,
+  AuditLog,
+} from '../types'
 import { checkConflict } from '../utils/conflictUtils'
 import { isoExpiryToDisplay, isValidDisplayDate, parseDisplayDateToIso } from '../utils/dateUtils'
 import { pickImage, uploadProductImage, deleteProductImage } from '../utils/imageUtils'
@@ -50,6 +59,13 @@ function isExpiredBeforeToday(expiryDate?: string): boolean {
   return expiry.getTime() < today.getTime()
 }
 
+function formatBarcodeDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
+}
+
 export default function ProductDetailScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
@@ -65,6 +81,10 @@ export default function ProductDetailScreen() {
     checkBarcodeConflict,
     upsertProductBarcode,
     logBarcodeConflict,
+    fetchProductBarcodes,
+    deleteProductBarcode,
+    updateProductBarcode,
+    updateProductName,
     productCategoriesL1,
     productCategoriesL2,
     fetchCategories,
@@ -104,6 +124,17 @@ export default function ProductDetailScreen() {
   const [viewingImage, setViewingImage] = useState(false)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
 
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [originalName, setOriginalName] = useState('')
+  const [isSavingName, setIsSavingName] = useState(false)
+
+  const [productBarcodes, setProductBarcodes] = useState<ProductBarcode[]>([])
+  const [barcodesLoading, setBarcodesLoading] = useState(false)
+  const [barcodeInputModalOpen, setBarcodeInputModalOpen] = useState(false)
+  const [barcodeInputValue, setBarcodeInputValue] = useState('')
+  const [barcodeInputTargetId, setBarcodeInputTargetId] = useState<string | null>(null)
+
   const totalLotBoxes = useMemo(
     () => lots.reduce((sum, lot) => sum + lot.quantity_boxes, 0),
     [lots]
@@ -112,6 +143,19 @@ export default function ProductDetailScreen() {
   const hasThresholdChanged =
     editWarningDays !== originalWarningDays ||
     editLowWarningBoxes !== originalLowWarningBoxes
+
+  const nameHasChanges = isEditingName && nameInput.trim() !== originalName.trim()
+  const nameEditIcon = !isEditingName ? '✏️' : nameHasChanges && nameInput.trim().length > 0 ? '✅' : '❌'
+
+  const loadProductBarcodes = useCallback(async () => {
+    setBarcodesLoading(true)
+    try {
+      const rows = await fetchProductBarcodes(productId)
+      setProductBarcodes(rows)
+    } finally {
+      setBarcodesLoading(false)
+    }
+  }, [fetchProductBarcodes, productId])
 
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
@@ -171,8 +215,9 @@ export default function ProductDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       void loadData()
+      void loadProductBarcodes()
       void fetchAuditLogsForProduct(productId, 10).then(setAuditEntries)
-    }, [loadData, fetchAuditLogsForProduct, productId])
+    }, [loadData, loadProductBarcodes, fetchAuditLogsForProduct, productId])
   )
 
   useEffect(() => {
@@ -197,6 +242,209 @@ export default function ProductDetailScreen() {
     setShowCategoryL1Picker(false)
     setShowCategoryL2Picker(false)
     void loadData()
+  }
+
+  function startEditName() {
+    const current = product?.name ?? ''
+    setNameInput(current)
+    setOriginalName(current)
+    setIsEditingName(true)
+  }
+
+  function cancelEditName() {
+    setNameInput(originalName)
+    setIsEditingName(false)
+  }
+
+  async function saveProductName() {
+    const trimmed = nameInput.trim()
+    if (!trimmed) return
+    setIsSavingName(true)
+    try {
+      await updateProductName(productId, trimmed)
+      setProduct((p) => (p ? { ...p, name: trimmed } : p))
+      setOriginalName(trimmed)
+      setIsEditingName(false)
+    } finally {
+      setIsSavingName(false)
+    }
+  }
+
+  function handleNameEditButtonPress() {
+    if (!isEditingName) {
+      startEditName()
+      return
+    }
+    if (nameHasChanges && nameInput.trim().length > 0) {
+      void saveProductName()
+    } else {
+      cancelEditName()
+    }
+  }
+
+  function isDuplicateInList(barcode: string, excludeId?: string | null) {
+    const normalized = barcode.trim().toLowerCase()
+    return productBarcodes.some(
+      (row) => row.barcode.toLowerCase() === normalized && row.id !== excludeId,
+    )
+  }
+
+  async function commitBarcodeAdd(barcode: string, reassign = false) {
+    await upsertProductBarcode(productId, barcode, reassign ? { reassign: true } : undefined)
+    await loadProductBarcodes()
+  }
+
+  async function commitBarcodeUpdate(barcodeId: string, newBarcode: string, reassign = false) {
+    const normalized = newBarcode.trim().toLowerCase()
+    if (reassign) {
+      const { data: conflictRow } = await supabase
+        .from('product_barcodes')
+        .select('id')
+        .eq('barcode', normalized)
+        .maybeSingle()
+      if (conflictRow && conflictRow.id !== barcodeId) {
+        await deleteProductBarcode(conflictRow.id)
+      }
+    }
+    const result = await updateProductBarcode(barcodeId, newBarcode)
+    if (result.error) {
+      Alert.alert('Lỗi', result.error)
+      return
+    }
+    await loadProductBarcodes()
+  }
+
+  function promptBarcodeConflict(
+    barcode: string,
+    conflicting: Product,
+    onConfirm: () => void | Promise<void>,
+  ) {
+    Alert.alert(
+      'Mã vạch trùng',
+      `Mã "${barcode.trim()}" đang thuộc sản phẩm "${conflicting.name}". Vẫn thêm vào sản phẩm này?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Vẫn thêm',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              await logBarcodeConflict(
+                barcode,
+                productId,
+                conflicting.id,
+                product?.name ?? 'Không rõ',
+                conflicting.name,
+              )
+              await onConfirm()
+            })()
+          },
+        },
+      ],
+    )
+  }
+
+  async function applyNewBarcode(barcode: string) {
+    const trimmed = barcode.trim()
+    if (!trimmed) return
+    if (isDuplicateInList(trimmed)) {
+      Alert.alert('Trùng mã', 'Mã này đã có trong danh sách.')
+      return
+    }
+    const conflicting = await checkBarcodeConflict(trimmed, productId)
+    if (conflicting) {
+      promptBarcodeConflict(trimmed, conflicting, () => commitBarcodeAdd(trimmed, true))
+      return
+    }
+    await commitBarcodeAdd(trimmed)
+  }
+
+  async function applyBarcodeChange(barcodeId: string, newBarcode: string) {
+    const trimmed = newBarcode.trim()
+    if (!trimmed) return
+    const current = productBarcodes.find((row) => row.id === barcodeId)
+    if (current && current.barcode.toLowerCase() === trimmed.toLowerCase()) return
+    if (isDuplicateInList(trimmed, barcodeId)) {
+      Alert.alert('Trùng mã', 'Mã này đã có trong danh sách.')
+      return
+    }
+    const conflicting = await checkBarcodeConflict(trimmed, productId)
+    if (conflicting) {
+      promptBarcodeConflict(trimmed, conflicting, () => commitBarcodeUpdate(barcodeId, trimmed, true))
+      return
+    }
+    await commitBarcodeUpdate(barcodeId, trimmed)
+  }
+
+  function openAddBarcodeChooser() {
+    Alert.alert('Thêm mã vạch', undefined, [
+      {
+        text: '📷 Quét',
+        onPress: () => {
+          navigation.navigate('BarcodeScanner', {
+            mode: 'search',
+            onScanFillBarcode: (bc: string) => {
+              void applyNewBarcode(bc)
+            },
+          })
+        },
+      },
+      {
+        text: '⌨️ Nhập tay',
+        onPress: () => {
+          setBarcodeInputTargetId(null)
+          setBarcodeInputValue('')
+          setBarcodeInputModalOpen(true)
+        },
+      },
+      { text: 'Hủy', style: 'cancel' },
+    ])
+  }
+
+  function openEditBarcodeManual(barcodeId: string, currentBarcode: string) {
+    setBarcodeInputTargetId(barcodeId)
+    setBarcodeInputValue(currentBarcode)
+    setBarcodeInputModalOpen(true)
+  }
+
+  function openEditBarcodeScan(barcodeId: string) {
+    navigation.navigate('BarcodeScanner', {
+      mode: 'search',
+      onScanFillBarcode: (bc: string) => {
+        void applyBarcodeChange(barcodeId, bc)
+      },
+    })
+  }
+
+  function submitBarcodeInputModal() {
+    const value = barcodeInputValue.trim()
+    if (!value) return
+    setBarcodeInputModalOpen(false)
+    if (barcodeInputTargetId) {
+      void applyBarcodeChange(barcodeInputTargetId, value)
+    } else {
+      void applyNewBarcode(value)
+    }
+  }
+
+  function confirmDeleteBarcode(row: ProductBarcode) {
+    Alert.alert(
+      'Xóa mã vạch',
+      `Xóa mã vạch "${row.barcode}" khỏi sản phẩm này?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              await deleteProductBarcode(row.id)
+              await loadProductBarcodes()
+            })()
+          },
+        },
+      ],
+    )
   }
 
   async function handleThresholdEditButtonPress() {
@@ -724,7 +972,32 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.productName, { color: colors.text }]}>{product?.name ?? 'Không xác định'}</Text>
+          <View style={styles.productNameRow}>
+            {isEditingName ? (
+              <TextInput
+                style={[
+                  styles.productName,
+                  styles.productNameInput,
+                  { color: colors.text, borderColor: colors.border, backgroundColor: colors.bg },
+                ]}
+                value={nameInput}
+                onChangeText={setNameInput}
+                autoFocus
+                editable={!isSavingName}
+              />
+            ) : (
+              <Text style={[styles.productName, styles.productNameFlex, { color: colors.text }]}>
+                {product?.name ?? 'Không xác định'}
+              </Text>
+            )}
+            <TouchableOpacity
+              style={[styles.nameEditBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+              onPress={handleNameEditButtonPress}
+              disabled={isSavingName}
+            >
+              <Text style={styles.nameEditBtnText}>{nameEditIcon}</Text>
+            </TouchableOpacity>
+          </View>
           {!!product?.notes && <Text style={[styles.infoText, { color: colors.sub }]}>Ghi chú: {product.notes}</Text>}
           <TouchableOpacity
             style={[styles.detailsToggleRow, { borderColor: colors.border, backgroundColor: colors.bg }]}
@@ -873,6 +1146,52 @@ export default function ProductDetailScreen() {
                 </>
               )}
             </>
+          )}
+        </View>
+
+        <View style={[styles.barcodeSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.barcodeSectionHeader}>
+            <Text style={[styles.barcodeSectionTitle, { color: colors.text }]}>Mã vạch đã dùng</Text>
+            <TouchableOpacity onPress={openAddBarcodeChooser}>
+              <Text style={{ color: colors.accent, fontSize: 13, fontWeight: '600' }}>+ Thêm mã vạch</Text>
+            </TouchableOpacity>
+          </View>
+          {barcodesLoading && productBarcodes.length === 0 ? (
+            <ActivityIndicator color={colors.accent} style={{ marginVertical: 8 }} />
+          ) : productBarcodes.length === 0 ? (
+            <Text style={[styles.barcodeEmpty, { color: colors.sub }]}>Chưa có mã vạch nào được ghi nhận</Text>
+          ) : (
+            productBarcodes.map((row) => (
+              <View key={row.id} style={[styles.barcodeRow, { borderTopColor: colors.border }]}>
+                <View style={styles.barcodeRowMain}>
+                  <Text style={[styles.barcodeValue, { color: colors.text }]}>{row.barcode}</Text>
+                  <Text style={[styles.barcodeDates, { color: colors.sub }]}>
+                    Lần đầu: {formatBarcodeDate(row.first_scanned_at)} · Mới nhất:{' '}
+                    {formatBarcodeDate(row.last_scanned_at)}
+                  </Text>
+                </View>
+                <View style={styles.barcodeRowActions}>
+                  <TouchableOpacity
+                    style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                    onPress={() => openEditBarcodeManual(row.id, row.barcode)}
+                  >
+                    <Text style={styles.barcodeActionText}>✏️</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                    onPress={() => openEditBarcodeScan(row.id)}
+                  >
+                    <Text style={styles.barcodeActionText}>📷</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                    onPress={() => confirmDeleteBarcode(row)}
+                  >
+                    <Text style={styles.barcodeActionText}>🗑️</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
           )}
         </View>
 
@@ -1124,6 +1443,51 @@ export default function ProductDetailScreen() {
           showImageOptions()
         }}
       />
+
+      <Modal
+        visible={barcodeInputModalOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBarcodeInputModalOpen(false)}
+      >
+        <Pressable style={styles.barcodeModalOverlay} onPress={() => setBarcodeInputModalOpen(false)}>
+          <Pressable
+            style={[styles.barcodeModalBox, { backgroundColor: colors.card }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={[styles.barcodeModalTitle, { color: colors.text }]}>
+              {barcodeInputTargetId ? 'Sửa mã vạch' : 'Nhập mã vạch'}
+            </Text>
+            <TextInput
+              style={[
+                styles.barcodeModalInput,
+                { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border },
+              ]}
+              value={barcodeInputValue}
+              onChangeText={setBarcodeInputValue}
+              placeholder="Mã vạch"
+              placeholderTextColor={colors.sub}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoFocus
+            />
+            <View style={styles.barcodeModalActions}>
+              <TouchableOpacity
+                style={[styles.cancelBtn, { backgroundColor: colors.bg }]}
+                onPress={() => setBarcodeInputModalOpen(false)}
+              >
+                <Text style={{ color: colors.sub }}>Huỷ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveBtn, { backgroundColor: colors.accent }]}
+                onPress={submitBarcodeInputModal}
+              >
+                <Text style={{ color: colors.card, fontWeight: '700' }}>Lưu</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -1212,7 +1576,81 @@ const styles = StyleSheet.create({
   },
   totalBoxesToolbar: { fontSize: 15, fontWeight: '700' },
   issuesToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  productName: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
+  productNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 6,
+  },
+  productName: { fontSize: 18, fontWeight: '700' },
+  productNameFlex: { flex: 1 },
+  productNameInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  nameEditBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameEditBtnText: { fontSize: 14 },
+  barcodeSection: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+  barcodeSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  barcodeSectionTitle: { fontSize: 15, fontWeight: '700' },
+  barcodeEmpty: { fontSize: 13, fontStyle: 'italic' },
+  barcodeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+  },
+  barcodeRowMain: { flex: 1, minWidth: 0 },
+  barcodeValue: { fontSize: 15, fontWeight: '600' },
+  barcodeDates: { fontSize: 11, marginTop: 4, lineHeight: 16 },
+  barcodeRowActions: { flexDirection: 'row', gap: 6 },
+  barcodeActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  barcodeActionText: { fontSize: 14 },
+  barcodeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  barcodeModalBox: { borderRadius: 14, padding: 16 },
+  barcodeModalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  barcodeModalInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  barcodeModalActions: { flexDirection: 'row', gap: 10 },
   infoText: { fontSize: 13, marginTop: 2 },
   thresholdsHeaderRow: {
     flexDirection: 'row',
