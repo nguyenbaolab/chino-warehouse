@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — chore: ProductDetail — gọn section mã vạch (bỏ timestamp + bỏ bold)
+
+- Ẩn dòng Lần đầu / Mới nhất khỏi UI (DB giữ nguyên).
+- Mã vạch hiển thị `fontWeight: '400'`.
+
+---
+
 ## [tháng 5/2026] — feat: ProductDetail — đổi tên inline + section mã vạch đã dùng (thêm/sửa/xóa)
 
 - **Đổi tên SP:** ✏️/✅/❌ inline trong `infoBox` → `updateProductName`.

@@ -59,13 +59,6 @@ function isExpiredBeforeToday(expiryDate?: string): boolean {
   return expiry.getTime() < today.getTime()
 }
 
-function formatBarcodeDate(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
-}
-
 export default function ProductDetailScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute()
@@ -1165,10 +1158,6 @@ export default function ProductDetailScreen() {
               <View key={row.id} style={[styles.barcodeRow, { borderTopColor: colors.border }]}>
                 <View style={styles.barcodeRowMain}>
                   <Text style={[styles.barcodeValue, { color: colors.text }]}>{row.barcode}</Text>
-                  <Text style={[styles.barcodeDates, { color: colors.sub }]}>
-                    Lần đầu: {formatBarcodeDate(row.first_scanned_at)} · Mới nhất:{' '}
-                    {formatBarcodeDate(row.last_scanned_at)}
-                  </Text>
                 </View>
                 <View style={styles.barcodeRowActions}>
                   <TouchableOpacity
@@ -1623,8 +1612,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   barcodeRowMain: { flex: 1, minWidth: 0 },
-  barcodeValue: { fontSize: 15, fontWeight: '600' },
-  barcodeDates: { fontSize: 11, marginTop: 4, lineHeight: 16 },
+  barcodeValue: { fontSize: 15, fontWeight: '400' },
   barcodeRowActions: { flexDirection: 'row', gap: 6 },
   barcodeActionBtn: {
     width: 32,
