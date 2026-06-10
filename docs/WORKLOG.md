@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — chore: ProductDetail — section mã vạch chuyển accordion (mặc định đóng)
+
+- Header toggle `Mã vạch đã dùng (N)` + chevron ⌄/⌃; state `barcodeSectionExpanded` mặc định `false`.
+- Khi mở: list + empty state + nút `+ Thêm mã vạch` dưới list; style tham khảo `CategoryManagementScreen`.
+
+---
+
 ## [tháng 5/2026] — chore: ProductDetail — gọn section mã vạch (bỏ timestamp + bỏ bold)
 
 - Ẩn dòng Lần đầu / Mới nhất khỏi UI (DB giữ nguyên).

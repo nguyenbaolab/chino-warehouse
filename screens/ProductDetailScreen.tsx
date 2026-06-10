@@ -124,6 +124,7 @@ export default function ProductDetailScreen() {
 
   const [productBarcodes, setProductBarcodes] = useState<ProductBarcode[]>([])
   const [barcodesLoading, setBarcodesLoading] = useState(false)
+  const [barcodeSectionExpanded, setBarcodeSectionExpanded] = useState(false)
   const [barcodeInputModalOpen, setBarcodeInputModalOpen] = useState(false)
   const [barcodeInputValue, setBarcodeInputValue] = useState('')
   const [barcodeInputTargetId, setBarcodeInputTargetId] = useState<string | null>(null)
@@ -1143,45 +1144,61 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={[styles.barcodeSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.barcodeSectionHeader}>
-            <Text style={[styles.barcodeSectionTitle, { color: colors.text }]}>Mã vạch đã dùng</Text>
-            <TouchableOpacity onPress={openAddBarcodeChooser}>
-              <Text style={{ color: colors.accent, fontSize: 13, fontWeight: '600' }}>+ Thêm mã vạch</Text>
-            </TouchableOpacity>
-          </View>
-          {barcodesLoading && productBarcodes.length === 0 ? (
-            <ActivityIndicator color={colors.accent} style={{ marginVertical: 8 }} />
-          ) : productBarcodes.length === 0 ? (
-            <Text style={[styles.barcodeEmpty, { color: colors.sub }]}>Chưa có mã vạch nào được ghi nhận</Text>
-          ) : (
-            productBarcodes.map((row) => (
-              <View key={row.id} style={[styles.barcodeRow, { borderTopColor: colors.border }]}>
-                <View style={styles.barcodeRowMain}>
-                  <Text style={[styles.barcodeValue, { color: colors.text }]}>{row.barcode}</Text>
-                </View>
-                <View style={styles.barcodeRowActions}>
-                  <TouchableOpacity
-                    style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                    onPress={() => openEditBarcodeManual(row.id, row.barcode)}
-                  >
-                    <Text style={styles.barcodeActionText}>✏️</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                    onPress={() => openEditBarcodeScan(row.id)}
-                  >
-                    <Text style={styles.barcodeActionText}>📷</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                    onPress={() => confirmDeleteBarcode(row)}
-                  >
-                    <Text style={styles.barcodeActionText}>🗑️</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
+          <TouchableOpacity
+            style={styles.barcodeSectionHeader}
+            onPress={() => setBarcodeSectionExpanded((v) => !v)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.barcodeSectionTitle, { color: colors.text }]}>
+              Mã vạch đã dùng ({productBarcodes.length})
+            </Text>
+            <Text style={[styles.barcodeChevron, { color: colors.sub }]}>
+              {barcodeSectionExpanded ? '⌃' : '⌄'}
+            </Text>
+          </TouchableOpacity>
+          {barcodeSectionExpanded ? (
+            <View style={[styles.barcodeSectionBody, { borderTopColor: colors.border }]}>
+              {barcodesLoading && productBarcodes.length === 0 ? (
+                <ActivityIndicator color={colors.accent} style={{ marginVertical: 8 }} />
+              ) : productBarcodes.length === 0 ? (
+                <Text style={[styles.barcodeEmpty, { color: colors.sub }]}>Chưa có mã vạch nào được ghi nhận</Text>
+              ) : (
+                productBarcodes.map((row) => (
+                  <View key={row.id} style={[styles.barcodeRow, { borderTopColor: colors.border }]}>
+                    <View style={styles.barcodeRowMain}>
+                      <Text style={[styles.barcodeValue, { color: colors.text }]}>{row.barcode}</Text>
+                    </View>
+                    <View style={styles.barcodeRowActions}>
+                      <TouchableOpacity
+                        style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                        onPress={() => openEditBarcodeManual(row.id, row.barcode)}
+                      >
+                        <Text style={styles.barcodeActionText}>✏️</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                        onPress={() => openEditBarcodeScan(row.id)}
+                      >
+                        <Text style={styles.barcodeActionText}>📷</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                        onPress={() => confirmDeleteBarcode(row)}
+                      >
+                        <Text style={styles.barcodeActionText}>🗑️</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              )}
+              <TouchableOpacity
+                style={[styles.barcodeAddBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                onPress={openAddBarcodeChooser}
+              >
+                <Text style={{ color: colors.accent, fontWeight: '600' }}>+ Thêm mã vạch</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
         </View>
 
         <View style={[styles.lotsToolbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -1592,16 +1609,31 @@ const styles = StyleSheet.create({
   barcodeSection: {
     borderWidth: 1,
     borderRadius: 12,
-    padding: 12,
     marginBottom: 12,
+    overflow: 'hidden',
   },
   barcodeSectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
-  barcodeSectionTitle: { fontSize: 15, fontWeight: '700' },
+  barcodeSectionTitle: { flex: 1, fontSize: 15, fontWeight: '600' },
+  barcodeChevron: { fontSize: 14, marginLeft: 8 },
+  barcodeSectionBody: {
+    borderTopWidth: 1,
+    paddingHorizontal: 12,
+    paddingBottom: 10,
+    paddingTop: 4,
+  },
+  barcodeAddBtn: {
+    marginTop: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
   barcodeEmpty: { fontSize: 13, fontStyle: 'italic' },
   barcodeRow: {
     flexDirection: 'row',
