@@ -40,6 +40,8 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `20260601000100_add_user_profiles_to_audit.sql` | F24: audit trigger `user_profiles` (UPDATE/DELETE) |
 | `20260601000200_fix_user_profiles_rls_recursion.sql` | F24: SECURITY DEFINER helpers `is_current_user_admin` |
 | `20260601000300_add_list_users_rpc.sql` | F24 Task 3: RPC `list_user_profiles_with_email` |
+| `20260601000400_backfill_last_login_at.sql` | F24: backfill `last_login_at` từ `auth.users.last_sign_in_at` |
+| `20260601000500_add_user_profiles_to_realtime.sql` | F24: `user_profiles` trong `supabase_realtime` (kick disable) |
 
 ---
 
@@ -85,6 +87,10 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `App.tsx` | F24 Task 3 — route `UserManagement` trong SettingsStack |
 | `screens/SettingsScreen.tsx` | F24 Task 3 — navigate `UserManagement` |
 | `types/index.ts` | F24 Task 3 — `UserProfileWithEmail` |
+| `lib/presence.ts` | F24 — presence channel join/leave + sync `onlineUserIds` |
+| `App.tsx` | F24 — Realtime own `user_profiles` + presence join/leave |
+| `stores/authStore.ts` | F24 — `onlineUserIds`, `setOnlineUserIds`, `fetchCurrentUserProfile({ silent })` |
+| `screens/UserManagementScreen.tsx` | F24 — badge online + switch spacing |
 
 ---
 

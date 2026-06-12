@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.14 | Tháng 5/2026
+-- Phiên bản: 3.15 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.14:
+--   - F24: user_profiles trong supabase_realtime (kick disable / role sync)
 -- Thay đổi so với v3.13:
 --   - F24: migration backfill last_login_at từ auth.users.last_sign_in_at (DB đã có user)
 -- Thay đổi so với v3.12:
@@ -339,6 +341,7 @@ WITH CHECK (true);
 -- Cho phép postgres_changes subscribe trên các bảng cần Realtime
 -- inventory_entries: đã có sẵn từ trước (Settings/Discontinued dùng)
 -- zones: thêm mới (C1 — MapScreen realtime update cho multi-user)
+-- user_profiles: F24 kick disable + role sync (App.tsx subscribe own row)
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -347,6 +350,13 @@ BEGIN
       AND tablename = 'zones'
   ) THEN
     ALTER PUBLICATION supabase_realtime ADD TABLE zones;
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND tablename = 'user_profiles'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE user_profiles;
   END IF;
 END;
 $$;

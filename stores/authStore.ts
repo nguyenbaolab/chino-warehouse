@@ -8,12 +8,14 @@ type AuthStore = {
   isLoadingProfile: boolean
   users: UserProfileWithEmail[]
   isLoadingUsers: boolean
-  fetchCurrentUserProfile: () => Promise<UserProfile | null>
+  fetchCurrentUserProfile: (opts?: { silent?: boolean }) => Promise<UserProfile | null>
   clearCurrentUserProfile: () => void
   updateLastLogin: () => Promise<void>
   fetchUsers: () => Promise<string | null>
   updateUserRole: (userId: string, newRole: UserRole) => Promise<string | null>
   updateUserDisabled: (userId: string, isDisabled: boolean) => Promise<string | null>
+  onlineUserIds: Set<string>
+  setOnlineUserIds: (ids: Set<string>) => void
 }
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
@@ -22,16 +24,22 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   isLoadingProfile: false,
   users: [],
   isLoadingUsers: false,
+  onlineUserIds: new Set<string>(),
 
-  fetchCurrentUserProfile: async () => {
-    set({ isLoadingProfile: true })
+  fetchCurrentUserProfile: async (opts) => {
+    const silent = opts?.silent ?? false
+    if (!silent) set({ isLoadingProfile: true })
     try {
       const {
         data: { session },
         error: sessionError,
       } = await supabase.auth.getSession()
       if (sessionError || !session?.user) {
-        set({ currentUserProfile: null, currentUserEmail: null, isLoadingProfile: false })
+        set({
+          currentUserProfile: null,
+          currentUserEmail: null,
+          ...(silent ? {} : { isLoadingProfile: false }),
+        })
         return null
       }
 
@@ -43,15 +51,27 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         .maybeSingle()
 
       if (error || !data) {
-        set({ currentUserProfile: null, currentUserEmail: email, isLoadingProfile: false })
+        set({
+          currentUserProfile: null,
+          currentUserEmail: email,
+          ...(silent ? {} : { isLoadingProfile: false }),
+        })
         return null
       }
 
       const profile = data as UserProfile
-      set({ currentUserProfile: profile, currentUserEmail: email, isLoadingProfile: false })
+      set({
+        currentUserProfile: profile,
+        currentUserEmail: email,
+        ...(silent ? {} : { isLoadingProfile: false }),
+      })
       return profile
     } catch {
-      set({ currentUserProfile: null, currentUserEmail: null, isLoadingProfile: false })
+      set({
+        currentUserProfile: null,
+        currentUserEmail: null,
+        ...(silent ? {} : { isLoadingProfile: false }),
+      })
       return null
     }
   },
@@ -63,7 +83,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       isLoadingProfile: false,
       users: [],
       isLoadingUsers: false,
+      onlineUserIds: new Set<string>(),
     })
+  },
+
+  setOnlineUserIds: (ids) => {
+    set({ onlineUserIds: new Set(ids) })
   },
 
   updateLastLogin: async () => {

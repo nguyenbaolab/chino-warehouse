@@ -6,8 +6,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { StatusBar } from 'expo-status-bar'
 import { Text, View, ActivityIndicator, StyleSheet, AppState, Alert } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import type { Session } from '@supabase/supabase-js'
+import type { RealtimeChannel, Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
+import { joinPresenceChannel, leavePresenceChannel } from './lib/presence'
 import { useWarningStore } from './stores/warningStore'
 import { useAuthStore } from './stores/authStore'
 import ConfigErrorScreen from './components/ConfigErrorScreen'
@@ -192,6 +193,8 @@ export default function App() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   // Phân biệt auto-logout (inactivity) vs user tự bấm đăng xuất / kill app
   const isAutoLogoutRef = useRef(false)
+  const presenceChannelRef = useRef<RealtimeChannel | null>(null)
+  const profileRealtimeChannelRef = useRef<RealtimeChannel | null>(null)
 
   const updateActivity = useCallback(() => {
     lastActivityRef.current = Date.now()
@@ -322,6 +325,65 @@ export default function App() {
       cancelled = true
     }
   }, [session, fetchCurrentUserProfile, clearCurrentUserProfile, updateLastLogin])
+
+  // F24: Realtime kick disable + presence tracking (sau profile OK)
+  useEffect(() => {
+    const userId = session?.user?.id
+    const email = session?.user?.email ?? ''
+
+    const cleanupChannels = () => {
+      if (profileRealtimeChannelRef.current) {
+        void supabase.removeChannel(profileRealtimeChannelRef.current)
+        profileRealtimeChannelRef.current = null
+      }
+      if (presenceChannelRef.current) {
+        void leavePresenceChannel(presenceChannelRef.current)
+        presenceChannelRef.current = null
+      }
+    }
+
+    if (!userId || !currentUserProfile || currentUserProfile.is_disabled) {
+      cleanupChannels()
+      return
+    }
+
+    const profileChannel = supabase
+      .channel(`user-profile-self-${userId}-${Date.now()}`, {
+        config: { private: true },
+      })
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_profiles',
+          filter: `id=eq.${userId}`,
+        },
+        (payload) => {
+          const newRecord = payload.new as { is_disabled?: boolean }
+          if (newRecord.is_disabled === true) {
+            Alert.alert('Tài khoản đã bị vô hiệu hóa', 'Bạn sẽ bị đăng xuất.')
+            void supabase.auth.signOut()
+            clearCurrentUserProfile()
+            return
+          }
+          void fetchCurrentUserProfile({ silent: true })
+        },
+      )
+      .subscribe()
+
+    profileRealtimeChannelRef.current = profileChannel
+    presenceChannelRef.current = joinPresenceChannel(userId, email)
+
+    return cleanupChannels
+  }, [
+    session?.user?.id,
+    session?.user?.email,
+    currentUserProfile?.id,
+    currentUserProfile?.is_disabled,
+    fetchCurrentUserProfile,
+    clearCurrentUserProfile,
+  ])
 
   // AppState: check inactivity khi app quay lại foreground, dừng timer khi background
   useEffect(() => {

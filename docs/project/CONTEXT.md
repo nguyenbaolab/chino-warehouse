@@ -64,6 +64,7 @@ docs/
   BUILD_APK_GUIDE.md    # Hướng dẫn build APK (EAS Cloud + Local WSL2, cache, troubleshooting)
 lib/
   supabase.ts
+  presence.ts         # F24 — join/leave presence channel warehouse-online; sync onlineUserIds
 utils/
   textUtils.ts          # normalizeText() — tìm kiếm / filter text toàn app
   dateUtils.ts          # isoExpiryToDisplay / parseDisplayDateToIso / isValidDisplayDate (nhập hạn lô)
@@ -116,7 +117,7 @@ README.md
 
 ## §3 Navigation structure
 
-- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading bootstrap / **đang fetch `user_profiles`** → `<ActivityIndicator />`; có session + profile OK → `SafeAreaProvider` → `NavigationContainer`. **F24:** sau login gọi `authStore.fetchCurrentUserProfile()`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC `update_my_last_login()`.
+- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading bootstrap / **đang fetch `user_profiles`** → `<ActivityIndicator />`; có session + profile OK → `SafeAreaProvider` → `NavigationContainer`. **F24:** sau login gọi `authStore.fetchCurrentUserProfile()`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC `update_my_last_login()`. **Realtime (F24):** sau profile OK — subscribe `postgres_changes` UPDATE own `user_profiles` (kick disable + silent refetch role); join presence `presence:warehouse-online` qua `lib/presence.ts`; cleanup khi logout.
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar. **Flow quét (search/locate):** `searchByBarcode` (lô) → nếu không có → `lookupProductByBarcode` (`product_barcodes`) → Alert **"Hàng đã hết"** (tổng tồn / không còn lô với mã này) + nút **Xem chi tiết** → `Products` → `ProductDetail`; nếu vẫn không có → Alert **Không tìm thấy** (Thử lại / Thêm thủ công / Huỷ).
 - **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
@@ -146,9 +147,9 @@ README.md
 
 ## §4 Store — `authStore.ts` (F24)
 
-**State:** `currentUserProfile` (`UserProfile | null`), `currentUserEmail`, `isLoadingProfile`, `users` (`UserProfileWithEmail[]`), `isLoadingUsers`.
+**State:** `currentUserProfile` (`UserProfile | null`), `currentUserEmail`, `isLoadingProfile`, `users` (`UserProfileWithEmail[]`), `isLoadingUsers`, `onlineUserIds` (`Set<string>` — user đang online qua Presence).
 
-**Actions:** `fetchCurrentUserProfile` (query `user_profiles` theo `session.user.id`), `clearCurrentUserProfile`, `updateLastLogin` (RPC `update_my_last_login`), `fetchUsers` (RPC `list_user_profiles_with_email`), `updateUserRole`, `updateUserDisabled` (UPDATE `user_profiles` qua RLS, refetch list).
+**Actions:** `fetchCurrentUserProfile` (query `user_profiles`; option `{ silent: true }` khi refetch Realtime), `clearCurrentUserProfile`, `updateLastLogin` (RPC `update_my_last_login`), `fetchUsers` (RPC `list_user_profiles_with_email`), `updateUserRole`, `updateUserDisabled` (UPDATE `user_profiles` qua RLS, refetch list), `setOnlineUserIds` (cập nhật từ `lib/presence.ts` sync).
 
 **Gọi từ:** `App.tsx` — fetch sau khi có session; clear khi logout; guard `is_disabled`.
 

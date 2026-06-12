@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: F24 — realtime kick disable + presence tracking online users + switch spacing
+
+- Migration `20260601000500_add_user_profiles_to_realtime.sql`; `schema.sql` v3.15.
+- `App.tsx`: subscribe own `user_profiles` UPDATE (kick disable + silent refetch role); presence join/leave.
+- `lib/presence.ts`; `authStore.onlineUserIds`; `UserManagementScreen` badge xanh + switch spacing.
+
+---
+
 ## [tháng 5/2026] — fix: F24 Task 3 — last_login_at update + backfill + UI badge/spacing
 
 - `authStore.updateLastLogin`: log lỗi RPC `update_my_last_login` (trước đó silent fail).

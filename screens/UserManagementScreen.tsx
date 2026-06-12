@@ -77,6 +77,7 @@ export default function UserManagementScreen() {
   const fetchUsers = useAuthStore((s) => s.fetchUsers)
   const updateUserRole = useAuthStore((s) => s.updateUserRole)
   const updateUserDisabled = useAuthStore((s) => s.updateUserDisabled)
+  const onlineUserIds = useAuthStore((s) => s.onlineUserIds)
 
   useEffect(() => {
     if (!isAdmin) {
@@ -226,6 +227,13 @@ export default function UserManagementScreen() {
                           <Text style={[styles.badgeText, { color: '#EF4444' }]}>Đã vô hiệu hóa</Text>
                         </View>
                       </>
+                    ) : onlineUserIds.has(user.id) ? (
+                      <>
+                        <Text style={[styles.metaDot, { color: colors.sub }]}>·</Text>
+                        <View style={[styles.badge, { backgroundColor: '#22C55E22' }]}>
+                          <Text style={[styles.badgeText, { color: '#22C55E' }]}>Đang hoạt động</Text>
+                        </View>
+                      </>
                     ) : null}
                   </View>
                   <Text style={[styles.lastLogin, { color: colors.sub }]}>
@@ -309,12 +317,12 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12, fontWeight: '600' },
   metaDot: { fontSize: 13 },
   lastLogin: { fontSize: 12, marginTop: 8 },
-  switchSection: { borderTopWidth: 1, marginTop: 12, paddingTop: 2 },
+  switchSection: { borderTopWidth: 1, marginTop: 8, paddingTop: 0 },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: 2,
   },
   switchLabel: { fontSize: 15, fontWeight: '500' },
 })

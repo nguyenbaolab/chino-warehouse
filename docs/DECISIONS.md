@@ -536,6 +536,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F24 Realtime — kick disable + Presence online tracking
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** `user_profiles` thêm vào `supabase_realtime`. **`App.tsx`** subscribe UPDATE own row (`filter id=eq.uid`) — `is_disabled` → Alert + `signOut`; đổi role → `fetchCurrentUserProfile({ silent: true })`. **Presence:** channel cố định `presence:warehouse-online`, `private: true`, `presence.key = userId`; join/leave trong `App.tsx` qua **`lib/presence.ts`**; `presence sync` → `authStore.onlineUserIds`. **`UserManagementScreen`** đọc store — badge xanh "Đang hoạt động" (không join channel riêng).
+- **Lý do:** Kick ngay khi admin disable; role sync không cần re-login; một channel presence tránh duplicate; UI admin consume state tập trung.
+
+---
+
 ### RLS role check — SECURITY DEFINER helpers (tránh recursion)
 
 - **Ngày:** tháng 5/2026
