@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: KI-055 — RLS role-based writes (guest read-only ở DB level) + storage product-images
+
+- Migration `20260601000600_rls_role_based_writes.sql`: `is_current_user_at_least_staff()`; 9 bảng kho SELECT all / mutate staff+; storage `product-images` staff+ write.
+- `schema.sql` v3.16.
+
+---
+
 ## [tháng 5/2026] — fix: SettingsScreen scroll không hoạt động
 
 - Wrap toàn bộ content trong `ScrollView` (`flex: 1`, `contentContainerStyle` `paddingBottom: 24`); root vẫn `SafeAreaView`.

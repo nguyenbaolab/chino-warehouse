@@ -1,8 +1,11 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.15 | Tháng 5/2026
+-- Phiên bản: 3.16 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.15:
+--   - KI-055: RLS role-based writes — is_current_user_at_least_staff;
+--     9 bảng kho SELECT all authenticated / mutate staff+; storage product-images staff+ write
 -- Thay đổi so với v3.14:
 --   - F24: user_profiles trong supabase_realtime (kick disable / role sync)
 -- Thay đổi so với v3.13:
@@ -234,19 +237,7 @@ ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles         ENABLE ROW LEVEL SECURITY;
 
--- Phase 1+: cho phép tất cả user đã đăng nhập
--- Phase 3: thay bằng policy kiểm tra user role (F24 / SEC-09)
-CREATE POLICY "allow_all" ON locations             FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON zones                 FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON product_categories_l1 FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON product_categories_l2 FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON products              FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON inventory_entries     FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON product_barcodes      FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON order_lists           FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "allow_all" ON order_items           FOR ALL TO authenticated USING (true) WITH CHECK (true);
-
--- F24: helpers bypass RLS khi check role (tránh infinite recursion trong policy)
+-- F24 / KI-055: helpers bypass RLS khi check role (tránh infinite recursion trong policy)
 CREATE OR REPLACE FUNCTION public.is_current_user_admin()
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -277,8 +268,89 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION public.is_current_user_at_least_staff()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_profiles
+    WHERE id = auth.uid()
+      AND role IN ('super_admin', 'admin', 'staff')
+  );
+END;
+$$;
+
 GRANT EXECUTE ON FUNCTION public.is_current_user_admin() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_current_user_super_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_current_user_at_least_staff() TO authenticated;
+
+-- KI-055 / F24: guest SELECT only; staff+ INSERT/UPDATE/DELETE (2 policy/bảng)
+CREATE POLICY locations_select_authenticated ON locations
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY locations_mutate_staff_plus ON locations
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY zones_select_authenticated ON zones
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY zones_mutate_staff_plus ON zones
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY product_categories_l1_select_authenticated ON product_categories_l1
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY product_categories_l1_mutate_staff_plus ON product_categories_l1
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY product_categories_l2_select_authenticated ON product_categories_l2
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY product_categories_l2_mutate_staff_plus ON product_categories_l2
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY products_select_authenticated ON products
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY products_mutate_staff_plus ON products
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY inventory_entries_select_authenticated ON inventory_entries
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY inventory_entries_mutate_staff_plus ON inventory_entries
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY product_barcodes_select_authenticated ON product_barcodes
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY product_barcodes_mutate_staff_plus ON product_barcodes
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY order_lists_select_authenticated ON order_lists
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY order_lists_mutate_staff_plus ON order_lists
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY order_items_select_authenticated ON order_items
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY order_items_mutate_staff_plus ON order_items
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
 
 -- F24: user_profiles — SELECT own + admin/super_admin; UPDATE theo role; không INSERT/DELETE client
 CREATE POLICY user_profiles_select_own ON user_profiles
@@ -579,31 +651,29 @@ CREATE TRIGGER zones_updated_at_trigger
 
 -- ============================================================
 -- STORAGE BUCKETS (F08)
--- Bucket product-images: public read; authenticated write/update/delete
+-- Bucket product-images: public read; staff+ write/update/delete (KI-055)
 -- ============================================================
 
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('product-images', 'product-images', true)
 ON CONFLICT (id) DO NOTHING;
 
-CREATE POLICY "Public read product images"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'product-images');
+CREATE POLICY "product_images_public_read" ON storage.objects
+  FOR SELECT TO public
+  USING (bucket_id = 'product-images');
 
-CREATE POLICY "Authenticated upload product images"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'product-images');
+CREATE POLICY "product_images_write_staff_plus" ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'product-images' AND public.is_current_user_at_least_staff());
 
-CREATE POLICY "Authenticated update product images"
-ON storage.objects FOR UPDATE
-TO authenticated
-USING (bucket_id = 'product-images');
+CREATE POLICY "product_images_update_staff_plus" ON storage.objects
+  FOR UPDATE TO authenticated
+  USING (bucket_id = 'product-images' AND public.is_current_user_at_least_staff())
+  WITH CHECK (bucket_id = 'product-images' AND public.is_current_user_at_least_staff());
 
-CREATE POLICY "Authenticated delete product images"
-ON storage.objects FOR DELETE
-TO authenticated
-USING (bucket_id = 'product-images');
+CREATE POLICY "product_images_delete_staff_plus" ON storage.objects
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'product-images' AND public.is_current_user_at_least_staff());
 
 
 -- ============================================================

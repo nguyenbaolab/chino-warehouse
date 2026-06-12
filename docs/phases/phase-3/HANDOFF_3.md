@@ -42,6 +42,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `20260601000300_add_list_users_rpc.sql` | F24 Task 3: RPC `list_user_profiles_with_email` |
 | `20260601000400_backfill_last_login_at.sql` | F24: backfill `last_login_at` từ `auth.users.last_sign_in_at` |
 | `20260601000500_add_user_profiles_to_realtime.sql` | F24: `user_profiles` trong `supabase_realtime` (kick disable) |
+| `20260601000600_rls_role_based_writes.sql` | KI-055: guest SELECT only; staff+ mutate 9 bảng + storage product-images |
 
 ---
 
@@ -91,6 +92,8 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `App.tsx` | F24 — Realtime own `user_profiles` + presence join/leave |
 | `stores/authStore.ts` | F24 — `onlineUserIds`, `setOnlineUserIds`, `fetchCurrentUserProfile({ silent })` |
 | `screens/UserManagementScreen.tsx` | F24 — badge online + switch spacing |
+| `supabase/migrations/20260601000600_rls_role_based_writes.sql` | KI-055 — RLS guest read-only server-side |
+| `supabase/migrations/schema.sql` | v3.16 — helpers + 18 table policies + 4 storage policies |
 
 ---
 

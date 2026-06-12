@@ -16,10 +16,11 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 
 **Mô hình bảo mật (client-direct BaaS):**
 - Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.
-- RLS bật trên tất cả **10 bảng** app (`user_profiles` có policy theo role F24; các bảng còn lại `authenticated_only` / `allow_all`).
+- RLS bật trên tất cả **10 bảng** app: **9 bảng kho** — guest SELECT only / staff+ mutate (`is_current_user_at_least_staff`); **`user_profiles`** policy theo role F24; **`audit_logs`** SELECT only.
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
+- Storage **`product-images`:** public read; staff+ upload/update/delete (KI-055).
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
-- RBAC (F24) → Phase 3 **xong Task 1–3:** `user_profiles`, guard guest read-only, `UserManagementScreen` (list + toggle role/disabled; tạo user qua Dashboard).
+- RBAC (F24) → Phase 3 **xong Task 1–3 + RLS server (KI-055):** client guard guest read-only **và** DB enforce; `UserManagementScreen`; tạo user qua Dashboard.
 
 **Build & phân phối APK:** hướng dẫn vận hành đầy đủ (EAS Cloud + EAS Local qua WSL2, cache Gradle, lỗi thường gặp, script `build.sh`) → **`docs/BUILD_APK_GUIDE.md`**. Checklist go-live: `docs/phases/phase-2/GOLIVE_CHECKLIST_2.md`. Tổng quan kiến trúc EAS (phase 2): `docs/phases/phase-2/EAS_BUILD_GUIDE.md`.
 

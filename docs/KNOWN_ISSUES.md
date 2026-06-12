@@ -18,8 +18,9 @@
 - **Mức độ:** High (security — bypass nếu hack client)
 - **File liên quan:** `stores/authStore.ts`, toàn bộ màn đã guard Task 2; RLS các bảng kho (`zones`, `products`, `inventory_entries`, …)
 - **Mô tả:** Task 2 ẩn/vô hiệu CRUD UI cho role `guest` ở client. Các bảng nghiệp vụ kho vẫn dùng policy `allow_all` cho `authenticated` → guest có thể gọi API trực tiếp nếu biết endpoint/key.
-- **Hướng fix:** Cuối Phase 3 (trước closeout): RLS role-based cho INSERT/UPDATE/DELETE trên bảng kho; guest chỉ SELECT; staff+ full CRUD; admin policies `user_profiles` đã có.
-- **Trạng thái:** Open
+- **Hướng fix:** RLS role-based cho INSERT/UPDATE/DELETE trên bảng kho; guest chỉ SELECT; staff+ full CRUD; storage product-images staff+ write.
+- **Trạng thái:** Resolved
+- **Đã fix:** Migration `20260601000600_rls_role_based_writes.sql`; `schema.sql` v3.16.
 
 ---
 

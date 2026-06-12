@@ -536,6 +536,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### KI-055 — RLS server-side defense-in-depth cho guest; helper is_current_user_at_least_staff
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Migration `20260601000600_rls_role_based_writes.sql`: helper **`is_current_user_at_least_staff()`** (`super_admin` \| `admin` \| `staff`). **9 bảng kho:** policy `*_select_authenticated` (SELECT mọi authenticated) + `*_mutate_staff_plus` (FOR ALL với staff check — guest read qua OR permissive). **Storage `product-images`:** public read; INSERT/UPDATE/DELETE chỉ staff+. **`user_profiles`**, **`audit_logs`**, **`realtime.messages`** không đổi.
+- **Lý do:** Đóng KI-055 — client guard Task 2 + RLS server; guest không bypass bằng API trực tiếp.
+
+---
+
 ### F24 Realtime — kick disable + Presence online tracking
 
 - **Ngày:** tháng 5/2026
