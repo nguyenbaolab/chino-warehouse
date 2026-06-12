@@ -19,7 +19,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - RLS bật trên tất cả **10 bảng** app (`user_profiles` có policy theo role F24; các bảng còn lại `authenticated_only` / `allow_all`).
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
-- RBAC (F24) → Phase 3: Task 1 (xong) `user_profiles` + guard `is_disabled`; **Task 2 (xong)** guard guest read-only toàn app + card User Management (admin); Task 3: `UserManagementScreen`.
+- RBAC (F24) → Phase 3 **xong Task 1–3:** `user_profiles`, guard guest read-only, `UserManagementScreen` (list + toggle role/disabled; tạo user qua Dashboard).
 
 **Build & phân phối APK:** hướng dẫn vận hành đầy đủ (EAS Cloud + EAS Local qua WSL2, cache Gradle, lỗi thường gặp, script `build.sh`) → **`docs/BUILD_APK_GUIDE.md`**. Checklist go-live: `docs/phases/phase-2/GOLIVE_CHECKLIST_2.md`. Tổng quan kiến trúc EAS (phase 2): `docs/phases/phase-2/EAS_BUILD_GUIDE.md`.
 
@@ -130,6 +130,7 @@ README.md
 
 **UI bản đồ & lọc (đối chiếu code):**
 
+- **UserManagementScreen (F24):** mount guard `useIsAdmin()`; `useFocusEffect` → `fetchUsers` (RPC); mỗi user một card (tên = phần trước `@`, badge role, trạng thái, đăng nhập cuối); Switch **Guest** / **Vô hiệu hóa** / **Admin** (chỉ super_admin) — logic ẩn theo viewer/target; Alert confirm → `updateUserRole` / `updateUserDisabled`.
 - **SettingsScreen:** hai card ngang **Quản lý kho** / **Phân loại sản phẩm** (subtext `X nhóm · Y loại`); `useFocusEffect` gọi `fetchCategories` khi cả hai danh sách category rỗng; card phân loại → `CategoryManagement`. Card **Tổng quan kho** (F23) — subtitle `{SKU không archived} · {số kho}` → `Dashboard`. Card **Lịch sử thay đổi** — subtitle audit gần nhất từ `fetchLatestAuditEntry`; navigate `AuditLog`. Realtime `products` + `inventory_entries` (debounce 2s) → `refreshDiscontinuedContext`.
 - **DashboardScreen (F23):** filter **Kho** / **Zone** (cùng quy ước Products/Notifications). **8 stat cards** (lưới 2 cột): tổng SP, SKU có lô, SP hết/sắp hết, lô hết/sắp hết hạn, không nhập nữa, tổng kho — màu `#EF4444` / `#FACC15` / `#22C55E`. **Pie chart** (`SimplePieChart` + `react-native-svg`): chế độ tồn kho (bình thường/sắp hết/hết) hoặc hạn dùng (còn hạn/sắp hết/hết/không hạn); legend dưới chart. Logic `utils/dashboardStats.ts` (reuse `getExpiryStatus` như NotificationsScreen). `useFocusEffect` fetch (`fetchProducts`, `fetchAllInventoryEntries` hoặc `fetchInventoryByZone`); Realtime `products` + `inventory_entries` debounce 2s → refetch.
 - **AuditLogScreen:** truy cập từ Settings card "Lịch sử thay đổi" hoặc từ nút "Xem tất cả" trong `ProductDetailScreen`. **4 Filter — Modal-based searchable dropdown** (`SearchableDropdownModal`: Modal bottom sheet + FlatList + TextInput tìm kiếm auto-focus, case-insensitive substring): [1] Kho (tất cả / từng kho — disabled + opacity 0.4 khi loại = Sản phẩm) · [2] Loại thay đổi (tất cả / Lô hàng / Sản phẩm — chọn Sản phẩm tự reset kho về null) · [3] Người thay đổi (distinct `changed_by_name` từ 50 entries gần nhất; placeholder "Tất cả (chưa có lịch sử)" khi chưa có entry) · [4] Sản phẩm (tất cả / từng sản phẩm — set sẵn khi navigate từ `ProductDetailScreen`; icon 📷 bên phải label → `BarcodeScanner` → `searchByBarcode` → set `filterProductId`). Khi bất kỳ filter thay đổi: reset pages + load lại. **Danh sách:** 10 entries mỗi trang, mỗi entry gồm icon action · tên người · nhãn loại (Lô hàng / Sản phẩm) · thời gian · field thay đổi. **Pagination:** nút mũi tên góc dưới phải = xem cũ hơn (query thêm 10 từ DB); nút mũi tên góc dưới trái = xem mới hơn (từ cache). Cursor-based pagination dùng `changed_at`. **Cache:** tất cả pages đã query lưu trong local state, clear khi unmount màn. **Tên user:** lấy phần trước @ của email, được lưu sẵn trong cột `changed_by_name` của `audit_logs` (ghi bởi trigger, không join runtime). **Realtime:** chưa implement — deferred (xem KI-026).
@@ -145,9 +146,9 @@ README.md
 
 ## §4 Store — `authStore.ts` (F24)
 
-**State:** `currentUserProfile` (`UserProfile | null`), `currentUserEmail`, `isLoadingProfile`.
+**State:** `currentUserProfile` (`UserProfile | null`), `currentUserEmail`, `isLoadingProfile`, `users` (`UserProfileWithEmail[]`), `isLoadingUsers`.
 
-**Actions:** `fetchCurrentUserProfile` (query `user_profiles` theo `session.user.id`), `clearCurrentUserProfile`, `updateLastLogin` (RPC `update_my_last_login`).
+**Actions:** `fetchCurrentUserProfile` (query `user_profiles` theo `session.user.id`), `clearCurrentUserProfile`, `updateLastLogin` (RPC `update_my_last_login`), `fetchUsers` (RPC `list_user_profiles_with_email`), `updateUserRole`, `updateUserDisabled` (UPDATE `user_profiles` qua RLS, refetch list).
 
 **Gọi từ:** `App.tsx` — fetch sau khi có session; clear khi logout; guard `is_disabled`.
 

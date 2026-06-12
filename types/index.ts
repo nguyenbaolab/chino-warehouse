@@ -101,6 +101,10 @@ export type UserProfile = {
   created_at: string
 }
 
+export type UserProfileWithEmail = UserProfile & {
+  email: string
+}
+
 /** B1 — lịch sử mã vạch per sản phẩm (UNIQUE barcode toàn hệ thống). */
 export interface ProductBarcode {
   id: string

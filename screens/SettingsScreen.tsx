@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch, Alert } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -219,7 +219,7 @@ export default function SettingsScreen() {
         <TouchableOpacity
           style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
           activeOpacity={0.75}
-          onPress={() => Alert.alert('Đang phát triển', 'Quản lý người dùng sẽ có trong bản cập nhật tiếp theo.')}
+          onPress={() => navigation.navigate('UserManagement')}
         >
           <View style={{ flex: 1 }}>
             <Text style={[styles.linkTitle, { color: colors.text }]}>Quản lý người dùng</Text>

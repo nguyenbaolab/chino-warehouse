@@ -1,20 +1,27 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import type { UserProfile } from '../types'
+import type { UserProfile, UserProfileWithEmail, UserRole } from '../types'
 
 type AuthStore = {
   currentUserProfile: UserProfile | null
   currentUserEmail: string | null
   isLoadingProfile: boolean
+  users: UserProfileWithEmail[]
+  isLoadingUsers: boolean
   fetchCurrentUserProfile: () => Promise<UserProfile | null>
   clearCurrentUserProfile: () => void
   updateLastLogin: () => Promise<void>
+  fetchUsers: () => Promise<string | null>
+  updateUserRole: (userId: string, newRole: UserRole) => Promise<string | null>
+  updateUserDisabled: (userId: string, isDisabled: boolean) => Promise<string | null>
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
+export const useAuthStore = create<AuthStore>((set, get) => ({
   currentUserProfile: null,
   currentUserEmail: null,
   isLoadingProfile: false,
+  users: [],
+  isLoadingUsers: false,
 
   fetchCurrentUserProfile: async () => {
     set({ isLoadingProfile: true })
@@ -50,11 +57,46 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   clearCurrentUserProfile: () => {
-    set({ currentUserProfile: null, currentUserEmail: null, isLoadingProfile: false })
+    set({
+      currentUserProfile: null,
+      currentUserEmail: null,
+      isLoadingProfile: false,
+      users: [],
+      isLoadingUsers: false,
+    })
   },
 
   updateLastLogin: async () => {
     await supabase.rpc('update_my_last_login')
+  },
+
+  fetchUsers: async () => {
+    set({ isLoadingUsers: true })
+    try {
+      const { data, error } = await supabase.rpc('list_user_profiles_with_email')
+      if (error) {
+        set({ isLoadingUsers: false })
+        return error.message
+      }
+      const rows = (data ?? []) as UserProfileWithEmail[]
+      set({ users: rows, isLoadingUsers: false })
+      return null
+    } catch (e) {
+      set({ isLoadingUsers: false })
+      return e instanceof Error ? e.message : 'Unknown error'
+    }
+  },
+
+  updateUserRole: async (userId, newRole) => {
+    const { error } = await supabase.from('user_profiles').update({ role: newRole }).eq('id', userId)
+    if (error) return error.message
+    return get().fetchUsers()
+  },
+
+  updateUserDisabled: async (userId, isDisabled) => {
+    const { error } = await supabase.from('user_profiles').update({ is_disabled: isDisabled }).eq('id', userId)
+    if (error) return error.message
+    return get().fetchUsers()
   },
 }))
 

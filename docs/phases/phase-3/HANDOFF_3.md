@@ -38,6 +38,8 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `20260530001000_f08_product_images_storage.sql` | F08: bucket `product-images` + RLS (public read, authenticated write/delete) |
 | `20260601000000_add_user_profiles.sql` | F24 Task 1: `user_profiles` + RLS + trigger auth + RPC `update_my_last_login` |
 | `20260601000100_add_user_profiles_to_audit.sql` | F24: audit trigger `user_profiles` (UPDATE/DELETE) |
+| `20260601000200_fix_user_profiles_rls_recursion.sql` | F24: SECURITY DEFINER helpers `is_current_user_admin` |
+| `20260601000300_add_list_users_rpc.sql` | F24 Task 3: RPC `list_user_profiles_with_email` |
 
 ---
 
@@ -78,6 +80,11 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `screens/LocationManagementScreen.tsx` | F24 Task 2 — ẩn FAB/edit/delete + mount safety |
 | `screens/BarcodeScannerScreen.tsx` | F24 Task 2 — ẩn alert Thêm thủ công (guest) |
 | `screens/SettingsScreen.tsx` | F24 Task 2 — card Quản lý người dùng (admin) |
+| `screens/UserManagementScreen.tsx` | F24 Task 3 — list users + toggle role/disabled |
+| `stores/authStore.ts` | F24 Task 3 — `fetchUsers`, `updateUserRole`, `updateUserDisabled` |
+| `App.tsx` | F24 Task 3 — route `UserManagement` trong SettingsStack |
+| `screens/SettingsScreen.tsx` | F24 Task 3 — navigate `UserManagement` |
+| `types/index.ts` | F24 Task 3 — `UserProfileWithEmail` |
 
 ---
 
@@ -136,9 +143,10 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 ### Group E — New Features
 
 - [x] **E1 / F23** — DashboardScreen + entry Settings
-- [ ] **E2 / F24** — RBAC `user_profiles` + UserManagementScreen + guards
+- [x] **E2 / F24** — RBAC `user_profiles` + UserManagementScreen + guards
   - [x] **E2 / F24 Task 1** — migration `user_profiles` + `authStore` + guard `is_disabled` + load role
   - [x] **E2 / F24 Task 2** — hooks RBAC + guard guest read-only toàn app + card User Management (admin)
+  - [x] **E2 / F24 Task 3** — UserManagementScreen + RPC list users + toggle role/disabled
 
 ### Security
 

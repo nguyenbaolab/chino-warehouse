@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: F24 RBAC Task 3 — UserManagementScreen + RPC list_user_profiles_with_email
+
+- Migration `20260601000300_add_list_users_rpc.sql`; `schema.sql` v3.13.
+- `authStore`: `users`, `fetchUsers`, `updateUserRole`, `updateUserDisabled`; type `UserProfileWithEmail`.
+- `UserManagementScreen`: list card + toggle Guest/Disabled/Admin; route `UserManagement` trong SettingsStack.
+- Tạo user trong app: không implement (super_admin tạo qua Supabase Dashboard).
+
+---
+
 ## [tháng 5/2026] — feat: F24 RBAC Task 2 — guard guest read-only toàn app + card User Management cho admin
 
 - `stores/authStore.ts`: export `useIsReadOnly`, `useCanWrite`, `useIsAdmin`, `useIsSuperAdmin`.

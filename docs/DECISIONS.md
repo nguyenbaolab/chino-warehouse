@@ -528,6 +528,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### RBAC Task 3 — List users RPC; update qua RLS; không tạo user trong app
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Danh sách user kèm email qua RPC **`list_user_profiles_with_email()`** (`SECURITY DEFINER`, join `auth.users`, gate `is_current_user_admin()`). Toggle role/disabled: client **`UPDATE user_profiles`** — RLS policies Task 1 đủ; business rules (không sửa self, không đụng super_admin khác, admin chỉ staff/guest) enforce **client-side** trên `UserManagementScreen`. **Không** implement tạo tài khoản trong app — `super_admin` tạo user qua Supabase Dashboard; trigger `handle_new_user` tạo `user_profiles` staff.
+- **Lý do:** Email chỉ lấy server-side; tránh service_role trong APK; UPDATE + audit trigger sẵn có; tạo user cần Admin API — defer Dashboard.
+
+---
+
 ### RLS role check — SECURITY DEFINER helpers (tránh recursion)
 
 - **Ngày:** tháng 5/2026
