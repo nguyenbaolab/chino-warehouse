@@ -987,6 +987,7 @@ export default function ProductDetailScreen() {
                 onChangeText={setNameInput}
                 autoFocus
                 editable={!isSavingName}
+                maxLength={200}
               />
             ) : (
               <Text style={[styles.productName, styles.productNameFlex, { color: colors.text }]}>
@@ -1062,6 +1063,7 @@ export default function ProductDetailScreen() {
                   keyboardType="numeric"
                   placeholder="30"
                   placeholderTextColor={colors.sub}
+                  maxLength={4}
                 />
               ) : (
                 <Text style={[styles.infoText, { color: colors.text }]}>{product?.warning_days ?? 30} ngày</Text>
@@ -1092,6 +1094,7 @@ export default function ProductDetailScreen() {
                   keyboardType="numeric"
                   placeholder="3"
                   placeholderTextColor={colors.sub}
+                  maxLength={6}
                 />
               ) : (
                 <Text style={[styles.infoText, { color: colors.text }]}>{product?.low_warning_boxes ?? 3} thùng</Text>
@@ -1380,6 +1383,7 @@ export default function ProductDetailScreen() {
                       onChangeText={setEditQuantity}
                       placeholder="1"
                       placeholderTextColor={colors.sub}
+                      maxLength={6}
                     />
 
                     <Text style={[styles.editLabel, { color: colors.sub }]}>Hạn sử dụng (DD/MM/YYYY)</Text>
@@ -1390,6 +1394,7 @@ export default function ProductDetailScreen() {
                       placeholder="30/12/2026"
                       placeholderTextColor={colors.sub}
                       keyboardType="default"
+                      maxLength={10}
                     />
 
                     <Text style={[styles.editLabel, { color: colors.sub }]}>Ghi chú</Text>
@@ -1399,6 +1404,7 @@ export default function ProductDetailScreen() {
                       onChangeText={setEditNotes}
                       placeholder="Optional"
                       placeholderTextColor={colors.sub}
+                      maxLength={500}
                     />
 
                     <Text style={[styles.editLabel, { color: colors.sub }]}>Barcode lô</Text>
@@ -1411,6 +1417,7 @@ export default function ProductDetailScreen() {
                         placeholderTextColor={colors.sub}
                         autoCapitalize="none"
                         autoCorrect={false}
+                        maxLength={50}
                       />
                       <TouchableOpacity
                         style={[styles.scanBarcodeBtn, { backgroundColor: colors.accent }]}
@@ -1552,6 +1559,7 @@ export default function ProductDetailScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               autoFocus
+              maxLength={50}
             />
             <View style={styles.barcodeModalActions}>
               <TouchableOpacity

@@ -835,6 +835,7 @@ export default function MapScreen() {
               placeholderTextColor={colors.sub}
               value={searchQuery}
               onChangeText={handleSearch}
+              maxLength={100}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={clearSearch} style={styles.searchClearInsideBtn}>
@@ -987,6 +988,7 @@ export default function MapScreen() {
               placeholder="VD: A1, Khu lạnh..."
               placeholderTextColor={colors.sub}
               autoFocus
+              maxLength={100}
             />
 
             <Text style={[styles.label, { color: colors.sub }]}>Số tầng kệ</Text>
@@ -995,6 +997,7 @@ export default function MapScreen() {
               value={tierCount}
               onChangeText={setTierCount}
               keyboardType="numeric"
+              maxLength={2}
             />
 
             <Text style={[styles.label, { color: colors.sub }]}>Màu zone</Text>

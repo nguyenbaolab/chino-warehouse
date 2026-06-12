@@ -573,6 +573,7 @@ export default function AddInventoryScreen() {
                 setSearchQuery(text)
                 if (barcodeSearchWarning) setBarcodeSearchWarning(null)
               }}
+              maxLength={100}
             />
             {searchQuery.length > 0 && !selectedProduct && (
               <TouchableOpacity
@@ -698,6 +699,7 @@ export default function AddInventoryScreen() {
                 placeholderTextColor={colors.sub}
                 autoCapitalize="none"
                 autoCorrect={false}
+                maxLength={50}
               />
               <TouchableOpacity
                 style={[styles.barcodeScanBtn, { backgroundColor: colors.accent }]}
@@ -725,6 +727,7 @@ export default function AddInventoryScreen() {
               onChangeText={setNewProductName}
               placeholder="VD: Chino Milk Tea"
               placeholderTextColor={colors.sub}
+              maxLength={200}
             />
 
             <Text style={[styles.label, { color: colors.sub }]}>Nhóm (Cấp 1)</Text>
@@ -820,6 +823,7 @@ export default function AddInventoryScreen() {
               onChangeText={setNewProductNote}
               placeholder="Optional"
               placeholderTextColor={colors.sub}
+              maxLength={500}
             />
 
             <View style={styles.newProductImageWrap}>
@@ -880,6 +884,7 @@ export default function AddInventoryScreen() {
           placeholderTextColor={colors.sub}
           value={quantityBoxes}
           onChangeText={setQuantityBoxes}
+          maxLength={6}
         />
 
         <Text style={[styles.label, { color: colors.sub }]}>Hạn sử dụng (DD/MM/YYYY)</Text>
@@ -889,6 +894,7 @@ export default function AddInventoryScreen() {
           placeholderTextColor={colors.sub}
           value={expiryDisplay}
           onChangeText={setExpiryDisplay}
+          maxLength={10}
         />
 
         <Text style={[styles.label, { color: colors.sub }]}>Ghi chú lô hàng</Text>
@@ -903,6 +909,7 @@ export default function AddInventoryScreen() {
           onChangeText={setBatchNote}
           placeholder="Optional"
           placeholderTextColor={colors.sub}
+          maxLength={500}
           onFocus={() => {
             setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)
           }}

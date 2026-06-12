@@ -287,6 +287,7 @@ export default function LocationManagementScreen() {
                 onChangeText={setNewName}
                 placeholder="VD: Kho chính"
                 placeholderTextColor={colors.sub}
+                maxLength={100}
               />
               <Text style={[styles.label, { color: colors.sub }]}>Số hàng (rows)</Text>
               <TextInput
@@ -295,6 +296,7 @@ export default function LocationManagementScreen() {
                 onChangeText={setNewRows}
                 keyboardType="number-pad"
                 onFocus={() => scrollModalToEnd(createScrollRef)}
+                maxLength={2}
               />
               <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
               <TextInput
@@ -303,6 +305,7 @@ export default function LocationManagementScreen() {
                 onChangeText={setNewCols}
                 keyboardType="number-pad"
                 onFocus={() => scrollModalToEnd(createScrollRef)}
+                maxLength={2}
               />
               <View style={styles.modalActions}>
                 <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setCreateOpen(false)}>
@@ -340,6 +343,7 @@ export default function LocationManagementScreen() {
                 value={editName}
                 onChangeText={setEditName}
                 placeholderTextColor={colors.sub}
+                maxLength={100}
               />
               <Text style={[styles.label, { color: colors.sub }]}>Số hàng (rows)</Text>
               <TextInput
@@ -348,6 +352,7 @@ export default function LocationManagementScreen() {
                 onChangeText={setEditRows}
                 keyboardType="number-pad"
                 onFocus={() => scrollModalToEnd(editScrollRef)}
+                maxLength={2}
               />
               <Text style={[styles.label, { color: colors.sub }]}>Số cột (cols)</Text>
               <TextInput
@@ -356,6 +361,7 @@ export default function LocationManagementScreen() {
                 onChangeText={setEditCols}
                 keyboardType="number-pad"
                 onFocus={() => scrollModalToEnd(editScrollRef)}
+                maxLength={2}
               />
               <View style={styles.modalActions}>
                 <TouchableOpacity style={[styles.btnGhost, { borderColor: colors.border }]} onPress={() => setEditing(null)}>

@@ -683,6 +683,7 @@ export default function ProductsScreen() {
               onChangeText={setSearchQuery}
               placeholder="Tìm sản phẩm theo tên..."
               placeholderTextColor={colors.sub}
+              maxLength={100}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity style={styles.searchClearInsideBtn} onPress={clearSearch}>
@@ -884,6 +885,7 @@ export default function ProductsScreen() {
                   placeholder="Tên sản phẩm *"
                   placeholderTextColor={colors.sub}
                   autoFocus
+                  maxLength={200}
                 />
                 {createName.trim().length > 0 && !existingProductWarning && createNameSuggestions.length > 0 && (
                   <View style={[styles.createProductList, { borderColor: colors.border, backgroundColor: colors.bg }]}>
@@ -923,6 +925,7 @@ export default function ProductsScreen() {
                     placeholderTextColor={colors.sub}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    maxLength={50}
                   />
                   <TouchableOpacity
                     style={[styles.createBarcodeScanBtn, { backgroundColor: colors.accent }]}
@@ -977,6 +980,7 @@ export default function ProductsScreen() {
                   placeholder="Ghi chú (tuỳ chọn)"
                   placeholderTextColor={colors.sub}
                   multiline
+                  maxLength={500}
                 />
 
                 <Text style={[styles.createLabel, { color: colors.sub }]}>Nhóm (Cấp 1)</Text>

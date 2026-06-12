@@ -577,6 +577,7 @@ export default function NotificationsScreen() {
               onChangeText={setSearchQuery}
               placeholder="Tìm sản phẩm theo tên..."
               placeholderTextColor={colors.sub}
+              maxLength={100}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity style={styles.searchClearInsideBtn} onPress={clearSearch}>

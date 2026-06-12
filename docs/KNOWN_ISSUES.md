@@ -306,8 +306,8 @@
 - **Mức độ:** High
 - **File liên quan:** Nhiều screens (`AddInventoryScreen`, `ProductDetailScreen`, `OrderDetailScreen`, ...)
 - **Mô tả:** `notes`, `barcode`, `product_name` không có giới hạn độ dài. Cần `maxLength` trên UI và kiểm tra type trước khi gửi DB.
-- **Trạng thái:** Open
-- **Hướng fix:** Thêm `maxLength` vào `TextInput` liên quan (`product_name` <= 100, `barcode` <= 50, `notes` <= 500); validate trước khi gọi Supabase.
+- **Trạng thái:** Resolved
+- **Hướng fix:** Thêm `maxLength` vào `TextInput` liên quan (`product_name` <= 200, tên khác <= 100, `barcode` <= 50, `notes` <= 500); validate trước khi gọi Supabase (SEC-05).
 
 ---
 

@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: SEC-05 — maxLength cho mọi TextInput (48 fields, 12 files)
+
+- Thêm `maxLength` theo bảng giới hạn theo loại field (tên SP 200, tên khác/search/email/password 100, ghi chú 500, barcode 50, số thùng 6, ngày 10, ngưỡng ngày 4, ngưỡng thùng 6, tier/grid 2).
+- 12 file: `LoginScreen`, `AddInventoryScreen`, `ProductsScreen`, `ProductDetailScreen`, `MapScreen`, `OrderDetailScreen`, `LocationManagementScreen`, `CategoryManagementScreen`, `NotificationsScreen`, `AuditLogScreen`, `ZoneLayoutEditorScreen`, `ZoneDetailSheet`.
+
+---
+
 ## [tháng 5/2026] — feat: KI-055 — RLS role-based writes (guest read-only ở DB level) + storage product-images
 
 - Migration `20260601000600_rls_role_based_writes.sql`: `is_current_user_at_least_staff()`; 9 bảng kho SELECT all / mutate staff+; storage `product-images` staff+ write.

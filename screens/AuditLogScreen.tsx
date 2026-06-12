@@ -150,6 +150,7 @@ function SearchableDropdownModal({
             placeholder="Tìm kiếm..."
             placeholderTextColor={colors.sub}
             autoCorrect={false}
+            maxLength={100}
           />
           {filtered.length === 0 ? (
             <Text style={[modalStyles.emptyText, { color: colors.sub }]}>Không tìm thấy kết quả</Text>

@@ -307,6 +307,7 @@ export default function CategoryManagementScreen() {
               placeholder="Tên…"
               placeholderTextColor={colors.sub}
               autoFocus
+              maxLength={100}
             />
             <View style={styles.modalActions}>
               <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.border }]} onPress={closeNameModal} disabled={saving}>

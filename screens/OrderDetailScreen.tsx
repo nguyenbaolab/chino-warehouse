@@ -258,6 +258,7 @@ export default function OrderDetailScreen() {
             blurOnSubmit
             autoFocus
             selectTextOnFocus
+            maxLength={100}
           />
         ) : (
           <TouchableOpacity
@@ -293,6 +294,7 @@ export default function OrderDetailScreen() {
           placeholder="Nhập tên sản phẩm..."
           placeholderTextColor={colors.sub}
           editable={!isLocked}
+          maxLength={100}
         />
         <View style={styles.qtyNoteRow}>
           <TextInput
@@ -303,6 +305,7 @@ export default function OrderDetailScreen() {
             placeholder="Số thùng"
             placeholderTextColor={colors.sub}
             editable={!isLocked}
+            maxLength={6}
           />
           <TextInput
             style={[styles.input, styles.noteInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
@@ -311,6 +314,7 @@ export default function OrderDetailScreen() {
             placeholder="Ghi chú"
             placeholderTextColor={colors.sub}
             editable={!isLocked}
+            maxLength={500}
             onFocus={() => {
               setTimeout(() => listScrollRef.current?.scrollTo({ y: 0, animated: true }), 100)
             }}
@@ -370,6 +374,7 @@ export default function OrderDetailScreen() {
                         onFocus={cancelItemSaveTimer}
                         onBlur={() => schedulePersistItem(item.id)}
                         returnKeyType="next"
+                        maxLength={6}
                       />
                       <Text style={[styles.sep, { color: colors.sub }]}> | </Text>
                       <TextInput
@@ -379,6 +384,7 @@ export default function OrderDetailScreen() {
                         placeholder="Ghi chú"
                         placeholderTextColor={colors.sub}
                         editable={!isLocked}
+                        maxLength={500}
                         onFocus={cancelItemSaveTimer}
                         onBlur={() => schedulePersistItem(item.id)}
                         returnKeyType="done"

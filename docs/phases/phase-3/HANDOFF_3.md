@@ -94,6 +94,18 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `screens/UserManagementScreen.tsx` | F24 — badge online + switch spacing |
 | `supabase/migrations/20260601000600_rls_role_based_writes.sql` | KI-055 — RLS guest read-only server-side |
 | `supabase/migrations/schema.sql` | v3.16 — helpers + 18 table policies + 4 storage policies |
+| `screens/LoginScreen.tsx` | SEC-05 — maxLength email/password |
+| `screens/AddInventoryScreen.tsx` | SEC-05 — maxLength 7 input |
+| `screens/ProductsScreen.tsx` | SEC-05 — maxLength 4 input |
+| `screens/ProductDetailScreen.tsx` | SEC-05 — maxLength 9 input |
+| `screens/MapScreen.tsx` | SEC-05 — maxLength 3 input |
+| `screens/OrderDetailScreen.tsx` | SEC-05 — maxLength 6 input |
+| `screens/LocationManagementScreen.tsx` | SEC-05 — maxLength 6 input |
+| `screens/CategoryManagementScreen.tsx` | SEC-05 — maxLength 1 input |
+| `screens/NotificationsScreen.tsx` | SEC-05 — maxLength 1 input |
+| `screens/AuditLogScreen.tsx` | SEC-05 — maxLength SearchableDropdownModal search |
+| `screens/ZoneLayoutEditorScreen.tsx` | SEC-05 — maxLength 1 input |
+| `components/ZoneDetailSheet.tsx` | SEC-05 — maxLength 7 input |
 
 ---
 
@@ -101,7 +113,6 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 | KI | Mô tả | Mức độ | Trạng thái |
 |----|-------|--------|-----------|
-| KI-017 | SEC-05: Input validation thiếu (`maxLength`) | High | Open |
 | KI-018 | SEC-06: Error message lộ schema | High | Open |
 | KI-044 | Format nhập hạn DD/MM/YYYY ở ZoneDetailSheet inline edit | Medium | Resolved |
 | KI-045 | ProductsScreen: barcode X clear + barcode text search | High | Resolved |
@@ -159,7 +170,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 ### Security
 
-- [ ] **SEC-05** — `maxLength` trên TextInput — KI-017
+- [x] **SEC-05** — `maxLength` trên TextInput — KI-017
 - [ ] **SEC-06** — Generic error messages — KI-018
 
 ### Docs & QA

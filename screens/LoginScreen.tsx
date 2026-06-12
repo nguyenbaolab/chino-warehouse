@@ -92,6 +92,7 @@ export default function LoginScreen() {
               textContentType="emailAddress"
               autoComplete="email"
               editable={!loading}
+              maxLength={100}
             />
 
             <View style={styles.passwordRow}>
@@ -112,6 +113,7 @@ export default function LoginScreen() {
                 textContentType="password"
                 autoComplete="password"
                 editable={!loading}
+                maxLength={100}
                 onSubmitEditing={handleLogin}
               />
               <TouchableOpacity

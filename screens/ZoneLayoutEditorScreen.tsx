@@ -408,6 +408,7 @@ export default function ZoneLayoutEditorScreen() {
               placeholderTextColor={colors.sub}
               autoCapitalize="none"
               autoCorrect={false}
+              maxLength={100}
             />
             {zoneSearchQuery.length > 0 && (
               <TouchableOpacity

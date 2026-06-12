@@ -486,6 +486,7 @@ export default function ZoneDetailSheet({
               onChangeText={(text) => setTierSearchQueries((prev) => ({ ...prev, [selectedTier]: text }))}
               placeholder="Tìm sản phẩm trong tầng..."
               placeholderTextColor={colors.sub}
+              maxLength={100}
             />
           </View>
 
@@ -585,6 +586,7 @@ export default function ZoneDetailSheet({
                                 styles.itemNameInput,
                                 { color: colors.text, borderColor: colors.accent },
                               ]}
+                              maxLength={200}
                             />
                           ) : (
                             <TouchableOpacity
@@ -678,6 +680,7 @@ export default function ZoneDetailSheet({
                                     onChangeText={setEditQuantity}
                                     placeholder="1"
                                     placeholderTextColor={colors.sub}
+                                    maxLength={6}
                                   />
 
                                   <Text style={[styles.editLabel, { color: colors.sub }]}>Hạn sử dụng (DD/MM/YYYY)</Text>
@@ -688,6 +691,7 @@ export default function ZoneDetailSheet({
                                     placeholder="30/12/2026"
                                     placeholderTextColor={colors.sub}
                                     keyboardType="default"
+                                    maxLength={10}
                                   />
 
                                   <Text style={[styles.editLabel, { color: colors.sub }]}>Ghi chú</Text>
@@ -697,6 +701,7 @@ export default function ZoneDetailSheet({
                                     onChangeText={setEditNotes}
                                     placeholder="Optional"
                                     placeholderTextColor={colors.sub}
+                                    maxLength={500}
                                   />
 
                                   <Text style={[styles.editLabel, { color: colors.sub }]}>Barcode lô</Text>
@@ -709,6 +714,7 @@ export default function ZoneDetailSheet({
                                       placeholderTextColor={colors.sub}
                                       autoCapitalize="none"
                                       autoCorrect={false}
+                                      maxLength={50}
                                     />
                                     <TouchableOpacity
                                       style={[styles.barcodeScanBtn, { backgroundColor: colors.accent }]}

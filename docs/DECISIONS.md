@@ -4,6 +4,11 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### SEC-05 — maxLength trên TextInput
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** SEC-05 maxLength bảng giới hạn theo loại field; tên SP 200, tên khác 100, ghi chú 500, barcode 50, số thùng 6, ngày 10.
+
 ---
 
 ### FAB tạo sản phẩm trên ProductsScreen (catalog-only)
