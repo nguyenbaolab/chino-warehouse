@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useIsReadOnly } from '../stores/authStore'
 import { ZoneCell } from '../types'
 import { normalizeText } from '../utils/textUtils'
 
@@ -99,6 +100,7 @@ export default function ZoneLayoutEditorScreen() {
   const { width: screenWidth } = useWindowDimensions()
   const { colors, loadTheme } = useThemeStore()
   const { locations, zones, fetchZones, batchUpdateZoneCells } = useWarehouseStore()
+  const isReadOnly = useIsReadOnly()
 
   const locationId: string | undefined = route.params?.locationId
   const markOwnMutation: (() => void) | undefined = route.params?.markOwnMutation
@@ -119,6 +121,13 @@ export default function ZoneLayoutEditorScreen() {
   useEffect(() => {
     loadTheme()
   }, [loadTheme])
+
+  useEffect(() => {
+    if (isReadOnly) {
+      Alert.alert('Bạn không có quyền thực hiện thao tác này')
+      navigation.goBack()
+    }
+  }, [isReadOnly, navigation])
 
   useFocusEffect(
     useCallback(() => {

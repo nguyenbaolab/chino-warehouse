@@ -13,10 +13,13 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
 import { Product } from '../types'
+import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 
 export default function DiscontinuedProductsScreen() {
   const navigation = useNavigation<any>()
   const { colors } = useThemeStore()
+  const canWrite = useCanWrite()
+  const isReadOnly = useIsReadOnly()
   const {
     products,
     inventoryEntries,
@@ -98,6 +101,7 @@ export default function DiscontinuedProductsScreen() {
   }, [products])
 
   async function handleResume(productId: string) {
+    if (isReadOnly) return
     setSavingId(productId)
     try {
       await setProductDiscontinued(productId, false)
@@ -148,20 +152,22 @@ export default function DiscontinuedProductsScreen() {
                     Lý do: {product.notes.trim()}
                   </Text>
                 )}
-                <TouchableOpacity
-                  style={[
-                    styles.resumeBtn,
-                    { backgroundColor: colors.accent, opacity: busy ? 0.6 : 1 },
-                  ]}
-                  disabled={busy}
-                  onPress={() => void handleResume(product.id)}
-                >
-                  {busy ? (
-                    <ActivityIndicator color={colors.card} />
-                  ) : (
-                    <Text style={[styles.resumeBtnText, { color: colors.card }]}>Nhập lại</Text>
-                  )}
-                </TouchableOpacity>
+                {canWrite ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.resumeBtn,
+                      { backgroundColor: colors.accent, opacity: busy ? 0.6 : 1 },
+                    ]}
+                    disabled={busy}
+                    onPress={() => void handleResume(product.id)}
+                  >
+                    {busy ? (
+                      <ActivityIndicator color={colors.card} />
+                    ) : (
+                      <Text style={[styles.resumeBtnText, { color: colors.card }]}>Nhập lại</Text>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
               </View>
             )
           })}

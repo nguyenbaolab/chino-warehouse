@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: F24 RBAC Task 2 — guard guest read-only toàn app + card User Management cho admin
+
+- `stores/authStore.ts`: export `useIsReadOnly`, `useCanWrite`, `useIsAdmin`, `useIsSuperAdmin`.
+- Guard CRUD toàn app: ẩn nút mutate (`canWrite`) + safety `useEffect` (Category, Location, AddInventory, ZoneLayoutEditor); handler `if (isReadOnly) return`.
+- `SettingsScreen`: card **Quản lý người dùng** (admin/super_admin) → Alert placeholder Task 3.
+- Docs: HANDOFF_3, CONTEXT §4, DECISIONS, KI-055 (RLS warehouse defer cuối Phase 3).
+
+---
+
 ## [tháng 5/2026] — fix: F24 Task 1 — RLS recursion trên user_profiles (SECURITY DEFINER helper)
 
 - Migration `20260601000200_fix_user_profiles_rls_recursion.sql`: `is_current_user_admin()`, `is_current_user_super_admin()`; recreate SELECT/UPDATE policies.

@@ -520,6 +520,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### RBAC Task 2 — Client-side guard; RLS server-side defer cuối Phase 3
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** Task 2 guard read-only cho `guest` **chỉ ở client**: hooks `useIsReadOnly` / `useCanWrite` / `useIsAdmin` / `useIsSuperAdmin`; ẩn hoàn toàn nút mutate (`{canWrite && …}`); safety `useEffect` trên màn CRUD-only; handler `if (isReadOnly) return`. Card **Quản lý người dùng** (Settings) chỉ `admin`/`super_admin` — Task 3 mới có screen. **RLS role-based trên bảng kho** (INSERT/UPDATE/DELETE) **hoãn** đến cuối Phase 3 — ghi KI-055.
+- **Lý do:** Ship UX read-only nhanh; tránh migration RLS lớn giữa sprint; server enforce bắt buộc trước closeout multi-user.
+
+---
+
 ### RLS role check — SECURITY DEFINER helpers (tránh recursion)
 
 - **Ngày:** tháng 5/2026

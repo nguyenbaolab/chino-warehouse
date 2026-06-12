@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { formatExpiryDate, getCombinedStatus, getCombinedStatusRank, InventoryEntry, Zone } from '../types'
@@ -61,6 +62,8 @@ export default function ZoneDetailSheet({
 }: ZoneDetailSheetProps) {
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
+  const canWrite = useCanWrite()
+  const isReadOnly = useIsReadOnly()
   const insets = useSafeAreaInsets()
   const {
     zones,
@@ -191,6 +194,7 @@ export default function ZoneDetailSheet({
   }, [groupedProducts, currentSearchQuery])
 
   function handlePressLot(entry: InventoryEntry) {
+    if (isReadOnly) return
     // Tap lô để mở/đóng inline form chỉnh sửa
     if (editingLotId === entry.id) {
       setEditingLotId(null)
@@ -205,6 +209,7 @@ export default function ZoneDetailSheet({
   }
 
   async function handleSaveLot(entry: InventoryEntry) {
+    if (isReadOnly) return
     const quantity = Number(editQuantity)
     if (!Number.isFinite(quantity) || quantity < 0 || quantity !== Math.floor(quantity)) {
       Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn hoặc bằng 0.')
@@ -283,6 +288,7 @@ export default function ZoneDetailSheet({
   }
 
   function handleDeleteLot(entry: InventoryEntry) {
+    if (isReadOnly) return
     Alert.alert('Xóa lô hàng', 'Xóa lô hàng này?', [
       { text: 'Huỷ', style: 'cancel' },
       {
@@ -298,6 +304,7 @@ export default function ZoneDetailSheet({
   }
 
   function openMoveLot(entry: InventoryEntry) {
+    if (isReadOnly) return
     setMoveLot(entry)
     setTargetZoneId(null)
     setTargetTier(null)
@@ -323,6 +330,7 @@ export default function ZoneDetailSheet({
   }
 
   async function handleSaveProductName(productId: string) {
+    if (isReadOnly) return
     if (editingProductId !== productId) return
     const trimmed = productNameInput.trim()
     if (!trimmed) {
@@ -346,6 +354,7 @@ export default function ZoneDetailSheet({
   }
 
   function handleProductNameEditButtonPress(productId: string, productName: string) {
+    if (isReadOnly) return
     const isEditingThis = editingProductId === productId
     if (!isEditingThis) {
       startEditProductName(productId, productName)
@@ -359,7 +368,7 @@ export default function ZoneDetailSheet({
   }
 
   useEffect(() => {
-    if (!visible || !scannedLotBarcodeAt || !scannedLotId) return
+    if (!visible || !scannedLotBarcodeAt || !scannedLotId || isReadOnly) return
     const target = entries.find((entry) => entry.id === scannedLotId)
     if (!target) return
     setEditingLotId(target.id)
@@ -372,7 +381,7 @@ export default function ZoneDetailSheet({
       scannedZoneLotId: undefined,
       scannedZoneLotBarcodeAt: undefined,
     })
-  }, [visible, scannedLotBarcodeAt, scannedLotId, scannedLotBarcode, entries, navigation])
+  }, [visible, scannedLotBarcodeAt, scannedLotId, scannedLotBarcode, entries, navigation, isReadOnly])
 
   useEffect(() => {
     if (!visible || isLoading || !pendingScrollProductIdRef.current) return
@@ -402,6 +411,7 @@ export default function ZoneDetailSheet({
   }, [highlightedProductId])
 
   function handlePressAddInventory() {
+    if (isReadOnly) return
     if (!zone) return
     onClose()
     // Đóng sheet trước rồi mới navigate để tránh giật transition
@@ -485,12 +495,14 @@ export default function ZoneDetailSheet({
             ) : currentTierEntries.length === 0 ? (
               <View style={styles.emptyWrap}>
                 <Text style={[styles.emptyText, { color: colors.sub }]}>Chưa có hàng trong zone này</Text>
-                <TouchableOpacity
-                  style={[styles.emptyAddBtn, { backgroundColor: colors.accent }]}
-                  onPress={handlePressAddInventory}
-                >
-                  <Text style={[styles.emptyAddBtnText, { color: colors.card }]}>Thêm hàng</Text>
-                </TouchableOpacity>
+                {canWrite ? (
+                  <TouchableOpacity
+                    style={[styles.emptyAddBtn, { backgroundColor: colors.accent }]}
+                    onPress={handlePressAddInventory}
+                  >
+                    <Text style={[styles.emptyAddBtnText, { color: colors.card }]}>Thêm hàng</Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             ) : (
               <ScrollView
@@ -613,6 +625,7 @@ export default function ZoneDetailSheet({
                               <TouchableOpacity
                                 style={[styles.lotRow, { borderColor: colors.border, backgroundColor: colors.bg }]}
                                 onPress={() => handlePressLot(lot)}
+                                disabled={isReadOnly}
                               >
                                 <View style={styles.lotInfo}>
                                   <Text style={[styles.lotText, { color: colors.text }]}>{lot.quantity_boxes} thùng</Text>
@@ -621,37 +634,41 @@ export default function ZoneDetailSheet({
                                 </View>
                                 <View style={styles.lotRight}>
                                   <View style={[styles.expiryDot, { backgroundColor: lotColor }]} />
-                                  <TouchableOpacity
-                                    style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                                    onPress={() =>
-                                      handleProductNameEditButtonPress(group.productId, group.productName)
-                                    }
-                                  >
-                                    <Text
-                                      style={[
-                                        styles.deleteLotBtnText,
-                                        productNameHasChanges ? { color: '#22C55E' } : null,
-                                      ]}
-                                    >
-                                      {productNameEditIcon}
-                                    </Text>
-                                  </TouchableOpacity>
-                                  <TouchableOpacity
-                                    style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                                    onPress={() => openMoveLot(lot)}
-                                  >
-                                    <Text style={styles.deleteLotBtnText}>→</Text>
-                                  </TouchableOpacity>
-                                  <TouchableOpacity
-                                    style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                                    onPress={() => handleDeleteLot(lot)}
-                                  >
-                                    <Text style={styles.deleteLotBtnText}>🗑️</Text>
-                                  </TouchableOpacity>
+                                  {canWrite ? (
+                                    <>
+                                      <TouchableOpacity
+                                        style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                        onPress={() =>
+                                          handleProductNameEditButtonPress(group.productId, group.productName)
+                                        }
+                                      >
+                                        <Text
+                                          style={[
+                                            styles.deleteLotBtnText,
+                                            productNameHasChanges ? { color: '#22C55E' } : null,
+                                          ]}
+                                        >
+                                          {productNameEditIcon}
+                                        </Text>
+                                      </TouchableOpacity>
+                                      <TouchableOpacity
+                                        style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                        onPress={() => openMoveLot(lot)}
+                                      >
+                                        <Text style={styles.deleteLotBtnText}>→</Text>
+                                      </TouchableOpacity>
+                                      <TouchableOpacity
+                                        style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                        onPress={() => handleDeleteLot(lot)}
+                                      >
+                                        <Text style={styles.deleteLotBtnText}>🗑️</Text>
+                                      </TouchableOpacity>
+                                    </>
+                                  ) : null}
                                 </View>
                               </TouchableOpacity>
 
-                              {editingLotId === lot.id && (
+                              {canWrite && editingLotId === lot.id && (
                                 <View style={[styles.editBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
                                   <Text style={[styles.editLabel, { color: colors.sub }]}>Số thùng</Text>
                                   <TextInput
@@ -736,11 +753,14 @@ export default function ZoneDetailSheet({
             )}
           </View>
 
-          <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.accent }]} onPress={handlePressAddInventory}>
-            <Text style={[styles.addBtnText, { color: colors.card }]}>Thêm hàng</Text>
-          </TouchableOpacity>
+          {canWrite ? (
+            <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.accent }]} onPress={handlePressAddInventory}>
+              <Text style={[styles.addBtnText, { color: colors.card }]}>Thêm hàng</Text>
+            </TouchableOpacity>
+          ) : null}
         </KeyboardAvoidingView>
 
+        {canWrite ? (
         <Modal visible={!!moveLot} transparent animationType="slide" onRequestClose={() => setMoveLot(null)}>
           <View style={styles.modalOverlay}>
             <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setMoveLot(null)} />
@@ -826,6 +846,7 @@ export default function ZoneDetailSheet({
             </View>
           </View>
         </Modal>
+        ) : null}
       </View>
     </Modal>
   )

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { OrderItem, OrderListStatus } from '../types'
 import { normalizeText } from '../utils/textUtils'
 
@@ -33,6 +34,8 @@ export default function OrderDetailScreen() {
   const route = useRoute<any>()
   const { orderListId } = (route.params || {}) as RouteParams
   const { colors } = useThemeStore()
+  const canWrite = useCanWrite()
+  const isReadOnly = useIsReadOnly()
   const {
     products,
     orderLists,
@@ -74,7 +77,7 @@ export default function OrderDetailScreen() {
     () => orderItems.filter((item) => item.order_list_id === orderListId),
     [orderItems, orderListId]
   )
-  const isLocked = orderList?.status === 'confirmed' || orderList?.status === 'placed'
+  const isLocked = orderList?.status === 'confirmed' || orderList?.status === 'placed' || isReadOnly
   const isDraft = orderList?.status === 'draft'
 
   useEffect(() => {
@@ -272,7 +275,7 @@ export default function OrderDetailScreen() {
             </Text>
           </TouchableOpacity>
         )}
-        {isDraft && (
+        {isDraft && canWrite && (
           <TouchableOpacity style={[styles.deleteListBtn, { borderColor: colors.border, backgroundColor: colors.card }]} onPress={requestDeleteList}>
             <Text style={{ color: colors.text, fontSize: 12, fontWeight: '600' }}>Xóa list</Text>
           </TouchableOpacity>
@@ -280,6 +283,7 @@ export default function OrderDetailScreen() {
       </View>
       <Text style={[styles.status, { color: colors.sub }]}>Trạng thái: {statusLabel(orderList.status)}</Text>
 
+      {canWrite ? (
       <View style={[styles.addBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.label, { color: colors.sub }]}>Thêm sản phẩm vào list</Text>
         <TextInput
@@ -329,6 +333,7 @@ export default function OrderDetailScreen() {
           <Text style={{ color: colors.card, fontWeight: '700' }}>Thêm sản phẩm</Text>
         </TouchableOpacity>
       </View>
+      ) : null}
 
       <ScrollView
         ref={listScrollRef}
@@ -411,7 +416,7 @@ export default function OrderDetailScreen() {
         <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.bg, borderColor: colors.border }]} onPress={() => console.log('[Order] export PDF placeholder', orderList.id)}>
           <Text style={{ color: colors.text, fontWeight: '700' }}>Xuất PDF</Text>
         </TouchableOpacity>
-        {orderList.status === 'draft' && (
+        {canWrite && orderList.status === 'draft' && (
           <>
             <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.accent }]} onPress={() => void confirmOrderList(orderList.id)}>
               <Text style={{ color: colors.card, fontWeight: '700' }}>Confirm</Text>
@@ -421,12 +426,12 @@ export default function OrderDetailScreen() {
             </TouchableOpacity>
           </>
         )}
-        {orderList.status === 'confirmed' && (
+        {canWrite && orderList.status === 'confirmed' && (
           <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => void updateOrderList(orderList.id, { status: 'draft' })}>
             <Text style={{ color: colors.text, fontWeight: '700' }}>Mở lại</Text>
           </TouchableOpacity>
         )}
-        {orderList.status === 'placed' && (
+        {canWrite && orderList.status === 'placed' && (
           <TouchableOpacity
             style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             onPress={() => {

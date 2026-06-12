@@ -31,6 +31,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
 import { pickImage, uploadProductImage } from '../utils/imageUtils'
+import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 
 const PAGE_SIZE = 10
 /** UUID sentinel — SP chưa tạo; mọi barcode đã gán SP khác đều là conflict. */
@@ -59,6 +60,8 @@ export default function ProductsScreen() {
   } = useWarehouseStore()
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
+  const canWrite = useCanWrite()
+  const isReadOnly = useIsReadOnly()
   const [searchQuery, setSearchQuery] = useState('')
   /** null = Tất cả zone (chỉ khi đã chọn kho cụ thể) */
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
@@ -331,6 +334,7 @@ export default function ProductsScreen() {
   }
 
   async function handleCreateProduct() {
+    if (isReadOnly) return
     const trimmedName = createName.trim()
     if (!trimmedName) {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập tên sản phẩm.')
@@ -403,6 +407,7 @@ export default function ProductsScreen() {
   }
 
   function showImageOptions(product: Product) {
+    if (isReadOnly) return
     console.log('[F08] showImageOptions called', product.id)
     const pickAndUpload = async (source: 'camera' | 'library') => {
       setUploadingProductId(product.id)
@@ -471,7 +476,7 @@ export default function ProductsScreen() {
               if (isUploading) return
               if (product.image_url) {
                 setViewingImage({ uri: product.image_url, productId: product.id })
-              } else {
+              } else if (canWrite) {
                 showImageOptions(product)
               }
             }}
@@ -829,20 +834,26 @@ export default function ProductsScreen() {
       <ImageViewerModal
         uri={viewingImage?.uri ?? null}
         onClose={() => setViewingImage(null)}
-        onChangeImage={() => {
-          const product = products.find((p) => p.id === viewingImage?.productId)
-          setViewingImage(null)
-          if (product) showImageOptions(product)
-        }}
+        onChangeImage={
+          canWrite
+            ? () => {
+                const product = products.find((p) => p.id === viewingImage?.productId)
+                setViewingImage(null)
+                if (product) showImageOptions(product)
+              }
+            : undefined
+        }
       />
 
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.accent, bottom: fabBottom }]}
-        activeOpacity={0.85}
-        onPress={() => setShowCreateProductModal(true)}
-      >
-        <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
-      </TouchableOpacity>
+      {canWrite ? (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.accent, bottom: fabBottom }]}
+          activeOpacity={0.85}
+          onPress={() => setShowCreateProductModal(true)}
+        >
+          <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
+        </TouchableOpacity>
+      ) : null}
 
       <Modal
         visible={showCreateProductModal}

@@ -63,6 +63,21 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `stores/authStore.ts` | F24 Task 1 — `currentUserProfile`, fetch/clear, `updateLastLogin` |
 | `App.tsx` | F24 — guard `is_disabled`, spinner fetch profile |
 | `types/index.ts` | `UserRole`, `UserProfile`; `AuditLog.table_name` + `user_profiles` |
+| `stores/authStore.ts` | F24 Task 2 — `useIsReadOnly`, `useCanWrite`, `useIsAdmin`, `useIsSuperAdmin` |
+| `screens/MapScreen.tsx` | F24 Task 2 — ẩn zone CRUD, layout editor, thêm kho |
+| `components/ZoneDetailSheet.tsx` | F24 Task 2 — ẩn thêm hàng, sửa SP/lô, chuyển lô |
+| `screens/ZoneLayoutEditorScreen.tsx` | F24 Task 2 — mount safety guest → goBack |
+| `screens/ProductsScreen.tsx` | F24 Task 2 — ẩn FAB + upload ảnh card |
+| `screens/ProductDetailScreen.tsx` | F24 Task 2 — ẩn mutate (ảnh, tên, ngưỡng, barcode, lô, archive/delete) |
+| `screens/AddInventoryScreen.tsx` | F24 Task 2 — mount safety guest |
+| `screens/NotificationsScreen.tsx` | F24 Task 2 — ẩn toggle giảm giá, không nhập, thêm danh sách nhập |
+| `screens/OrderListScreen.tsx` | F24 Task 2 — ẩn tạo list mới |
+| `screens/OrderDetailScreen.tsx` | F24 Task 2 — ẩn sửa/xóa item, footer mutate; giữ Xuất PDF |
+| `screens/DiscontinuedProductsScreen.tsx` | F24 Task 2 — ẩn Nhập lại |
+| `screens/CategoryManagementScreen.tsx` | F24 Task 2 — ẩn CRUD + mount safety |
+| `screens/LocationManagementScreen.tsx` | F24 Task 2 — ẩn FAB/edit/delete + mount safety |
+| `screens/BarcodeScannerScreen.tsx` | F24 Task 2 — ẩn alert Thêm thủ công (guest) |
+| `screens/SettingsScreen.tsx` | F24 Task 2 — card Quản lý người dùng (admin) |
 
 ---
 
@@ -123,6 +138,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 - [x] **E1 / F23** — DashboardScreen + entry Settings
 - [ ] **E2 / F24** — RBAC `user_profiles` + UserManagementScreen + guards
   - [x] **E2 / F24 Task 1** — migration `user_profiles` + `authStore` + guard `is_disabled` + load role
+  - [x] **E2 / F24 Task 2** — hooks RBAC + guard guest read-only toàn app + card User Management (admin)
 
 ### Security
 

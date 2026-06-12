@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 
 type NameModalState =
   | { open: false }
@@ -28,6 +29,8 @@ type NameModalState =
 export default function CategoryManagementScreen() {
   const navigation = useNavigation<any>()
   const { colors } = useThemeStore()
+  const canWrite = useCanWrite()
+  const isReadOnly = useIsReadOnly()
   const {
     productCategoriesL1,
     productCategoriesL2,
@@ -61,6 +64,13 @@ export default function CategoryManagementScreen() {
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    if (isReadOnly) {
+      Alert.alert('Bạn không có quyền thực hiện thao tác này')
+      navigation.goBack()
+    }
+  }, [isReadOnly, navigation])
 
   const sortedL1 = useMemo(
     () => [...productCategoriesL1].sort((a, b) => a.name.localeCompare(b.name)),
@@ -218,20 +228,24 @@ export default function CategoryManagementScreen() {
                   <Text style={[styles.l1Name, { color: colors.text }]} numberOfLines={2}>
                     {l1.name}
                   </Text>
-                  <TouchableOpacity
-                    style={[styles.iconBtn, { borderColor: colors.border }]}
-                    onPress={() => openEditL1(l1.id, l1.name)}
-                    hitSlop={8}
-                  >
-                    <Text style={{ color: colors.accent, fontSize: 14 }}>Sửa</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.iconBtn, { borderColor: colors.border }]}
-                    onPress={() => confirmDeleteL1(l1.id, l1.name)}
-                    hitSlop={8}
-                  >
-                    <Text style={{ color: colors.statusExpired, fontSize: 14 }}>Xóa</Text>
-                  </TouchableOpacity>
+                  {canWrite ? (
+                    <>
+                      <TouchableOpacity
+                        style={[styles.iconBtn, { borderColor: colors.border }]}
+                        onPress={() => openEditL1(l1.id, l1.name)}
+                        hitSlop={8}
+                      >
+                        <Text style={{ color: colors.accent, fontSize: 14 }}>Sửa</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.iconBtn, { borderColor: colors.border }]}
+                        onPress={() => confirmDeleteL1(l1.id, l1.name)}
+                        hitSlop={8}
+                      >
+                        <Text style={{ color: colors.statusExpired, fontSize: 14 }}>Xóa</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : null}
                 </Pressable>
                 {open ? (
                   <View style={[styles.l2Wrap, { borderTopColor: colors.border }]}>
@@ -240,33 +254,41 @@ export default function CategoryManagementScreen() {
                         <Text style={[styles.l2Name, { color: colors.text }]} numberOfLines={2}>
                           {l2.name}
                         </Text>
-                        <TouchableOpacity onPress={() => openEditL2(l2.id, l2.name)} hitSlop={8}>
-                          <Text style={{ color: colors.accent, fontSize: 13 }}>Sửa</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => confirmDeleteL2(l2.id, l2.name)} hitSlop={8}>
-                          <Text style={{ color: colors.statusExpired, fontSize: 13 }}>Xóa</Text>
-                        </TouchableOpacity>
+                        {canWrite ? (
+                          <>
+                            <TouchableOpacity onPress={() => openEditL2(l2.id, l2.name)} hitSlop={8}>
+                              <Text style={{ color: colors.accent, fontSize: 13 }}>Sửa</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => confirmDeleteL2(l2.id, l2.name)} hitSlop={8}>
+                              <Text style={{ color: colors.statusExpired, fontSize: 13 }}>Xóa</Text>
+                            </TouchableOpacity>
+                          </>
+                        ) : null}
                       </View>
                     ))}
-                    <TouchableOpacity
-                      style={[styles.addL2Btn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                      onPress={() => openAddL2(l1.id)}
-                    >
-                      <Text style={{ color: colors.accent, fontWeight: '600' }}>+ Thêm loại</Text>
-                    </TouchableOpacity>
+                    {canWrite ? (
+                      <TouchableOpacity
+                        style={[styles.addL2Btn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                        onPress={() => openAddL2(l1.id)}
+                      >
+                        <Text style={{ color: colors.accent, fontWeight: '600' }}>+ Thêm loại</Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
                 ) : null}
               </View>
             )
           })}
 
-          <TouchableOpacity
-            style={[styles.addL1Btn, { backgroundColor: colors.accent }]}
-            onPress={openAddL1}
-            activeOpacity={0.85}
-          >
-            <Text style={[styles.addL1BtnText, { color: colors.card }]}>+ Thêm nhóm</Text>
-          </TouchableOpacity>
+          {canWrite ? (
+            <TouchableOpacity
+              style={[styles.addL1Btn, { backgroundColor: colors.accent }]}
+              onPress={openAddL1}
+              activeOpacity={0.85}
+            >
+              <Text style={[styles.addL1BtnText, { color: colors.card }]}>+ Thêm nhóm</Text>
+            </TouchableOpacity>
+          ) : null}
         </ScrollView>
       )}
 

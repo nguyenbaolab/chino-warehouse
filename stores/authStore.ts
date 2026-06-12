@@ -57,3 +57,15 @@ export const useAuthStore = create<AuthStore>((set) => ({
     await supabase.rpc('update_my_last_login')
   },
 }))
+
+export const useIsReadOnly = () => useAuthStore((s) => s.currentUserProfile?.role === 'guest')
+
+export const useCanWrite = () => useAuthStore((s) => s.currentUserProfile?.role !== 'guest')
+
+export const useIsAdmin = () =>
+  useAuthStore((s) => {
+    const role = s.currentUserProfile?.role
+    return role === 'admin' || role === 'super_admin'
+  })
+
+export const useIsSuperAdmin = () => useAuthStore((s) => s.currentUserProfile?.role === 'super_admin')

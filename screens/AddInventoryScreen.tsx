@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRoute, useNavigation } from '@react-navigation/native'
 import ImageViewerModal from '../components/ImageViewerModal'
 import { useThemeStore } from '../stores/themeStore'
+import { useIsReadOnly } from '../stores/authStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { Product } from '../types'
 import { supabase } from '../lib/supabase'
@@ -79,6 +80,7 @@ export default function AddInventoryScreen() {
     returnTab,
   } = (route.params as AddInventoryRouteParams) || {}
   const { colors } = useThemeStore()
+  const isReadOnly = useIsReadOnly()
   const {
     products,
     zones,
@@ -200,6 +202,17 @@ export default function AddInventoryScreen() {
       ])
     }
   }
+
+  useEffect(() => {
+    if (isReadOnly) {
+      Alert.alert('Bạn không có quyền thực hiện thao tác này')
+      if (returnTab) {
+        navigateToTabMainFromNestedStack(navigation, returnTab)
+      } else {
+        navigation.goBack()
+      }
+    }
+  }, [isReadOnly, navigation, returnTab])
 
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {

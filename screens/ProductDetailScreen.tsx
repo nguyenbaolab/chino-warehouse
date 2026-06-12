@@ -22,6 +22,7 @@ import ImageViewerModal from '../components/ImageViewerModal'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { getDisplayColor, getDisplayColorContextFromEntry } from '../utils/statusUtils'
 import { supabase } from '../lib/supabase'
 import {
@@ -65,6 +66,8 @@ export default function ProductDetailScreen() {
   const { productId, scannedLotBarcode, scannedLotId, scannedLotBarcodeAt } = route.params as ProductDetailRouteParams
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
+  const canWrite = useCanWrite()
+  const isReadOnly = useIsReadOnly()
   const {
     zones,
     locations,
@@ -265,6 +268,7 @@ export default function ProductDetailScreen() {
   }
 
   function handleNameEditButtonPress() {
+    if (isReadOnly) return
     if (!isEditingName) {
       startEditName()
       return
@@ -371,6 +375,7 @@ export default function ProductDetailScreen() {
   }
 
   function openAddBarcodeChooser() {
+    if (isReadOnly) return
     Alert.alert('Thêm mã vạch', undefined, [
       {
         text: '📷 Quét',
@@ -442,6 +447,7 @@ export default function ProductDetailScreen() {
   }
 
   async function handleThresholdEditButtonPress() {
+    if (isReadOnly) return
     if (!isEditingThresholds) {
       setOriginalWarningDays(editWarningDays)
       setOriginalLowWarningBoxes(editLowWarningBoxes)
@@ -463,6 +469,7 @@ export default function ProductDetailScreen() {
   }
 
   function openInlineEdit(lot: InventoryEntry) {
+    if (isReadOnly) return
     if (editingLotId === lot.id) {
       setEditingLotId(null)
       return
@@ -570,6 +577,7 @@ export default function ProductDetailScreen() {
   }
 
   function handleDeleteLot(lot: InventoryEntry) {
+    if (isReadOnly) return
     Alert.alert('Xóa lô hàng', 'Xóa lô hàng này?', [
       { text: 'Huỷ', style: 'cancel' },
       {
@@ -767,6 +775,7 @@ export default function ProductDetailScreen() {
   }
 
   function handleAddNewLot() {
+    if (isReadOnly) return
     // Prefill productId để AddInventoryScreen tự chọn sẵn sản phẩm
     const fallbackLot = lots[0]
     if (!fallbackLot?.zone_id || !fallbackLot?.zone?.name) {
@@ -784,6 +793,7 @@ export default function ProductDetailScreen() {
   }
 
   function showImageOptions() {
+    if (isReadOnly) return
     if (!product) return
 
     const pickAndUpload = async (source: 'camera' | 'library') => {
@@ -825,6 +835,7 @@ export default function ProductDetailScreen() {
   }
 
   function handleDeleteImage() {
+    if (isReadOnly) return
     if (!product) return
 
     Alert.alert('Xóa ảnh?', 'Ảnh sản phẩm sẽ bị xóa vĩnh viễn.', [
@@ -848,6 +859,7 @@ export default function ProductDetailScreen() {
   }
 
   function handleArchiveToggle() {
+    if (isReadOnly) return
     if (!product) return
     const nextArchived = !product.is_archived
     const isHiding = nextArchived
@@ -890,6 +902,7 @@ export default function ProductDetailScreen() {
   }
 
   function handleDeleteProduct() {
+    if (isReadOnly) return
     if (!product) return
     Alert.alert(
       'Xóa sản phẩm',
@@ -944,16 +957,12 @@ export default function ProductDetailScreen() {
               />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity
-              style={[styles.imagePreview, styles.imagePlaceholder, { backgroundColor: colors.border }]}
-              activeOpacity={0.85}
-              onPress={showImageOptions}
-            >
+            <View style={[styles.imagePreview, styles.imagePlaceholder, { backgroundColor: colors.border }]}>
               <Text style={{ fontSize: 32 }}>📷</Text>
-            </TouchableOpacity>
+            </View>
           )}
 
-          {product?.image_url && !isUploadingImage && (
+          {canWrite && product?.image_url && !isUploadingImage && (
             <View style={styles.imageActionsRow}>
               <TouchableOpacity onPress={showImageOptions}>
                 <Text style={{ color: colors.accent, fontSize: 13 }}>✏️ Đổi ảnh</Text>
@@ -984,13 +993,15 @@ export default function ProductDetailScreen() {
                 {product?.name ?? 'Không xác định'}
               </Text>
             )}
-            <TouchableOpacity
-              style={[styles.nameEditBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-              onPress={handleNameEditButtonPress}
-              disabled={isSavingName}
-            >
-              <Text style={styles.nameEditBtnText}>{nameEditIcon}</Text>
-            </TouchableOpacity>
+            {canWrite ? (
+              <TouchableOpacity
+                style={[styles.nameEditBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                onPress={handleNameEditButtonPress}
+                disabled={isSavingName}
+              >
+                <Text style={styles.nameEditBtnText}>{nameEditIcon}</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
           {!!product?.notes && <Text style={[styles.infoText, { color: colors.sub }]}>Ghi chú: {product.notes}</Text>}
           <TouchableOpacity
@@ -1009,133 +1020,175 @@ export default function ProductDetailScreen() {
                 <Text style={[styles.infoText, { color: colors.sub, marginTop: 0, flex: 1 }]}>
                   Ngưỡng cảnh báo · sắp hết
                 </Text>
-                <TouchableOpacity
-                  style={[styles.thresholdEditBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                  onPress={() => void handleThresholdEditButtonPress()}
-                >
-                  <Text
-                    style={[
-                      styles.thresholdEditBtnText,
-                      isEditingThresholds && hasThresholdChanged ? { color: '#22C55E' } : null,
-                    ]}
-                  >
-                    {!isEditingThresholds ? '✏️' : hasThresholdChanged ? '✓' : '✕'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={[styles.infoText, { color: colors.sub }]}>
-                Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
-              </Text>
-              <TextInput
-                style={[
-                  styles.warningInput,
-                  {
-                    backgroundColor: colors.bg,
-                    color: colors.text,
-                    borderColor: colors.border,
-                    opacity: isEditingThresholds ? 1 : 0.65,
-                  },
-                ]}
-                value={editWarningDays}
-                onChangeText={setEditWarningDays}
-                editable={isEditingThresholds}
-                keyboardType="numeric"
-                placeholder="30"
-                placeholderTextColor={colors.sub}
-              />
-              <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
-                Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
-              </Text>
-              <TextInput
-                style={[
-                  styles.warningInput,
-                  {
-                    backgroundColor: colors.bg,
-                    color: colors.text,
-                    borderColor: colors.border,
-                    opacity: isEditingThresholds ? 1 : 0.65,
-                  },
-                ]}
-                value={editLowWarningBoxes}
-                onChangeText={setEditLowWarningBoxes}
-                editable={isEditingThresholds}
-                keyboardType="numeric"
-                placeholder="3"
-                placeholderTextColor={colors.sub}
-              />
-
-              <Text style={[styles.infoText, { color: colors.sub, marginTop: 12 }]}>Nhóm (Cấp 1)</Text>
-              <Pressable
-                style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, marginTop: 6 }]}
-                onPress={() => {
-                  setShowCategoryL1Picker((v) => !v)
-                  setShowCategoryL2Picker(false)
-                }}
-              >
-                <Text style={{ color: colors.text }}>
-                  {categorySaving
-                    ? '...'
-                    : !product?.category_level1_id
-                      ? 'Không phân loại'
-                      : productCategoriesL1.find((c) => c.id === product.category_level1_id)?.name ?? 'Không phân loại'}
-                </Text>
-              </Pressable>
-              {showCategoryL1Picker && (
-                <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                {canWrite ? (
                   <TouchableOpacity
-                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                    onPress={() => void applyCategoryL1(null)}
+                    style={[styles.thresholdEditBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => void handleThresholdEditButtonPress()}
                   >
-                    <Text style={{ color: colors.text }}>Không phân loại</Text>
-                  </TouchableOpacity>
-                  {productCategoriesL1.map((cat) => (
-                    <TouchableOpacity
-                      key={cat.id}
-                      style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                      onPress={() => void applyCategoryL1(cat.id)}
+                    <Text
+                      style={[
+                        styles.thresholdEditBtnText,
+                        isEditingThresholds && hasThresholdChanged ? { color: '#22C55E' } : null,
+                      ]}
                     >
-                      <Text style={{ color: colors.text }}>{cat.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                      {!isEditingThresholds ? '✏️' : hasThresholdChanged ? '✓' : '✕'}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              {canWrite ? (
+                <Text style={[styles.infoText, { color: colors.sub }]}>
+                  Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
+                </Text>
+              ) : (
+                <Text style={[styles.infoText, { color: colors.sub }]}>
+                  Ngưỡng cảnh báo: {product?.warning_days ?? 30} ngày
+                </Text>
+              )}
+              {canWrite ? (
+                <TextInput
+                  style={[
+                    styles.warningInput,
+                    {
+                      backgroundColor: colors.bg,
+                      color: colors.text,
+                      borderColor: colors.border,
+                      opacity: isEditingThresholds ? 1 : 0.65,
+                    },
+                  ]}
+                  value={editWarningDays}
+                  onChangeText={setEditWarningDays}
+                  editable={isEditingThresholds}
+                  keyboardType="numeric"
+                  placeholder="30"
+                  placeholderTextColor={colors.sub}
+                />
+              ) : (
+                <Text style={[styles.infoText, { color: colors.text }]}>{product?.warning_days ?? 30} ngày</Text>
+              )}
+              {canWrite ? (
+                <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
+                  Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
+                </Text>
+              ) : (
+                <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
+                  Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
+                </Text>
+              )}
+              {canWrite ? (
+                <TextInput
+                  style={[
+                    styles.warningInput,
+                    {
+                      backgroundColor: colors.bg,
+                      color: colors.text,
+                      borderColor: colors.border,
+                      opacity: isEditingThresholds ? 1 : 0.65,
+                    },
+                  ]}
+                  value={editLowWarningBoxes}
+                  onChangeText={setEditLowWarningBoxes}
+                  editable={isEditingThresholds}
+                  keyboardType="numeric"
+                  placeholder="3"
+                  placeholderTextColor={colors.sub}
+                />
+              ) : (
+                <Text style={[styles.infoText, { color: colors.text }]}>{product?.low_warning_boxes ?? 3} thùng</Text>
               )}
 
-              {!!product?.category_level1_id && (
+              <Text style={[styles.infoText, { color: colors.sub, marginTop: 12 }]}>Nhóm (Cấp 1)</Text>
+              {canWrite ? (
                 <>
-                  <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>Loại (Cấp 2)</Text>
                   <Pressable
                     style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, marginTop: 6 }]}
                     onPress={() => {
-                      setShowCategoryL2Picker((v) => !v)
-                      setShowCategoryL1Picker(false)
+                      setShowCategoryL1Picker((v) => !v)
+                      setShowCategoryL2Picker(false)
                     }}
                   >
                     <Text style={{ color: colors.text }}>
                       {categorySaving
                         ? '...'
-                        : !product?.category_level2_id
+                        : !product?.category_level1_id
                           ? 'Không phân loại'
-                          : productCategoriesL2.find((c) => c.id === product.category_level2_id)?.name ?? 'Không phân loại'}
+                          : productCategoriesL1.find((c) => c.id === product.category_level1_id)?.name ?? 'Không phân loại'}
                     </Text>
                   </Pressable>
-                  {showCategoryL2Picker && (
+                  {showCategoryL1Picker && (
                     <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
                       <TouchableOpacity
                         style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                        onPress={() => void applyCategoryL2(null)}
+                        onPress={() => void applyCategoryL1(null)}
                       >
                         <Text style={{ color: colors.text }}>Không phân loại</Text>
                       </TouchableOpacity>
-                      {categoryL2Options.map((cat) => (
+                      {productCategoriesL1.map((cat) => (
                         <TouchableOpacity
                           key={cat.id}
                           style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                          onPress={() => void applyCategoryL2(cat.id)}
+                          onPress={() => void applyCategoryL1(cat.id)}
                         >
                           <Text style={{ color: colors.text }}>{cat.name}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
+                  )}
+                </>
+              ) : (
+                <Text style={[styles.infoText, { color: colors.text, marginTop: 4 }]}>
+                  {!product?.category_level1_id
+                    ? 'Không phân loại'
+                    : productCategoriesL1.find((c) => c.id === product.category_level1_id)?.name ?? 'Không phân loại'}
+                </Text>
+              )}
+
+              {!!product?.category_level1_id && (
+                <>
+                  <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>Loại (Cấp 2)</Text>
+                  {canWrite ? (
+                    <>
+                      <Pressable
+                        style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, marginTop: 6 }]}
+                        onPress={() => {
+                          setShowCategoryL2Picker((v) => !v)
+                          setShowCategoryL1Picker(false)
+                        }}
+                      >
+                        <Text style={{ color: colors.text }}>
+                          {categorySaving
+                            ? '...'
+                            : !product?.category_level2_id
+                              ? 'Không phân loại'
+                              : productCategoriesL2.find((c) => c.id === product.category_level2_id)?.name ?? 'Không phân loại'}
+                        </Text>
+                      </Pressable>
+                      {showCategoryL2Picker && (
+                        <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
+                          <TouchableOpacity
+                            style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                            onPress={() => void applyCategoryL2(null)}
+                          >
+                            <Text style={{ color: colors.text }}>Không phân loại</Text>
+                          </TouchableOpacity>
+                          {categoryL2Options.map((cat) => (
+                            <TouchableOpacity
+                              key={cat.id}
+                              style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                              onPress={() => void applyCategoryL2(cat.id)}
+                            >
+                              <Text style={{ color: colors.text }}>{cat.name}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </>
+                  ) : (
+                    <Text style={[styles.infoText, { color: colors.text, marginTop: 4 }]}>
+                      {!product?.category_level2_id
+                        ? 'Không phân loại'
+                        : productCategoriesL2.find((c) => c.id === product.category_level2_id)?.name ?? 'Không phân loại'}
+                    </Text>
                   )}
                 </>
               )}
@@ -1168,35 +1221,39 @@ export default function ProductDetailScreen() {
                     <View style={styles.barcodeRowMain}>
                       <Text style={[styles.barcodeValue, { color: colors.text }]}>{row.barcode}</Text>
                     </View>
-                    <View style={styles.barcodeRowActions}>
-                      <TouchableOpacity
-                        style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                        onPress={() => openEditBarcodeManual(row.id, row.barcode)}
-                      >
-                        <Text style={styles.barcodeActionText}>✏️</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                        onPress={() => openEditBarcodeScan(row.id)}
-                      >
-                        <Text style={styles.barcodeActionText}>📷</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                        onPress={() => confirmDeleteBarcode(row)}
-                      >
-                        <Text style={styles.barcodeActionText}>🗑️</Text>
-                      </TouchableOpacity>
-                    </View>
+                    {canWrite ? (
+                      <View style={styles.barcodeRowActions}>
+                        <TouchableOpacity
+                          style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                          onPress={() => openEditBarcodeManual(row.id, row.barcode)}
+                        >
+                          <Text style={styles.barcodeActionText}>✏️</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                          onPress={() => openEditBarcodeScan(row.id)}
+                        >
+                          <Text style={styles.barcodeActionText}>📷</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.barcodeActionBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                          onPress={() => confirmDeleteBarcode(row)}
+                        >
+                          <Text style={styles.barcodeActionText}>🗑️</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
                   </View>
                 ))
               )}
-              <TouchableOpacity
-                style={[styles.barcodeAddBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                onPress={openAddBarcodeChooser}
-              >
-                <Text style={{ color: colors.accent, fontWeight: '600' }}>+ Thêm mã vạch</Text>
-              </TouchableOpacity>
+              {canWrite ? (
+                <TouchableOpacity
+                  style={[styles.barcodeAddBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                  onPress={openAddBarcodeChooser}
+                >
+                  <Text style={{ color: colors.accent, fontWeight: '600' }}>+ Thêm mã vạch</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           ) : null}
         </View>
@@ -1214,9 +1271,11 @@ export default function ProductDetailScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={[styles.addLotBtn, { backgroundColor: colors.accent }]} onPress={handleAddNewLot}>
-          <Text style={[styles.addLotBtnText, { color: colors.card }]}>Thêm lô hàng mới</Text>
-        </TouchableOpacity>
+        {canWrite ? (
+          <TouchableOpacity style={[styles.addLotBtn, { backgroundColor: colors.accent }]} onPress={handleAddNewLot}>
+            <Text style={[styles.addLotBtnText, { color: colors.card }]}>Thêm lô hàng mới</Text>
+          </TouchableOpacity>
+        ) : null}
 
         {isLoading ? (
           <Text style={{ color: colors.sub }}>Đang tải...</Text>
@@ -1251,21 +1310,30 @@ export default function ProductDetailScreen() {
                 {lot.quantity_boxes === 0 && (
                   <View style={[styles.depletedRow, { borderBottomColor: colors.border }]}>
                     <Text style={[styles.depletedLabel, { color: colors.sub }]}>Lô này đã hết hàng</Text>
-                    <TouchableOpacity onPress={() => handleDeleteLot(lot)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Text style={[styles.deleteLotLink, { color: colors.statusCritical }]}>Xóa lô</Text>
-                    </TouchableOpacity>
+                    {canWrite ? (
+                      <TouchableOpacity onPress={() => handleDeleteLot(lot)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Text style={[styles.deleteLotLink, { color: colors.statusCritical }]}>Xóa lô</Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
                 )}
                 {isExpiredLot && (
                   <View style={[styles.depletedRow, { borderBottomColor: colors.border }]}>
                     <Text style={[styles.depletedLabel, { color: colors.sub }]}>Lô này đã hết hạn</Text>
-                    <TouchableOpacity onPress={() => handleDeleteLot(lot)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                      <Text style={[styles.deleteLotLink, { color: colors.statusCritical }]}>Xóa lô</Text>
-                    </TouchableOpacity>
+                    {canWrite ? (
+                      <TouchableOpacity onPress={() => handleDeleteLot(lot)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Text style={[styles.deleteLotLink, { color: colors.statusCritical }]}>Xóa lô</Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </View>
                 )}
                 <View style={styles.lotRow}>
-                  <TouchableOpacity style={styles.lotMain} activeOpacity={0.75} onPress={() => openInlineEdit(lot)}>
+                  <TouchableOpacity
+                    style={styles.lotMain}
+                    activeOpacity={0.75}
+                    onPress={() => openInlineEdit(lot)}
+                    disabled={isReadOnly}
+                  >
                     <Text style={[styles.lotTitle, { color: colors.text }]}>{lotPlaceTitle}</Text>
                     <Text style={[styles.lotSub, { color: colors.sub }]}>
                       {lot.quantity_boxes} thùng · Hạn: {formatExpiryDate(lot.expiry_date)}
@@ -1275,12 +1343,14 @@ export default function ProductDetailScreen() {
                   </TouchableOpacity>
                   <View style={styles.lotActions}>
                     <View style={[styles.expiryDot, { backgroundColor: dotColor }]} />
-                    <TouchableOpacity
-                      style={[styles.actionBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                      onPress={() => openInlineEdit(lot)}
-                    >
-                      <Text style={styles.deleteBtnText}>✏️</Text>
-                    </TouchableOpacity>
+                    {canWrite ? (
+                      <TouchableOpacity
+                        style={[styles.actionBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+                        onPress={() => openInlineEdit(lot)}
+                      >
+                        <Text style={styles.deleteBtnText}>✏️</Text>
+                      </TouchableOpacity>
+                    ) : null}
                     {lot.quantity_boxes > 0 && (
                       <TouchableOpacity
                         style={[styles.actionBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
@@ -1289,18 +1359,18 @@ export default function ProductDetailScreen() {
                         <Text style={styles.deleteBtnText}>📍</Text>
                       </TouchableOpacity>
                     )}
-                    {lot.quantity_boxes > 0 && (
+                    {canWrite && lot.quantity_boxes > 0 ? (
                       <TouchableOpacity
                         style={[styles.deleteBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
                         onPress={() => handleDeleteLot(lot)}
                       >
                         <Text style={styles.deleteBtnText}>🗑️</Text>
                       </TouchableOpacity>
-                    )}
+                    ) : null}
                   </View>
                 </View>
 
-                {editingLotId === lot.id && (
+                {canWrite && editingLotId === lot.id && (
                   <View style={[styles.editBox, { borderColor: colors.border, backgroundColor: colors.bg }]}>
                     <Text style={[styles.editLabel, { color: colors.sub }]}>Số thùng</Text>
                     <TextInput
@@ -1410,44 +1480,50 @@ export default function ProductDetailScreen() {
           </View>
         )}
 
-        <View style={styles.productActionsRow}>
-          <TouchableOpacity
-            style={[
-              styles.archiveProductBtn,
-              {
-                borderColor: product?.is_archived ? colors.statusOk : colors.statusWarning,
-                backgroundColor: colors.card,
-              },
-            ]}
-            onPress={handleArchiveToggle}
-          >
-            <Text
+        {canWrite ? (
+          <View style={styles.productActionsRow}>
+            <TouchableOpacity
               style={[
-                styles.archiveProductBtnText,
-                { color: product?.is_archived ? colors.statusOk : colors.statusWarning },
+                styles.archiveProductBtn,
+                {
+                  borderColor: product?.is_archived ? colors.statusOk : colors.statusWarning,
+                  backgroundColor: colors.card,
+                },
               ]}
+              onPress={handleArchiveToggle}
             >
-              {product?.is_archived ? 'Khôi phục sản phẩm' : 'Ẩn sản phẩm'}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  styles.archiveProductBtnText,
+                  { color: product?.is_archived ? colors.statusOk : colors.statusWarning },
+                ]}
+              >
+                {product?.is_archived ? 'Khôi phục sản phẩm' : 'Ẩn sản phẩm'}
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.deleteProductBtn, { borderColor: colors.statusExpired, backgroundColor: colors.card }]}
-            onPress={handleDeleteProduct}
-          >
-            <Text style={[styles.deleteProductBtnText, { color: colors.statusExpired }]}>Xóa sản phẩm</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[styles.deleteProductBtn, { borderColor: colors.statusExpired, backgroundColor: colors.card }]}
+              onPress={handleDeleteProduct}
+            >
+              <Text style={[styles.deleteProductBtnText, { color: colors.statusExpired }]}>Xóa sản phẩm</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
 
       <ImageViewerModal
         uri={viewingImage && product?.image_url ? product.image_url : null}
         onClose={() => setViewingImage(false)}
-        onChangeImage={() => {
-          setViewingImage(false)
-          showImageOptions()
-        }}
+        onChangeImage={
+          canWrite
+            ? () => {
+                setViewingImage(false)
+                showImageOptions()
+              }
+            : undefined
+        }
       />
 
       <Modal

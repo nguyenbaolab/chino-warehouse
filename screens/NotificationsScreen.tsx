@@ -16,6 +16,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { useCanWrite } from '../stores/authStore'
 import { formatExpiryDate, getExpiryStatus, InventoryEntry, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
@@ -66,6 +67,7 @@ export default function NotificationsScreen() {
   const route = useRoute()
   const routeParams = (route.params as NotificationsRouteParams | undefined) ?? {}
   const { colors } = useThemeStore()
+  const canWrite = useCanWrite()
   const {
     expiryWarningEnabled,
     lowStockWarningEnabled,
@@ -442,20 +444,22 @@ export default function NotificationsScreen() {
                         {lot.quantityBoxes} thùng · Hạn: {formatExpiryDate(lot.expiryDate)}
                       </Text>
                     </View>
-                    <TouchableOpacity
-                      style={[
-                        styles.lotToggleBtn,
-                        {
-                          backgroundColor: lot.isPriceReduced ? '#22C55E' : colors.bg,
-                          borderColor: lot.isPriceReduced ? '#22C55E' : colors.border,
-                        },
-                      ]}
-                      onPress={() => void togglePriceReduced(lot.entryId)}
-                    >
-                      <Text style={[styles.lotToggleText, { color: lot.isPriceReduced ? '#FFFFFF' : colors.text }]}>
-                        {lot.isPriceReduced ? 'Đã giảm giá' : 'Chưa giảm giá'}
-                      </Text>
-                    </TouchableOpacity>
+                    {canWrite ? (
+                      <TouchableOpacity
+                        style={[
+                          styles.lotToggleBtn,
+                          {
+                            backgroundColor: lot.isPriceReduced ? '#22C55E' : colors.bg,
+                            borderColor: lot.isPriceReduced ? '#22C55E' : colors.border,
+                          },
+                        ]}
+                        onPress={() => void togglePriceReduced(lot.entryId)}
+                      >
+                        <Text style={[styles.lotToggleText, { color: lot.isPriceReduced ? '#FFFFFF' : colors.text }]}>
+                          {lot.isPriceReduced ? 'Đã giảm giá' : 'Chưa giảm giá'}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
                   </TouchableOpacity>
                 )
               })}
@@ -464,7 +468,7 @@ export default function NotificationsScreen() {
         </View>
       )
     },
-    [colors, expandedProducts, expiryWarningEnabled, navigation, togglePriceReduced]
+    [canWrite, colors, expandedProducts, expiryWarningEnabled, navigation, togglePriceReduced]
   )
 
   const renderLowStockItem = useCallback(
@@ -499,26 +503,28 @@ export default function NotificationsScreen() {
           </View>
         </View>
         <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} thùng</Text>
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={[styles.secondaryBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-            onPress={() => {
-              console.log('[Notifications] add to purchase list placeholder', item.productId)
-            }}
-          >
-            <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Thêm vào danh sách nhập</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-            onPress={() => void toggleDiscontinued(item.productId)}
-          >
-            <Text style={[styles.primaryBtnText, { color: colors.card }]}>Không nhập nữa</Text>
-          </TouchableOpacity>
-        </View>
+        {canWrite ? (
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              style={[styles.secondaryBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
+              onPress={() => {
+                console.log('[Notifications] add to purchase list placeholder', item.productId)
+              }}
+            >
+              <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Thêm vào danh sách nhập</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+              onPress={() => void toggleDiscontinued(item.productId)}
+            >
+              <Text style={[styles.primaryBtnText, { color: colors.card }]}>Không nhập nữa</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
       )
     },
-    [colors, expiryWarningEnabled, lowStockWarningEnabled, navigation, toggleDiscontinued]
+    [canWrite, colors, expiryWarningEnabled, lowStockWarningEnabled, navigation, toggleDiscontinued]
   )
 
   return (

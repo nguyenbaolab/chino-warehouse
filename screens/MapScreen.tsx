@@ -10,6 +10,7 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore, type ThemeColors } from '../stores/themeStore'
 import { Zone, ZoneCell, InventoryEntry, Product, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
 import { useWarningStore } from '../stores/warningStore'
+import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { getDisplayColorForEntry } from '../utils/statusUtils'
 import ZoneDetailSheet from '../components/ZoneDetailSheet'
 
@@ -134,6 +135,8 @@ export default function MapScreen() {
 
   const { colors, loadTheme } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
+  const canWrite = useCanWrite()
+  const isReadOnly = useIsReadOnly()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<InventoryEntry[]>([])
@@ -434,6 +437,7 @@ export default function MapScreen() {
   }
 
   function startAddZone() {
+    if (isReadOnly) return
     setEditingZone(null)
     setSelectedCells([])
     setSelectedColor(ZONE_COLORS[0])
@@ -476,6 +480,7 @@ export default function MapScreen() {
   }
 
   function confirmSelection() {
+    if (isReadOnly) return
     if (selectedCells.length === 0) {
       Alert.alert('Chưa chọn ô', 'Hãy chọn ít nhất 1 ô trên lưới.')
       return
@@ -491,6 +496,7 @@ export default function MapScreen() {
   }
 
   async function saveZone() {
+    if (isReadOnly) return
     if (isSavingZone) return
     if (!zoneName.trim()) {
       Alert.alert('Lỗi', 'Tên zone không được để trống')
@@ -540,6 +546,7 @@ export default function MapScreen() {
   }
 
   function startEditZone() {
+    if (isReadOnly) return
     if (!tappedZone) return
     setEditingZone(tappedZone)
     setSelectedCells(tappedZone.cells ?? [])
@@ -554,6 +561,7 @@ export default function MapScreen() {
   }
 
   async function handleDeleteZone() {
+    if (isReadOnly) return
     if (!tappedZone) return
     setActionModal(false)
     Alert.alert('Xóa zone', `Xóa zone "${tappedZone.name}"?`, [
@@ -729,33 +737,35 @@ export default function MapScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>🏪 Chino's Warehouse</Text>
         {mode === 'normal' ? (
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              style={[
-                styles.layoutBtn,
-                { backgroundColor: colors.card, borderColor: colors.border },
-                !selectedLocationId ? { opacity: 0.35 } : null,
-              ]}
-              onPress={() => {
-                if (!selectedLocationId) return
-                navigation.navigate('ZoneLayoutEditor', {
-                  locationId: selectedLocationId,
-                  markOwnMutation,
-                })
-              }}
-              disabled={!selectedLocationId}
-            >
-              <Text style={[styles.layoutBtnIcon, { color: colors.text }]}>▦</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.accent }]} onPress={startAddZone}>
-              <Text style={styles.addBtnText}>+ Zone</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
+          canWrite ? (
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={[
+                  styles.layoutBtn,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                  !selectedLocationId ? { opacity: 0.35 } : null,
+                ]}
+                onPress={() => {
+                  if (!selectedLocationId) return
+                  navigation.navigate('ZoneLayoutEditor', {
+                    locationId: selectedLocationId,
+                    markOwnMutation,
+                  })
+                }}
+                disabled={!selectedLocationId}
+              >
+                <Text style={[styles.layoutBtnIcon, { color: colors.text }]}>▦</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.accent }]} onPress={startAddZone}>
+                <Text style={styles.addBtnText}>+ Zone</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null
+        ) : canWrite ? (
           <TouchableOpacity style={[styles.cancelBtn, { backgroundColor: colors.card }]} onPress={cancelSelect}>
             <Text style={[styles.cancelBtnText, { color: colors.text }]}>Hủy</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
 
       {/* Location selector — dropdown sheet (KI-004: clear search khi đổi kho) */}
@@ -803,12 +813,14 @@ export default function MapScreen() {
                 )
               })}
             </ScrollView>
-            <TouchableOpacity
-              style={[styles.locationSheetAddBtn, { backgroundColor: colors.accent }]}
-              onPress={openAddWarehouseFromMap}
-            >
-              <Text style={[styles.locationSheetAddBtnText, { color: colors.card }]}>Thêm kho mới</Text>
-            </TouchableOpacity>
+            {canWrite ? (
+              <TouchableOpacity
+                style={[styles.locationSheetAddBtn, { backgroundColor: colors.accent }]}
+                onPress={openAddWarehouseFromMap}
+              >
+                <Text style={[styles.locationSheetAddBtnText, { color: colors.card }]}>Thêm kho mới</Text>
+              </TouchableOpacity>
+            ) : null}
           </Pressable>
         </Pressable>
       </Modal>
@@ -944,7 +956,7 @@ export default function MapScreen() {
       )}
 
       {/* Confirm bar */}
-      {mode === 'selecting' && (
+      {mode === 'selecting' && canWrite && (
         <View style={[styles.confirmBar, { backgroundColor: colors.bg, borderTopColor: colors.border }]}>
           <TouchableOpacity style={[styles.confirmBtn, { backgroundColor: colors.accent }]} onPress={confirmSelection}>
             <Text style={styles.confirmBtnText}>
@@ -1007,16 +1019,18 @@ export default function MapScreen() {
               >
                 <Text style={{ color: colors.sub }}>Hủy</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={saveZone}
-                disabled={isSavingZone}
-                style={[
-                  styles.modalSaveBtn,
-                  { backgroundColor: colors.accent, opacity: isSavingZone ? 0.5 : 1 },
-                ]}
-              >
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Lưu</Text>
-              </TouchableOpacity>
+              {canWrite ? (
+                <TouchableOpacity
+                  onPress={saveZone}
+                  disabled={isSavingZone}
+                  style={[
+                    styles.modalSaveBtn,
+                    { backgroundColor: colors.accent, opacity: isSavingZone ? 0.5 : 1 },
+                  ]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Lưu</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -1034,12 +1048,18 @@ export default function MapScreen() {
             <TouchableOpacity style={[styles.actionBtn, { borderBottomColor: colors.border }]} onPress={openZoneDetail}>
               <Text style={[styles.actionBtnText, { color: colors.text }]}>📦 Xem hàng trong zone</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, { borderBottomColor: colors.border }]} onPress={startEditZone}>
-              <Text style={[styles.actionBtnText, { color: colors.text }]}>✏️ Sửa zone</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, { borderBottomWidth: 0 }]} onPress={handleDeleteZone}>
-              <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>🗑️ Xóa zone</Text>
-            </TouchableOpacity>
+            {canWrite ? (
+              <TouchableOpacity style={[styles.actionBtn, { borderBottomColor: colors.border }]} onPress={startEditZone}>
+                <Text style={[styles.actionBtnText, { color: colors.text }]}>✏️ Sửa zone</Text>
+              </TouchableOpacity>
+            ) : null}
+            {canWrite ? (
+              <TouchableOpacity style={[styles.actionBtn, { borderBottomWidth: 0 }]} onPress={handleDeleteZone}>
+                <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>🗑️ Xóa zone</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={{ height: 8 }} />
+            )}
           </View>
         </TouchableOpacity>
       </Modal>

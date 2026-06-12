@@ -19,6 +19,7 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { supabase } from '../lib/supabase'
 import { Location } from '../types'
+import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 
 const DEFAULT_GRID = 6
 
@@ -42,6 +43,8 @@ export default function LocationManagementScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
   const { colors } = useThemeStore()
+  const canWrite = useCanWrite()
+  const isReadOnly = useIsReadOnly()
   const { locations, fetchLocations, addLocation, updateLocation, deleteLocation } = useWarehouseStore()
 
   const [skuCounts, setSkuCounts] = useState<Map<string, number>>(new Map())
@@ -99,6 +102,13 @@ export default function LocationManagementScreen() {
       navigation.setParams({ openCreateModal: undefined })
     }
   }, [route.params?.openCreateModal, navigation])
+
+  useEffect(() => {
+    if (isReadOnly) {
+      Alert.alert('Bạn không có quyền thực hiện thao tác này')
+      navigation.goBack()
+    }
+  }, [isReadOnly, navigation])
 
   const sortedLocations = useMemo(
     () => [...locations].sort((a, b) => a.name.localeCompare(b.name)),
@@ -215,22 +225,24 @@ export default function LocationManagementScreen() {
                     <Text style={[styles.cardLine, { color: colors.sub }]}>Grid size: {gr} × {gc}</Text>
                     <Text style={[styles.cardLine, { color: colors.sub }]}>Số sản phẩm: {sku}</Text>
                   </View>
-                  <View style={styles.cardActions}>
-                    <TouchableOpacity
-                      style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                      onPress={() => openEdit(loc)}
-                      hitSlop={8}
-                    >
-                      <Text style={{ fontSize: 16 }}>✏️</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                      onPress={() => confirmDelete(loc)}
-                      hitSlop={8}
-                    >
-                      <Text style={{ fontSize: 16 }}>🗑️</Text>
-                    </TouchableOpacity>
-                  </View>
+                  {canWrite ? (
+                    <View style={styles.cardActions}>
+                      <TouchableOpacity
+                        style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                        onPress={() => openEdit(loc)}
+                        hitSlop={8}
+                      >
+                        <Text style={{ fontSize: 16 }}>✏️</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                        onPress={() => confirmDelete(loc)}
+                        hitSlop={8}
+                      >
+                        <Text style={{ fontSize: 16 }}>🗑️</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
                 </View>
               </View>
             )
@@ -241,18 +253,20 @@ export default function LocationManagementScreen() {
         </ScrollView>
       )}
 
-      <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.accent }]}
-        activeOpacity={0.85}
-        onPress={() => {
-          setNewName('')
-          setNewRows('6')
-          setNewCols('6')
-          setCreateOpen(true)
-        }}
-      >
-        <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
-      </TouchableOpacity>
+      {canWrite ? (
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: colors.accent }]}
+          activeOpacity={0.85}
+          onPress={() => {
+            setNewName('')
+            setNewRows('6')
+            setNewCols('6')
+            setCreateOpen(true)
+          }}
+        >
+          <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
+        </TouchableOpacity>
+      ) : null}
 
       {/* Modal tạo kho */}
       <Modal visible={createOpen} transparent animationType="slide" onRequestClose={() => setCreateOpen(false)}>

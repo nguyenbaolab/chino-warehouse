@@ -7,6 +7,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { Product } from '../types'
 import { tabsParamsForReturnTabMain } from '../lib/tabNavigation'
+import { useIsReadOnly } from '../stores/authStore'
 
 type BarcodeScannerParams = {
   mode?: 'search' | 'locate'
@@ -47,6 +48,7 @@ export default function BarcodeScannerScreen() {
     productDetailParams,
   } = (route.params || {}) as BarcodeScannerParams
   const { colors } = useThemeStore()
+  const isReadOnly = useIsReadOnly()
   const { searchByBarcode, lookupProductByBarcode } = useWarehouseStore()
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
@@ -97,41 +99,48 @@ export default function BarcodeScannerScreen() {
     }, 160)
   }
 
-  /** Không tìm thấy lô — locate & search dùng chung 3 nút: Thử lại / Thêm thủ công / Huỷ */
+  /** Không tìm thấy lô — locate & search: Thử lại / (Thêm thủ công nếu có quyền) / Huỷ */
   function openBarcodeNotFoundAlert(effectiveReturnTab: string) {
     processingRef.current = false
+    const buttons: Parameters<typeof Alert.alert>[2] = [
+      {
+        text: 'Thử lại',
+        onPress: () => {
+          processingRef.current = false
+          setIsScanLocked(false)
+        },
+      },
+    ]
+    if (!isReadOnly) {
+      buttons.push({
+        text: 'Thêm thủ công',
+        onPress: () => {
+          navigateTabsThenCloseModal({
+            screen: effectiveReturnTab,
+            params: {
+              screen: 'AddInventory',
+              params: { returnTab: effectiveReturnTab },
+            },
+          })
+        },
+      })
+    }
+    buttons.push({
+      text: 'Huỷ',
+      style: 'cancel',
+      onPress: () => {
+        processingRef.current = false
+        setIsScanLocked(false)
+        navigateTabsThenCloseModal(tabsParamsForReturnTabMain(effectiveReturnTab))
+      },
+    })
     Alert.alert(
       'Không tìm thấy mã vạch',
-      'Mã vạch lô này chưa có trong hệ thống. Bạn có thể thử lại, thêm thủ công hoặc huỷ.',
+      isReadOnly
+        ? 'Mã vạch lô này chưa có trong hệ thống. Bạn có thể thử lại hoặc huỷ.'
+        : 'Mã vạch lô này chưa có trong hệ thống. Bạn có thể thử lại, thêm thủ công hoặc huỷ.',
       [
-        {
-          text: 'Thử lại',
-          onPress: () => {
-            processingRef.current = false
-            setIsScanLocked(false)
-          },
-        },
-        {
-          text: 'Thêm thủ công',
-          onPress: () => {
-            navigateTabsThenCloseModal({
-              screen: effectiveReturnTab,
-              params: {
-                screen: 'AddInventory',
-                params: { returnTab: effectiveReturnTab },
-              },
-            })
-          },
-        },
-        {
-          text: 'Huỷ',
-          style: 'cancel',
-          onPress: () => {
-            processingRef.current = false
-            setIsScanLocked(false)
-            navigateTabsThenCloseModal(tabsParamsForReturnTabMain(effectiveReturnTab))
-          },
-        },
+        ...buttons,
       ],
       { cancelable: true }
     )

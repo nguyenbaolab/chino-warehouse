@@ -19,7 +19,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - RLS bật trên tất cả **10 bảng** app (`user_profiles` có policy theo role F24; các bảng còn lại `authenticated_only` / `allow_all`).
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
-- RBAC (F24) → Phase 3 **đang implement Task 1** (xong): `user_profiles`, `authStore`, guard `is_disabled` ở `App.tsx`. Task 2/3: `UserManagementScreen`, guard theo role.
+- RBAC (F24) → Phase 3: Task 1 (xong) `user_profiles` + guard `is_disabled`; **Task 2 (xong)** guard guest read-only toàn app + card User Management (admin); Task 3: `UserManagementScreen`.
 
 **Build & phân phối APK:** hướng dẫn vận hành đầy đủ (EAS Cloud + EAS Local qua WSL2, cache Gradle, lỗi thường gặp, script `build.sh`) → **`docs/BUILD_APK_GUIDE.md`**. Checklist go-live: `docs/phases/phase-2/GOLIVE_CHECKLIST_2.md`. Tổng quan kiến trúc EAS (phase 2): `docs/phases/phase-2/EAS_BUILD_GUIDE.md`.
 
@@ -150,6 +150,8 @@ README.md
 **Actions:** `fetchCurrentUserProfile` (query `user_profiles` theo `session.user.id`), `clearCurrentUserProfile`, `updateLastLogin` (RPC `update_my_last_login`).
 
 **Gọi từ:** `App.tsx` — fetch sau khi có session; clear khi logout; guard `is_disabled`.
+
+**Hooks (Task 2):** `useIsReadOnly()` — `role === 'guest'`; `useCanWrite()` — `role !== 'guest'`; `useIsAdmin()` — `admin` \| `super_admin`; `useIsSuperAdmin()` — `super_admin`. Dùng ẩn nút CRUD và safety handler trên màn hình.
 
 ---
 

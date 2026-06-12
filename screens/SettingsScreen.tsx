@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { supabase } from '../lib/supabase'
+import { useIsAdmin } from '../stores/authStore'
 
 export default function SettingsScreen() {
   const navigation = useNavigation<any>()
@@ -23,6 +24,7 @@ export default function SettingsScreen() {
     fetchLatestAuditEntry,
   } = useWarehouseStore()
   const { isDark, colors, loadTheme, toggleTheme } = useThemeStore()
+  const isAdmin = useIsAdmin()
   const {
     expiryWarningEnabled,
     lowStockWarningEnabled,
@@ -212,6 +214,20 @@ export default function SettingsScreen() {
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
+
+      {isAdmin ? (
+        <TouchableOpacity
+          style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          activeOpacity={0.75}
+          onPress={() => Alert.alert('Đang phát triển', 'Quản lý người dùng sẽ có trong bản cập nhật tiếp theo.')}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.linkTitle, { color: colors.text }]}>Quản lý người dùng</Text>
+            <Text style={[styles.linkSub, { color: colors.sub }]}>Phân quyền và vô hiệu hóa</Text>
+          </View>
+          <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+        </TouchableOpacity>
+      ) : null}
 
       <Text style={[styles.sectionTitle, { color: colors.sub }]}>Cảnh báo</Text>
 
