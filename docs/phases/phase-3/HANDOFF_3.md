@@ -106,6 +106,11 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 | `screens/AuditLogScreen.tsx` | SEC-05 — maxLength SearchableDropdownModal search |
 | `screens/ZoneLayoutEditorScreen.tsx` | SEC-05 — maxLength 1 input |
 | `components/ZoneDetailSheet.tsx` | SEC-05 — maxLength 7 input |
+| `utils/errorMessages.ts` | SEC-06 — `getErrorMessage(error, operation)` |
+| `stores/warehouseStore.ts` | SEC-06 — wrap 27 Supabase error sites |
+| `stores/authStore.ts` | SEC-06 — wrap fetchUsers / update role / disabled |
+| `screens/LoginScreen.tsx` | SEC-06 — auth fallback generic |
+| `screens/ProductDetailScreen.tsx` | SEC-06 — deleteProduct catch + console.error |
 
 ---
 
@@ -113,7 +118,6 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 
 | KI | Mô tả | Mức độ | Trạng thái |
 |----|-------|--------|-----------|
-| KI-018 | SEC-06: Error message lộ schema | High | Open |
 | KI-044 | Format nhập hạn DD/MM/YYYY ở ZoneDetailSheet inline edit | Medium | Resolved |
 | KI-045 | ProductsScreen: barcode X clear + barcode text search | High | Resolved |
 | KI-046 | Zone overlap race condition khi tạo zone | High | Resolved |
@@ -171,7 +175,7 @@ Chi tiết task: **`docs/phases/phase-3/PLAN_3.md`**.
 ### Security
 
 - [x] **SEC-05** — `maxLength` trên TextInput — KI-017
-- [ ] **SEC-06** — Generic error messages — KI-018
+- [x] **SEC-06** — Generic error messages — KI-018
 
 ### Docs & QA
 

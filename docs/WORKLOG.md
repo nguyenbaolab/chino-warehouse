@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — feat: SEC-06 — generic error messages, helper getErrorMessage, wrap 30 chỗ trong store + 2 UI
+
+- `utils/errorMessages.ts`: `getErrorMessage(error, operation)` — detect RLS (42501) + network; 6 operation map.
+- `warehouseStore`: 19 passthrough + 8 `throw error` → generic; `console.error` raw trước khi wrap.
+- `authStore`: fetchUsers / updateUserRole / updateUserDisabled / updateLastLogin log.
+- `LoginScreen`, `ProductDetailScreen` (deleteProduct catch).
+
+---
+
 ## [tháng 5/2026] — feat: SEC-05 — maxLength cho mọi TextInput (48 fields, 12 files)
 
 - Thêm `maxLength` theo bảng giới hạn theo loại field (tên SP 200, tên khác/search/email/password 100, ghi chú 500, barcode 50, số thùng 6, ngày 10, ngưỡng ngày 4, ngưỡng thùng 6, tier/grid 2).

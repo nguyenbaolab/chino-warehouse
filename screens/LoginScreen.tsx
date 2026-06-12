@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useThemeStore } from '../stores/themeStore'
 import { supabase } from '../lib/supabase'
+import { getErrorMessage } from '../utils/errorMessages'
 
 export default function LoginScreen() {
   const { colors } = useThemeStore()
@@ -44,7 +45,7 @@ export default function LoginScreen() {
       if (authError.message.includes('Invalid login credentials')) {
         setError('Email hoặc mật khẩu không đúng.')
       } else {
-        setError(authError.message)
+        setError(getErrorMessage(authError, 'auth'))
       }
     }
     // Login thành công → App.tsx useEffect(session) tự reset inactivity timer

@@ -316,8 +316,8 @@
 - **Mức độ:** High
 - **File liên quan:** `stores/warehouseStore.ts`, các screens hiển thị `error?.message`
 - **Mô tả:** `error?.message` từ Supabase truyền thẳng ra UI, có thể chứa tên bảng, constraint, foreign key.
-- **Trạng thái:** Open
-- **Hướng fix:** Wrap error Supabase bằng generic message "Có lỗi xảy ra, vui lòng thử lại"; log chi tiết chỉ với `__DEV__`.
+- **Trạng thái:** Resolved
+- **Hướng fix:** Wrap error Supabase bằng generic message qua `getErrorMessage`; log chi tiết `console.error` trong store (SEC-06).
 
 ---
 

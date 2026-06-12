@@ -71,6 +71,7 @@ utils/
   dateUtils.ts          # isoExpiryToDisplay / parseDisplayDateToIso / isValidDisplayDate (nhập hạn lô)
   conflictUtils.ts     # A5 checkConflict optimistic locking (updated_at + audit_logs)
   imageUtils.ts        # uploadProductImage, deleteProductImage, compressImage (F08)
+  errorMessages.ts     # SEC-06 getErrorMessage — generic Supabase errors (RLS, network, operation map)
 screens/
   AddInventoryScreen.tsx
   AuditLogScreen.tsx

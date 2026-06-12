@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { getErrorMessage } from '../utils/errorMessages'
 import type { UserProfile, UserProfileWithEmail, UserRole } from '../types'
 
 type AuthStore = {
@@ -94,7 +95,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   updateLastLogin: async () => {
     const { error } = await supabase.rpc('update_my_last_login')
     if (error) {
-      console.warn('[authStore] update_my_last_login failed:', error.message)
+      console.error('[authStore] updateLastLogin failed:', error)
     }
   },
 
@@ -103,27 +104,35 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const { data, error } = await supabase.rpc('list_user_profiles_with_email')
       if (error) {
+        console.error('[authStore] fetchUsers:', error)
         set({ isLoadingUsers: false })
-        return error.message
+        return getErrorMessage(error, 'fetch')
       }
       const rows = (data ?? []) as UserProfileWithEmail[]
       set({ users: rows, isLoadingUsers: false })
       return null
     } catch (e) {
+      console.error('[authStore] fetchUsers:', e)
       set({ isLoadingUsers: false })
-      return e instanceof Error ? e.message : 'Unknown error'
+      return getErrorMessage(e, 'fetch')
     }
   },
 
   updateUserRole: async (userId, newRole) => {
     const { error } = await supabase.from('user_profiles').update({ role: newRole }).eq('id', userId)
-    if (error) return error.message
+    if (error) {
+      console.error('[authStore] updateUserRole:', error)
+      return getErrorMessage(error, 'update')
+    }
     return get().fetchUsers()
   },
 
   updateUserDisabled: async (userId, isDisabled) => {
     const { error } = await supabase.from('user_profiles').update({ is_disabled: isDisabled }).eq('id', userId)
-    if (error) return error.message
+    if (error) {
+      console.error('[authStore] updateUserDisabled:', error)
+      return getErrorMessage(error, 'update')
+    }
     return get().fetchUsers()
   },
 }))

@@ -4,6 +4,13 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### SEC-06 — Generic error messages
+
+- **Ngày:** tháng 5/2026
+- **Quyết định:** SEC-06: helper `getErrorMessage(error, operation)`, detect RLS (42501) + network, 6 operation map; fix tại store, UI giữ nguyên Alert `result.error` vì store đã sạch.
+
+---
+
 ### SEC-05 — maxLength trên TextInput
 
 - **Ngày:** tháng 5/2026

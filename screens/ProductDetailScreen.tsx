@@ -37,6 +37,7 @@ import {
 import { checkConflict } from '../utils/conflictUtils'
 import { isoExpiryToDisplay, isValidDisplayDate, parseDisplayDateToIso } from '../utils/dateUtils'
 import { pickImage, uploadProductImage, deleteProductImage } from '../utils/imageUtils'
+import { getErrorMessage } from '../utils/errorMessages'
 
 type ProductDetailRouteParams = {
   productId: string
@@ -918,9 +919,9 @@ export default function ProductDetailScreen() {
                 await deleteProduct(product.id)
                 navigation.goBack()
               } catch (err) {
-                const message =
-                  err instanceof Error ? err.message : 'Không thể xóa sản phẩm.'
-                Alert.alert('Không thể xóa', message)
+                console.error('[ProductDetail] deleteProduct failed:', err)
+                const msg = err instanceof Error ? err.message : getErrorMessage(err, 'delete')
+                Alert.alert('Không thể xóa', msg)
               }
             })()
           },

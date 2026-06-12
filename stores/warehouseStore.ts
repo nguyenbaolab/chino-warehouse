@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
 import { deleteProductImage } from '../utils/imageUtils'
+import { getErrorMessage } from '../utils/errorMessages'
 import { normalizeText } from '../utils/textUtils'
 import {
   Location,
@@ -184,7 +185,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*')
       .single()
     if (error || !created) {
-      return { error: error?.message ?? 'Không tạo được kho.' }
+      if (error) console.error('[warehouseStore] addLocation:', error)
+      return { error: getErrorMessage(error, 'create') }
     }
     const location = created as Location
     await get().fetchLocations()
@@ -234,7 +236,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('locations').update(payload).eq('id', id)
     if (error) {
-      return { error: error.message ?? 'Cập nhật kho thất bại.' }
+      console.error('[warehouseStore] updateLocation:', error)
+      return { error: getErrorMessage(error, 'update') }
     }
     await get().fetchLocations()
     return { error: null }
@@ -243,7 +246,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   deleteLocation: async (id) => {
     const { data: zones, error: zErr } = await supabase.from('zones').select('id').eq('location_id', id)
     if (zErr) {
-      return { error: zErr.message ?? 'Không đọc được danh sách zone.' }
+      console.error('[warehouseStore] deleteLocation (zones):', zErr)
+      return { error: getErrorMessage(zErr, 'delete') }
     }
     const zoneIds = (zones ?? []).map((z) => z.id)
     if (zoneIds.length > 0) {
@@ -252,7 +256,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         .select('id', { count: 'exact', head: true })
         .in('zone_id', zoneIds)
       if (cErr) {
-        return { error: cErr.message ?? 'Không kiểm tra được tồn kho.' }
+        console.error('[warehouseStore] deleteLocation (inventory check):', cErr)
+        return { error: getErrorMessage(cErr, 'delete') }
       }
       if ((count ?? 0) > 0) {
         return {
@@ -264,7 +269,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     const wasSelected = get().selectedLocationId === id
     const { error: delErr } = await supabase.from('locations').delete().eq('id', id)
     if (delErr) {
-      return { error: delErr.message ?? 'Xóa kho thất bại.' }
+      console.error('[warehouseStore] deleteLocation:', delErr)
+      return { error: getErrorMessage(delErr, 'delete') }
     }
     await get().fetchLocations()
     if (wasSelected) {
@@ -304,7 +310,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     ])
     const err = e1 ?? e2
     if (err) {
-      return { error: err.message ?? 'Không tải được phân loại.' }
+      console.error('[warehouseStore] fetchCategories:', err)
+      return { error: getErrorMessage(err, 'fetch') }
     }
     set({
       productCategoriesL1: (l1 as ProductCategoryL1[]) ?? [],
@@ -324,7 +331,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*')
       .single()
     if (error || !created) {
-      return { error: error?.message ?? 'Không tạo được nhóm.' }
+      if (error) console.error('[warehouseStore] addCategoryL1:', error)
+      return { error: getErrorMessage(error, 'create') }
     }
     const row = created as ProductCategoryL1
     set((s) => ({
@@ -342,7 +350,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('product_categories_l1').update({ name: trimmed }).eq('id', id)
     if (error) {
-      return { error: error.message ?? 'Cập nhật nhóm thất bại.' }
+      console.error('[warehouseStore] updateCategoryL1:', error)
+      return { error: getErrorMessage(error, 'update') }
     }
     set((s) => ({
       productCategoriesL1: s.productCategoriesL1
@@ -370,7 +379,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('product_categories_l1').delete().eq('id', id)
     if (error) {
-      return { error: error.message ?? 'Xóa nhóm thất bại.' }
+      console.error('[warehouseStore] deleteCategoryL1:', error)
+      return { error: getErrorMessage(error, 'delete') }
     }
     set((s) => ({
       productCategoriesL1: s.productCategoriesL1.filter((c) => c.id !== id),
@@ -397,7 +407,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*')
       .single()
     if (error || !created) {
-      return { error: error?.message ?? 'Không tạo được loại.' }
+      if (error) console.error('[warehouseStore] addCategoryL2:', error)
+      return { error: getErrorMessage(error, 'create') }
     }
     const row = created as ProductCategoryL2
     set((s) => ({
@@ -415,7 +426,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('product_categories_l2').update({ name: trimmed }).eq('id', id)
     if (error) {
-      return { error: error.message ?? 'Cập nhật loại thất bại.' }
+      console.error('[warehouseStore] updateCategoryL2:', error)
+      return { error: getErrorMessage(error, 'update') }
     }
     set((s) => ({
       productCategoriesL2: s.productCategoriesL2
@@ -435,7 +447,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('product_categories_l2').delete().eq('id', id)
     if (error) {
-      return { error: error.message ?? 'Xóa loại thất bại.' }
+      console.error('[warehouseStore] deleteCategoryL2:', error)
+      return { error: getErrorMessage(error, 'delete') }
     }
     set((s) => ({
       productCategoriesL2: s.productCategoriesL2.filter((c) => c.id !== id),
@@ -488,7 +501,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .from('inventory_entries')
       .select('*, product:products(*), zone:zones(*)')
     if (error) {
-      return { error: error.message ?? 'Không tải được tồn kho.' }
+      console.error('[warehouseStore] fetchAllInventoryEntries:', error)
+      return { error: getErrorMessage(error, 'fetch') }
     }
     set({ inventoryEntries: data ?? [] })
     return { error: null }
@@ -609,7 +623,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
             .from('product_barcodes')
             .update({ product_id: productId, last_scanned_at: now })
             .eq('id', existing.id)
-          if (error) throw error
+          if (error) {
+            console.error('[warehouseStore] upsertProductBarcode (reassign):', error)
+            throw new Error(getErrorMessage(error, 'update'))
+          }
           return
         }
         throw new Error('Barcode đã thuộc sản phẩm khác')
@@ -618,7 +635,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         .from('product_barcodes')
         .update({ last_scanned_at: now })
         .eq('id', existing.id)
-      if (error) throw error
+      if (error) {
+        console.error('[warehouseStore] upsertProductBarcode (update):', error)
+        throw new Error(getErrorMessage(error, 'update'))
+      }
       return
     }
 
@@ -630,7 +650,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         first_scanned_at: now,
         last_scanned_at: now,
       })
-    if (error) throw error
+    if (error) {
+      console.error('[warehouseStore] upsertProductBarcode (insert):', error)
+      throw new Error(getErrorMessage(error, 'update'))
+    }
   },
 
   fetchProductBarcodes: async (productId) => {
@@ -639,13 +662,19 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*')
       .eq('product_id', productId)
       .order('last_scanned_at', { ascending: false })
-    if (error) throw error
+    if (error) {
+      console.error('[warehouseStore] fetchProductBarcodes:', error)
+      throw new Error(getErrorMessage(error, 'fetch'))
+    }
     return (data as ProductBarcode[]) ?? []
   },
 
   deleteProductBarcode: async (barcodeId) => {
     const { error } = await supabase.from('product_barcodes').delete().eq('id', barcodeId)
-    if (error) throw error
+    if (error) {
+      console.error('[warehouseStore] deleteProductBarcode:', error)
+      throw new Error(getErrorMessage(error, 'delete'))
+    }
   },
 
   updateProductBarcode: async (barcodeId, newBarcode) => {
@@ -658,7 +687,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .eq('id', barcodeId)
       .maybeSingle()
 
-    if (fetchError) return { error: fetchError.message }
+    if (fetchError) {
+      console.error('[warehouseStore] updateProductBarcode (fetch):', fetchError)
+      return { error: getErrorMessage(fetchError, 'fetch') }
+    }
     if (!row) return { error: 'Không tìm thấy mã vạch.' }
     if (row.barcode === normalized) return {}
 
@@ -678,7 +710,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .update({ barcode: normalized, last_scanned_at: now })
       .eq('id', barcodeId)
 
-    if (error) return { error: error.message }
+    if (error) {
+      console.error('[warehouseStore] updateProductBarcode (update):', error)
+      return { error: getErrorMessage(error, 'update') }
+    }
     return {}
   },
 
@@ -735,7 +770,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
 
     const { error } = await supabase.from('products').delete().eq('id', productId)
-    if (error) throw error
+    if (error) {
+      console.error('[warehouseStore] deleteProduct:', error)
+      throw new Error(getErrorMessage(error, 'delete'))
+    }
 
     set((s) => ({
       products: s.products.filter((p) => p.id !== productId),
@@ -816,7 +854,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .single()
 
     if (error) {
-      return { error: error.message, product: null }
+      console.error('[warehouseStore] updateProductCategory:', error)
+      return { error: getErrorMessage(error, 'update'), product: null }
     }
     if (updated) {
       set((s) => ({
@@ -857,7 +896,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .update({ image_url: url })
       .eq('id', productId)
 
-    if (error) throw error
+    if (error) {
+      console.error('[warehouseStore] updateProductImage:', error)
+      throw new Error(getErrorMessage(error, 'upload'))
+    }
 
     set((s) => ({
       products: s.products.map((p) =>
@@ -877,7 +919,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .update({ image_url: null })
       .eq('id', productId)
 
-    if (error) throw error
+    if (error) {
+      console.error('[warehouseStore] removeProductImage:', error)
+      throw new Error(getErrorMessage(error, 'delete'))
+    }
 
     set((s) => ({
       products: s.products.map((p) =>
@@ -919,7 +964,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     for (const u of updates) {
       const { error } = await supabase.from('zones').update({ cells: u.cells }).eq('id', u.id)
       if (error) {
-        return { error: error.message ?? 'Cập nhật zone thất bại.' }
+        console.error('[warehouseStore] batchUpdateZoneCells:', error)
+        return { error: getErrorMessage(error, 'update') }
       }
     }
     await get().fetchZones(locationId)
