@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -139,6 +139,12 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
       <View style={styles.topSpacer} />
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>⚙️ Cài đặt</Text>
@@ -301,12 +307,15 @@ export default function SettingsScreen() {
       >
         <Text style={styles.logoutText}>Đăng xuất</Text>
       </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scroll: { flex: 1 },
+  scrollContent: { paddingBottom: 24 },
   topSpacer: { height: Platform.OS === 'android' ? 16 : 0 },
   header: { paddingHorizontal: 16, paddingVertical: 12 },
   title: { fontSize: 17, fontWeight: 'bold' },

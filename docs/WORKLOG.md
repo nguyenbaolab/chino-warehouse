@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: SettingsScreen scroll không hoạt động
+
+- Wrap toàn bộ content trong `ScrollView` (`flex: 1`, `contentContainerStyle` `paddingBottom: 24`); root vẫn `SafeAreaView`.
+
+---
+
 ## [tháng 5/2026] — feat: F24 — realtime kick disable + presence tracking online users + switch spacing
 
 - Migration `20260601000500_add_user_profiles_to_realtime.sql`; `schema.sql` v3.15.
