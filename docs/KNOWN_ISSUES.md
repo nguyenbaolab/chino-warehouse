@@ -2,6 +2,17 @@
 
 ---
 
+### [KI-056] F24 — `last_login_at` không cập nhật / UserManagement hiện "Chưa đăng nhập"
+
+- **Mức độ:** Medium (data / UX)
+- **File liên quan:** `App.tsx`, `stores/authStore.ts`, `supabase/migrations/20260601000000_add_user_profiles.sql`
+- **Mô tả:** `App.tsx` đã gọi `updateLastLogin()` sau fetch profile OK; RPC `update_my_last_login` có `GRANT EXECUTE TO authenticated`. Root cause: **`updateLastLogin()` không kiểm tra `error` từ `supabase.rpc`** → fail im lặng, khó debug. User login trước Task 1 không có `last_login_at` cho đến khi login lại thành công hoặc backfill.
+- **Hướng fix:** Log/warn lỗi RPC ở client; backfill `last_login_at` từ `auth.users.last_sign_in_at`.
+- **Trạng thái:** Resolved
+- **Đã fix:** `authStore.updateLastLogin` log error; migration `20260601000400_backfill_last_login_at.sql`.
+
+---
+
 ### [KI-055] F24 Task 2 — Guest RBAC chỉ guard client; RLS server chưa enforce
 
 - **Mức độ:** High (security — bypass nếu hack client)

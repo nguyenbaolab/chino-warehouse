@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 5/2026] — fix: F24 Task 3 — last_login_at update + backfill + UI badge/spacing
+
+- `authStore.updateLastLogin`: log lỗi RPC `update_my_last_login` (trước đó silent fail).
+- Migration `20260601000400_backfill_last_login_at.sql` từ `auth.users.last_sign_in_at`; `schema.sql` v3.14.
+- `UserManagementScreen`: ẩn trạng thái khi active; badge đỏ khi disabled; switch rows gọn hơn.
+
+---
+
 ## [tháng 5/2026] — feat: F24 RBAC Task 3 — UserManagementScreen + RPC list_user_profiles_with_email
 
 - Migration `20260601000300_add_list_users_rpc.sql`; `schema.sql` v3.13.

@@ -219,15 +219,14 @@ export default function UserManagementScreen() {
                     <View style={[styles.badge, { backgroundColor: badge.color + '22' }]}>
                       <Text style={[styles.badgeText, { color: badge.color }]}>{badge.label}</Text>
                     </View>
-                    <Text style={[styles.metaDot, { color: colors.sub }]}>·</Text>
-                    <Text
-                      style={[
-                        styles.statusText,
-                        { color: user.is_disabled ? '#EF4444' : '#22C55E' },
-                      ]}
-                    >
-                      {user.is_disabled ? 'Đã vô hiệu hóa' : 'Đang hoạt động'}
-                    </Text>
+                    {user.is_disabled ? (
+                      <>
+                        <Text style={[styles.metaDot, { color: colors.sub }]}>·</Text>
+                        <View style={[styles.badge, { backgroundColor: '#EF444422' }]}>
+                          <Text style={[styles.badgeText, { color: '#EF4444' }]}>Đã vô hiệu hóa</Text>
+                        </View>
+                      </>
+                    ) : null}
                   </View>
                   <Text style={[styles.lastLogin, { color: colors.sub }]}>
                     Đăng nhập cuối: {formatLastLogin(user.last_login_at)}
@@ -309,14 +308,13 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgeText: { fontSize: 12, fontWeight: '600' },
   metaDot: { fontSize: 13 },
-  statusText: { fontSize: 13, fontWeight: '500' },
   lastLogin: { fontSize: 12, marginTop: 8 },
-  switchSection: { borderTopWidth: 1, marginTop: 12, paddingTop: 4 },
+  switchSection: { borderTopWidth: 1, marginTop: 12, paddingTop: 2 },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 6,
   },
   switchLabel: { fontSize: 15, fontWeight: '500' },
 })

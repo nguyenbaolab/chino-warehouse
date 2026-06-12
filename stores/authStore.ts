@@ -67,7 +67,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   updateLastLogin: async () => {
-    await supabase.rpc('update_my_last_login')
+    const { error } = await supabase.rpc('update_my_last_login')
+    if (error) {
+      console.warn('[authStore] update_my_last_login failed:', error.message)
+    }
   },
 
   fetchUsers: async () => {

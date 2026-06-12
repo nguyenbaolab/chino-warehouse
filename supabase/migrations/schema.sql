@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.13 | Tháng 5/2026
+-- Phiên bản: 3.14 | Tháng 5/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.13:
+--   - F24: migration backfill last_login_at từ auth.users.last_sign_in_at (DB đã có user)
 -- Thay đổi so với v3.12:
 --   - F24 Task 3: RPC list_user_profiles_with_email (join auth.users, admin only)
 -- Thay đổi so với v3.11:
