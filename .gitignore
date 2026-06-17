@@ -55,3 +55,6 @@ yarn-error.*
 /apk
 build.sh
 *.apk
+
+# codegraph
+.codegraph/
