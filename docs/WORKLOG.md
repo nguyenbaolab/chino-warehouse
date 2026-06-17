@@ -844,7 +844,7 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 ## [tháng 5/2026] — milestone: APK v1.0 build + cài điện thoại thành công
 
 - **Kết quả:** EAS Local (WSL2) build APK preview thành công; cài lên thiết bị Android thật, app mở và chạy bình thường (D8 go-live).
-- **Môi trường đã xác nhận:** Project trên `E:\personal projects\`; WSL2 Ubuntu + `build.sh`; `~/.gradle/gradle.properties` + `.wslconfig` `memory=16GB`; export `EXPO_PUBLIC_*` trước build.
+- **Môi trường đã xác nhận:** Project trên `E:\projects\`; WSL2 Ubuntu + `build.sh`; `~/.gradle/gradle.properties` + `.wslconfig` `memory=16GB`; export `EXPO_PUBLIC_*` trước build.
 - **KNOWN_ISSUES:** KI-031–KI-033 → Mitigated; KI-034–KI-035 → Resolved.
 - **File đã sửa:** `docs/KNOWN_ISSUES.md`, `docs/WORKLOG.md`
 

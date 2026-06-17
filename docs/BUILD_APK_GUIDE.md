@@ -83,7 +83,7 @@ Lấy giá trị thật từ file `.env` trong thư mục project.
 ### 3.5 Build APK
 
 ```cmd
-cd "E:\personal projects\chino-warehouse"
+cd "E:\projects\chino-warehouse"
 eas build --profile preview --platform android
 ```
 
@@ -95,7 +95,7 @@ Terminal sẽ hỏi một vài câu → Enter hết. Sau đó:
 ### 3.6 Những lần build sau (EAS Cloud)
 
 ```cmd
-cd "E:\personal projects\chino-warehouse"
+cd "E:\projects\chino-warehouse"
 eas build --profile preview --platform android
 ```
 
@@ -303,7 +303,7 @@ Lấy giá trị thật từ file `.env` trong thư mục project.
 
 #### Chạy build
 ```bash
-cd "/mnt/e/personal projects/chino-warehouse"
+cd "/mnt/e/projects/chino-warehouse"
 eas build --profile preview --platform android --local
 ```
 
@@ -315,9 +315,9 @@ Từ lần 2 trở đi mất **3–7 phút** (Gradle cache lại).
 Sau khi build xong, terminal báo đường dẫn file `.apk`:
 
 ```bash
-mkdir -p "/mnt/e/personal projects/chino-warehouse/apk"
+mkdir -p "/mnt/e/projects/chino-warehouse/apk"
 cp /mnt/e/personal\ projects/chino-warehouse/build-*.apk \
-   "/mnt/e/personal projects/chino-warehouse/apk/chino-warehouse-v1.0.apk"
+   "/mnt/e/projects/chino-warehouse/apk/chino-warehouse-v1.0.apk"
 ```
 
 ---
@@ -326,7 +326,7 @@ cp /mnt/e/personal\ projects/chino-warehouse/build-*.apk \
 
 ### Cách đơn giản nhất — Zalo / Telegram / Google Drive
 
-1. Mở File Explorer → vào `E:\personal projects\chino-warehouse\apk\`
+1. Mở File Explorer → vào `E:\projects\chino-warehouse\apk\`
 2. Gửi file `.apk` qua Zalo / Telegram / Google Drive
 3. Người nhận mở file trên điện thoại Android
 4. Điện thoại hỏi **"Cho phép cài từ nguồn không rõ"** → bấm **Allow / Cho phép**
@@ -348,7 +348,7 @@ adb devices
 
 **Cài APK:**
 ```cmd
-adb install "E:\personal projects\chino-warehouse\apk\chino-warehouse-v1.0.apk"
+adb install "E:\projects\chino-warehouse\apk\chino-warehouse-v1.0.apk"
 ```
 
 ---
@@ -408,7 +408,7 @@ rm -f ~/.gradle/caches/journal-1/journal-1.lock
 ### 6.5 Lưu ý quan trọng
 
 - ✅ **Xóa cache không mất code** — chỉ mất Gradle build cache trong `~/.gradle`
-- ✅ **Xóa cache không ảnh hưởng project** — thư mục project `E:\personal projects\chino-warehouse` không bị đụng tới
+- ✅ **Xóa cache không ảnh hưởng project** — thư mục project `E:\projects\chino-warehouse` không bị đụng tới
 - ⚠️ **Sau khi xóa `~/.gradle` toàn bộ**, bắt buộc phải tạo lại `~/.gradle/gradle.properties` — nếu không sẽ bị `OutOfMemoryError` lại ngay lần build kế tiếp
 - ⚠️ **Không xóa cache thường xuyên** — chỉ xóa khi gặp lỗi cụ thể, vì xóa sẽ làm lần build sau chậm hơn
 
@@ -427,7 +427,7 @@ rm -f ~/.gradle/caches/journal-1/journal-1.lock
 **Fix:** Chuyển project ra khỏi OneDrive:
 1. OneDrive Settings → Sync and backup → Manage backup
 2. Tắt Desktop backup → chọn **"Only on my PC"**
-3. Chuyển project sang ổ khác (ví dụ `E:\personal projects\`)
+3. Chuyển project sang ổ khác (ví dụ `E:\projects\`)
 
 ---
 
@@ -526,7 +526,7 @@ sudo npm install -g eas-cli
 **Nguyên nhân:** Chưa `cd` vào thư mục project.  
 **Fix:**
 ```bash
-cd "/mnt/e/personal projects/chino-warehouse"
+cd "/mnt/e/projects/chino-warehouse"
 ```
 
 ---
@@ -575,7 +575,7 @@ sed -i 's/\r//' build.sh
 ### EAS Cloud — đơn giản, chạy trên Windows
 
 ```cmd
-cd "E:\personal projects\chino-warehouse"
+cd "E:\projects\chino-warehouse"
 eas build --profile preview --platform android
 # Chờ 10-30 phút → vào link expo.dev → Download APK
 ```
@@ -587,7 +587,7 @@ eas build --profile preview --platform android
 wsl -d Ubuntu
 
 # 2. Vào thư mục project
-cd "/mnt/e/personal projects/chino-warehouse"
+cd "/mnt/e/projects/chino-warehouse"
 
 # 3. Set env — bắt buộc mỗi lần, không tự nhớ
 export EXPO_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
@@ -606,7 +606,7 @@ cp build-*.apk "apk/chino-warehouse-v1.1.apk"
 Tạo file `build.sh` trong thư mục project — chạy trong Ubuntu:
 
 ```bash
-cat > "/mnt/e/personal projects/chino-warehouse/build.sh" << 'EOF'
+cat > "/mnt/e/projects/chino-warehouse/build.sh" << 'EOF'
 #!/bin/bash
 set -e
 
@@ -623,12 +623,12 @@ cp "$ORIGINAL" "apk/$ORIGINAL"
 echo "Done: apk/$ORIGINAL"
 EOF
 
-chmod +x "/mnt/e/personal projects/chino-warehouse/build.sh"
+chmod +x "/mnt/e/projects/chino-warehouse/build.sh"
 ```
 
 Dùng:
 ```bash
-cd "/mnt/e/personal projects/chino-warehouse"
+cd "/mnt/e/projects/chino-warehouse"
 sed -i 's/\r//' build.sh
 ./build.sh
 ```
@@ -674,9 +674,9 @@ A: Làm lại từ Bước 4.2 (cài WSL2 + Ubuntu) trên máy mới. Bước 4.
 | Build type | `apk` |
 | Expo SDK | 54.0.0 |
 | React Native | 0.81.5 |
-| Thư mục project (Windows) | `E:\personal projects\chino-warehouse` |
-| Thư mục project (Ubuntu/WSL) | `/mnt/e/personal projects/chino-warehouse` |
-| Thư mục APK output | `E:\personal projects\chino-warehouse\apk\` |
+| Thư mục project (Windows) | `E:\projects\chino-warehouse` |
+| Thư mục project (Ubuntu/WSL) | `/mnt/e/projects/chino-warehouse` |
+| Thư mục APK output | `E:\projects\chino-warehouse\apk\` |
 
 ### Checklist trước khi build (EAS Local)
 
@@ -703,10 +703,10 @@ rm -rf ~/.gradle/caches
 rm -rf ~/.gradle
 
 # Xem APK đã build
-ls -lh "/mnt/e/personal projects/chino-warehouse"/build-*.apk 2>/dev/null
+ls -lh "/mnt/e/projects/chino-warehouse"/build-*.apk 2>/dev/null
 
 # Cài APK qua USB
-adb install "E:\personal projects\chino-warehouse\apk\chino-warehouse-v1.0.apk"
+adb install "E:\projects\chino-warehouse\apk\chino-warehouse-v1.0.apk"
 ```
 
 ---

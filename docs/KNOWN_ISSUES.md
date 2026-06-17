@@ -103,9 +103,9 @@
 - **File liên quan:** đường dẫn project, `docs/BUILD_APK_GUIDE.md` §7
 - **Mô tả:** EAS local trong WSL gọi `git` trên thư mục sync OneDrive → lỗi quyền `chmod` / git init.
 - **Cách tái hiện:** Clone/project nằm trong OneDrive Desktop/Documents → `eas build --local`.
-- **Hướng fix:** Chuyển repo ra ổ local (vd. `E:\personal projects\`), tắt backup OneDrive cho thư mục đó.
+- **Hướng fix:** Chuyển repo ra ổ local (vd. `E:\projects\`), tắt backup OneDrive cho thư mục đó.
 - **Trạng thái:** Resolved
-- **Đã fix:** Đã chuyển project sang ổ `E:\personal projects\chino-warehouse` (ngoài OneDrive sync).
+- **Đã fix:** Đã chuyển project sang ổ `E:\projects\chino-warehouse` (ngoài OneDrive sync).
 
 ---
 
