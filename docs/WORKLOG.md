@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 6/2026] — feat: ProductDetail — bấm placeholder ảnh để chụp/chọn (parity ProductsScreen)
+
+- Gộp 3 nhánh render ảnh (uploading / có ảnh / placeholder) vào một `TouchableOpacity`; chưa ảnh + `canWrite` → `showImageOptions()`.
+
+---
+
 ## [tháng 5/2026] — feat: SEC-06 — generic error messages, helper getErrorMessage, wrap 30 chỗ trong store + 2 UI
 
 - `utils/errorMessages.ts`: `getErrorMessage(error, operation)` — detect RLS (42501) + network; 6 operation map.

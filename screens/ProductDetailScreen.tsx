@@ -945,23 +945,30 @@ export default function ProductDetailScreen() {
       >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.imageBlock}>
-          {isUploadingImage ? (
-            <View style={[styles.imagePreview, styles.imagePlaceholder, { backgroundColor: colors.border }]}>
-              <ActivityIndicator />
-            </View>
-          ) : product?.image_url ? (
-            <TouchableOpacity activeOpacity={0.85} onPress={() => setViewingImage(true)}>
-              <Image
-                source={{ uri: product.image_url }}
-                style={styles.imagePreview}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          ) : (
-            <View style={[styles.imagePreview, styles.imagePlaceholder, { backgroundColor: colors.border }]}>
-              <Text style={{ fontSize: 32 }}>📷</Text>
-            </View>
-          )}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            disabled={isUploadingImage}
+            onPress={() => {
+              if (isUploadingImage) return
+              if (product?.image_url) {
+                setViewingImage(true)
+              } else if (canWrite) {
+                showImageOptions()
+              }
+            }}
+          >
+            {isUploadingImage ? (
+              <View style={[styles.imagePreview, styles.imagePlaceholder, { backgroundColor: colors.border }]}>
+                <ActivityIndicator />
+              </View>
+            ) : product?.image_url ? (
+              <Image source={{ uri: product.image_url }} style={styles.imagePreview} resizeMode="cover" />
+            ) : (
+              <View style={[styles.imagePreview, styles.imagePlaceholder, { backgroundColor: colors.border }]}>
+                <Text style={{ fontSize: 32 }}>📷</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
           {canWrite && product?.image_url && !isUploadingImage && (
             <View style={styles.imageActionsRow}>
