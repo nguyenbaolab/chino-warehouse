@@ -2,6 +2,28 @@
 
 ---
 
+### [KI-058] Xóa lô khi còn thùng — UI và store không block (F2 Phase 3)
+
+- **Mức độ:** High (data loss risk)
+- **File liên quan:** `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`, `stores/warehouseStore.ts` (`deleteInventoryEntry`)
+- **Mô tả:** Lô còn `quantity_boxes > 0` vẫn hiện nút 🗑️ và cho phép xóa — cả ProductDetail (L1373–1378) lẫn ZoneDetailSheet (L662–667). `deleteInventoryEntry` DELETE trực tiếp không validate qty. Doc mâu thuẫn: F07 ghi "xóa khi còn thùng", F16 ghi "xóa khi hết hàng".
+- **Hướng fix:** Chỉ hiện/xử lý xóa khi `quantity_boxes === 0`; store reject nếu qty > 0; giữ banner "Lô này đã hết hàng [Xóa lô]" cho lô 0 thùng. Thống nhất REQUIREMENTS F07 + DECISIONS.
+- **Trạng thái:** Open
+- **Tham chiếu:** `PLAN_3.md` F2, `REQUIREMENTS.md` F07/F16 v1.3.8
+
+---
+
+### [KI-057] BarcodeScanner "Hàng đã hết" — navigation hardcode Products, stack kẹt ProductDetail (F1 Phase 3)
+
+- **Mức độ:** High (UX / navigation)
+- **File liên quan:** `screens/BarcodeScannerScreen.tsx` (L149–183, L93–100), `screens/ProductDetailScreen.tsx`
+- **Mô tả:** Alert **"Hàng đã hết"** → **"Xem chi tiết"** luôn `navigateTabsThenCloseModal({ screen: 'Products', params: { screen: 'ProductDetail', … } })` — bỏ qua `returnTab` (quét từ tab Kho vẫn sang tab Sản phẩm). Đóng ProductDetail có thể về tab Kho thay vì màn gốc; chuyển tab Sản phẩm → ProductDetail vẫn trên stack (React Navigation preserve state).
+- **Hướng fix:** Navigate theo `returnTab`; truyền params back context; đóng ProductDetail reset stack tab về màn gốc (`ProductsMain` / `MapMain`).
+- **Trạng thái:** Open
+- **Tham chiếu:** `PLAN_3.md` F1, `REQUIREMENTS.md` F10 v1.3.8
+
+---
+
 ### [KI-056] F24 — `last_login_at` không cập nhật / UserManagement hiện "Chưa đăng nhập"
 
 - **Mức độ:** Medium (data / UX)

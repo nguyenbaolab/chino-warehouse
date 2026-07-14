@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 6/2026] — docs: ghi nhận 10 feature/fix mới (6 Phase 3 + 4 Phase 4)
+
+- **PLAN_3.md:** Group F (F1–F6): navigation scanner, block xóa lô, sync `is_archived`, tap kho→Map, filter chưa ảnh, Internal Notes; §9 Deferred F32–F35; §11 tổng **27** task.
+- **REQUIREMENTS.md** v1.3.8: sửa F07/F09/F10; thêm F31; F32–F35 Phase 4; roadmap §10–§13.
+- **KNOWN_ISSUES.md:** KI-057 (navigation scanner), KI-058 (xóa lô còn thùng).
+- **DECISIONS.md:** block xóa lô, sync `is_archived`, tap kho→Map, Internal Notes tách F27.
+
+---
+
 ## [tháng 6/2026] — feat: ProductDetail — bấm placeholder ảnh để chụp/chọn (parity ProductsScreen)
 
 - Gộp 3 nhánh render ảnh (uploading / có ảnh / placeholder) vào một `TouchableOpacity`; chưa ảnh + `canWrite` → `showImageOptions()`.

@@ -255,7 +255,83 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 
 ---
 
-## 7. Security (carry từ Phase 2)
+## 7. Group F — Bổ sung
+
+### F1 — Fix navigation sau quét barcode "Hàng đã hết" (Bug — KI-057)
+
+- **Vấn đề:** Quét barcode → Alert **"Hàng đã hết"** → **"Xem chi tiết"** → `navigateTabsThenCloseModal` hardcode tab **`Products` → `ProductDetail`**. Đóng ProductDetail → user về tab Kho thay vì tab/scanner gốc; chuyển sang tab Sản phẩm → ProductDetail vẫn kẹt trên stack.
+- **Files:** `screens/BarcodeScannerScreen.tsx` (L149–183 `openProductOutOfStockAlert`, L93–100 `navigateTabsThenCloseModal`), `screens/ProductDetailScreen.tsx` (back / stack reset).
+- **Yêu cầu fix:**
+  1. **"Xem chi tiết"** navigate về đúng tab gốc (`returnTab`) — nested stack `{ screen: returnTab, params: { screen: 'ProductDetail', params: { productId, fromScanner: true, returnTab } } }` (hoặc tương đương), **không** hardcode `Products`.
+  2. Đóng ProductDetail sau flow scanner → **reset stack** tab đó về màn gốc (`ProductsMain` / `MapMain` / …) — không để `ProductDetail` kẹt khi chuyển tab.
+- **KNOWN_ISSUES:** KI-057 (High).
+
+### F2 — Block xóa lô khi còn thùng (Bug — KI-058)
+
+- **Vấn đề:** Lô còn `quantity_boxes > 0` mà nút 🗑️ vẫn hiện và cho xóa — cả `ProductDetailScreen` lẫn `ZoneDetailSheet`. Doc mâu thuẫn: F07 ghi "xóa khi còn thùng", F16 ghi "xóa khi hết hàng".
+- **Files:** `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`, `stores/warehouseStore.ts` (`deleteInventoryEntry`).
+- **Yêu cầu fix:**
+  1. Nút 🗑️ xóa lô **chỉ hiện/hoạt động** khi `quantity_boxes === 0`.
+  2. `deleteInventoryEntry` **reject** nếu `quantity_boxes > 0` (fetch + validate trước DELETE).
+  3. Lô 0 thùng: giữ banner **"Lô này đã hết hàng [Xóa lô]"** (và banner hết hạn tương tự).
+- **Doc (đã cập nhật):** REQUIREMENTS F07/F16 thống nhất; DECISIONS "Block xóa lô khi còn thùng".
+- **KNOWN_ISSUES:** KI-058 (High).
+
+### F3 — Đồng bộ `is_archived` giữa các màn
+
+- **Vấn đề:** SP ẩn (`is_archived = true`) trên ProductsScreen vẫn hiện lô ở `ZoneDetailSheet`.
+- **Files:** `components/ZoneDetailSheet.tsx` (filter entries theo `product.is_archived`).
+- **Yêu cầu:**
+  - **ZoneDetailSheet:** không hiện lô của SP `is_archived = true` (ban đầu ẩn hẳn, không toggle).
+  - **MapScreen search:** `searchProducts` đã filter `!p.is_archived` — **giữ nguyên**.
+  - **AddInventory gợi ý:** **KHÔNG** filter — vẫn gợi ý SP archived (có thể nhập lô mới).
+  - **NotificationsScreen:** **KHÔNG** thay đổi.
+- **DECISIONS:** scope đồng bộ `is_archived` (xem DECISIONS.md).
+
+### F4 — Tap tên kho → navigate MapScreen
+
+- **Vấn đề:** `LocationManagementScreen` — bấm card kho chỉ có icon ✏️ mở modal sửa.
+- **Files:** `screens/LocationManagementScreen.tsx`, `stores/warehouseStore.ts` (`setSelectedLocation`), `App.tsx` (tab Map).
+- **Yêu cầu:**
+  - Tap **tên kho** (hoặc vùng chính card, không phải ✏️/🗑️) → chuyển tab **Map** + `setSelectedLocation(locationId)`.
+  - Icon ✏️ / 🗑️ giữ nguyên.
+  - Tiền lệ: `ProductDetailScreen` — `navigation.getParent()?.navigate('Map')` + `setLocateIntent`.
+
+### F5 — Filter SP chưa có ảnh
+
+- **Files:** `screens/ProductsScreen.tsx`
+- **Yêu cầu:**
+  - Toggle **"Chỉ chưa có ảnh"** (hoặc **"Chưa có ảnh"**) cạnh toggle **Hiện SP đã ẩn** / **Chỉ hết lô**.
+  - Filter: `image_url === null` hoặc `image_url === ''`.
+  - Mục đích: tiện tìm SP chưa chụp ảnh để bổ sung (F08).
+
+### F6 — Internal Notes (Ghi chú nội bộ)
+
+- **Mô tả:** Màn Settings — ghi chú nhanh về SP (cần nhập thêm, khách yêu cầu, hàng bán chạy, …). **Tách biệt hoàn toàn** F27 Đặt hàng.
+
+**Schema — bảng `internal_notes`:**
+
+| Trường | Kiểu | Mô tả |
+|--------|------|-------|
+| `id` | UUID | PK, `gen_random_uuid()` |
+| `product_id` | UUID | FK → `products(id)`, NOT NULL |
+| `reason` | TEXT | Lý do / ghi chú, NOT NULL |
+| `created_by` | UUID | FK → `auth.users(id)` |
+| `created_at` | TIMESTAMPTZ | default `now()` |
+
+**Màn `InternalNotesScreen`:**
+
+- Settings → card **"Ghi chú"** → route `InternalNotes` (SettingsStack).
+- UI card giống ProductsScreen: ảnh SP 64×64 trái, tên SP + lý do phải.
+- FAB **(+)** → bottom sheet: chọn SP (autocomplete tên, **chỉ SP đã có** — không tạo SP mới) → nhập lý do → lưu.
+- Mỗi card: sửa lý do + xóa ghi chú.
+- **RBAC:** guest chỉ xem; staff+ sửa/xóa **mọi** ghi chú (không giới hạn người tạo).
+
+**Files (dự kiến):** migration `internal_notes`, `screens/InternalNotesScreen.tsx`, `stores/warehouseStore.ts` (CRUD), `App.tsx` / SettingsStack, `screens/SettingsScreen.tsx` (card entry).
+
+---
+
+## 8. Security (carry từ Phase 2)
 
 | Mã | KI | Mô tả | Mức độ |
 |----|-----|-------|--------|
@@ -264,7 +340,7 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 
 ---
 
-## 8. Deferred → Phase 4
+## 9. Deferred → Phase 4
 
 | Hạng mục | Ghi chú |
 |----------|---------|
@@ -272,6 +348,10 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 | **F21** | Offline mode |
 | **F25** | Báo cáo / Xuất dữ liệu |
 | **F26** | Kiểm kho |
+| **F32** | Toggle cảnh báo **per sản phẩm** — `ignore_expiry_warning` / `ignore_stock_warning` trên `products`; 2 switch trên ProductDetail section Chi tiết; ẩn SP khỏi Notifications/Dashboard tương ứng |
+| **F33** | Lô **"Đã lên kệ"** — cột `inventory_entries.is_on_shelf`; lô 0 thùng → nút "Đã lên kệ" cạnh "Xóa lô"; ẩn khỏi Map/ZoneDetail nhưng giữ expiry → Notifications vẫn cảnh báo hạn |
+| **F34** | **Giỏ hàng / Picking list** — schema `picking_lists`, `picking_list_items`; tạo đơn lấy hàng, autocomplete SP + ảnh, nhóm kho/zone/tầng, checklist tick, OK → trừ `quantity_boxes` |
+| **F35** | **Push notification** — `expo-notifications` local scheduled 11h sáng; check lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày") |
 | **SEC-10** | Backup script `service_role` (KI-021) |
 | **SEC-12** | `console.log` guard (KI-023) |
 | **SEC-13** | Dependency audit (KI-024) |
@@ -281,7 +361,7 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 
 ---
 
-## 9. Tài liệu đi kèm Phase 3
+## 10. Tài liệu đi kèm Phase 3
 
 | File | Mục đích |
 |------|----------|
@@ -292,7 +372,7 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 
 ---
 
-## 10. Tóm tắt scope (đếm task)
+## 11. Tóm tắt scope (đếm task)
 
 | Group | Số task | Mã |
 |-------|---------|-----|
@@ -301,9 +381,10 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 | **C — Realtime** | 1 | C1 |
 | **D — Feature Completion** | 3 | D1 (F27), D2 (F28), D3 (F08) |
 | **E — New Features** | 2 | E1 (F23), E2 (F24) |
+| **F — Bổ sung** | 6 | F1 (KI-057), F2 (KI-058), F3–F6 |
 | **Security** | 2 | SEC-05, SEC-06 |
-| **Tổng task implement** | **21** | |
+| **Tổng task implement** | **27** | |
 
 **Dropped / không làm Phase 3:** F19.
 
-**Deferred Phase 4:** F21, F25, F26, SEC-10/12/13/14, KI-039, KI-040.
+**Deferred Phase 4:** F21, F25, F26, **F32–F35**, SEC-10/12/13/14, KI-039, KI-040.

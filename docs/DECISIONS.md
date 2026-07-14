@@ -4,6 +4,38 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Internal Notes (F31) — tách biệt F27 Đặt hàng
+
+- **Ngày:** tháng 6/2026
+- **Quyết định:** Màn **Ghi chú nội bộ** (`internal_notes`) dùng cho ghi chú vận hành nhanh (cần nhập thêm, khách yêu cầu, hàng bán chạy, …). **Tách biệt hoàn toàn** tab Đặt hàng (F27 / `order_lists`). Chỉ gắn vào **SP đã tồn tại** — không tạo SP mới từ màn Ghi chú. RBAC: guest xem; staff+ sửa/xóa mọi ghi chú (không giới hạn người tạo).
+- **Lý do:** Ghi chú nội bộ khác nghiệp vụ đặt hàng; tránh trùng UI/intent với order list.
+
+---
+
+### Tap tên kho → MapScreen (F4)
+
+- **Ngày:** tháng 6/2026
+- **Quyết định:** Trong **Quản lý kho** (`LocationManagementScreen`), tap **tên kho** (vùng chính card, không phải ✏️/🗑️) → chuyển tab **Kho** (`Map`) + `setSelectedLocation(locationId)`. Icon sửa/xóa giữ nguyên.
+- **Lý do:** User muốn xem bản đồ kho ngay từ danh sách quản lý; tiền lệ cross-tab Map đã có (`ProductDetail` → `locateIntent` / `navigate('Map')`).
+
+---
+
+### Đồng bộ `is_archived` — scope hiển thị (F3)
+
+- **Ngày:** tháng 6/2026
+- **Quyết định:** SP `is_archived = true` (**Ẩn sản phẩm** trên ProductDetail) phải **ẩn lô** khỏi `ZoneDetailSheet`. **MapScreen** search (`searchProducts`) đã lọc `!is_archived` — giữ nguyên. **AddInventory** gợi ý SP: **không** lọc archived (có thể nhập lô mới cho SP đã ẩn). **NotificationsScreen:** không đổi. **ProductsScreen** toggle "Hiện SP đã ẩn" chỉ ảnh hưởng list tab Sản phẩm.
+- **Lý do:** `is_archived` ≠ `is_discontinued`; ẩn SP trên list không đủ nếu lô vẫn hiện trên bản đồ zone; AddInventory cần linh hoạt nhập lại hàng.
+
+---
+
+### Block xóa lô khi còn thùng (F2)
+
+- **Ngày:** tháng 6/2026
+- **Quyết định:** Chỉ cho **xóa thủ công** lô khi `quantity_boxes === 0`. UI: 🗑️ / "Xóa lô" chỉ khi 0 thùng (banner "Lô này đã hết hàng" / hết hạn). Store `deleteInventoryEntry` reject nếu qty > 0. Lô 0 thùng vẫn **giữ trong DB** cho đến khi user xóa (DECISIONS "Lô 0 thùng được giữ lại").
+- **Lý do:** Tránh mất hàng nhầm; thống nhất F07/F16 — "xóa khi hết hàng" nghĩa là 0 thùng, không phải xóa khi còn tồn.
+
+---
+
 ### SEC-06 — Generic error messages
 
 - **Ngày:** tháng 5/2026
