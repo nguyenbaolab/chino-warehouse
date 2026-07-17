@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: F4 — tap card kho → tab Map
+
+- `LocationManagementScreen`: body card (`TouchableOpacity`) → `setSelectedLocation` + `getParent()?.navigate('Map')`; ✏️/🗑️ không đổi.
+- Docs: CONTEXT §3 LocationManagementScreen.
+
+---
+
 ## [tháng 7/2026] — fix: KI-060 — toggle Chỉ SP đã ẩn (race + filter + page)
 
 - Race: fetch theo `showArchived` + `cancelled` cleanup; không dùng `fetchProducts` (không cancel được).

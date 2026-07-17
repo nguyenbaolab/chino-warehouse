@@ -45,7 +45,8 @@ export default function LocationManagementScreen() {
   const { colors } = useThemeStore()
   const canWrite = useCanWrite()
   const isReadOnly = useIsReadOnly()
-  const { locations, fetchLocations, addLocation, updateLocation, deleteLocation } = useWarehouseStore()
+  const { locations, fetchLocations, addLocation, updateLocation, deleteLocation, setSelectedLocation } =
+    useWarehouseStore()
 
   const [skuCounts, setSkuCounts] = useState<Map<string, number>>(new Map())
   const [countsLoading, setCountsLoading] = useState(false)
@@ -218,13 +219,21 @@ export default function LocationManagementScreen() {
             return (
               <View key={loc.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.cardTop}>
-                  <View style={{ flex: 1, minWidth: 0 }}>
+                  {/* F4: tap body → tab Map + chọn kho */}
+                  <TouchableOpacity
+                    style={{ flex: 1, minWidth: 0 }}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setSelectedLocation(loc.id)
+                      navigation.getParent()?.navigate('Map' as never)
+                    }}
+                  >
                     <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={2}>
                       {loc.name}
                     </Text>
                     <Text style={[styles.cardLine, { color: colors.sub }]}>Grid size: {gr} × {gc}</Text>
                     <Text style={[styles.cardLine, { color: colors.sub }]}>Số sản phẩm: {sku}</Text>
-                  </View>
+                  </TouchableOpacity>
                   {canWrite ? (
                     <View style={styles.cardActions}>
                       <TouchableOpacity
