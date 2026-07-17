@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: closeout Phase 3
+
+- `SUMMARY_3.md`, `HANDOFF_3.md`, `TESTCASES_3.md` đầy đủ (28/29 Done; F27 → Phase 4).
+- Sync: REQUIREMENTS v1.3.10 (F28 Done, F27 Partial Phase 4); KI-020 Resolved; KI-039/040 → Phase 4; PLAN_3 Closed + §9/§11.
+
+---
+
 ## [tháng 7/2026] — feat: F8 — dời lô bằng ZonePicker map fullscreen
 
 - MapStack route `ZonePicker` + `ZonePickerScreen` (grid, highlight nguồn, chọn tầng, `updateInventoryEntry`).

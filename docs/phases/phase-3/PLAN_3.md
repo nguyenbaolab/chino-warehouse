@@ -1,6 +1,6 @@
 # Phase 3 — Plan
 
-**Trạng thái:** In progress | Tháng 5/2026
+**Trạng thái:** Closed (Done) | closeout Tháng 7/2026
 
 ---
 
@@ -363,6 +363,7 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 
 | Hạng mục | Ghi chú |
 |----------|---------|
+| **D1 / F27 mở rộng** | 2 tab Hàng trong kho / Hàng mới, list active, số thùng trống đến Confirm, PDF tổng hợp, flow Draft→Confirm→PDF→Đã đặt — **carry từ Phase 3** |
 | **F19** | **DROPPED** — không implement (không phù hợp nghiệp vụ thực tế) |
 | **F21** | Offline mode |
 | **F25** | Báo cáo / Xuất dữ liệu |
@@ -394,17 +395,19 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 
 ## 11. Tóm tắt scope (đếm task)
 
-| Group | Số task | Mã |
-|-------|---------|-----|
-| **A — Bug Fixes** | 5 | A1–A5 (KI-044 → KI-048) |
-| **B — UX Improvements** | 8 | B1–B8 |
-| **C — Realtime** | 1 | C1 |
-| **D — Feature Completion** | 3 | D1 (F27), D2 (F28), D3 (F08) |
-| **E — New Features** | 2 | E1 (F23), E2 (F24) |
-| **F — Bổ sung** | 8 | F1 (KI-057), F2 (KI-058), F3–F8 |
-| **Security** | 2 | SEC-05, SEC-06 |
-| **Tổng task implement** | **29** | |
+| Group | Số task | Mã | Closeout |
+|-------|---------|-----|----------|
+| **A — Bug Fixes** | 5 | A1–A5 (KI-044 → KI-048) | **Done** |
+| **B — UX Improvements** | 8 | B1–B8 | **Done** |
+| **C — Realtime** | 1 | C1 | **Done** |
+| **D — Feature Completion** | 3 | D1 (F27), D2 (F28), D3 (F08) | D2+D3 Done; **D1 → Phase 4** |
+| **E — New Features** | 2 | E1 (F23), E2 (F24) | **Done** |
+| **F — Bổ sung** | 8 | F1 (KI-057), F2 (KI-058), F3–F8 | **Done** |
+| **Security** | 2 | SEC-05, SEC-06 | **Done** |
+| **Tổng** | **29** | | **28 Done / 1 carry** |
 
 **Dropped / không làm Phase 3:** F19.
 
-**Deferred Phase 4:** F21, F25, F26, **F32–F36**, SEC-10/12/13/14, KI-039, KI-040.
+**Deferred Phase 4:** **F27 mở rộng (D1)**, F21, F25, F26, **F32–F36**, SEC-10/12/13/14, KI-039, KI-040.
+
+**Tài liệu closeout:** `SUMMARY_3.md`, `HANDOFF_3.md`, `TESTCASES_3.md` (Tháng 7/2026).

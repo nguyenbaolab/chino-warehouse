@@ -397,10 +397,10 @@
 ### [KI-020] SEC-09 — Không có Authorization / RBAC
 
 - **Mức độ:** Medium
-- **File liên quan:** RLS policies, `App.tsx`
+- **File liên quan:** RLS policies, `App.tsx`, `stores/authStore.ts`, `screens/UserManagementScreen.tsx`
 - **Mô tả:** Không phân biệt quyền manager vs nhân viên — mọi user authenticated đều có full CRUD.
-- **Trạng thái:** Deferred — Phase 3 (F24)
-- **Ghi chú:** Sẽ thiết kế khi super app integration có yêu cầu cụ thể.
+- **Trạng thái:** Resolved
+- **Đã fix (Phase 3 / F24):** bảng `user_profiles` (role + is_disabled); guard client guest read-only; RLS staff+ mutate (KI-055); UserManagementScreen; kick disable realtime.
 
 ---
 
@@ -525,8 +525,8 @@
 - **Mức độ:** Medium
 - **File liên quan:** Nhiều screens (`useFocusEffect`, `useEffect` mount)
 - **Mô tả:** Một số màn hình fetch lại dữ liệu không cần thiết khi re-focus, gây load chậm.
-- **Hướng fix (Phase 3):** Xác định các `useFocusEffect` đang fetch thừa; thêm TTL cache hoặc điều kiện skip fetch khi data còn mới.
-- **Trạng thái:** Deferred — Phase 3
+- **Hướng fix (Phase 4):** Xác định các `useFocusEffect` đang fetch thừa; thêm TTL cache hoặc điều kiện skip fetch khi data còn mới.
+- **Trạng thái:** Deferred — Phase 4
 
 ---
 
@@ -535,8 +535,8 @@
 - **Mức độ:** Medium
 - **File liên quan:** `stores/warehouseStore.ts` (`fetchProducts`), `screens/ProductsScreen.tsx` (`filteredProducts`, pagination client)
 - **Mô tả:** Hiện tại `fetchProducts()` không có limit, load toàn bộ `products` về store. Với quy mô vài trăm SP thì ổn. Nếu lên vài nghìn SP: load chậm lúc đầu; tốn RAM; `useMemo` filter lag khi gõ search.
-- **Hướng fix (Phase 3):** Cursor-based pagination từ DB giống `AuditLogScreen`, kết hợp server-side filter theo search/kho/zone. Cần refactor `fetchProducts` + `filteredProducts` useMemo + pagination bar.
-- **Trạng thái:** Deferred — Phase 3
+- **Hướng fix (Phase 4):** Cursor-based pagination từ DB giống `AuditLogScreen`, kết hợp server-side filter theo search/kho/zone. Cần refactor `fetchProducts` + `filteredProducts` useMemo + pagination bar.
+- **Trạng thái:** Deferred — Phase 4
 
 ---
 
