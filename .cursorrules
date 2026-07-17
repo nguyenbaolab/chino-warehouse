@@ -48,7 +48,10 @@ Tài liệu trong docs/phases/phase-N/ đặt tên có suffix _N:
            SUMMARY_1.md, USER_GUIDE_1.md
   Phase 2: PLAN_2.md, TESTCASES_2.md, HANDOFF_2.md,
            SUMMARY_2.md, USER_GUIDE_2.md, GOLIVE_CHECKLIST_2.md
-  Phase 3: PLAN_3.md, TESTCASES_3.md, ... (tương tự)
+  Phase 3: PLAN_3.md, TESTCASES_3.md, HANDOFF_3.md,
+           SUMMARY_3.md, USER_GUIDE_3.md
+  Phase 4: PLAN_4.md, TESTCASES_4.md, HANDOFF_4.md,
+           SUMMARY_4.md, USER_GUIDE_4.md
 Tài liệu trong docs/project/ KHÔNG có suffix (dùng xuyên suốt mọi phase).
 
 ## Quy tắc cập nhật tài liệu

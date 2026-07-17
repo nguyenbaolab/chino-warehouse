@@ -411,3 +411,5 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 **Deferred Phase 4:** **F27 mở rộng (D1)**, F21, F25, F26, **F32–F36**, SEC-10/12/13/14, KI-039, KI-040.
 
 **Tài liệu closeout:** `SUMMARY_3.md`, `HANDOFF_3.md`, `TESTCASES_3.md` (Tháng 7/2026).
+
+**Phase 4 kế hoạch chi tiết:** [`docs/phases/phase-4/PLAN_4.md`](../phase-4/PLAN_4.md).

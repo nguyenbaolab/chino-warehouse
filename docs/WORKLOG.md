@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: khởi động Phase 4 — PLAN_4.md + thư mục
+
+- Tạo `docs/phases/phase-4/PLAN_4.md` (Groups A–H, ~25 task).
+- Sync: CONTEXT tree, REQUIREMENTS v1.3.11, PLAN_3 link Phase 4, `.cursorrules` Phase 4 naming.
+
+---
+
 ## [tháng 7/2026] — docs: closeout Phase 3
 
 - `SUMMARY_3.md`, `HANDOFF_3.md`, `TESTCASES_3.md` đầy đủ (28/29 Done; F27 → Phase 4).

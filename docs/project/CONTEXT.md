@@ -58,6 +58,8 @@ docs/
       SUMMARY_3.md
       TESTCASES_3.md
       USER_GUIDE_3.md
+    phase-4/
+      PLAN_4.md
   DECISIONS.md
   WORKLOG.md
   BLOCKERS.md
