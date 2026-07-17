@@ -17,14 +17,15 @@
 
 ---
 
-### [KI-057] BarcodeScanner "Hàng đã hết" — navigation hardcode Products, stack kẹt ProductDetail (F1 Phase 3)
+### [KI-057] BarcodeScanner "Hàng đã hết" — navigation / stack cụt ProductDetail (F1 Phase 3)
 
 - **Mức độ:** High (UX / navigation)
-- **File liên quan:** `screens/BarcodeScannerScreen.tsx` (L149–183, L93–100), `screens/ProductDetailScreen.tsx`
-- **Mô tả:** Alert **"Hàng đã hết"** → **"Xem chi tiết"** luôn `navigateTabsThenCloseModal({ screen: 'Products', params: { screen: 'ProductDetail', … } })` — bỏ qua `returnTab` (quét từ tab Kho vẫn sang tab Sản phẩm). Đóng ProductDetail có thể về tab Kho thay vì màn gốc; chuyển tab Sản phẩm → ProductDetail vẫn trên stack (React Navigation preserve state).
-- **Hướng fix:** Navigate theo `returnTab`; truyền params back context; đóng ProductDetail reset stack tab về màn gốc (`ProductsMain` / `MapMain`).
-- **Trạng thái:** Open
-- **Tham chiếu:** `PLAN_3.md` F1, `REQUIREMENTS.md` F10 v1.3.8
+- **File liên quan:** `screens/BarcodeScannerScreen.tsx`, `lib/tabNavigation.ts`
+- **Mô tả:** Alert **"Hàng đã hết"** → **"Xem chi tiết"** nested navigate chỉ `ProductDetail` → stack tab có thể thành **`[ProductDetail]`** (thiếu Main). Đóng → `goBack()` index 0 bubble sang Tab → Map; tab Sản phẩm kẹt ProductDetail (`popToTop` không chạy vì `index === 0`). (Lần 1: thiếu `returnTab` — đã sửa nhưng chưa đủ.)
+- **Hướng fix:** Navigate theo `returnTab` + **state tường minh** `[Main, ProductDetail]` (`index: 1`).
+- **Trạng thái:** Resolved
+- **Đã fix (lần 2):** `getMainScreenName` + `tabsParamsForProductDetail` trong `lib/tabNavigation.ts`; "Xem chi tiết" dùng state `{ routes: [Main, ProductDetail], index: 1 }`. Lần 1: `returnTab` thay hardcode Products. Huỷ / Thêm thủ công không đổi.
+- **Tham chiếu:** `PLAN_3.md` F1, `REQUIREMENTS.md` F10
 
 ---
 

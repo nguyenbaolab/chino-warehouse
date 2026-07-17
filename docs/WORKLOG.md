@@ -4,6 +4,23 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: KI-057 lần 2 — stack tường minh Main + ProductDetail
+
+- Root cause: nested navigate chỉ `ProductDetail` → stack cụt `[ProductDetail]`; Đóng bubble → Map; tab Sản phẩm kẹt.
+- `lib/tabNavigation.ts`: `getMainScreenName`, `tabsParamsForProductDetail`; refactor `tabsParamsForReturnTabMain` dùng chung mapping.
+- `openProductOutOfStockAlert` "Xem chi tiết" → state `{ routes: [Main, ProductDetail], index: 1 }`.
+- Docs: KI-057 Resolved (lần 2); CONTEXT §3.
+
+---
+
+## [tháng 7/2026] — fix: KI-057 — "Xem chi tiết" navigate theo returnTab
+
+- `openProductOutOfStockAlert` nhận `returnTab`; "Xem chi tiết" → `{ screen: returnTab, params: { screen: 'ProductDetail', params: { productId } } }` (không hardcode Products).
+- `tryLookupOrNotFound` truyền `fallbackTab` (locate: Map, search: Products).
+- Docs: KI-057 Resolved; CONTEXT §3 BarcodeScanner.
+
+---
+
 ## [tháng 7/2026] — fix: KI-058 — block xóa lô khi còn thùng
 
 - ProductDetail: 🗑️ chỉ khi `qty === 0`; banner hết hạn giữ text, link "Xóa lô" chỉ khi `qty === 0`; `handleDeleteLot` guard.

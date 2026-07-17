@@ -6,7 +6,7 @@ import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/nativ
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { Product } from '../types'
-import { tabsParamsForReturnTabMain } from '../lib/tabNavigation'
+import { tabsParamsForReturnTabMain, tabsParamsForProductDetail } from '../lib/tabNavigation'
 import { useIsReadOnly } from '../stores/authStore'
 
 type BarcodeScannerParams = {
@@ -146,12 +146,14 @@ export default function BarcodeScannerScreen() {
     )
   }
 
-  function openProductOutOfStockAlert(product: Product, totalStock: number) {
+  function openProductOutOfStockAlert(product: Product, totalStock: number, returnTab: string) {
     processingRef.current = false
     const message =
       totalStock === 0
         ? `${product.name} hiện không còn lô nào trong kho.`
         : `${product.name} không có lô nào với mã vạch này, nhưng vẫn còn ${totalStock} thùng ở lô khác.`
+
+    const targetTab = returnTab || 'Products'
 
     Alert.alert(
       'Hàng đã hết',
@@ -160,13 +162,8 @@ export default function BarcodeScannerScreen() {
         {
           text: 'Xem chi tiết',
           onPress: () => {
-            navigateTabsThenCloseModal({
-              screen: 'Products',
-              params: {
-                screen: 'ProductDetail',
-                params: { productId: product.id },
-              },
-            })
+            // KI-057 lần 2: state tường minh Main + ProductDetail — tránh stack cụt [ProductDetail]
+            navigateTabsThenCloseModal(tabsParamsForProductDetail(targetTab, product.id))
           },
         },
         {
@@ -185,7 +182,7 @@ export default function BarcodeScannerScreen() {
   async function tryLookupOrNotFound(barcode: string, fallbackTab: string) {
     const lookup = await lookupProductByBarcode(barcode)
     if (lookup) {
-      openProductOutOfStockAlert(lookup.product, lookup.totalStock)
+      openProductOutOfStockAlert(lookup.product, lookup.totalStock, fallbackTab)
       return
     }
     openBarcodeNotFoundAlert(fallbackTab)
