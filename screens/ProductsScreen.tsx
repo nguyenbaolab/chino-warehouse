@@ -67,6 +67,7 @@ export default function ProductsScreen() {
   const [currentPage, setCurrentPage] = useState(0)
   const [showArchived, setShowArchived] = useState(false)
   const [showOutOfStockOnly, setShowOutOfStockOnly] = useState(false)
+  const [showNoImageOnly, setShowNoImageOnly] = useState(false)
 
   const [scannedLotId, setScannedLotId] = useState<string | null>(null)
   const [viewingImage, setViewingImage] = useState<{ uri: string; productId: string } | null>(null)
@@ -162,7 +163,7 @@ export default function ProductsScreen() {
 
   useEffect(() => {
     setCurrentPage(0)
-  }, [searchQuery, filterLocationId, selectedZoneId, showOutOfStockOnly, showArchived])
+  }, [searchQuery, filterLocationId, selectedZoneId, showOutOfStockOnly, showArchived, showNoImageOnly])
 
   useEffect(() => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
@@ -253,9 +254,13 @@ export default function ProductsScreen() {
       if (showOutOfStockOnly && (totalBoxesByProduct.get(product.id) ?? 0) !== 0) {
         return false
       }
+      // F5: chỉ SP chưa có ảnh
+      if (showNoImageOnly && !!product.image_url) {
+        return false
+      }
       return true
     })
-  }, [products, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet, showOutOfStockOnly, showArchived, totalBoxesByProduct])
+  }, [products, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet, showOutOfStockOnly, showArchived, showNoImageOnly, totalBoxesByProduct])
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE))
   const pagedProducts = useMemo(
@@ -642,6 +647,14 @@ export default function ProductsScreen() {
         >
           <Text style={[styles.toggleLabel, { color: colors.sub }]}>
             {showOutOfStockOnly ? '✅ Đang chỉ hết lô' : '⬜ Chỉ hết lô'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.archivedToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => setShowNoImageOnly((v) => !v)}
+        >
+          <Text style={[styles.toggleLabel, { color: colors.sub }]}>
+            {showNoImageOnly ? '✅ Chưa có ảnh' : '⬜ Chưa có ảnh'}
           </Text>
         </TouchableOpacity>
       </View>

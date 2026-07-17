@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: F5 — toggle Chưa có ảnh trên ProductsScreen
+
+- State `showNoImageOnly`; toggle thứ 3 trong `toggleRow`; filter `!image_url` cuối pipeline; reset page khi đổi toggle.
+- Docs: CONTEXT ProductsScreen.
+
+---
+
 ## [tháng 7/2026] — feat: F4 — tap card kho → tab Map
 
 - `LocationManagementScreen`: body card (`TouchableOpacity`) → `setSelectedLocation` + `getParent()?.navigate('Map')`; ✏️/🗑️ không đổi.
