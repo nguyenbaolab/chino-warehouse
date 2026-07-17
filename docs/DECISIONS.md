@@ -4,6 +4,28 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Shelf Management (F36) — tách kho / kệ, giảm giá độc lập
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:**
+  - Màn **Hàng đang bán** (`shelf_items` / `shelf_zones` / `shelf_zone_items`) **tách biệt** inventory kho: đơn vị **cá thể** (cái/chai/gói), không phải thùng (`quantity_boxes`).
+  - Toggle giảm giá `shelf_items.is_price_reduced` **độc lập** `inventory_entries.is_price_reduced` (Notifications) — bật một chỗ không tự bật chỗ kia (double-check).
+  - `shelf_zones` do nhân viên tự tạo (tên tùy ý) — **tách biệt** Category (F30 phân loại SP).
+  - Checklist tab **Hàng đặc biệt**: reset **thủ công** (nút "Reset checklist") — **không** tự reset hàng ngày.
+  - 1 SP có thể thuộc nhiều khu. RBAC: guest xem; staff+ CRUD.
+  - Gộp roadmap với F33 `is_on_shelf` (Phase 4).
+- **Lý do:** Siêu thị vận hành khác kho (đơn vị, checklist ngày, khu đặc biệt); tránh nhầm lẫn với Category và order list.
+
+---
+
+### Dời lô bằng map toàn màn hình (F8)
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Flow **Chuyển lô** trên `ZoneDetailSheet` thay list dropdown chọn zone đích bằng **map toàn màn hình** (layout giống MapScreen, zone của kho hiện tại). Tap zone → chọn tầng → confirm. Không đổi logic cập nhật `zone_id` / `tier` trên `inventory_entries`.
+- **Lý do:** Nhiều zone → list khó nhận diện vị trí; map giúp chọn đích trực quan.
+
+---
+
 ### Internal Notes (F31) — tách biệt F27 Đặt hàng
 
 - **Ngày:** tháng 6/2026

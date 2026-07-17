@@ -329,6 +329,25 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 
 **Files (dự kiến):** migration `internal_notes`, `screens/InternalNotesScreen.tsx`, `stores/warehouseStore.ts` (CRUD), `App.tsx` / SettingsStack, `screens/SettingsScreen.tsx` (card entry).
 
+### F7 — Barcode tự điền khi chọn SP sau quét (AddInventoryScreen)
+
+- **Vấn đề:** Quét barcode trên `AddInventoryScreen` → tìm thấy SP → hiện tên trong dropdown gợi ý → bấm chọn SP → ô barcode lô vẫn trống, phải nhập/quét lại.
+- **Files:** `screens/AddInventoryScreen.tsx` — flow `handleProductBarcodeScan` → dropdown chọn SP → set barcode field.
+- **Yêu cầu:**
+  1. Khi user quét barcode → SP hiện trong dropdown → user **bấm chọn** SP đó → ô barcode lô **tự điền** mã vừa quét.
+  2. Chỉ tự điền khi user **chủ động bấm chọn** SP từ dropdown — **không** tự điền trước khi chọn.
+  3. Gõ tên thủ công (không quét) → ô barcode giữ trống — không đổi behavior hiện tại.
+
+### F8 — Dời lô hàng bằng map toàn màn hình
+
+- **Vấn đề:** `ZoneDetailSheet` chuyển lô dùng list dropdown (ScrollView chọn zone đích + tầng). Nhiều zone → khó biết zone nào ở đâu.
+- **Files:** `components/ZoneDetailSheet.tsx` (modal chuyển lô), `screens/MapScreen.tsx` (layout map tái sử dụng / tham khảo).
+- **Yêu cầu:**
+  1. Thay flow chọn zone đích: thay list dropdown → mở **map toàn màn hình** (layout giống MapScreen) hiện tất cả zone của kho hiện tại.
+  2. User tap zone đích trên map → hiện **list tầng** của zone đó → chọn tầng → xác nhận chuyển.
+  3. Flow: bấm **"Chuyển lô"** trên ZoneDetailSheet → map chọn zone → tap zone → chọn tầng → confirm → lô chuyển sang zone/tầng mới.
+- **DECISIONS:** dời lô bằng map thay dropdown (UX nhiều zone).
+
 ---
 
 ## 8. Security (carry từ Phase 2)
@@ -349,9 +368,10 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 | **F25** | Báo cáo / Xuất dữ liệu |
 | **F26** | Kiểm kho |
 | **F32** | Toggle cảnh báo **per sản phẩm** — `ignore_expiry_warning` / `ignore_stock_warning` trên `products`; 2 switch trên ProductDetail section Chi tiết; ẩn SP khỏi Notifications/Dashboard tương ứng |
-| **F33** | Lô **"Đã lên kệ"** — cột `inventory_entries.is_on_shelf`; lô 0 thùng → nút "Đã lên kệ" cạnh "Xóa lô"; ẩn khỏi Map/ZoneDetail nhưng giữ expiry → Notifications vẫn cảnh báo hạn |
+| **F33** | Lô **"Đã lên kệ"** — cột `inventory_entries.is_on_shelf`; lô 0 thùng → nút "Đã lên kệ" cạnh "Xóa lô"; ẩn khỏi Map/ZoneDetail nhưng giữ expiry → Notifications vẫn cảnh báo hạn. **Liên quan F36** Shelf Management (hàng trên kệ siêu thị). |
 | **F34** | **Giỏ hàng / Picking list** — schema `picking_lists`, `picking_list_items`; tạo đơn lấy hàng, autocomplete SP + ảnh, nhóm kho/zone/tầng, checklist tick, OK → trừ `quantity_boxes` |
 | **F35** | **Push notification** — `expo-notifications` local scheduled 11h sáng; check lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày") |
+| **F36** | **Shelf Management** — màn Settings "Hàng đang bán"; schema `shelf_items` / `shelf_zones` / `shelf_zone_items`; 2 tab (Tất cả / Hàng đặc biệt); qty cá thể (không phải thùng); toggle giảm giá độc lập kho; checklist reset thủ công. Gộp nghiệp vụ với F33 `is_on_shelf`. |
 | **SEC-10** | Backup script `service_role` (KI-021) |
 | **SEC-12** | `console.log` guard (KI-023) |
 | **SEC-13** | Dependency audit (KI-024) |
@@ -381,10 +401,10 @@ Phase 3 tập trung vào: sửa bug tồn đọng, cải tiến UX, hoàn thiệ
 | **C — Realtime** | 1 | C1 |
 | **D — Feature Completion** | 3 | D1 (F27), D2 (F28), D3 (F08) |
 | **E — New Features** | 2 | E1 (F23), E2 (F24) |
-| **F — Bổ sung** | 6 | F1 (KI-057), F2 (KI-058), F3–F6 |
+| **F — Bổ sung** | 8 | F1 (KI-057), F2 (KI-058), F3–F8 |
 | **Security** | 2 | SEC-05, SEC-06 |
-| **Tổng task implement** | **27** | |
+| **Tổng task implement** | **29** | |
 
 **Dropped / không làm Phase 3:** F19.
 
-**Deferred Phase 4:** F21, F25, F26, **F32–F35**, SEC-10/12/13/14, KI-039, KI-040.
+**Deferred Phase 4:** F21, F25, F26, **F32–F36**, SEC-10/12/13/14, KI-039, KI-040.

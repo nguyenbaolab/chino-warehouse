@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: ghi nhận 3 feature mới (F7, F8 Phase 3 + F36 Phase 4)
+
+- **PLAN_3.md:** Group F thêm F7 (barcode autofill AddInventory), F8 (dời lô bằng map); §9 Deferred F36 Shelf Management (cùng F33); §11 tổng **29** task.
+- **REQUIREMENTS.md** v1.3.9: F15/F16 note F7/F8; thêm F36; roadmap §11–§13.
+- **DECISIONS.md:** dời lô bằng map (F8); Shelf Management design (F36).
+
+---
+
 ## [tháng 6/2026] — docs: ghi nhận 10 feature/fix mới (6 Phase 3 + 4 Phase 4)
 
 - **PLAN_3.md:** Group F (F1–F6): navigation scanner, block xóa lô, sync `is_archived`, tap kho→Map, filter chưa ảnh, Internal Notes; §9 Deferred F32–F35; §11 tổng **27** task.
