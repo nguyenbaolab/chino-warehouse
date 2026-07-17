@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: KI-058 — block xóa lô khi còn thùng
+
+- ProductDetail: 🗑️ chỉ khi `qty === 0`; banner hết hạn giữ text, link "Xóa lô" chỉ khi `qty === 0`; `handleDeleteLot` guard.
+- ZoneDetailSheet: 🗑️ chỉ khi `qty === 0`; `handleDeleteLot` guard.
+- Store `deleteInventoryEntry`: reject nếu entry trong store có `quantity_boxes > 0`.
+- Docs: KNOWN_ISSUES KI-058 Resolved; CONTEXT §3 ProductDetail + ZoneDetailSheet.
+
+---
+
 ## [tháng 7/2026] — docs: ghi nhận 3 feature mới (F7, F8 Phase 3 + F36 Phase 4)
 
 - **PLAN_3.md:** Group F thêm F7 (barcode autofill AddInventory), F8 (dời lô bằng map); §9 Deferred F36 Shelf Management (cùng F33); §11 tổng **29** task.

@@ -804,6 +804,11 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   deleteInventoryEntry: async (id) => {
+    // KI-058: block xóa lô còn thùng (nếu tìm thấy trong store)
+    const existing = get().inventoryEntries.find((e) => e.id === id)
+    if (existing && existing.quantity_boxes > 0) {
+      throw new Error('Không thể xóa lô còn thùng. Chỉ xóa khi số thùng = 0.')
+    }
     await supabase.from('inventory_entries').delete().eq('id', id)
     set((s) => ({
       inventoryEntries: s.inventoryEntries.filter((entry) => entry.id !== id),

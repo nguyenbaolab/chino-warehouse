@@ -6,9 +6,13 @@
 
 - **Mức độ:** High (data loss risk)
 - **File liên quan:** `screens/ProductDetailScreen.tsx`, `components/ZoneDetailSheet.tsx`, `stores/warehouseStore.ts` (`deleteInventoryEntry`)
-- **Mô tả:** Lô còn `quantity_boxes > 0` vẫn hiện nút 🗑️ và cho phép xóa — cả ProductDetail (L1373–1378) lẫn ZoneDetailSheet (L662–667). `deleteInventoryEntry` DELETE trực tiếp không validate qty. Doc mâu thuẫn: F07 ghi "xóa khi còn thùng", F16 ghi "xóa khi hết hàng".
-- **Hướng fix:** Chỉ hiện/xử lý xóa khi `quantity_boxes === 0`; store reject nếu qty > 0; giữ banner "Lô này đã hết hàng [Xóa lô]" cho lô 0 thùng. Thống nhất REQUIREMENTS F07 + DECISIONS.
-- **Trạng thái:** Open
+- **Mô tả:** Lô còn `quantity_boxes > 0` vẫn hiện nút 🗑️ và cho phép xóa — cả ProductDetail lẫn ZoneDetailSheet. `deleteInventoryEntry` DELETE trực tiếp không validate qty.
+- **Hướng fix:** Chỉ hiện/xử lý xóa khi `quantity_boxes === 0`; store reject nếu qty > 0; banner hết hạn chỉ hiện "Xóa lô" khi qty === 0.
+- **Trạng thái:** Resolved
+- **Đã fix:**
+  - ProductDetail: 🗑️ chỉ khi `qty === 0`; banner hết hạn giữ text, link "Xóa lô" chỉ khi `qty === 0`; `handleDeleteLot` guard `qty > 0`.
+  - ZoneDetailSheet: 🗑️ chỉ khi `qty === 0`; `handleDeleteLot` guard tương tự.
+  - Store: `deleteInventoryEntry` reject nếu entry trong store có `quantity_boxes > 0`.
 - **Tham chiếu:** `PLAN_3.md` F2, `REQUIREMENTS.md` F07/F16 v1.3.8
 
 ---

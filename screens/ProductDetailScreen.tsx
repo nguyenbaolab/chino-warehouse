@@ -579,6 +579,8 @@ export default function ProductDetailScreen() {
 
   function handleDeleteLot(lot: InventoryEntry) {
     if (isReadOnly) return
+    // KI-058: chỉ cho xóa khi hết hàng
+    if (lot.quantity_boxes > 0) return
     Alert.alert('Xóa lô hàng', 'Xóa lô hàng này?', [
       { text: 'Huỷ', style: 'cancel' },
       {
@@ -1331,7 +1333,7 @@ export default function ProductDetailScreen() {
                 {isExpiredLot && (
                   <View style={[styles.depletedRow, { borderBottomColor: colors.border }]}>
                     <Text style={[styles.depletedLabel, { color: colors.sub }]}>Lô này đã hết hạn</Text>
-                    {canWrite ? (
+                    {canWrite && lot.quantity_boxes === 0 ? (
                       <TouchableOpacity onPress={() => handleDeleteLot(lot)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                         <Text style={[styles.deleteLotLink, { color: colors.statusCritical }]}>Xóa lô</Text>
                       </TouchableOpacity>
@@ -1370,7 +1372,7 @@ export default function ProductDetailScreen() {
                         <Text style={styles.deleteBtnText}>📍</Text>
                       </TouchableOpacity>
                     )}
-                    {canWrite && lot.quantity_boxes > 0 ? (
+                    {canWrite && lot.quantity_boxes === 0 ? (
                       <TouchableOpacity
                         style={[styles.deleteBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
                         onPress={() => handleDeleteLot(lot)}

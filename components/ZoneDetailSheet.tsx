@@ -289,6 +289,8 @@ export default function ZoneDetailSheet({
 
   function handleDeleteLot(entry: InventoryEntry) {
     if (isReadOnly) return
+    // KI-058: chỉ cho xóa khi hết hàng
+    if (entry.quantity_boxes > 0) return
     Alert.alert('Xóa lô hàng', 'Xóa lô hàng này?', [
       { text: 'Huỷ', style: 'cancel' },
       {
@@ -659,12 +661,14 @@ export default function ZoneDetailSheet({
                                       >
                                         <Text style={styles.deleteLotBtnText}>→</Text>
                                       </TouchableOpacity>
-                                      <TouchableOpacity
-                                        style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
-                                        onPress={() => handleDeleteLot(lot)}
-                                      >
-                                        <Text style={styles.deleteLotBtnText}>🗑️</Text>
-                                      </TouchableOpacity>
+                                      {lot.quantity_boxes === 0 ? (
+                                        <TouchableOpacity
+                                          style={[styles.deleteLotBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                          onPress={() => handleDeleteLot(lot)}
+                                        >
+                                          <Text style={styles.deleteLotBtnText}>🗑️</Text>
+                                        </TouchableOpacity>
+                                      ) : null}
                                     </>
                                   ) : null}
                                 </View>
