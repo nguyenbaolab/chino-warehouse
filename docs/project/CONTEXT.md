@@ -79,6 +79,7 @@ screens/
   CategoryManagementScreen.tsx
   DashboardScreen.tsx          # F23 — tổng quan kho (Phase 3)
   DiscontinuedProductsScreen.tsx
+  InternalNotesScreen.tsx      # F31 — ghi chú nội bộ (Settings)
   LocationManagementScreen.tsx
   LoginScreen.tsx
   MapScreen.tsx
@@ -127,7 +128,7 @@ README.md
 - **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
 - **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail`).
 - **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
-- **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `CategoryManagement` → `DiscontinuedProducts` → `Dashboard` → **`NotificationsFromDashboard`** (reuse `NotificationsScreen`) → `UserManagement` → `AuditLog`). `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount. **`DashboardScreen`** (F23): card **Tổng quan kho**; stat cards `push` sang `NotificationsFromDashboard` / `DiscontinuedProducts` (back về Dashboard). **`UserManagementScreen`** (F24): card **Quản lý người dùng** — chỉ hiện với role `admin` và `super_admin` (guard trên Settings card).
+- **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `CategoryManagement` → `DiscontinuedProducts` → **`InternalNotes`** (F31) → `Dashboard` → **`NotificationsFromDashboard`** (reuse `NotificationsScreen`) → `UserManagement` → `AuditLog`). Card **📝 Ghi chú** trên Settings (sau "Không nhập nữa") → `InternalNotes`; subtitle = số ghi chú từ store. **`InternalNotesScreen` (F31):** `useFocusEffect` → `fetchInternalNotes` (+ `fetchProducts` nếu store rỗng); FlatList card ảnh 64×64 + tên + lý do + ngày; FAB (+) staff+ → modal chọn SP (autocomplete `normalizeText`, max 8, không tạo mới) + lý do → `addInternalNote`; ✏️/`updateInternalNote`; 🗑️ confirm/`deleteInternalNote`; guest chỉ xem. `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount. **`DashboardScreen`** (F23): card **Tổng quan kho**; stat cards `push` sang `NotificationsFromDashboard` / `DiscontinuedProducts` (back về Dashboard). **`UserManagementScreen`** (F24): card **Quản lý người dùng** — chỉ hiện với role `admin` và `super_admin` (guard trên Settings card).
 - **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng. Sheet: `paddingBottom` động (`useSafeAreaInsets().bottom`). Inline edit lô (gồm barcode): cùng pattern **`checkBarcodeConflict`** / **`logBarcodeConflict`** / **`upsertProductBarcode`** như ProductDetail. Modal **Chuyển lô hàng**: nội dung zone/tầng trong `ScrollView`; nút Hủy/Xác nhận fixed dưới (`marginTop` 16). **🗑️ xóa lô chỉ khi `quantity_boxes = 0`** (KI-058). **F3:** filter `!entry.product?.is_archived` trong `currentTierEntries` — lô SP ẩn không hiện trong sheet (zone có thể trống nếu mọi SP đều archived).
 - **Cross-tab locate:** `ProductDetailScreen` bấm **📍** trên lô → `setLocateIntent` trong `warehouseStore` → chuyển tab **Kho**; `MapScreen` `useFocusEffect` đọc intent → `setSelectedLocation` · `handleSearch(productName)` (highlight zone qua kết quả) · panel kết quả expanded → `clearLocateIntent`. Không truyền qua navigation params (xem `DECISIONS.md`).
 
@@ -161,7 +162,7 @@ README.md
 
 ## §4a Store — `warehouseStore.ts`
 
-**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, `orderLists`, `orderItems`, `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail). **F24 Task 2+ (planned):** `users` (danh sách cho admin/super_admin).
+**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`), `selectedLocationId`, `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, `orderLists`, `orderItems`, **`internalNotes`** (F31), `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail). **F24 Task 2+ (planned):** `users` (danh sách cho admin/super_admin).
 
 **Actions — locate:** `setLocateIntent`, `clearLocateIntent`.
 
@@ -176,6 +177,8 @@ README.md
 **Actions — sản phẩm / cờ:** `toggleDeferred`, `togglePriceReduced`, `setProductDiscontinued`, `toggleDiscontinued`, `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`, `updateProductName`, `updateProductImage(productId, imageUrl)`, `removeProductImage(productId)` (xóa Storage + set `image_url` null). **Ẩn/khôi phục SP** (`ProductDetailScreen` `handleArchiveToggle`): cập nhật DB `is_archived` + store `products` (ẩn = remove khỏi list) **và** sync `inventoryEntries[].product` (cùng object `updated`, pattern như `updateProductName`) — KI-059; tránh Notifications fallback snapshot cũ.
 
 **Actions — đặt hàng:** `fetchOrderLists`, `createOrderList`, `updateOrderList`, `deleteOrderList`, `addOrderItem`, `updateOrderItem`, `deleteOrderItem`, `confirmOrderList`, `markOrderPlaced`.
+
+**Actions — ghi chú nội bộ (F31):** `fetchInternalNotes`, `addInternalNote`, `updateInternalNote`, `deleteInternalNote` (join `product:products(id, name, image_url)`).
 
 **Actions — audit log:** `fetchAuditLogs` (cursor-based, filter kho + loại + người + sản phẩm), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`.
 
@@ -195,7 +198,7 @@ README.md
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (gồm `table_name: 'user_profiles'`), `OrderList`, `OrderItem`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, **`InternalNote`** (F31), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (gồm `table_name: 'user_profiles' | 'internal_notes'`), `OrderList`, `OrderItem`
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 

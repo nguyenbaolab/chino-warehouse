@@ -17,6 +17,7 @@ import {
   AuditLog,
   LocateIntent,
   ProductBarcode,
+  InternalNote,
 } from '../types'
 
 type WarehouseStore = {
@@ -29,6 +30,7 @@ type WarehouseStore = {
   inventoryEntries: InventoryEntry[]
   orderLists: OrderList[]
   orderItems: OrderItem[]
+  internalNotes: InternalNote[]
   isLoading: boolean
   locateIntent: LocateIntent | null
 
@@ -135,6 +137,13 @@ type WarehouseStore = {
     limit?: number
   }) => Promise<AuditLog[]>
   fetchAuditLogsForProduct: (productId: string, limit?: number) => Promise<AuditLog[]>
+  fetchInternalNotes: () => Promise<{ error: string | null }>
+  addInternalNote: (
+    productId: string,
+    reason: string,
+  ) => Promise<{ error: string | null; note?: InternalNote }>
+  updateInternalNote: (id: string, reason: string) => Promise<{ error: string | null }>
+  deleteInternalNote: (id: string) => Promise<{ error: string | null }>
 }
 
 export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
@@ -147,6 +156,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   inventoryEntries: [],
   orderLists: [],
   orderItems: [],
+  internalNotes: [],
   isLoading: false,
   locateIntent: null,
 
@@ -1275,5 +1285,77 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
   fetchAuditLogsForProduct: async (productId, limit = 10) => {
     return get().fetchAuditLogs({ filterProductId: productId, limit })
+  },
+
+  // F31 — ghi chú nội bộ
+  fetchInternalNotes: async () => {
+    const { data, error } = await supabase
+      .from('internal_notes')
+      .select('*, product:products(id, name, image_url)')
+      .order('created_at', { ascending: false })
+    if (error) {
+      console.error('[warehouseStore] fetchInternalNotes:', error)
+      return { error: getErrorMessage(error, 'fetch') }
+    }
+    set({ internalNotes: (data as InternalNote[]) ?? [] })
+    return { error: null }
+  },
+
+  addInternalNote: async (productId, reason) => {
+    const trimmed = reason.trim()
+    if (!trimmed) {
+      return { error: 'Nội dung ghi chú không được để trống.' }
+    }
+    const { data: userData } = await supabase.auth.getUser()
+    const { data, error } = await supabase
+      .from('internal_notes')
+      .insert({
+        product_id: productId,
+        reason: trimmed,
+        created_by: userData.user?.id ?? null,
+      })
+      .select('*, product:products(id, name, image_url)')
+      .single()
+    if (error || !data) {
+      if (error) console.error('[warehouseStore] addInternalNote:', error)
+      return { error: getErrorMessage(error, 'create') }
+    }
+    const note = data as InternalNote
+    set((s) => ({ internalNotes: [note, ...s.internalNotes] }))
+    return { error: null, note }
+  },
+
+  updateInternalNote: async (id, reason) => {
+    const trimmed = reason.trim()
+    if (!trimmed) {
+      return { error: 'Nội dung ghi chú không được để trống.' }
+    }
+    const { data, error } = await supabase
+      .from('internal_notes')
+      .update({ reason: trimmed })
+      .eq('id', id)
+      .select('*, product:products(id, name, image_url)')
+      .single()
+    if (error || !data) {
+      if (error) console.error('[warehouseStore] updateInternalNote:', error)
+      return { error: getErrorMessage(error, 'update') }
+    }
+    const note = data as InternalNote
+    set((s) => ({
+      internalNotes: s.internalNotes.map((n) => (n.id === note.id ? note : n)),
+    }))
+    return { error: null }
+  },
+
+  deleteInternalNote: async (id) => {
+    const { error } = await supabase.from('internal_notes').delete().eq('id', id)
+    if (error) {
+      console.error('[warehouseStore] deleteInternalNote:', error)
+      return { error: getErrorMessage(error, 'delete') }
+    }
+    set((s) => ({
+      internalNotes: s.internalNotes.filter((n) => n.id !== id),
+    }))
+    return { error: null }
   },
 }))

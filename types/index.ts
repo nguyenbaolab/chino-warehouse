@@ -130,9 +130,19 @@ export type InventoryEntry = {
   zone?: Zone
 }
 
+/** F31 — ghi chú nội bộ theo sản phẩm */
+export type InternalNote = {
+  id: string
+  product_id: string
+  reason: string
+  created_by: string | null
+  created_at: string
+  product?: Product
+}
+
 export type AuditLog = {
   id: string
-  table_name: 'inventory_entries' | 'products' | 'product_barcodes' | 'user_profiles'
+  table_name: 'inventory_entries' | 'products' | 'product_barcodes' | 'user_profiles' | 'internal_notes'
   action: 'INSERT' | 'UPDATE' | 'DELETE' | 'CONFLICT'
   record_id: string | null
   location_id: string | null

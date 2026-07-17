@@ -20,8 +20,10 @@ export default function SettingsScreen() {
     products,
     productCategoriesL1,
     productCategoriesL2,
+    internalNotes,
     refreshDiscontinuedContext,
     fetchLatestAuditEntry,
+    fetchInternalNotes,
   } = useWarehouseStore()
   const { isDark, colors, loadTheme, toggleTheme } = useThemeStore()
   const isAdmin = useIsAdmin()
@@ -68,6 +70,7 @@ export default function SettingsScreen() {
 
       void (async () => {
         await refreshDiscontinuedContext()
+        await fetchInternalNotes()
         if (productCategoriesL1.length === 0 && productCategoriesL2.length === 0) {
           await fetchCategories()
         }
@@ -98,6 +101,7 @@ export default function SettingsScreen() {
       })()
     }, [
       refreshDiscontinuedContext,
+      fetchInternalNotes,
       fetchCategories,
       fetchLatestAuditEntry,
       productCategoriesL1.length,
@@ -202,6 +206,21 @@ export default function SettingsScreen() {
           <Text style={[styles.linkTitle, { color: colors.text }]}>Sản phẩm không nhập nữa</Text>
           <Text style={[styles.linkSub, { color: colors.sub }]}>
             {discontinuedCount} sản phẩm
+          </Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
+
+      {/* F31 — Ghi chú nội bộ */}
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('InternalNotes')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>📝 Ghi chú</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>
+            {internalNotes.length} ghi chú
           </Text>
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>

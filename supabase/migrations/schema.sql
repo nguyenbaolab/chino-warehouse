@@ -1,8 +1,11 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.16 | Tháng 5/2026
+-- Phiên bản: 3.17 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.16:
+--   - F31: bảng internal_notes + RLS (SELECT authenticated / mutate staff+)
+--     + audit trigger; mở rộng audit_logs.table_name CHECK
 -- Thay đổi so với v3.15:
 --   - KI-055: RLS role-based writes — is_current_user_at_least_staff;
 --     9 bảng kho SELECT all authenticated / mutate staff+; storage product-images staff+ write
@@ -185,10 +188,19 @@ CREATE TABLE user_profiles (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 8b. Internal notes (F31 — ghi chú nội bộ theo SP)
+CREATE TABLE internal_notes (
+  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id  UUID        NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  reason      TEXT        NOT NULL,
+  created_by  UUID        REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 9. Audit logs (SEC-11)
 CREATE TABLE audit_logs (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products', 'product_barcodes', 'user_profiles')),
+  table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products', 'product_barcodes', 'user_profiles', 'internal_notes')),
   action         TEXT        NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE', 'CONFLICT')),
   record_id      UUID,
   location_id    UUID        REFERENCES locations(id) ON DELETE SET NULL,
@@ -214,6 +226,8 @@ CREATE INDEX ON order_items(product_id);
 CREATE INDEX idx_product_categories_l2_level1 ON product_categories_l2(level1_id);
 CREATE INDEX idx_user_profiles_role ON user_profiles(role);
 CREATE INDEX idx_user_profiles_is_disabled ON user_profiles(is_disabled);
+CREATE INDEX idx_internal_notes_product_id ON internal_notes(product_id);
+CREATE INDEX idx_internal_notes_created_at ON internal_notes(created_at DESC);
 
 -- Indexes cho audit_logs (SEC-11)
 CREATE INDEX ON audit_logs(changed_at DESC);
@@ -236,6 +250,7 @@ ALTER TABLE product_barcodes      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE internal_notes        ENABLE ROW LEVEL SECURITY;
 
 -- F24 / KI-055: helpers bypass RLS khi check role (tránh infinite recursion trong policy)
 CREATE OR REPLACE FUNCTION public.is_current_user_admin()
@@ -376,6 +391,14 @@ CREATE POLICY user_profiles_update_admin ON user_profiles
     public.is_current_user_admin()
     AND role IN ('staff', 'guest')
   );
+
+-- F31: internal_notes — guest SELECT; staff+ mutate
+CREATE POLICY internal_notes_select_authenticated ON internal_notes
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY internal_notes_mutate_staff_plus ON internal_notes
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
 
 -- RLS audit_logs (SEC-11): chỉ authenticated SELECT, không INSERT/UPDATE/DELETE từ client
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
@@ -519,6 +542,10 @@ CREATE TRIGGER audit_product_barcodes
 
 CREATE TRIGGER audit_user_profiles
   AFTER UPDATE OR DELETE ON user_profiles
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
+
+CREATE TRIGGER audit_internal_notes
+  AFTER INSERT OR UPDATE OR DELETE ON internal_notes
   FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
 
 -- F24: auto-insert user_profiles khi tạo auth.users

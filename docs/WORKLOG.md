@@ -4,6 +4,22 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: F6 phần 2 — InternalNotesScreen UI
+
+- List cards (ảnh 64×64, tên, lý do, ngày); FAB + modal tạo (autocomplete SP, không tạo mới); sửa/xóa; RBAC `useCanWrite`.
+- Docs: CONTEXT §3 InternalNotesScreen.
+
+---
+
+## [tháng 7/2026] — feat: F6 phần 1 — migration + store + nav + settings card
+
+- Migration `20260717_create_internal_notes.sql` + `schema.sql` v3.17 (RLS + audit CHECK/trigger).
+- Types `InternalNote`; store `internalNotes` + fetch/add/update/delete.
+- SettingsStack route `InternalNotes` (placeholder screen); Settings card 📝 Ghi chú.
+- Docs: CONTEXT §2–§5.
+
+---
+
 ## [tháng 7/2026] — feat: F5 — toggle Chưa có ảnh trên ProductsScreen
 
 - State `showNoImageOnly`; toggle thứ 3 trong `toggleRow`; filter `!image_url` cuối pipeline; reset page khi đổi toggle.
