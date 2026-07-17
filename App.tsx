@@ -27,6 +27,7 @@ import BarcodeScannerScreen from './screens/BarcodeScannerScreen'
 import OrderListScreen from './screens/OrderListScreen'
 import OrderDetailScreen from './screens/OrderDetailScreen'
 import ZoneLayoutEditorScreen from './screens/ZoneLayoutEditorScreen'
+import ZonePickerScreen from './screens/ZonePickerScreen'
 import AuditLogScreen from './screens/AuditLogScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import UserManagementScreen from './screens/UserManagementScreen'
@@ -45,6 +46,7 @@ function MapStackNavigator() {
     <MapStack.Navigator screenOptions={{ headerShown: false }}>
       <MapStack.Screen name="MapMain" component={MapScreen} />
       <MapStack.Screen name="ZoneLayoutEditor" component={ZoneLayoutEditorScreen} />
+      <MapStack.Screen name="ZonePicker" component={ZonePickerScreen} />
       <MapStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <MapStack.Screen name="AddInventory" component={AddInventoryScreen} />
       <MapStack.Screen name="AuditLog" component={AuditLogScreen} />

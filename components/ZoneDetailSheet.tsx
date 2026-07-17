@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useIsFocused } from '@react-navigation/native'
 import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -65,8 +65,9 @@ export default function ZoneDetailSheet({
   const canWrite = useCanWrite()
   const isReadOnly = useIsReadOnly()
   const insets = useSafeAreaInsets()
+  const isFocused = useIsFocused()
   const {
-    zones,
+    selectedLocationId,
     fetchInventoryByZone,
     updateInventoryEntry,
     deleteInventoryEntry,
@@ -86,11 +87,6 @@ export default function ZoneDetailSheet({
   const [editNotes, setEditNotes] = useState('')
   const [editLotBarcode, setEditLotBarcode] = useState('')
   const [lotSnapshotUpdatedAt, setLotSnapshotUpdatedAt] = useState<string>('')
-  const [moveLot, setMoveLot] = useState<InventoryEntry | null>(null)
-  const [targetZoneId, setTargetZoneId] = useState<string | null>(null)
-  const [targetTier, setTargetTier] = useState<number | null>(null)
-  const [showZoneOptions, setShowZoneOptions] = useState(false)
-  const [showTierOptions, setShowTierOptions] = useState(false)
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [productNameInput, setProductNameInput] = useState('')
   const [originalProductName, setOriginalProductName] = useState('')
@@ -140,6 +136,19 @@ export default function ZoneDetailSheet({
       isMounted = false
     }
   }, [fetchInventoryByZone, visible, zone?.id])
+
+  // F8: sau goBack từ ZonePicker, MapMain focus lại → reload sheet (cùng zone.id)
+  useEffect(() => {
+    if (!visible || !zone || !isFocused) return
+    let cancelled = false
+    void (async () => {
+      const data = await fetchInventoryByZone(zone.id)
+      if (!cancelled) setEntries(data)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isFocused, visible, zone?.id, fetchInventoryByZone])
 
   async function reloadCurrentZoneInventory() {
     if (!zone) return
@@ -311,28 +320,19 @@ export default function ZoneDetailSheet({
 
   function openMoveLot(entry: InventoryEntry) {
     if (isReadOnly) return
-    setMoveLot(entry)
-    setTargetZoneId(null)
-    setTargetTier(null)
-    setShowZoneOptions(false)
-    setShowTierOptions(false)
-  }
-
-  const availableTargetZones = zones
-  const selectedTargetZone = zones.find((z) => z.id === targetZoneId) ?? null
-  const availableTargetTiers = selectedTargetZone
-    ? Array.from({ length: Math.max(selectedTargetZone.tier_count || 1, 1) }, (_, idx) => idx + 1)
-    : []
-
-  async function confirmMoveLot() {
-    if (!moveLot || !targetZoneId || !targetTier) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng chọn zone đích và tầng đích.')
+    const locationId = selectedLocationId ?? zone?.location_id
+    if (!locationId) {
+      Alert.alert('Thiếu thông tin', 'Không xác định được kho hiện tại.')
       return
     }
-    onBeforeMutation?.()
-    await updateInventoryEntry(moveLot.id, { zone_id: targetZoneId, tier: targetTier })
-    setMoveLot(null)
-    await reloadCurrentZoneInventory()
+    // F8: map fullscreen chọn zone đích
+    navigation.navigate('ZonePicker', {
+      entryId: entry.id,
+      sourceZoneId: entry.zone_id,
+      sourceTier: entry.tier,
+      locationId,
+      markOwnMutation: onBeforeMutation,
+    })
   }
 
   async function handleSaveProductName(productId: string) {
@@ -773,94 +773,6 @@ export default function ZoneDetailSheet({
             </TouchableOpacity>
           ) : null}
         </KeyboardAvoidingView>
-
-        {canWrite ? (
-        <Modal visible={!!moveLot} transparent animationType="slide" onRequestClose={() => setMoveLot(null)}>
-          <View style={styles.modalOverlay}>
-            <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => setMoveLot(null)} />
-            <View style={[styles.modalBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <ScrollView
-                style={styles.moveModalScroll}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                bounces={false}
-              >
-                <Text style={[styles.modalTitle, { color: colors.text }]}>Chuyển lô hàng</Text>
-
-                <Text style={[styles.editLabel, { color: colors.sub }]}>Zone đích</Text>
-                <Pressable
-                  style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
-                  onPress={() => {
-                    setShowZoneOptions((v) => !v)
-                    setShowTierOptions(false)
-                  }}
-                >
-                  <Text style={{ color: selectedTargetZone ? colors.text : colors.sub }}>
-                    {selectedTargetZone?.name ?? 'Chọn zone đích'}
-                  </Text>
-                </Pressable>
-                {showZoneOptions && (
-                  <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-                    {availableTargetZones.map((zoneItem) => (
-                      <TouchableOpacity
-                        key={zoneItem.id}
-                        style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                        onPress={() => {
-                          setTargetZoneId(zoneItem.id)
-                          const tiersCount = Math.max(zoneItem.tier_count || 1, 1)
-                          setTargetTier(tiersCount === 1 ? 1 : null)
-                          setShowZoneOptions(false)
-                        }}
-                      >
-                        <Text style={{ color: colors.text }}>{zoneItem.name}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-
-                <Text style={[styles.editLabel, { color: colors.sub, marginTop: 8 }]}>Tầng đích</Text>
-                <Pressable
-                  style={[styles.selectBtn, { backgroundColor: colors.bg, borderColor: colors.border, opacity: selectedTargetZone ? 1 : 0.5 }]}
-                  onPress={() => {
-                    if (!selectedTargetZone || availableTargetTiers.length <= 1) return
-                    setShowTierOptions((v) => !v)
-                    setShowZoneOptions(false)
-                  }}
-                >
-                  <Text style={{ color: targetTier ? colors.text : colors.sub }}>
-                    {targetTier ? `Tầng ${targetTier}` : 'Chọn tầng đích'}
-                  </Text>
-                </Pressable>
-                {showTierOptions && availableTargetTiers.length > 1 && (
-                  <View style={[styles.optionsWrap, { backgroundColor: colors.bg, borderColor: colors.border }]}>
-                    {availableTargetTiers.map((tierNum) => (
-                      <TouchableOpacity
-                        key={tierNum}
-                        style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                        onPress={() => {
-                          setTargetTier(tierNum)
-                          setShowTierOptions(false)
-                        }}
-                      >
-                        <Text style={{ color: colors.text }}>Tầng {tierNum}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
-              </ScrollView>
-
-              <View style={[styles.editActions, styles.moveModalActions]}>
-                <TouchableOpacity style={[styles.editCancelBtn, { backgroundColor: colors.bg }]} onPress={() => setMoveLot(null)}>
-                  <Text style={{ color: colors.sub }}>Huỷ</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.editSaveBtn, { backgroundColor: colors.accent }]} onPress={confirmMoveLot}>
-                  <Text style={{ color: colors.card, fontWeight: '700' }}>Xác nhận</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-        ) : null}
       </View>
     </Modal>
   )
@@ -1066,8 +978,6 @@ const styles = StyleSheet.create({
   barcodeScanBtnText: {
     fontSize: 18,
   },
-  moveModalScroll: { maxHeight: 360 },
-  moveModalActions: { marginTop: 16 },
   editActions: {
     flexDirection: 'row',
     gap: 8,
@@ -1102,11 +1012,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
-  modalBox: { borderTopLeftRadius: 16, borderTopRightRadius: 16, borderWidth: 1, padding: 16 },
-  modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  selectBtn: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
-  optionsWrap: { borderWidth: 1, borderRadius: 10, marginTop: 6, overflow: 'hidden' },
-  optionRow: { borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
 })

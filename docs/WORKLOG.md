@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: F8 — dời lô bằng ZonePicker map fullscreen
+
+- MapStack route `ZonePicker` + `ZonePickerScreen` (grid, highlight nguồn, chọn tầng, `updateInventoryEntry`).
+- ZoneDetailSheet: nút → navigate ZonePicker; bỏ modal dropdown; reload khi focus lại.
+- Docs: CONTEXT §3 MapStack / ZoneDetail / ZonePicker.
+
+---
+
 ## [tháng 7/2026] — feat: F7 — barcode lô tự điền sau quét + chọn SP
 
 - `pendingLotBarcodeRef` stash khi `handleProductBarcodeScan` tìm thấy SP; điền `lotBarcode` khi bấm chọn dropdown; gõ tay clear stash.
