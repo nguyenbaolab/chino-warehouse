@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: KI-059 — sync nested product khi archive SP
+
+- Root cause: archive chỉ remove `store.products`; Notifications fallback `entries[0].product` stale `is_archived: false`.
+- `ProductDetailScreen` `handleArchiveToggle`: sync `inventoryEntries[].product = updated` (pattern `updateProductName`).
+- Docs: KI-059 Resolved; CONTEXT §4a.
+
+---
+
 ## [tháng 7/2026] — feat: F3 bổ sung — toggle Chỉ SP đã ẩn + confirm Notifications
 
 - **NotificationsScreen:** L204 (Sắp hết hạn) và L254 (Sắp hết hàng) đã `continue` khi `product.is_archived` — không sửa code.

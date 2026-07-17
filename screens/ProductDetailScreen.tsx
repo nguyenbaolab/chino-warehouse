@@ -895,6 +895,10 @@ export default function ProductDetailScreen() {
                 products: nextArchived
                   ? s.products.filter((p) => p.id !== updated.id)
                   : s.products.map((p) => (p.id === updated.id ? updated : p)),
+                // KI-059: sync nested product — Notifications fallback entries[0].product
+                inventoryEntries: s.inventoryEntries.map((e) =>
+                  e.product_id === updated.id ? { ...e, product: updated } : e,
+                ),
               }))
               navigation.goBack()
             })()

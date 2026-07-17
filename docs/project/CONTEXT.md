@@ -173,7 +173,7 @@ README.md
 
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
 
-**Actions — sản phẩm / cờ:** `toggleDeferred`, `togglePriceReduced`, `setProductDiscontinued`, `toggleDiscontinued`, `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`, `updateProductName`, `updateProductImage(productId, imageUrl)`, `removeProductImage(productId)` (xóa Storage + set `image_url` null).
+**Actions — sản phẩm / cờ:** `toggleDeferred`, `togglePriceReduced`, `setProductDiscontinued`, `toggleDiscontinued`, `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`, `updateProductName`, `updateProductImage(productId, imageUrl)`, `removeProductImage(productId)` (xóa Storage + set `image_url` null). **Ẩn/khôi phục SP** (`ProductDetailScreen` `handleArchiveToggle`): cập nhật DB `is_archived` + store `products` (ẩn = remove khỏi list) **và** sync `inventoryEntries[].product` (cùng object `updated`, pattern như `updateProductName`) — KI-059; tránh Notifications fallback snapshot cũ.
 
 **Actions — đặt hàng:** `fetchOrderLists`, `createOrderList`, `updateOrderList`, `deleteOrderList`, `addOrderItem`, `updateOrderItem`, `deleteOrderItem`, `confirmOrderList`, `markOrderPlaced`.
 

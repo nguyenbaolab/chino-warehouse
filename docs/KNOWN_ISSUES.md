@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-059] Ẩn SP — Notifications vẫn hiện (stale nested `product.is_archived`)
+
+- **Mức độ:** Medium (UX / data consistency)
+- **File liên quan:** `screens/ProductDetailScreen.tsx` (`handleArchiveToggle`), `screens/NotificationsScreen.tsx` (fallback `entries[0].product`)
+- **Mô tả:** Ẩn SP từ ProductDetail (mở từ Notifications) chỉ `filter` remove khỏi `store.products`, **không** cập nhật `inventoryEntries[].product`. Notifications: `products.find ?? entries[0].product` → snapshot cũ `is_archived: false` → filter fail → card vẫn hiện. Từ ProductsScreen không lộ vì list đọc trực tiếp `products`.
+- **Hướng fix:** Khi archive/khôi phục, sync `inventoryEntries` nested `product` giống `updateProductName` (gán `product: updated`).
+- **Trạng thái:** Resolved
+- **Đã fix:** `handleArchiveToggle` `setState` cập nhật cả `products` và `inventoryEntries` map theo `product_id`. Không thêm focus-refetch.
+- **Tham chiếu:** F3 sync `is_archived`
+
+---
+
 ### [KI-058] Xóa lô khi còn thùng — UI và store không block (F2 Phase 3)
 
 - **Mức độ:** High (data loss risk)
