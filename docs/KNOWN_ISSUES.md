@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-060] Toggle "Chỉ sản phẩm đã ẩn" — race + thiếu client filter + page không reset
+
+- **Mức độ:** Medium (UX / data consistency)
+- **File liên quan:** `screens/ProductsScreen.tsx`
+- **Mô tả:** (1) Bật/tắt toggle nhanh → fetch song song, response cũ ghi đè `store.products` → list sai mode. (2) `filteredProducts` không lọc `is_archived` theo toggle → SP lệch mode (vd. vừa khôi phục) vẫn hiện. (3) `setCurrentPage(0)` không deps `showArchived` → kẹt trang cũ.
+- **Hướng fix:** cancelled flag khi fetch theo toggle; filter client `showArchived ? is_archived : !is_archived`; thêm `showArchived` vào deps reset page.
+- **Trạng thái:** Resolved
+- **Đã fix:** useEffect load products theo `.eq('is_archived', showArchived)` + cleanup `cancelled`; pipeline `filteredProducts` lọc mode; page reset khi đổi toggle.
+- **Tham chiếu:** F3 / F09 toggle archived
+
+---
+
 ### [KI-059] Ẩn SP — Notifications vẫn hiện (stale nested `product.is_archived`)
 
 - **Mức độ:** Medium (UX / data consistency)

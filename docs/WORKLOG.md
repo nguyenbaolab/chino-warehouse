@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: KI-060 — toggle Chỉ SP đã ẩn (race + filter + page)
+
+- Race: fetch theo `showArchived` + `cancelled` cleanup; không dùng `fetchProducts` (không cancel được).
+- `filteredProducts`: lọc client `is_archived` theo mode toggle.
+- `setCurrentPage(0)` deps thêm `showArchived`.
+- Docs: KI-060 Resolved; CONTEXT ProductsScreen.
+
+---
+
 ## [tháng 7/2026] — fix: KI-059 — sync nested product khi archive SP
 
 - Root cause: archive chỉ remove `store.products`; Notifications fallback `entries[0].product` stale `is_archived: false`.
