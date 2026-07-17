@@ -4,6 +4,22 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: F3 bổ sung — toggle Chỉ SP đã ẩn + confirm Notifications
+
+- **NotificationsScreen:** L204 (Sắp hết hạn) và L254 (Sắp hết hàng) đã `continue` khi `product.is_archived` — không sửa code.
+- **ProductsScreen:** toggle "Chỉ sản phẩm đã ẩn" — bật → query `.eq('is_archived', true)` (không còn load all); label cập nhật.
+- Docs: CONTEXT ProductsScreen; REQUIREMENTS F09.
+
+---
+
+## [tháng 7/2026] — feat: F3 — ẩn SP is_archived trong ZoneDetailSheet
+
+- `currentTierEntries`: thêm `!entry.product?.is_archived` (cùng filter tier) — lô SP ẩn không vào group/search/render.
+- Map `searchProducts` / AddInventory / store query: không đổi.
+- Docs: CONTEXT §3 ZoneDetailSheet.
+
+---
+
 ## [tháng 7/2026] — fix: KI-057 lần 2 — stack tường minh Main + ProductDetail
 
 - Root cause: nested navigate chỉ `ProductDetail` → stack cụt `[ProductDetail]`; Đóng bubble → Map; tab Sản phẩm kẹt.

@@ -109,10 +109,11 @@ export default function ProductsScreen() {
   useEffect(() => {
     fetchLocations()
     if (showArchived) {
-      // Bật toggle thì lấy cả sản phẩm đã ẩn
+      // F3: bật = CHỈ SP đã ẩn (không lẫn SP bình thường)
       supabase
         .from('products')
         .select('*')
+        .eq('is_archived', true)
         .order('name')
         .then(({ data }) => {
           if (data) useWarehouseStore.setState({ products: data })
@@ -624,7 +625,7 @@ export default function ProductsScreen() {
           onPress={() => setShowArchived((v) => !v)}
         >
           <Text style={[styles.toggleLabel, { color: colors.sub }]}>
-            {showArchived ? '✅ Đang hiện sản phẩm đã ẩn' : '⬜ Hiện sản phẩm đã ẩn'}
+            {showArchived ? '✅ Chỉ sản phẩm đã ẩn' : '⬜ Chỉ sản phẩm đã ẩn'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity

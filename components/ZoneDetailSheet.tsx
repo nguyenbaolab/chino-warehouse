@@ -150,9 +150,13 @@ export default function ZoneDetailSheet({
   const tierCount = zone?.tier_count ?? 1
   const tiers = Array.from({ length: Math.max(tierCount, 1) }, (_, index) => index + 1)
 
+  // F3: ẩn lô SP is_archived — filter sớm trước group/search/render
   const currentTierEntries = useMemo(
-    () => entries.filter((entry) => entry.tier === selectedTier),
-    [entries, selectedTier]
+    () =>
+      entries.filter(
+        (entry) => entry.tier === selectedTier && !entry.product?.is_archived,
+      ),
+    [entries, selectedTier],
   )
 
   const groupedProducts = useMemo(() => {
