@@ -138,10 +138,11 @@ type WarehouseStore = {
   }) => Promise<AuditLog[]>
   fetchAuditLogsForProduct: (productId: string, limit?: number) => Promise<AuditLog[]>
   fetchInternalNotes: () => Promise<{ error: string | null }>
-  addInternalNote: (
-    productId: string,
-    reason: string,
-  ) => Promise<{ error: string | null; note?: InternalNote }>
+  addInternalNote: (params: {
+    productId?: string
+    customName?: string
+    reason: string
+  }) => Promise<{ error: string | null; note?: InternalNote }>
   updateInternalNote: (id: string, reason: string) => Promise<{ error: string | null }>
   deleteInternalNote: (id: string) => Promise<{ error: string | null }>
 }
@@ -1301,17 +1302,24 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return { error: null }
   },
 
-  addInternalNote: async (productId, reason) => {
-    const trimmed = reason.trim()
-    if (!trimmed) {
+  addInternalNote: async (params) => {
+    const trimmedReason = params.reason.trim()
+    if (!trimmedReason) {
       return { error: 'Nội dung ghi chú không được để trống.' }
     }
+    const productId = params.productId?.trim() || null
+    const customName = productId ? null : (params.customName?.trim() || null)
+    if (!productId && !customName) {
+      return { error: 'Chọn sản phẩm hoặc nhập tên sản phẩm.' }
+    }
+
     const { data: userData } = await supabase.auth.getUser()
     const { data, error } = await supabase
       .from('internal_notes')
       .insert({
         product_id: productId,
-        reason: trimmed,
+        custom_product_name: customName,
+        reason: trimmedReason,
         created_by: userData.user?.id ?? null,
       })
       .select('*, product:products(id, name, image_url)')

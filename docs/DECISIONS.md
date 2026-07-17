@@ -26,10 +26,26 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### ProductsScreen archived mode — local state, không ghi đè store.products
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Toggle **Chỉ sản phẩm đã ẩn** fetch archived vào **local state** `archivedProducts`. `store.products` luôn giữ SP non-archived (qua `fetchProducts()` khi tắt toggle). List UI: `showArchived ? archivedProducts : products`.
+- **Lý do:** Ghi đè store khiến Internal Notes / AddInventory / Notifications thiếu SP bình thường (KI-061).
+
+---
+
+### Internal Notes (F31) — nullable product_id + custom_product_name
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** `internal_notes.product_id` **nullable**; thêm `custom_product_name`. CHECK: phải có `product_id` **hoặc** tên tự do (trim ≠ ''). Chọn SP có sẵn → FK; gõ tên không chọn dropdown → `custom_product_name`. Card custom: không navigate ProductDetail; card có `product_id` → ProductDetail (SettingsStack).
+- **Lý do:** Ghi chú cho hàng chưa nhập catalog; vẫn gợi ý SP có sẵn khi có.
+
+---
+
 ### Internal Notes (F31) — tách biệt F27 Đặt hàng
 
 - **Ngày:** tháng 6/2026
-- **Quyết định:** Màn **Ghi chú nội bộ** (`internal_notes`) dùng cho ghi chú vận hành nhanh (cần nhập thêm, khách yêu cầu, hàng bán chạy, …). **Tách biệt hoàn toàn** tab Đặt hàng (F27 / `order_lists`). Chỉ gắn vào **SP đã tồn tại** — không tạo SP mới từ màn Ghi chú. RBAC: guest xem; staff+ sửa/xóa mọi ghi chú (không giới hạn người tạo).
+- **Quyết định:** Màn **Ghi chú nội bộ** (`internal_notes`) dùng cho ghi chú vận hành nhanh (cần nhập thêm, khách yêu cầu, hàng bán chạy, …). **Tách biệt hoàn toàn** tab Đặt hàng (F27 / `order_lists`). Có thể gắn SP đã tồn tại **hoặc** tên tự do (`custom_product_name`) — không tạo SP mới từ màn Ghi chú. RBAC: guest xem; staff+ sửa/xóa mọi ghi chú (không giới hạn người tạo).
 - **Lý do:** Ghi chú nội bộ khác nghiệp vụ đặt hàng; tránh trùng UI/intent với order list.
 
 ---

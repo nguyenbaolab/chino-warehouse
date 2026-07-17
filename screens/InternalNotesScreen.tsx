@@ -61,9 +61,8 @@ export default function InternalNotesScreen() {
       let cancelled = false
       void (async () => {
         setLoading(true)
-        if (useWarehouseStore.getState().products.length === 0) {
-          await fetchProducts()
-        }
+        // Luôn refresh products — tránh dropdown rỗng sau archived toggle (Fix 2)
+        await fetchProducts()
         await fetchInternalNotes()
         if (!cancelled) setLoading(false)
       })()
@@ -83,7 +82,15 @@ export default function InternalNotesScreen() {
   }, [products, productQuery, selectedProduct])
 
   const canSaveCreate =
-    !!selectedProduct && createReason.trim().length > 0 && !saving
+    (!!selectedProduct || productQuery.trim().length > 0) &&
+    createReason.trim().length > 0 &&
+    !saving
+
+  function noteDisplayName(note: InternalNote): string {
+    if (note.product_id && note.product?.name) return note.product.name
+    if (note.custom_product_name?.trim()) return note.custom_product_name.trim()
+    return 'Sản phẩm không xác định'
+  }
 
   function resetCreateForm() {
     setProductQuery('')
@@ -107,10 +114,15 @@ export default function InternalNotesScreen() {
   }
 
   async function handleCreateSave() {
-    if (!selectedProduct || !createReason.trim()) return
+    if (!createReason.trim()) return
+    if (!selectedProduct && !productQuery.trim()) return
     setSaving(true)
     try {
-      const { error } = await addInternalNote(selectedProduct.id, createReason)
+      const { error } = await addInternalNote({
+        productId: selectedProduct?.id,
+        customName: productQuery.trim(),
+        reason: createReason,
+      })
       if (error) {
         Alert.alert('Lỗi', error)
         return
@@ -137,7 +149,7 @@ export default function InternalNotesScreen() {
   }
 
   function confirmDelete(note: InternalNote) {
-    const name = note.product?.name ?? 'sản phẩm này'
+    const name = noteDisplayName(note)
     Alert.alert('Xóa ghi chú?', `Xóa ghi chú cho «${name}»?`, [
       { text: 'Huỷ', style: 'cancel' },
       {
@@ -153,27 +165,56 @@ export default function InternalNotesScreen() {
     ])
   }
 
+  function openProductDetail(productId: string) {
+    navigation.navigate('ProductDetail', { productId })
+  }
+
   function renderNoteCard({ item }: { item: InternalNote }) {
+    const hasLinkedProduct = !!item.product_id
     const imageUrl = item.product?.image_url
+    const displayName = noteDisplayName(item)
+    const isCustomOnly = !hasLinkedProduct && !!item.custom_product_name?.trim()
+
+    const mainContent = (
+      <View style={styles.cardRowMain}>
+        <View style={styles.thumbnailContainer}>
+          {hasLinkedProduct && imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={styles.thumbnail} resizeMode="cover" />
+          ) : (
+            <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+              <Text style={{ fontSize: 22 }}>{isCustomOnly ? '📝' : '📷'}</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+            {displayName}
+          </Text>
+          {isCustomOnly ? (
+            <Text style={[styles.customHint, { color: colors.sub }]}>
+              Sản phẩm chưa có trong hệ thống
+            </Text>
+          ) : null}
+          <Text style={[styles.reason, { color: colors.text }]}>{item.reason}</Text>
+          <Text style={[styles.date, { color: colors.sub }]}>{formatNoteDate(item.created_at)}</Text>
+        </View>
+      </View>
+    )
+
     return (
       <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.cardRow}>
-          <View style={styles.thumbnailContainer}>
-            {imageUrl ? (
-              <Image source={{ uri: imageUrl }} style={styles.thumbnail} resizeMode="cover" />
-            ) : (
-              <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
-                <Text style={{ fontSize: 22 }}>📷</Text>
-              </View>
-            )}
-          </View>
-          <View style={styles.cardBody}>
-            <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-              {item.product?.name ?? 'Sản phẩm không xác định'}
-            </Text>
-            <Text style={[styles.reason, { color: colors.text }]}>{item.reason}</Text>
-            <Text style={[styles.date, { color: colors.sub }]}>{formatNoteDate(item.created_at)}</Text>
-          </View>
+          {hasLinkedProduct ? (
+            <TouchableOpacity
+              style={styles.cardPressable}
+              activeOpacity={0.7}
+              onPress={() => openProductDetail(item.product_id!)}
+            >
+              {mainContent}
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.cardPressable}>{mainContent}</View>
+          )}
           {canWrite ? (
             <View style={styles.cardActions}>
               <TouchableOpacity
@@ -316,7 +357,11 @@ export default function InternalNotesScreen() {
                     ) : null}
                     {productQuery.trim().length > 0 && productSuggestions.length === 0 ? (
                       <Text style={[styles.hint, { color: colors.sub }]}>
-                        Không tìm thấy sản phẩm. Chỉ chọn SP đã có trong hệ thống.
+                        Không khớp SP có sẵn — sẽ lưu tên tự do.
+                      </Text>
+                    ) : productQuery.trim().length > 0 && !selectedProduct ? (
+                      <Text style={[styles.hint, { color: colors.sub }]}>
+                        Chọn gợi ý hoặc lưu tên đã gõ.
                       </Text>
                     ) : null}
                   </>
@@ -374,9 +419,9 @@ export default function InternalNotesScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bounces={false}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>Sửa ghi chú</Text>
-                {editNote?.product?.name ? (
+                {editNote ? (
                   <Text style={[styles.editProductName, { color: colors.sub }]} numberOfLines={2}>
-                    {editNote.product.name}
+                    {noteDisplayName(editNote)}
                   </Text>
                 ) : null}
                 <Text style={[styles.label, { color: colors.sub }]}>Lý do / ghi chú *</Text>
@@ -447,11 +492,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  cardPressable: { flex: 1, minWidth: 0 },
+  cardRowMain: { flexDirection: 'row', alignItems: 'flex-start' },
   thumbnailContainer: { width: 64, height: 64 },
   thumbnail: { width: 64, height: 64, borderRadius: 8 },
   thumbnailPlaceholder: { justifyContent: 'center', alignItems: 'center' },
   cardBody: { flex: 1, paddingLeft: 10, minWidth: 0 },
   productName: { fontSize: 15, fontWeight: '700' },
+  customHint: { fontSize: 12, marginTop: 2 },
   reason: { fontSize: 14, marginTop: 4, lineHeight: 20 },
   date: { fontSize: 12, marginTop: 6 },
   cardActions: { marginLeft: 8, gap: 8 },

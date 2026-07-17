@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-061] Discontinued GO_BACK crash + Products archived ghi đè store.products
+
+- **Mức độ:** High (crash / data consistency)
+- **File liên quan:** `screens/DiscontinuedProductsScreen.tsx`, `screens/ProductsScreen.tsx`, `screens/InternalNotesScreen.tsx`
+- **Mô tả:** (1) Nút **Đóng** trên Discontinued gọi `navigation.goBack()` khi không còn history → crash `GO_BACK`. (2) Toggle **Chỉ SP đã ẩn** trên ProductsScreen fetch `.eq('is_archived', true)` rồi `setState({ products })` → `store.products` chỉ còn archived; các màn khác (Internal Notes dropdown, AddInventory, …) thiếu SP bình thường.
+- **Hướng fix:** `canGoBack()` → `goBack()`, else `navigate('SettingsMain')`. Archived list dùng **local state** `archivedProducts`, không ghi đè store; Internal Notes luôn `fetchProducts()` khi focus.
+- **Trạng thái:** Resolved
+- **Đã fix:** Discontinued close guard; ProductsScreen `archivedProducts` + source `showArchived ? archivedProducts : products`; Internal Notes always fetch + free-name (`custom_product_name`).
+- **Tham chiếu:** F28, F09, F31
+
+---
+
 ### [KI-060] Toggle "Chỉ sản phẩm đã ẩn" — race + thiếu client filter + page không reset
 
 - **Mức độ:** Medium (UX / data consistency)
@@ -9,7 +21,7 @@
 - **Mô tả:** (1) Bật/tắt toggle nhanh → fetch song song, response cũ ghi đè `store.products` → list sai mode. (2) `filteredProducts` không lọc `is_archived` theo toggle → SP lệch mode (vd. vừa khôi phục) vẫn hiện. (3) `setCurrentPage(0)` không deps `showArchived` → kẹt trang cũ.
 - **Hướng fix:** cancelled flag khi fetch theo toggle; filter client `showArchived ? is_archived : !is_archived`; thêm `showArchived` vào deps reset page.
 - **Trạng thái:** Resolved
-- **Đã fix:** useEffect load products theo `.eq('is_archived', showArchived)` + cleanup `cancelled`; pipeline `filteredProducts` lọc mode; page reset khi đổi toggle.
+- **Đã fix:** (lần 1) cancelled + filter client + page reset. **(lần 2 / KI-061)** archived mode → local `archivedProducts`, không ghi đè `store.products`; mode off → `fetchProducts()`.
 - **Tham chiếu:** F3 / F09 toggle archived
 
 ---

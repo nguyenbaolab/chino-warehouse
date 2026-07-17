@@ -130,10 +130,11 @@ export type InventoryEntry = {
   zone?: Zone
 }
 
-/** F31 — ghi chú nội bộ theo sản phẩm */
+/** F31 — ghi chú nội bộ theo sản phẩm (hoặc tên tự do) */
 export type InternalNote = {
   id: string
-  product_id: string
+  product_id: string | null
+  custom_product_name: string | null
   reason: string
   created_by: string | null
   created_at: string

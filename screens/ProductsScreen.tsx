@@ -47,6 +47,7 @@ export default function ProductsScreen() {
     productCategoriesL1,
     productCategoriesL2,
     fetchLocations,
+    fetchProducts,
     fetchInventoryByZone,
     fetchAllInventoryEntries,
     fetchCategories,
@@ -68,6 +69,8 @@ export default function ProductsScreen() {
   const [showArchived, setShowArchived] = useState(false)
   const [showOutOfStockOnly, setShowOutOfStockOnly] = useState(false)
   const [showNoImageOnly, setShowNoImageOnly] = useState(false)
+  /** KI-061: list archived local — không ghi đè store.products */
+  const [archivedProducts, setArchivedProducts] = useState<Product[]>([])
 
   const [scannedLotId, setScannedLotId] = useState<string | null>(null)
   const [viewingImage, setViewingImage] = useState<{ uri: string; productId: string } | null>(null)
@@ -110,15 +113,19 @@ export default function ProductsScreen() {
     fetchLocations()
     let cancelled = false
 
-    // KI-060: cancelled guard — tránh response fetch cũ ghi đè khi bật/tắt toggle nhanh
+    // KI-061: archived → local state; non-archived → fetchProducts (store)
     async function loadProductsForToggle() {
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_archived', showArchived)
-        .order('name')
-      if (!cancelled && data) {
-        useWarehouseStore.setState({ products: data })
+      if (showArchived) {
+        const { data } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_archived', true)
+          .order('name')
+        if (!cancelled && data) {
+          setArchivedProducts(data as Product[])
+        }
+      } else {
+        await fetchProducts()
       }
     }
 
@@ -126,7 +133,7 @@ export default function ProductsScreen() {
     return () => {
       cancelled = true
     }
-  }, [fetchLocations, showArchived])
+  }, [fetchLocations, fetchProducts, showArchived])
 
   useEffect(() => {
     if (filterLocationId) return
@@ -216,6 +223,7 @@ export default function ProductsScreen() {
   const filteredProducts = useMemo(() => {
     const normalizedQuery = normalizeText(searchQuery.trim())
     const hasZoneFilter = selectedZoneId != null
+    const source = showArchived ? archivedProducts : products
 
     const barcodeMatchedProductIds = new Set(
       inventoryEntries
@@ -227,11 +235,7 @@ export default function ProductsScreen() {
         .map((e) => e.product_id),
     )
 
-    return products.filter((product) => {
-      // KI-060: safety net — list luôn khớp mode toggle (kể cả sau restore / race)
-      if (showArchived ? product.is_archived !== true : product.is_archived !== false) {
-        return false
-      }
+    return source.filter((product) => {
       const matchSearch =
         normalizedQuery.length === 0 ||
         normalizeText(product.name).includes(normalizedQuery) ||
@@ -260,7 +264,7 @@ export default function ProductsScreen() {
       }
       return true
     })
-  }, [products, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet, showOutOfStockOnly, showArchived, showNoImageOnly, totalBoxesByProduct])
+  }, [products, archivedProducts, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet, showOutOfStockOnly, showArchived, showNoImageOnly, totalBoxesByProduct])
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE))
   const pagedProducts = useMemo(

@@ -114,7 +114,16 @@ export default function DiscontinuedProductsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Sản phẩm không nhập nữa</Text>
-        <TouchableOpacity style={[styles.backBtn, { backgroundColor: colors.card }]} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={[styles.backBtn, { backgroundColor: colors.card }]}
+          onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack()
+            } else {
+              navigation.navigate('SettingsMain' as never)
+            }
+          }}
+        >
           <Text style={{ color: colors.sub }}>Đóng</Text>
         </TouchableOpacity>
       </View>

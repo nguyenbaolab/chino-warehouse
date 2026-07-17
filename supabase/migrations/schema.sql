@@ -1,8 +1,11 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.17 | Tháng 7/2026
+-- Phiên bản: 3.18 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.17:
+--   - F31: internal_notes.product_id nullable + custom_product_name;
+--     CHECK product_id OR custom_product_name
 -- Thay đổi so với v3.16:
 --   - F31: bảng internal_notes + RLS (SELECT authenticated / mutate staff+)
 --     + audit trigger; mở rộng audit_logs.table_name CHECK
@@ -188,13 +191,18 @@ CREATE TABLE user_profiles (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- 8b. Internal notes (F31 — ghi chú nội bộ theo SP)
+-- 8b. Internal notes (F31 — ghi chú nội bộ theo SP hoặc tên tự do)
 CREATE TABLE internal_notes (
-  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id  UUID        NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  reason      TEXT        NOT NULL,
-  created_by  UUID        REFERENCES auth.users(id) ON DELETE SET NULL,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id           UUID        REFERENCES products(id) ON DELETE CASCADE,
+  custom_product_name  TEXT,
+  reason               TEXT        NOT NULL,
+  created_by           UUID        REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT internal_notes_product_or_name CHECK (
+    product_id IS NOT NULL
+    OR (custom_product_name IS NOT NULL AND trim(custom_product_name) <> '')
+  )
 );
 
 -- 9. Audit logs (SEC-11)

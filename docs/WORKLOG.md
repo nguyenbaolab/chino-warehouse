@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: KI-061 + F31 free-name / ProductDetail tap
+
+- Fix1: Discontinued Đóng — `canGoBack` / fallback `SettingsMain`.
+- Fix2: Products archived → local `archivedProducts` (không ghi đè `store.products`).
+- Fix3: migration nullable `product_id` + `custom_product_name`; store/UI tên tự do; luôn `fetchProducts` trên Notes.
+- Fix4: SettingsStack `ProductDetail`; tap card có FK → chi tiết SP.
+- Docs: KI-061, CONTEXT, REQUIREMENTS F31, DECISIONS; `schema.sql` v3.18.
+
+---
+
 ## [tháng 7/2026] — feat: F6 phần 2 — InternalNotesScreen UI
 
 - List cards (ảnh 64×64, tên, lý do, ngày); FAB + modal tạo (autocomplete SP, không tạo mới); sửa/xóa; RBAC `useCanWrite`.
