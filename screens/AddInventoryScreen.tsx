@@ -104,6 +104,8 @@ export default function AddInventoryScreen() {
   const [barcodeSearchWarning, setBarcodeSearchWarning] = useState<string | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [lotBarcode, setLotBarcode] = useState('')
+  // F7: stash mã vừa quét — chỉ điền ô barcode lô khi user bấm chọn SP
+  const pendingLotBarcodeRef = useRef<string | null>(null)
   const [quantityBoxes, setQuantityBoxes] = useState('1')
   const [expiryDisplay, setExpiryDisplay] = useState('')
   const [batchNote, setBatchNote] = useState('')
@@ -134,6 +136,7 @@ export default function AddInventoryScreen() {
     if (productName) {
       setBarcodeSearchWarning(null)
       setSearchQuery(productName)
+      pendingLotBarcodeRef.current = barcode
       return
     }
 
@@ -141,6 +144,7 @@ export default function AddInventoryScreen() {
     if (lookup) {
       setBarcodeSearchWarning(null)
       setSearchQuery(lookup.product.name)
+      pendingLotBarcodeRef.current = barcode
       return
     }
 
@@ -571,6 +575,7 @@ export default function AddInventoryScreen() {
               value={searchQuery}
               onChangeText={(text) => {
                 setSearchQuery(text)
+                pendingLotBarcodeRef.current = null
                 if (barcodeSearchWarning) setBarcodeSearchWarning(null)
               }}
               maxLength={100}
@@ -633,7 +638,13 @@ export default function AddInventoryScreen() {
                 onPress={() => {
                   setSelectedProduct(product)
                   setSearchQuery('')
-                  setLotBarcode('')
+                  // F7: điền mã vừa quét chỉ khi chọn từ kết quả scan (có stash)
+                  if (pendingLotBarcodeRef.current) {
+                    setLotBarcode(pendingLotBarcodeRef.current)
+                    pendingLotBarcodeRef.current = null
+                  } else {
+                    setLotBarcode('')
+                  }
                 }}
               >
                 <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>

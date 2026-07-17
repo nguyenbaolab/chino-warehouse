@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: F7 — barcode lô tự điền sau quét + chọn SP
+
+- `pendingLotBarcodeRef` stash khi `handleProductBarcodeScan` tìm thấy SP; điền `lotBarcode` khi bấm chọn dropdown; gõ tay clear stash.
+- Docs: CONTEXT §3 AddInventoryScreen.
+
+---
+
 ## [tháng 7/2026] — fix: KI-061 + F31 free-name / ProductDetail tap
 
 - Fix1: Discontinued Đóng — `canGoBack` / fallback `SettingsMain`.
