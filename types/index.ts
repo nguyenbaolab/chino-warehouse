@@ -1,6 +1,8 @@
 export type Location = {
   id: string
   name: string
+  /** F36 Market mode — 'warehouse' | 'market' */
+  type: 'warehouse' | 'market'
   description?: string
   created_at: string
   grid_rows: number
@@ -125,6 +127,10 @@ export type InventoryEntry = {
   is_price_reduced?: boolean
   expiry_date?: string
   notes?: string
+  /** F36 Market — hàng đặc biệt trên siêu thị */
+  is_special: boolean
+  /** F36 Market — checklist Kiểm hàng */
+  is_checked: boolean
   updated_at: string
   product?: Product
   zone?: Zone
@@ -141,41 +147,9 @@ export type InternalNote = {
   product?: Product
 }
 
-/** F36 — Khu trưng bày trên kệ siêu thị (tách biệt Category F30 và zones kho) */
-export type ShelfZone = {
-  id: string
-  name: string
-  sort_order: number
-  created_at: string
-}
-
-/** F36 — Hàng đang bán trên kệ (đơn vị cá thể, không phải thùng) */
-export type ShelfItem = {
-  id: string
-  product_id: string
-  quantity: number
-  expiry_date?: string | null
-  is_price_reduced: boolean
-  notes?: string | null
-  created_at: string
-  updated_at: string
-  product?: Product
-}
-
-/** F36 — Junction M:N: 1 SP thuộc nhiều khu */
-export type ShelfZoneItem = {
-  id: string
-  shelf_zone_id: string
-  shelf_item_id: string
-  is_checked: boolean
-  created_at: string
-  shelf_zone?: ShelfZone
-  shelf_item?: ShelfItem
-}
-
 export type AuditLog = {
   id: string
-  table_name: 'inventory_entries' | 'products' | 'product_barcodes' | 'user_profiles' | 'internal_notes' | 'shelf_items'
+  table_name: 'inventory_entries' | 'products' | 'product_barcodes' | 'user_profiles' | 'internal_notes'
   action: 'INSERT' | 'UPDATE' | 'DELETE' | 'CONFLICT'
   record_id: string | null
   location_id: string | null

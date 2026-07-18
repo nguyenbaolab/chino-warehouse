@@ -61,16 +61,15 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 
 > **Redesign (tháng 7/2026):** Bỏ 3 bảng shelf riêng. Market = `locations.type = 'market'`, reuse zones + `inventory_entries`. Qty cùng cột `quantity_boxes` — UI label **«thùng»** (warehouse) / **«sản phẩm»** (market). Xem `DECISIONS.md`.
 
-### C1 — Rollback shelf tables + migration mới
+### C1 — Rollback shelf tables + migration mới — ✅ Done (tháng 7/2026)
 
-- Xóa migration `20260718_create_shelf_tables.sql` (hoặc migration drop tương đương nếu đã apply trên DB)
-- Xóa 3 types `ShelfZone`, `ShelfItem`, `ShelfZoneItem` khỏi `types/index.ts`
-- `schema.sql`: rollback 3 bảng shelf + audit CHECK bỏ `shelf_items`
-- Migration mới:
+- Migration `20260719_rollback_shelf_add_market_columns.sql` (giữ nguyên `20260718_create_shelf_tables.sql` trong lịch sử)
+- Xóa types `ShelfZone`, `ShelfItem`, `ShelfZoneItem`; bỏ `'shelf_items'` khỏi `AuditLog`
+- `schema.sql` **v4.1**: không còn shelf; thêm `locations.type`, `inventory_entries.is_special`, `is_checked`
+- Migration đã ADD:
   - `locations.type` TEXT NOT NULL DEFAULT `'warehouse'` (`'warehouse' | 'market'`)
   - `inventory_entries.is_special` BOOLEAN NOT NULL DEFAULT false
   - `inventory_entries.is_checked` BOOLEAN NOT NULL DEFAULT false
-- `schema.sql` bump **v4.1**
 
 ### C2 — Mode switcher UI
 
@@ -222,7 +221,7 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 |-------|---------|-----|
 | **A — Bug / perf** | 3 | A1–A3 |
 | **B — Feature completion** | 1 | B1 (F27 mở rộng) |
-| **C — Market mode** | 4 | C1–C4 (F36 redesign) |
+| **C — Market mode** | 4 | C1 ✅ Done, C2–C4 (F36 redesign) |
 | **D — Per-SP warning** | 3 | D1–D3 (F32) |
 | **E — Picking** | 3 | E1–E3 (F34) — **Deferred Phase 5** |
 | **F — Push** | 3 | F1–F3 (F35) — **Deferred Phase 5** |

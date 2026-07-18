@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — C1: rollback shelf tables + migration Market mode columns
+
+- Migration `20260719_rollback_shelf_add_market_columns.sql`: DROP 3 bảng shelf + trigger/function; thu hẹp audit CHECK bỏ `shelf_items`; ADD `locations.type`, `inventory_entries.is_special`, `inventory_entries.is_checked`.
+- `schema.sql` v4.1: xóa toàn bộ shelf blocks, thêm 3 cột mới.
+- `types/index.ts`: xóa `ShelfZone` / `ShelfItem` / `ShelfZoneItem`; bỏ `'shelf_items'` khỏi `AuditLog`; thêm `type` vào Location, `is_special` + `is_checked` vào InventoryEntry.
+- Sync: CONTEXT §2, REQUIREMENTS v1.3.15, PLAN_4 C1 Done.
+
+---
+
 ## [tháng 7/2026] — docs: redesign F36 — Market mode thay Shelf tables
 
 - Rollback C1 shelf tables (`shelf_zones`, `shelf_items`, `shelf_zone_items`) khỏi plan.

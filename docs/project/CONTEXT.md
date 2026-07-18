@@ -16,7 +16,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 
 **Mô hình bảo mật (client-direct BaaS):**
 - Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.
-- RLS bật trên tất cả bảng app: **bảng kho** — guest SELECT only / staff+ mutate (`is_current_user_at_least_staff`); **`user_profiles`** policy theo role F24; **`audit_logs`** SELECT only. **F36 redesign:** 3 bảng `shelf_*` sẽ **rollback**; thay bằng `locations.type` + `inventory_entries.is_special` / `is_checked` (schema mục tiêu v4.1).
+- RLS bật trên tất cả bảng app: **bảng kho** — guest SELECT only / staff+ mutate (`is_current_user_at_least_staff`); **`user_profiles`** policy theo role F24; **`audit_logs`** SELECT only. **F36 Market mode (C1 Done):** `locations.type`, `inventory_entries.is_special` / `is_checked`; 3 bảng `shelf_*` đã rollback (`20260719_rollback_shelf_add_market_columns.sql`, schema **v4.1**).
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
 - Storage **`product-images`:** public read; staff+ upload/update/delete (KI-055).
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
@@ -105,9 +105,9 @@ supabase/migrations/
   20260601000100_add_user_profiles_to_audit.sql
   20260717_create_internal_notes.sql        # F31
   20260717_alter_internal_notes_nullable_product.sql
-  20260718_create_shelf_tables.sql          # C1 F36 shelf — SẼ ROLLBACK (Market mode redesign)
-  # [timestamp]_market_mode_columns.sql     # PLAN_4 C1 — locations.type + is_special/is_checked (planned)
-  schema.sql                                # Canonical schema v4.0 → v4.1 sau C1 rollback+migration
+  20260718_create_shelf_tables.sql          # C1 F36 shelf — ROLLED BACK by 20260719_rollback_shelf_add_market_columns.sql
+  20260719_rollback_shelf_add_market_columns.sql  # C1 Market mode — DROP shelf_* + locations.type + is_special/is_checked
+  schema.sql                                # Canonical schema v4.1
 supabase/db_dump_schema/   # Snapshot pg_dump (script dump_schema.bat — không thay schema.sql)
 dump_schema.bat            # Tiện ích dump schema public qua Session Pooler (xem §9)
 types/
@@ -180,7 +180,7 @@ README.md
 
 **Schema — `product_barcodes` (B1):** `id`, `product_id` → `products`, `barcode` **UNIQUE**, `first_scanned_at`, `last_scanned_at`; RLS authenticated; audit trigger SEC-11; backfill một lần từ `inventory_entries.barcode` (migration). **`audit_logs.action`:** thêm **`CONFLICT`** (B2) — RPC **`log_barcode_conflict`** ghi attempt gán barcode trùng SP khác.
 
-**Schema — Shelf Management (C1 / F36, schema v4.0) — ROLLED BACK (docs):** `shelf_zones` / `shelf_items` / `shelf_zone_items` sẽ bị xóa. **Thay bằng Market mode:** `locations.type` (`warehouse`|`market`); `inventory_entries.is_special`, `is_checked`; reuse zones; schema mục tiêu **v4.1**. Xem `DECISIONS.md` Redesign F36.
+**Schema — Market mode (C1 Done, schema v4.1):** `locations.type` (`warehouse`|`market`); `inventory_entries.is_special`, `is_checked`. Shelf tables (`shelf_zones` / `shelf_items` / `shelf_zone_items`) **đã DROP** — migration `20260719_rollback_shelf_add_market_columns.sql` (giữ file tạo shelf `20260718_…` trong lịch sử). Xem `DECISIONS.md` Redesign F36. Store/UI mode switcher → C2.
 
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
 
@@ -208,7 +208,7 @@ README.md
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location` (gồm `grid_rows`, `grid_cols`; **planned:** `type: 'warehouse' | 'market'`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry` (**planned:** `is_special`, `is_checked`), **`InternalNote`** (F31), ~~`ShelfZone` / `ShelfItem` / `ShelfZoneItem`~~ (**sẽ rollback**), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (bỏ `'shelf_items'` sau rollback), `OrderList`, `OrderItem`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`, **`type: 'warehouse' | 'market'`**), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry` (**`is_special`**, **`is_checked`**), **`InternalNote`** (F31), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (không còn `'shelf_items'`), `OrderList`, `OrderItem`
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 

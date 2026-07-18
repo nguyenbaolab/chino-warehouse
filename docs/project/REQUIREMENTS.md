@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.14 | Tháng 7/2026
+**Phiên bản:** 1.3.15 | Tháng 7/2026
 
+> **v1.3.15** — C1 Done: rollback shelf tables; migration `locations.type` + `is_special` + `is_checked`; schema v4.1; types cleanup.
 > **v1.3.14** — Redesign F36: Market mode (`locations.type`) thay Shelf tables; F34/F35 → Phase 5; Notifications date range + dropdown Kho/Siêu thị. Xem `DECISIONS.md`, `PLAN_4.md` Group C.
 > **v1.3.13** — F33 Dropped (`is_on_shelf`); C2 bỏ; kho và kệ tách hoàn toàn. Xem `DECISIONS.md`, `PLAN_4.md` Group C.
 > **v1.3.12** — C1 Shelf Management schema: `shelf_zones` / `shelf_items` / `shelf_zone_items` (migration `20260718_create_shelf_tables.sql`, schema v4.0); F36 In progress — **sau này rollback** (v1.3.14). Xem `PLAN_4.md` Group C.
@@ -128,7 +129,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
 | F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | Deferred *(PLAN_4 Group E → Phase 5)* |
 | F35 | Push notification (local) | `expo-notifications` — scheduled local notification mỗi ngày **11:00**. Check dữ liệu lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày"). | P3 | Phase 5 | Deferred *(PLAN_4 Group F → Phase 5)* |
-| F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | In progress *(PLAN_4 Group C — docs; code chưa)* |
+| F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | In progress *(C1 Done — schema; C2–C4 pending)* |
 
 ---
 
@@ -191,7 +192,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | created_at | Timestamp | Tự sinh |
 | grid_rows | Integer | Số hàng của lưới (mặc định 6) |
 | grid_cols | Integer | Số cột của lưới (mặc định 6) |
-| type | TEXT | **Phase 4 (planned):** `'warehouse'` \| `'market'` — NOT NULL DEFAULT `'warehouse'`. Market mode reuse cùng Location/Zone/Inventory. |
+| type | TEXT | **Phase 4 C1 Done:** `'warehouse'` \| `'market'` — NOT NULL DEFAULT `'warehouse'`. Market mode reuse cùng Location/Zone/Inventory. |
 
 ### 8.2 Zone
 | Trường | Kiểu | Mô tả |
@@ -248,8 +249,8 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | barcode | String | Mã vạch của lô (optional) |
 | expiry_date | Date | Hạn sử dụng của lô này |
 | is_price_reduced | Boolean | Đã giảm giá (Notifications) |
-| is_special | Boolean | **Phase 4 (planned):** hàng đặc biệt trên market (default false) |
-| is_checked | Boolean | **Phase 4 (planned):** checklist Kiểm hàng (default false); chủ yếu market + `is_special` |
+| is_special | Boolean | **Phase 4 C1 Done:** hàng đặc biệt trên market (default false) |
+| is_checked | Boolean | **Phase 4 C1 Done:** checklist Kiểm hàng (default false); chủ yếu market + `is_special` |
 | notes | String | Ghi chú lô hàng |
 | updated_at | Timestamp | Tự cập nhật |
 
@@ -275,10 +276,9 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 
 > Migration: `20260601000000_add_user_profiles.sql`, `20260601000100_add_user_profiles_to_audit.sql`. Cột `discontinued_reason` trên `products` (F28): `20260530002000_f28_add_discontinued_reason.sql`.
 
-### 8.9–8.11 Shelf tables — **Rolled back**
+### 8.9–8.11 Shelf tables — **Đã xóa**
 
-> **Rolled back — xem `DECISIONS.md` (Redesign F36 — Market mode).**  
-> Các bảng `shelf_zones`, `shelf_items`, `shelf_zone_items` (migration `20260718_create_shelf_tables.sql`, schema v4.0) **sẽ bị xóa / không dùng**. Thay bằng `locations.type` + `inventory_entries.is_special` / `is_checked` (schema mục tiêu **v4.1**).
+> **Đã xóa** — migration `20260719_rollback_shelf_add_market_columns.sql` (DROP `shelf_zone_items` / `shelf_items` / `shelf_zones`). File tạo gốc `20260718_create_shelf_tables.sql` giữ trong lịch sử migrations. Thay bằng `locations.type` + `inventory_entries.is_special` / `is_checked` (schema **v4.1**). Xem `DECISIONS.md` Redesign F36.
 
 ---
 
@@ -363,6 +363,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Super app | Không đề cập | Ghi nhận trong §1 và F24 | Thông tin mới từ chủ cửa hàng |
 | Phase 3 scope v1.3.7 | — | PLAN_3: A1–A5, B1–B8, C1, D1–D3, E1–E2; F19 Dropped; F21/F25/F26 → Phase 4 | Chốt roadmap Phase 3 |
 | Phase 3 Group F v1.3.8 | — | PLAN_3 Group F: F1 navigation (KI-057), F2 block xóa lô (KI-058), F3 `is_archived`, F4 tap kho→Map, F5 filter ảnh, F31 Internal Notes; F07 sửa xóa lô; F32–F35 → Phase 4 | Ghi nhận backlog mới |
+| C1 Market columns v1.3.15 | — | Rollback shelf; `locations.type` + is_special/is_checked; schema v4.1 | C1 Done |
 | F36 Market mode redesign v1.3.14 | — | Rollback shelf tables; `locations.type` + is_special/is_checked; F34/F35 → Phase 5; Notifications date range | Redesign F36 |
 | F33 Dropped v1.3.13 | — | Bỏ `is_on_shelf`; C2 Dropped; kho/kệ tách hoàn toàn | Quyết định vận hành cửa hàng nhỏ |
 | Phase 4 C1 schema v1.3.12 | — | `shelf_zones` / `shelf_items` / `shelf_zone_items`; schema v4.0; F36 In progress (schema only) | C1 Shelf Management |
