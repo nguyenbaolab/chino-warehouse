@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.19 | Tháng 7/2026
+**Phiên bản:** 1.3.20 | Tháng 7/2026
 
+> **v1.3.20** — C4 Done: màn Kiểm hàng (Settings) — list market entries is_special, tick is_checked, Reset batch; StockCheckScreen + route.
 > **v1.3.19** — C3 fix: date range mode hiện mọi lô trong khoảng [Từ, Đến]; nút ➜ kích hoạt / ✕ tắt; checkbox expired/warning disable khi date range active.
 > **v1.3.18** — C3 Done: date range Từ/Đến trên tab Sắp hết hạn (lots expired luôn hiện, lots warning filter theo range).
 > **v1.3.17** — FilterModal shared (Products/Notifications/Dashboard): filter Mode + Kho + Zone + nút Reset; AuditLog thêm filter Mode; ProductsScreen 4 toggles luôn hiện (không swap theo mode).
@@ -133,7 +134,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
 | F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | Deferred *(PLAN_4 Group E → Phase 5)* |
 | F35 | Push notification (local) | `expo-notifications` — scheduled local notification mỗi ngày **11:00**. Check dữ liệu lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày"). | P3 | Phase 5 | Deferred *(PLAN_4 Group F → Phase 5)* |
-| F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | In progress *(C1+C2+C3 Done; C4 pending)* |
+| F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | In progress *(C1–C4 Done; Group C complete)* |
 
 ---
 
@@ -298,7 +299,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Thêm hàng (Stack) | Thêm lô hàng | Zone · Tầng · Số lượng · Hạn · F30 category |
 | Thông báo (Tab) | Cảnh báo tồn & hạn | Nút **Lọc** → FilterModal Mode/Kho/Zone; tab Sắp hết hạn: checkbox + **date range** (➜ kích hoạt mọi lô ∈ [Từ,Đến]; ✕ về mặc định expired/warning); tab Sắp hết hàng: checkbox (không date range) |
 | Cài đặt (Tab) | Tuỳ chỉnh app | Theme · cảnh báo · Quản lý kho · … · **Kiểm hàng** (C4) · Audit · User |
-| Kiểm hàng (Stack, F36 C4) | Checklist market | List `is_special`; tick `is_checked`; Reset |
+| Kiểm hàng (Stack, F36 C4) | Checklist market | List `is_special` (market zones); tick `is_checked`; Reset batch; RBAC `canWrite` |
 | Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả |
 | Tổng quan kho (Stack, F23) | Dashboard | Nút **Lọc** → FilterModal; 8 stats + pie |
 | Quản lý người dùng (Stack, F24) | User Management | Admin only |
@@ -367,6 +368,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Super app | Không đề cập | Ghi nhận trong §1 và F24 | Thông tin mới từ chủ cửa hàng |
 | Phase 3 scope v1.3.7 | — | PLAN_3: A1–A5, B1–B8, C1, D1–D3, E1–E2; F19 Dropped; F21/F25/F26 → Phase 4 | Chốt roadmap Phase 3 |
 | Phase 3 Group F v1.3.8 | — | PLAN_3 Group F: F1 navigation (KI-057), F2 block xóa lô (KI-058), F3 `is_archived`, F4 tap kho→Map, F5 filter ảnh, F31 Internal Notes; F07 sửa xóa lô; F32–F35 → Phase 4 | Ghi nhận backlog mới |
+| C4 Kiểm hàng v1.3.20 | — | Settings StockCheck: market is_special list, tick is_checked, Reset batch | C4 Done |
 | C3 Date range Notifications v1.3.19 | — | Tab Sắp hết hạn: ➜ date range mode (mọi lô ∈ [from,to]); ✕ về mặc định; checkbox disable khi active | C3 Done |
 | C2 Mode switcher + FilterModal v1.3.17 | — | FilterModal shared; 4 toggles Products; AuditLog Mode; catalog ≠ appMode | FilterModal |
 | C2 Mode switcher v1.3.16 | — | appMode + header dropdown; tab Kho/Siêu thị; getQtyUnit; Products Hàng đặc biệt | C2 Done |

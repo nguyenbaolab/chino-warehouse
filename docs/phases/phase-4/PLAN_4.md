@@ -87,11 +87,12 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 - Date range filter (**tab Sắp hết hạn only**): **Từ** (hôm nay) — **Đến** (mặc định +30 ngày); expired luôn hiện; warning filter by range
 - Tab Sắp hết hàng: chỉ FilterModal Mode/Kho/Zone, **không** date range
 
-### C4 — Checklist kiểm hàng
+### C4 — Checklist kiểm hàng ✅ Done
 
-- Settings → màn **Kiểm hàng**: list market items có `is_special = true`
-- Mỗi item: checkbox tick → `is_checked = true`
-- Nút **Reset** → set tất cả `is_checked = false` (market + `is_special`)
+- Settings → màn **Kiểm hàng** (`StockCheckScreen`): list market items có `is_special = true`
+- Mỗi item: checkbox tick → `is_checked = true` (`updateInventoryEntry`; `canWrite`)
+- Nút **Reset** → `resetMarketChecklist` set tất cả `is_checked = false` (is_special + đang checked)
+- Group C (Market mode) **hoàn tất** (C1–C4)
 
 ---
 
@@ -223,7 +224,7 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 |-------|---------|-----|
 | **A — Bug / perf** | 3 | A1–A3 |
 | **B — Feature completion** | 1 | B1 (F27 mở rộng) |
-| **C — Market mode** | 4 | C1 ✅ Done, C2 ✅ Done, C3 ✅ Done, C4 (F36 redesign) |
+| **C — Market mode** | 4 | C1 ✅ Done, C2 ✅ Done, C3 ✅ Done, C4 ✅ Done (F36 redesign — Group C complete) |
 | **D — Per-SP warning** | 3 | D1–D3 (F32) |
 | **E — Picking** | 3 | E1–E3 (F34) — **Deferred Phase 5** |
 | **F — Push** | 3 | F1–F3 (F35) — **Deferred Phase 5** |

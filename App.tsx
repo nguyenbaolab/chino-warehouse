@@ -33,6 +33,7 @@ import AuditLogScreen from './screens/AuditLogScreen'
 import DashboardScreen from './screens/DashboardScreen'
 import UserManagementScreen from './screens/UserManagementScreen'
 import InternalNotesScreen from './screens/InternalNotesScreen'
+import StockCheckScreen from './screens/StockCheckScreen'
 
 const Tab = createBottomTabNavigator()
 const RootStack = createNativeStackNavigator()
@@ -94,6 +95,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="CategoryManagement" component={CategoryManagementScreen} />
       <SettingsStack.Screen name="DiscontinuedProducts" component={DiscontinuedProductsScreen} />
       <SettingsStack.Screen name="InternalNotes" component={InternalNotesScreen} />
+      <SettingsStack.Screen name="StockCheck" component={StockCheckScreen} />
       <SettingsStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <SettingsStack.Screen name="Dashboard" component={DashboardScreen} />
       <SettingsStack.Screen name="NotificationsFromDashboard" component={NotificationsScreen} />

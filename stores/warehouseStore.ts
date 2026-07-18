@@ -84,6 +84,8 @@ type WarehouseStore = {
   deleteProduct: (productId: string) => Promise<void>
   addInventoryEntry: (data: Partial<InventoryEntry>) => Promise<void>
   updateInventoryEntry: (id: string, data: Partial<InventoryEntry>) => Promise<void>
+  /** C4 — Reset checklist Kiểm hàng: is_checked=false cho mọi lô is_special */
+  resetMarketChecklist: () => Promise<void>
   deleteInventoryEntry: (id: string) => Promise<void>
   updateProductStockThresholds: (
     productId: string,
@@ -834,6 +836,19 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       inventoryEntries: s.inventoryEntries.map((entry) => (
         entry.id === id ? { ...entry, ...data } : entry
       )),
+    }))
+  },
+
+  resetMarketChecklist: async () => {
+    await supabase
+      .from('inventory_entries')
+      .update({ is_checked: false })
+      .eq('is_special', true)
+      .eq('is_checked', true)
+    set((s) => ({
+      inventoryEntries: s.inventoryEntries.map((e) =>
+        e.is_special && e.is_checked ? { ...e, is_checked: false } : e
+      ),
     }))
   },
 

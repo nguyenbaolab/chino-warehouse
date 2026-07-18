@@ -35,6 +35,7 @@ export default function SettingsScreen() {
   } = useWarningStore()
 
   const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
+  const [stockCheckSubtitle, setStockCheckSubtitle] = useState('Chưa có hàng đặc biệt')
   const lastFetchedAt = useRef(0)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const FOCUS_FETCH_TTL_MS = 30_000
@@ -55,6 +56,34 @@ export default function SettingsScreen() {
     return `${skuCount} SKU · ${locations.length} kho`
   }, [products, locations.length])
 
+  /** C4 — subtitle Kiểm hàng: X/Y đã kiểm (market + is_special) */
+  const refreshStockCheckSubtitle = useCallback(async () => {
+    const { data: locs } = await supabase.from('locations').select('id').eq('type', 'market')
+    const locIds = (locs ?? []).map((l) => l.id as string)
+    if (locIds.length === 0) {
+      setStockCheckSubtitle('Chưa có hàng đặc biệt')
+      return
+    }
+    const { data: zones } = await supabase.from('zones').select('id').in('location_id', locIds)
+    const zoneIds = (zones ?? []).map((z) => z.id as string)
+    if (zoneIds.length === 0) {
+      setStockCheckSubtitle('Chưa có hàng đặc biệt')
+      return
+    }
+    const { data: entries } = await supabase
+      .from('inventory_entries')
+      .select('is_checked')
+      .eq('is_special', true)
+      .in('zone_id', zoneIds)
+    const total = entries?.length ?? 0
+    if (total === 0) {
+      setStockCheckSubtitle('Chưa có hàng đặc biệt')
+      return
+    }
+    const checked = (entries ?? []).filter((e) => e.is_checked === true).length
+    setStockCheckSubtitle(`${checked}/${total} đã kiểm`)
+  }, [])
+
   useEffect(() => {
     loadTheme()
     void fetchLocations()
@@ -66,6 +95,9 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Subtitle Kiểm hàng luôn refresh khi vào Settings (sau tick/Reset)
+      void refreshStockCheckSubtitle()
+
       if (Date.now() - lastFetchedAt.current <= FOCUS_FETCH_TTL_MS) return
 
       void (async () => {
@@ -102,6 +134,7 @@ export default function SettingsScreen() {
     }, [
       refreshDiscontinuedContext,
       fetchInternalNotes,
+      refreshStockCheckSubtitle,
       fetchCategories,
       fetchLatestAuditEntry,
       productCategoriesL1.length,
@@ -222,6 +255,19 @@ export default function SettingsScreen() {
           <Text style={[styles.linkSub, { color: colors.sub }]}>
             {internalNotes.length} ghi chú
           </Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
+
+      {/* C4 — Checklist kiểm hàng (market is_special) */}
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('StockCheck')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>📋 Kiểm hàng</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>{stockCheckSubtitle}</Text>
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>

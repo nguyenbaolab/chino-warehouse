@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — C4: Checklist kiểm hàng (Settings)
+
+- Tạo `screens/StockCheckScreen.tsx`: list market entries is_special = true, tick is_checked, nút Reset.
+- Store: `resetMarketChecklist` batch update is_checked = false (1 query).
+- Route: SettingsStack `StockCheck`; card Settings 📋 Kiểm hàng (subtitle X/Y đã kiểm).
+- RBAC: canWrite gate cho tick + Reset.
+- Docs: CONTEXT, REQUIREMENTS v1.3.20, PLAN_4 C4 Done, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — fix: C3 date range mode — hiện mọi lô trong khoảng
 
 - `dateRangeActive` state: bấm ➜ kích hoạt, ✕ tắt.
