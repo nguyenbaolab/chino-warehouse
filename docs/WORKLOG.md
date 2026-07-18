@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: C3 date range mode — hiện mọi lô trong khoảng
+
+- `dateRangeActive` state: bấm ➜ kích hoạt, ✕ tắt.
+- Khi active: hiện mọi lô có expiry_date ∈ [from, to] (kể cả ok); checkbox Hết hạn/Sắp hết hạn disable.
+- Khi inactive: quay về logic mặc định (expired + warning, checkbox hoạt động).
+- Docs: CONTEXT, REQUIREMENTS v1.3.19.
+
+---
+
 ## [tháng 7/2026] — C3: date range filter tab Sắp hết hạn
 
 - NotificationsScreen: state `dateFrom` (hôm nay) / `dateTo` (+30 ngày); TextInput DD/MM/YYYY.

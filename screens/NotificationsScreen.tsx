@@ -44,7 +44,7 @@ type ExpiryLotRow = {
   quantityBoxes: number
   expiryDate?: string
   isPriceReduced: boolean
-  status: 'expired' | 'warning'
+  status: 'expired' | 'warning' | 'ok'
 }
 
 type ExpiryCard = {
@@ -116,6 +116,8 @@ export default function NotificationsScreen() {
   const [dateTo, setDateTo] = useState<string>(() => plus30ISO())
   const [dateFromDraft, setDateFromDraft] = useState(() => isoExpiryToDisplay(todayISO()) || '')
   const [dateToDraft, setDateToDraft] = useState(() => isoExpiryToDisplay(plus30ISO()) || '')
+  /** C3 fix: true = hiện mọi lô trong [from,to]; false = chỉ expired/warning + checkbox */
+  const [dateRangeActive, setDateRangeActive] = useState(false)
 
   useEffect(() => {
     if (routeParams.initialTab) setActiveTab(routeParams.initialTab)
@@ -226,6 +228,7 @@ export default function NotificationsScreen() {
     activeTab,
     dateFrom,
     dateTo,
+    dateRangeActive,
   ])
 
   const locationZoneSet = useMemo(() => {
@@ -267,33 +270,55 @@ export default function NotificationsScreen() {
 
       let totalBoxes = 0
       let hasExpired = false
-      let hasWarning = false
       const lots: ExpiryLotRow[] = []
-      for (const entry of entries) {
-        totalBoxes += entry.quantity_boxes
-        const status = getExpiryStatus(entry.expiry_date, product.warning_days ?? 30)
-        if (status === 'expired') {
-          hasExpired = true
+
+      if (dateRangeActive) {
+        // Mọi lô có expiry_date ∈ [from, to] (kể cả ok)
+        for (const entry of entries) {
+          if (!entry.expiry_date) continue
+          if (entry.expiry_date < dateFrom || entry.expiry_date > dateTo) continue
+          const status = getExpiryStatus(entry.expiry_date, product.warning_days ?? 30)
+          totalBoxes += entry.quantity_boxes
+          if (status === 'expired') hasExpired = true
           lots.push({
             entryId: entry.id,
             quantityBoxes: entry.quantity_boxes,
             expiryDate: entry.expiry_date,
             isPriceReduced: entry.is_price_reduced === true,
-            status: 'expired',
+            status,
           })
         }
-        if (status === 'warning') {
-          hasWarning = true
-          lots.push({
-            entryId: entry.id,
-            quantityBoxes: entry.quantity_boxes,
-            expiryDate: entry.expiry_date,
-            isPriceReduced: entry.is_price_reduced === true,
-            status: 'warning',
-          })
+        if (lots.length === 0) continue
+      } else {
+        // Mặc định: chỉ expired + warning
+        let hasWarning = false
+        for (const entry of entries) {
+          totalBoxes += entry.quantity_boxes
+          const status = getExpiryStatus(entry.expiry_date, product.warning_days ?? 30)
+          if (status === 'expired') {
+            hasExpired = true
+            lots.push({
+              entryId: entry.id,
+              quantityBoxes: entry.quantity_boxes,
+              expiryDate: entry.expiry_date,
+              isPriceReduced: entry.is_price_reduced === true,
+              status: 'expired',
+            })
+          }
+          if (status === 'warning') {
+            hasWarning = true
+            lots.push({
+              entryId: entry.id,
+              quantityBoxes: entry.quantity_boxes,
+              expiryDate: entry.expiry_date,
+              isPriceReduced: entry.is_price_reduced === true,
+              status: 'warning',
+            })
+          }
         }
+        if (!hasExpired && !hasWarning) continue
       }
-      if (!hasExpired && !hasWarning) continue
+
       cards.push({
         productId,
         productName: product.name,
@@ -306,7 +331,7 @@ export default function NotificationsScreen() {
       if (a.hasExpiredLot !== b.hasExpiredLot) return a.hasExpiredLot ? -1 : 1
       return a.productName.localeCompare(b.productName)
     })
-  }, [productIdToEntries, products])
+  }, [productIdToEntries, products, dateRangeActive, dateFrom, dateTo])
 
   const lowStockCards = useMemo(() => {
     const cards: LowStockCard[] = []
@@ -349,22 +374,19 @@ export default function NotificationsScreen() {
   )
 
   const expiryCardsFiltered = useMemo(() => {
+    // Date range active: đã lọc trong expiryCards — bỏ qua checkbox
+    if (dateRangeActive) {
+      return expiryCardsSearched
+    }
     return expiryCardsSearched
       .map((card) => {
-        const filteredLots = card.lots
-          .filter((lot) => {
-            if (!showExpiredFilter && !showWarningFilter) return true
-            if (showExpiredFilter && showWarningFilter) return true
-            if (showExpiredFilter) return lot.status === 'expired'
-            if (showWarningFilter) return lot.status === 'warning'
-            return true
-          })
-          .filter((lot) => {
-            // Expired luôn hiện; warning filter theo [dateFrom, dateTo]
-            if (lot.status === 'expired') return true
-            if (!lot.expiryDate) return true
-            return lot.expiryDate >= dateFrom && lot.expiryDate <= dateTo
-          })
+        const filteredLots = card.lots.filter((lot) => {
+          if (!showExpiredFilter && !showWarningFilter) return true
+          if (showExpiredFilter && showWarningFilter) return true
+          if (showExpiredFilter) return lot.status === 'expired'
+          if (showWarningFilter) return lot.status === 'warning'
+          return true
+        })
         return {
           ...card,
           lots: filteredLots,
@@ -372,7 +394,7 @@ export default function NotificationsScreen() {
         }
       })
       .filter((card) => card.lots.length > 0)
-  }, [expiryCardsSearched, showExpiredFilter, showWarningFilter, dateFrom, dateTo])
+  }, [expiryCardsSearched, showExpiredFilter, showWarningFilter, dateRangeActive])
 
   const lowStockCardsSearched = useMemo(() => {
     if (!normalizedSearch) return lowStockCards
@@ -445,6 +467,20 @@ export default function NotificationsScreen() {
     } else {
       setDateToDraft(isoExpiryToDisplay(dateTo) || '')
     }
+  }
+
+  function activateDateRange() {
+    const fromIso = parseDisplayDateToIso(dateFromDraft)
+    const toIso = parseDisplayDateToIso(dateToDraft)
+    if (!fromIso || !toIso) {
+      Alert.alert('Ngày không hợp lệ', 'Vui lòng nhập Từ và Đến theo định dạng DD/MM/YYYY.')
+      return
+    }
+    setDateFrom(fromIso)
+    setDateTo(toIso)
+    setDateFromDraft(isoExpiryToDisplay(fromIso) || '')
+    setDateToDraft(isoExpiryToDisplay(toIso) || '')
+    setDateRangeActive(true)
   }
 
   function handleBarcodeScan(barcode: string) {
@@ -710,11 +746,22 @@ export default function NotificationsScreen() {
       </View>
 
       {activeTab === 'expiry' && (
-        <View style={[styles.filterBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          style={[
+            styles.filterBar,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              opacity: dateRangeActive ? 0.4 : 1,
+            },
+          ]}
+          pointerEvents={dateRangeActive ? 'none' : 'auto'}
+        >
           <TouchableOpacity
             style={styles.filterItem}
             onPress={() => setShowExpiredFilter((v) => !v)}
             activeOpacity={0.8}
+            disabled={dateRangeActive}
           >
             <View style={[styles.tickBox, { borderColor: colors.border, backgroundColor: showExpiredFilter ? colors.accent : colors.bg }]}>
               {showExpiredFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
@@ -727,6 +774,7 @@ export default function NotificationsScreen() {
             style={styles.filterItem}
             onPress={() => setShowWarningFilter((v) => !v)}
             activeOpacity={0.8}
+            disabled={dateRangeActive}
           >
             <View style={[styles.tickBox, { borderColor: colors.border, backgroundColor: showWarningFilter ? colors.accent : colors.bg }]}>
               {showWarningFilter && <Text style={[styles.tickText, { color: colors.card }]}>✓</Text>}
@@ -739,7 +787,15 @@ export default function NotificationsScreen() {
       )}
 
       {activeTab === 'expiry' && (
-        <View style={[styles.dateRangeRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View
+          style={[
+            styles.dateRangeRow,
+            {
+              backgroundColor: dateRangeActive ? colors.accent + '18' : colors.card,
+              borderColor: dateRangeActive ? colors.accent : colors.border,
+            },
+          ]}
+        >
           <Text style={[styles.dateRangeLabel, { color: colors.sub }]}>Từ</Text>
           <TextInput
             style={[styles.dateRangeInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
@@ -766,6 +822,22 @@ export default function NotificationsScreen() {
             maxLength={10}
             returnKeyType="done"
           />
+          <TouchableOpacity
+            style={[styles.dateRangeActionBtn, { backgroundColor: colors.accent }]}
+            onPress={activateDateRange}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+          >
+            <Text style={[styles.dateRangeActionText, { color: colors.card }]}>➜</Text>
+          </TouchableOpacity>
+          {dateRangeActive ? (
+            <TouchableOpacity
+              style={[styles.dateRangeActionBtn, { backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border }]}
+              onPress={() => setDateRangeActive(false)}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+            >
+              <Text style={[styles.dateRangeActionText, { color: colors.text }]}>✕</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       )}
 
@@ -966,8 +1038,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     fontSize: 13,
-    minWidth: 88,
+    minWidth: 72,
   },
+  dateRangeActionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dateRangeActionText: { fontSize: 15, fontWeight: '700' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 32 },
   listWrap: { flex: 1 },
   list: { paddingHorizontal: 16, paddingBottom: 20 },

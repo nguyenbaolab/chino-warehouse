@@ -110,11 +110,11 @@ export function getDisplayColorForEntry(
 
 /** Nền/viền lô theo hạn (tab Thông báo — Sắp hết hạn). */
 export function getExpiryLotSurfaceColors(
-  expiryLotStatus: 'expired' | 'warning',
+  expiryLotStatus: 'expired' | 'warning' | 'ok',
   colors: ThemeColors,
   expiryWarningEnabled: boolean,
 ): { backgroundColor: string; borderColor: string; dotColor: string } {
-  if (!expiryWarningEnabled) {
+  if (!expiryWarningEnabled || expiryLotStatus === 'ok') {
     return {
       backgroundColor: colors.bg,
       borderColor: colors.border,
