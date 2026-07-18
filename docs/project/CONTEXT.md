@@ -108,7 +108,7 @@ supabase/migrations/
   20260718_create_shelf_tables.sql          # C1 F36 — shelf_zones / shelf_items / shelf_zone_items
   # [timestamp]_add_discontinued_reason.sql # F28 — Phase 3
   # [timestamp]_f08_product_images_storage.sql # F08 — bucket product-images + RLS
-  schema.sql                                # Canonical schema v3.19
+  schema.sql                                # Canonical schema v4.0
 supabase/db_dump_schema/   # Snapshot pg_dump (script dump_schema.bat — không thay schema.sql)
 dump_schema.bat            # Tiện ích dump schema public qua Session Pooler (xem §9)
 types/
@@ -180,7 +180,7 @@ README.md
 
 **Schema — `product_barcodes` (B1):** `id`, `product_id` → `products`, `barcode` **UNIQUE**, `first_scanned_at`, `last_scanned_at`; RLS authenticated; audit trigger SEC-11; backfill một lần từ `inventory_entries.barcode` (migration). **`audit_logs.action`:** thêm **`CONFLICT`** (B2) — RPC **`log_barcode_conflict`** ghi attempt gán barcode trùng SP khác.
 
-**Schema — Shelf Management (C1 / F36, schema v3.19):** `shelf_zones` (`id`, `name`, `sort_order`, `created_at`) — khu kệ do NV tạo, **tách** Category F30 và `zones` kho. `shelf_items` (`product_id`, `quantity` = cá thể không phải thùng, `expiry_date`, `is_price_reduced` độc lập inventory, `notes`, `created_at`, `updated_at`) — audit trigger SEC-11. `shelf_zone_items` (junction M:N, UNIQUE `(shelf_zone_id, shelf_item_id)`, `is_checked` checklist). RLS: guest SELECT / staff+ mutate. Migration: `20260718_create_shelf_tables.sql`. Store/UI → C3.
+**Schema — Shelf Management (C1 / F36, schema v4.0):** `shelf_zones` (`id`, `name`, `sort_order`, `created_at`) — khu kệ do NV tạo, **tách** Category F30 và `zones` kho. `shelf_items` (`product_id`, `quantity` = cá thể không phải thùng, `expiry_date`, `is_price_reduced` độc lập inventory, `notes`, `created_at`, `updated_at`) — audit trigger SEC-11. `shelf_zone_items` (junction M:N, UNIQUE `(shelf_zone_id, shelf_item_id)`, `is_checked` checklist). RLS: guest SELECT / staff+ mutate. Migration: `20260718_create_shelf_tables.sql`. Store/UI → C3.
 
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
 

@@ -5,7 +5,7 @@
 **Phiên bản:** 1.3.13 | Tháng 7/2026
 
 > **v1.3.13** — F33 Dropped (`is_on_shelf`); C2 bỏ; kho và kệ tách hoàn toàn. Xem `DECISIONS.md`, `PLAN_4.md` Group C.
-> **v1.3.12** — C1 Shelf Management schema: `shelf_zones` / `shelf_items` / `shelf_zone_items` (migration `20260718_create_shelf_tables.sql`, schema v3.19); F36 In progress (schema only — store/UI → C3). Xem `PLAN_4.md` Group C.
+> **v1.3.12** — C1 Shelf Management schema: `shelf_zones` / `shelf_items` / `shelf_zone_items` (migration `20260718_create_shelf_tables.sql`, schema v4.0); F36 In progress (schema only — store/UI → C3). Xem `PLAN_4.md` Group C.
 > **v1.3.11** — Khởi động Phase 4: tạo `PLAN_4.md` (Groups A–H: F27 mở rộng, Shelf F33+F36, F32–F35, F21/F25/F26 optional, SEC-10/12/13/14, KI-039/040/050). Xem `docs/phases/phase-4/PLAN_4.md`.
 > **v1.3.10** — Closeout Phase 3: F28 Done; F27 mở rộng vẫn Partial → Phase 4; sync SUMMARY_3 / HANDOFF_3 / TESTCASES_3. Xem `docs/phases/phase-3/SUMMARY_3.md`.
 > **v1.3.9** — Group F thêm F7 (barcode tự điền khi chọn SP sau quét AddInventory), F8 (dời lô bằng map toàn màn hình); F36 Shelf Management → Phase 4 (cùng F33 `is_on_shelf`). Xem `PLAN_3.md` Group F + §9 Deferred.
@@ -306,7 +306,7 @@ Khu trưng bày do nhân viên tự tạo — **tách biệt** Category F30 và 
 | is_checked | Boolean | Checklist ngày (default false) |
 | created_at | Timestamp | Tự sinh |
 
-> UNIQUE `(shelf_zone_id, shelf_item_id)`. Migration: `20260718_create_shelf_tables.sql`. RLS: guest SELECT / staff+ mutate. Schema canonical: v3.19.
+> UNIQUE `(shelf_zone_id, shelf_item_id)`. Migration: `20260718_create_shelf_tables.sql`. RLS: guest SELECT / staff+ mutate. Schema canonical: v4.0.
 
 ---
 
@@ -391,7 +391,7 @@ Khu trưng bày do nhân viên tự tạo — **tách biệt** Category F30 và 
 | Phase 3 scope v1.3.7 | — | PLAN_3: A1–A5, B1–B8, C1, D1–D3, E1–E2; F19 Dropped; F21/F25/F26 → Phase 4 | Chốt roadmap Phase 3 |
 | Phase 3 Group F v1.3.8 | — | PLAN_3 Group F: F1 navigation (KI-057), F2 block xóa lô (KI-058), F3 `is_archived`, F4 tap kho→Map, F5 filter ảnh, F31 Internal Notes; F07 sửa xóa lô; F32–F35 → Phase 4 | Ghi nhận backlog mới |
 | F33 Dropped v1.3.13 | — | Bỏ `is_on_shelf`; C2 Dropped; kho/kệ tách hoàn toàn | Quyết định vận hành cửa hàng nhỏ |
-| Phase 4 C1 schema v1.3.12 | — | `shelf_zones` / `shelf_items` / `shelf_zone_items`; schema v3.19; F36 In progress (schema only) | C1 Shelf Management |
+| Phase 4 C1 schema v1.3.12 | — | `shelf_zones` / `shelf_items` / `shelf_zone_items`; schema v4.0; F36 In progress (schema only) | C1 Shelf Management |
 | Phase 4 kickoff v1.3.11 | — | Tạo `PLAN_4.md` Groups A–H; F27/Shelf/F32–F35 ưu tiên; G có thể defer | Khởi động Phase 4 |
 | Phase 3 closeout v1.3.10 | — | SUMMARY_3/HANDOFF_3/TESTCASES_3; F28 Done; F27 mở rộng → Phase 4; PLAN_3 Closed 28/29 | Closeout Phase 3 |
 | Phase 3 Group F+ v1.3.9 | — | PLAN_3 F7 barcode autofill AddInventory, F8 dời lô bằng map; F36 Shelf Management → Phase 4 (cùng F33) | UX nhập kho + chuyển lô + kệ siêu thị |

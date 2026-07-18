@@ -16,7 +16,7 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 - Tạo `20260718_create_shelf_tables.sql`: `shelf_zones`, `shelf_items`, `shelf_zone_items` + RLS staff+/guest SELECT + audit `shelf_items` + indexes.
 - `updated_at`: dùng `update_shelf_items_updated_at()` (pattern A5 — không có `set_updated_at()`).
-- Sync `schema.sql` v3.19; types `ShelfZone` / `ShelfItem` / `ShelfZoneItem`; REQUIREMENTS v1.3.12 (F36 In progress); CONTEXT.
+- Sync `schema.sql` v4.0; types `ShelfZone` / `ShelfItem` / `ShelfZoneItem`; REQUIREMENTS v1.3.12 (F36 In progress); CONTEXT.
 - Chưa store / screen / navigation (C3).
 
 ---

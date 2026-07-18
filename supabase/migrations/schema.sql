@@ -1,10 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.19 | Tháng 7/2026
+-- Phiên bản: 4.0 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
--- Thay đổi so với v3.18:
---   - v3.19: C1 Shelf Management — shelf_zones, shelf_items, shelf_zone_items (F33+F36);
+-- Thay đổi so với v3.18 (Phase 3) → v4.0 (Phase 4):
+--   - v4.0: C1 Shelf Management — shelf_zones, shelf_items, shelf_zone_items (F36);
 --     RLS guest SELECT / staff+ mutate; audit trigger trên shelf_items;
 --     update_shelf_items_updated_at BEFORE UPDATE
 -- Thay đổi so với v3.17:
