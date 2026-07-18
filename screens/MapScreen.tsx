@@ -113,11 +113,14 @@ export default function MapScreen() {
   const isFocused = useIsFocused()
   const {
     locations, selectedLocationId, zones, products, inventoryEntries, isLoading,
+    appMode,
     fetchLocations,
     fetchProducts,
     fetchZones,
     fetchInventoryByLocation,
     setSelectedLocation,
+    setAppMode,
+    getQtyUnit,
     clearLocateIntent,
     addZone,
     updateZone,
@@ -125,6 +128,7 @@ export default function MapScreen() {
     searchProducts,
     searchInventoryByBarcode,
   } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const fetchZonesRef = useRef(fetchZones)
   const fetchInventoryByLocationRef = useRef(fetchInventoryByLocation)
@@ -167,6 +171,7 @@ export default function MapScreen() {
   const [tappedZone, setTappedZone] = useState<Zone | null>(null)
   const [autoScrollProductId, setAutoScrollProductId] = useState<string | null>(null)
   const [locationSheetOpen, setLocationSheetOpen] = useState(false)
+  const [modeSheetOpen, setModeSheetOpen] = useState(false)
   const [zoneName, setZoneName] = useState('')
   const [tierCount, setTierCount] = useState('1')
   const [selectedColor, setSelectedColor] = useState(ZONE_COLORS[0])
@@ -733,9 +738,17 @@ export default function MapScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.topSpacer} />
 
-      {/* Header */}
+      {/* Header — mode switcher Warehouse ↔ Market */}
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>🏪 Chino's Warehouse</Text>
+        <Pressable
+          style={({ pressed }) => [styles.modeTitleBtn, { opacity: pressed ? 0.85 : 1 }]}
+          onPress={() => setModeSheetOpen(true)}
+        >
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+            {appMode === 'warehouse' ? "🏪 Chino's Warehouse" : "🏪 Chino's Market"}
+          </Text>
+          <Text style={[styles.modeTitleChevron, { color: colors.sub }]}>▾</Text>
+        </Pressable>
         {mode === 'normal' ? (
           canWrite ? (
             <View style={styles.headerActions}>
@@ -767,6 +780,43 @@ export default function MapScreen() {
           </TouchableOpacity>
         ) : null}
       </View>
+
+      <Modal
+        visible={modeSheetOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModeSheetOpen(false)}
+      >
+        <Pressable style={styles.locationSheetBackdrop} onPress={() => setModeSheetOpen(false)}>
+          <Pressable style={[styles.locationSheetPanel, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
+            <Text style={[styles.locationSheetTitle, { color: colors.text }]}>Chọn chế độ</Text>
+            {(
+              [
+                { mode: 'warehouse' as const, label: "Chino's Warehouse" },
+                { mode: 'market' as const, label: "Chino's Market" },
+              ] as const
+            ).map((opt) => {
+              const selected = appMode === opt.mode
+              return (
+                <TouchableOpacity
+                  key={opt.mode}
+                  style={[styles.locationSheetRow, { borderColor: colors.border, backgroundColor: selected ? colors.bg : 'transparent' }]}
+                  onPress={() => {
+                    if (opt.mode !== appMode) {
+                      clearSearch()
+                      setAppMode(opt.mode)
+                    }
+                    setModeSheetOpen(false)
+                  }}
+                >
+                  <Text style={[styles.locationSheetName, { color: colors.text }]}>{opt.label}</Text>
+                  {selected ? <Text style={{ color: colors.accent, fontSize: 18, fontWeight: '700' }}>✓</Text> : null}
+                </TouchableOpacity>
+              )
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Location selector — dropdown sheet (KI-004: clear search khi đổi kho) */}
       <View style={styles.locationSelectorWrap}>
@@ -913,7 +963,7 @@ export default function MapScreen() {
                           {product?.name ?? 'Sản phẩm không xác định'}
                         </Text>
                         <Text style={[styles.resultLotMeta, { color: colors.sub }]} numberOfLines={2}>
-                          {entry.zone?.name ?? '—'} · Tầng {entry.tier} · {entry.quantity_boxes} thùng
+                          {entry.zone?.name ?? '—'} · Tầng {entry.tier} · {entry.quantity_boxes} {qtyUnit}
                           {entry.expiry_date ? ` · ${formatResultExpiry(entry.expiry_date)}` : ''}
                         </Text>
                       </View>
@@ -930,7 +980,7 @@ export default function MapScreen() {
                 style={[styles.resultText, styles.collapsedSummaryText, { color: colors.text }]}
                 numberOfLines={1}
               >
-                {summary.productName} — {summary.totalBoxes} thùng — {summary.zoneIds.size} zone
+                {summary.productName} — {summary.totalBoxes} {qtyUnit} — {summary.zoneIds.size} zone
               </Text>
             ))
           )}
@@ -1087,7 +1137,9 @@ const styles = StyleSheet.create({
   topSpacer: { height: Platform.OS === 'android' ? 16 : 0 },
   bottomSpacer: { height: 16 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
-  title: { fontSize: 17, fontWeight: 'bold' },
+  modeTitleBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', marginRight: 8, minWidth: 0 },
+  modeTitleChevron: { fontSize: 14, fontWeight: '700', marginLeft: 4 },
+  title: { fontSize: 17, fontWeight: 'bold', flexShrink: 1 },
   addBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   layoutBtn: {

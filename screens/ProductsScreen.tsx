@@ -46,6 +46,7 @@ export default function ProductsScreen() {
     inventoryEntries,
     productCategoriesL1,
     productCategoriesL2,
+    appMode,
     fetchLocations,
     fetchProducts,
     fetchInventoryByZone,
@@ -57,7 +58,9 @@ export default function ProductsScreen() {
     upsertProductBarcode,
     logBarcodeConflict,
     lookupProductByBarcode,
+    getQtyUnit,
   } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
   const canWrite = useCanWrite()
@@ -68,6 +71,8 @@ export default function ProductsScreen() {
   const [currentPage, setCurrentPage] = useState(0)
   const [showArchived, setShowArchived] = useState(false)
   const [showOutOfStockOnly, setShowOutOfStockOnly] = useState(false)
+  /** Market mode: chỉ SP có lô is_special trong locations thuộc mode hiện tại */
+  const [showSpecialOnly, setShowSpecialOnly] = useState(false)
   const [showNoImageOnly, setShowNoImageOnly] = useState(false)
   /** KI-061: list archived local — không ghi đè store.products */
   const [archivedProducts, setArchivedProducts] = useState<Product[]>([])
@@ -170,7 +175,13 @@ export default function ProductsScreen() {
 
   useEffect(() => {
     setCurrentPage(0)
-  }, [searchQuery, filterLocationId, selectedZoneId, showOutOfStockOnly, showArchived, showNoImageOnly])
+  }, [searchQuery, filterLocationId, selectedZoneId, showOutOfStockOnly, showSpecialOnly, showArchived, showNoImageOnly])
+
+  // Đổi mode → reset toggle hết lô / hàng đặc biệt
+  useEffect(() => {
+    setShowOutOfStockOnly(false)
+    setShowSpecialOnly(false)
+  }, [appMode])
 
   useEffect(() => {
     flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
@@ -206,6 +217,12 @@ export default function ProductsScreen() {
   const sortedLocations = useMemo(
     () => [...locations].sort((a, b) => a.name.localeCompare(b.name)),
     [locations]
+  )
+
+  /** Location IDs thuộc appMode hiện tại (đã filter bởi fetchLocations) */
+  const modeLocationIds = useMemo(
+    () => new Set(locations.map((l) => l.id)),
+    [locations],
   )
 
   const totalBoxesByProduct = useMemo(() => {
@@ -255,8 +272,17 @@ export default function ProductsScreen() {
         ))
         if (!inZone) return false
       }
-      if (showOutOfStockOnly && (totalBoxesByProduct.get(product.id) ?? 0) !== 0) {
+      if (appMode === 'warehouse' && showOutOfStockOnly && (totalBoxesByProduct.get(product.id) ?? 0) !== 0) {
         return false
+      }
+      // Market: chỉ SP có ≥1 lô is_special trong locations thuộc mode
+      if (appMode === 'market' && showSpecialOnly) {
+        const hasSpecial = inventoryEntries.some((entry) => {
+          if (entry.product_id !== product.id || !entry.is_special) return false
+          const locId = entry.zone?.location_id
+          return !!locId && modeLocationIds.has(locId)
+        })
+        if (!hasSpecial) return false
       }
       // F5: chỉ SP chưa có ảnh
       if (showNoImageOnly && !!product.image_url) {
@@ -264,7 +290,7 @@ export default function ProductsScreen() {
       }
       return true
     })
-  }, [products, archivedProducts, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet, showOutOfStockOnly, showArchived, showNoImageOnly, totalBoxesByProduct])
+  }, [products, archivedProducts, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet, showOutOfStockOnly, showSpecialOnly, showArchived, showNoImageOnly, totalBoxesByProduct, appMode, modeLocationIds])
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE))
   const pagedProducts = useMemo(
@@ -481,8 +507,8 @@ export default function ProductsScreen() {
     const isUploading = uploadingProductId === product.id
     const totalBoxes = totalBoxesByProduct.get(product.id) ?? 0
     const metaLine = categoryLine
-      ? `Tổng ${totalBoxes} thùng · ${categoryLine}`
-      : `Tổng ${totalBoxes} thùng`
+      ? `Tổng ${totalBoxes} ${qtyUnit} · ${categoryLine}`
+      : `Tổng ${totalBoxes} ${qtyUnit}`
     return (
       <View style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.itemRow}>
@@ -564,7 +590,7 @@ export default function ProductsScreen() {
                       <View style={styles.lotRow}>
                         <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
                         <Text style={[styles.lotText, { color: colors.sub }]}>
-                          Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} thùng
+                          Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} {qtyUnit}
                         </Text>
                       </View>
                     </View>
@@ -647,10 +673,15 @@ export default function ProductsScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.archivedToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => setShowOutOfStockOnly((v) => !v)}
+          onPress={() => {
+            if (appMode === 'warehouse') setShowOutOfStockOnly((v) => !v)
+            else setShowSpecialOnly((v) => !v)
+          }}
         >
           <Text style={[styles.toggleLabel, { color: colors.sub }]}>
-            {showOutOfStockOnly ? '✅ Đang chỉ hết lô' : '⬜ Chỉ hết lô'}
+            {appMode === 'warehouse'
+              ? (showOutOfStockOnly ? '✅ Đang chỉ hết lô' : '⬜ Chỉ hết lô')
+              : (showSpecialOnly ? '✅ Đang xem hàng đặc biệt' : '⬜ Hàng đặc biệt')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity

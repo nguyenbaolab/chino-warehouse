@@ -11,6 +11,7 @@ import { isSupabaseConfigured, supabase } from './lib/supabase'
 import { joinPresenceChannel, leavePresenceChannel } from './lib/presence'
 import { useWarningStore } from './stores/warningStore'
 import { useAuthStore } from './stores/authStore'
+import { useWarehouseStore } from './stores/warehouseStore'
 import ConfigErrorScreen from './components/ConfigErrorScreen'
 import LoginScreen from './screens/LoginScreen'
 
@@ -103,6 +104,8 @@ function SettingsStackNavigator() {
 }
 
 function TabNavigator() {
+  const appMode = useWarehouseStore((s) => s.appMode)
+
   /**
    * Bấm tab: nếu stack con không sâu (index === 0) → không can thiệp.
    * Đang focus tab đó và stack sâu → preventDefault + popToTop.
@@ -148,7 +151,10 @@ function TabNavigator() {
         name="Map"
         component={MapStackNavigator}
         listeners={stackTabPressListener}
-        options={{ tabBarLabel: 'Kho', tabBarIcon: () => <Text>🗺️</Text> }}
+        options={{
+          tabBarLabel: appMode === 'warehouse' ? 'Kho' : 'Siêu thị',
+          tabBarIcon: () => <Text>🗺️</Text>,
+        }}
       />
       <Tab.Screen
         name="Products"

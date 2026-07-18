@@ -75,7 +75,9 @@ export default function ZoneDetailSheet({
     upsertProductBarcode,
     logBarcodeConflict,
     updateProductName,
+    getQtyUnit,
   } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const [entries, setEntries] = useState<InventoryEntry[]>([])
   const [selectedTier, setSelectedTier] = useState(1)
@@ -225,7 +227,7 @@ export default function ZoneDetailSheet({
     if (isReadOnly) return
     const quantity = Number(editQuantity)
     if (!Number.isFinite(quantity) || quantity < 0 || quantity !== Math.floor(quantity)) {
-      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn hoặc bằng 0.')
+      Alert.alert(`Số ${qtyUnit} không hợp lệ`, `Số ${qtyUnit} phải là số nguyên lớn hơn hoặc bằng 0.`)
       return
     }
     if (!isValidDisplayDate(editExpiryDate)) {
@@ -605,7 +607,7 @@ export default function ZoneDetailSheet({
                               </Text>
                             </TouchableOpacity>
                           )}
-                          <Text style={[styles.itemQty, { color: colors.sub }]}>{group.totalBoxes} thùng</Text>
+                          <Text style={[styles.itemQty, { color: colors.sub }]}>{group.totalBoxes} {qtyUnit}</Text>
                         </View>
                         <View style={[styles.expiryDot, { backgroundColor: worstColor }]} />
                       </View>
@@ -636,7 +638,7 @@ export default function ZoneDetailSheet({
                                 disabled={isReadOnly}
                               >
                                 <View style={styles.lotInfo}>
-                                  <Text style={[styles.lotText, { color: colors.text }]}>{lot.quantity_boxes} thùng</Text>
+                                  <Text style={[styles.lotText, { color: colors.text }]}>{lot.quantity_boxes} {qtyUnit}</Text>
                                   <Text style={[styles.lotSubText, { color: colors.sub }]}>Hạn: {lotExpiry}</Text>
                                   {!!lot.barcode && <Text style={[styles.lotSubText, { color: colors.sub }]}>Barcode: {lot.barcode}</Text>}
                                 </View>
@@ -680,7 +682,7 @@ export default function ZoneDetailSheet({
 
                               {canWrite && editingLotId === lot.id && (
                                 <View style={[styles.editBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
-                                  <Text style={[styles.editLabel, { color: colors.sub }]}>Số thùng</Text>
+                                  <Text style={[styles.editLabel, { color: colors.sub }]}>Số {qtyUnit}</Text>
                                   <TextInput
                                     style={[styles.editInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
                                     keyboardType="numeric"

@@ -49,7 +49,9 @@ export default function OrderDetailScreen() {
     deleteOrderList,
     confirmOrderList,
     markOrderPlaced,
+    getQtyUnit,
   } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [qtyInput, setQtyInput] = useState('1')
@@ -105,7 +107,7 @@ export default function OrderDetailScreen() {
     if (editingItemId !== itemId) return true
     const qty = Number(itemEditQty)
     if (!Number.isFinite(qty) || qty <= 0 || qty !== Math.floor(qty)) {
-      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn 0.')
+      Alert.alert(`Số ${qtyUnit} không hợp lệ`, `Số ${qtyUnit} phải là số nguyên lớn hơn 0.`)
       return false
     }
     await updateOrderItem(itemId, { quantity_boxes: qty, notes: itemEditNotes.trim() || null })
@@ -181,7 +183,7 @@ export default function OrderDetailScreen() {
     if (!orderList) return
     const qty = Number(qtyInput)
     if (!Number.isFinite(qty) || qty <= 0 || qty !== Math.floor(qty)) {
-      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn 0.')
+      Alert.alert(`Số ${qtyUnit} không hợp lệ`, `Số ${qtyUnit} phải là số nguyên lớn hơn 0.`)
       return
     }
     const normalizedName = name.trim().toLowerCase()
@@ -302,7 +304,7 @@ export default function OrderDetailScreen() {
             value={qtyInput}
             onChangeText={setQtyInput}
             keyboardType="numeric"
-            placeholder="Số thùng"
+            placeholder={`Số ${qtyUnit}`}
             placeholderTextColor={colors.sub}
             editable={!isLocked}
             maxLength={6}

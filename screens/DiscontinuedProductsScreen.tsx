@@ -29,7 +29,9 @@ export default function DiscontinuedProductsScreen() {
     selectedLocationId,
     refreshDiscontinuedContext,
     setProductDiscontinued,
+    getQtyUnit,
   } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const [savingId, setSavingId] = useState<string | null>(null)
   const [initialBusy, setInitialBusy] = useState(true)
@@ -140,12 +142,12 @@ export default function DiscontinuedProductsScreen() {
         <ScrollView contentContainerStyle={styles.list}>
           {zones.length === 0 && (
             <Text style={[styles.hint, { color: colors.sub }]}>
-              Chưa có zone cho kho này — tổng thùng có thể chưa đồng bộ đầy đủ.
+              Chưa có zone cho kho này — tổng {qtyUnit} có thể chưa đồng bộ đầy đủ.
             </Text>
           )}
           {discontinuedRows.map((product) => {
             const total = productIdToTotalBoxes.get(product.id) ?? 0
-            const stockLabel = total <= 0 ? 'Hết hàng' : `${total} thùng`
+            const stockLabel = total <= 0 ? 'Hết hàng' : `${total} ${qtyUnit}`
             const busy = savingId === product.id
             return (
               <View

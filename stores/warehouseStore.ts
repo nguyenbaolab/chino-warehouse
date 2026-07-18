@@ -23,6 +23,8 @@ import {
 type WarehouseStore = {
   locations: Location[]
   selectedLocationId: string | null
+  /** F36 — Warehouse ↔ Market; filter locations theo type */
+  appMode: 'warehouse' | 'market'
   zones: Zone[]
   products: Product[]
   productCategoriesL1: ProductCategoryL1[]
@@ -35,6 +37,9 @@ type WarehouseStore = {
   locateIntent: LocateIntent | null
 
   setSelectedLocation: (id: string) => void
+  setAppMode: (mode: 'warehouse' | 'market') => void
+  /** Label đơn vị số lượng theo mode: thùng | sản phẩm */
+  getQtyUnit: () => string
   setLocateIntent: (intent: LocateIntent) => void
   clearLocateIntent: () => void
   fetchLocations: () => Promise<void>
@@ -150,6 +155,7 @@ type WarehouseStore = {
 export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   locations: [],
   selectedLocationId: null,
+  appMode: 'warehouse',
   zones: [],
   products: [],
   productCategoriesL1: [],
@@ -166,12 +172,28 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     get().fetchZones(id)
   },
 
+  setAppMode: (mode) => {
+    set({
+      appMode: mode,
+      selectedLocationId: null,
+      zones: [],
+      inventoryEntries: [],
+    })
+    void get().fetchLocations()
+  },
+
+  getQtyUnit: () => (get().appMode === 'warehouse' ? 'thùng' : 'sản phẩm'),
+
   setLocateIntent: (intent) => set({ locateIntent: intent }),
 
   clearLocateIntent: () => set({ locateIntent: null }),
 
   fetchLocations: async () => {
-    const { data } = await supabase.from('locations').select('*').order('name')
+    const { data } = await supabase
+      .from('locations')
+      .select('*')
+      .eq('type', get().appMode)
+      .order('name')
     if (data) {
       set({ locations: data })
       if (data.length > 0 && !get().selectedLocationId) {
@@ -271,9 +293,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         return { error: getErrorMessage(cErr, 'delete') }
       }
       if ((count ?? 0) > 0) {
+        const qtyUnit = get().getQtyUnit()
         return {
           error:
-            'Không xóa được kho: vẫn còn ít nhất một lô hàng (kể cả 0 thùng) trong các zone của kho. Xóa hoặc chuyển hết lô trước.',
+            `Không xóa được kho: vẫn còn ít nhất một lô hàng (kể cả 0 ${qtyUnit}) trong các zone của kho. Xóa hoặc chuyển hết lô trước.`,
         }
       }
     }
@@ -815,10 +838,11 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   deleteInventoryEntry: async (id) => {
-    // KI-058: block xóa lô còn thùng (nếu tìm thấy trong store)
+    // KI-058: block xóa lô còn số lượng (nếu tìm thấy trong store)
     const existing = get().inventoryEntries.find((e) => e.id === id)
     if (existing && existing.quantity_boxes > 0) {
-      throw new Error('Không thể xóa lô còn thùng. Chỉ xóa khi số thùng = 0.')
+      const qtyUnit = get().getQtyUnit()
+      throw new Error(`Không thể xóa lô còn ${qtyUnit}. Chỉ xóa khi số ${qtyUnit} = 0.`)
     }
     await supabase.from('inventory_entries').delete().eq('id', id)
     set((s) => ({

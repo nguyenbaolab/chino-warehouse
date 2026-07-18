@@ -71,7 +71,7 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
   - `inventory_entries.is_special` BOOLEAN NOT NULL DEFAULT false
   - `inventory_entries.is_checked` BOOLEAN NOT NULL DEFAULT false
 
-### C2 — Mode switcher UI
+### C2 — Mode switcher UI ✅ Done
 
 - Header dropdown: **Chino's Warehouse** ↔ **Chino's Market**
 - Filter toàn app theo `location.type`
@@ -221,7 +221,7 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 |-------|---------|-----|
 | **A — Bug / perf** | 3 | A1–A3 |
 | **B — Feature completion** | 1 | B1 (F27 mở rộng) |
-| **C — Market mode** | 4 | C1 ✅ Done, C2–C4 (F36 redesign) |
+| **C — Market mode** | 4 | C1 ✅ Done, C2 ✅ Done, C3–C4 (F36 redesign) |
 | **D — Per-SP warning** | 3 | D1–D3 (F32) |
 | **E — Picking** | 3 | E1–E3 (F34) — **Deferred Phase 5** |
 | **F — Push** | 3 | F1–F3 (F35) — **Deferred Phase 5** |

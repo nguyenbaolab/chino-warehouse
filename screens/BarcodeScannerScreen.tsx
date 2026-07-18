@@ -49,7 +49,8 @@ export default function BarcodeScannerScreen() {
   } = (route.params || {}) as BarcodeScannerParams
   const { colors } = useThemeStore()
   const isReadOnly = useIsReadOnly()
-  const { searchByBarcode, lookupProductByBarcode } = useWarehouseStore()
+  const { searchByBarcode, lookupProductByBarcode, getQtyUnit } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -151,7 +152,7 @@ export default function BarcodeScannerScreen() {
     const message =
       totalStock === 0
         ? `${product.name} hiện không còn lô nào trong kho.`
-        : `${product.name} không có lô nào với mã vạch này, nhưng vẫn còn ${totalStock} thùng ở lô khác.`
+        : `${product.name} không có lô nào với mã vạch này, nhưng vẫn còn ${totalStock} ${qtyUnit} ở lô khác.`
 
     const targetTab = returnTab || 'Products'
 

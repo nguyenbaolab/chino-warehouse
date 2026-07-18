@@ -98,7 +98,9 @@ export default function AddInventoryScreen() {
     checkBarcodeConflict,
     upsertProductBarcode,
     logBarcodeConflict,
+    getQtyUnit,
   } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [barcodeSearchWarning, setBarcodeSearchWarning] = useState<string | null>(null)
@@ -365,7 +367,7 @@ export default function AddInventoryScreen() {
 
     const quantity = Number(quantityBoxes)
     if (!Number.isFinite(quantity) || quantity < 0 || quantity !== Math.floor(quantity)) {
-      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn hoặc bằng 0.')
+      Alert.alert(`Số ${qtyUnit} không hợp lệ`, `Số ${qtyUnit} phải là số nguyên lớn hơn hoặc bằng 0.`)
       return
     }
 
@@ -419,7 +421,7 @@ export default function AddInventoryScreen() {
     if (duplicatedLot) {
       Alert.alert(
         'Đã có lô này',
-        `Đã có lô này, bạn muốn cộng thêm ${quantity} thùng?`,
+        `Đã có lô này, bạn muốn cộng thêm ${quantity} ${qtyUnit}?`,
         [
           {
             text: 'Hủy',
@@ -888,7 +890,7 @@ export default function AddInventoryScreen() {
           </View>
         )}
 
-        <Text style={[styles.label, { color: colors.sub }]}>Số thùng *</Text>
+        <Text style={[styles.label, { color: colors.sub }]}>Số {qtyUnit} *</Text>
         <TextInput
           style={[styles.input, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
           keyboardType="numeric"

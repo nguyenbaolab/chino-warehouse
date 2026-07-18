@@ -91,7 +91,9 @@ export default function ProductDetailScreen() {
     setLocateIntent,
     updateProductImage,
     removeProductImage,
+    getQtyUnit,
   } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [lots, setLots] = useState<InventoryEntry[]>([])
@@ -485,7 +487,7 @@ export default function ProductDetailScreen() {
   async function handleSaveLot(lot: InventoryEntry) {
     const quantity = Number(editQuantity)
     if (!Number.isFinite(quantity) || quantity < 0 || quantity !== Math.floor(quantity)) {
-      Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn hoặc bằng 0.')
+      Alert.alert(`Số ${qtyUnit} không hợp lệ`, `Số ${qtyUnit} phải là số nguyên lớn hơn hoặc bằng 0.`)
       return
     }
     if (!isValidDisplayDate(editExpiryDate)) {
@@ -1084,11 +1086,11 @@ export default function ProductDetailScreen() {
               )}
               {canWrite ? (
                 <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
-                  Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
+                  Ngưỡng cảnh báo sắp hết ({qtyUnit}): {product?.low_warning_boxes ?? 3}
                 </Text>
               ) : (
                 <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
-                  Ngưỡng cảnh báo sắp hết (thùng): {product?.low_warning_boxes ?? 3}
+                  Ngưỡng cảnh báo sắp hết ({qtyUnit}): {product?.low_warning_boxes ?? 3}
                 </Text>
               )}
               {canWrite ? (
@@ -1111,7 +1113,7 @@ export default function ProductDetailScreen() {
                   maxLength={6}
                 />
               ) : (
-                <Text style={[styles.infoText, { color: colors.text }]}>{product?.low_warning_boxes ?? 3} thùng</Text>
+                <Text style={[styles.infoText, { color: colors.text }]}>{product?.low_warning_boxes ?? 3} {qtyUnit}</Text>
               )}
 
               <Text style={[styles.infoText, { color: colors.sub, marginTop: 12 }]}>Nhóm (Cấp 1)</Text>
@@ -1276,7 +1278,7 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={[styles.lotsToolbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.totalBoxesToolbar, { color: colors.text }]}>Tổng {totalLotBoxes} thùng</Text>
+          <Text style={[styles.totalBoxesToolbar, { color: colors.text }]}>Tổng {totalLotBoxes} {qtyUnit}</Text>
           <View style={styles.issuesToggleInner}>
             <Text style={{ color: colors.sub, fontSize: 13 }}>Có vấn đề</Text>
             <Switch
@@ -1353,7 +1355,7 @@ export default function ProductDetailScreen() {
                   >
                     <Text style={[styles.lotTitle, { color: colors.text }]}>{lotPlaceTitle}</Text>
                     <Text style={[styles.lotSub, { color: colors.sub }]}>
-                      {lot.quantity_boxes} thùng · Hạn: {formatExpiryDate(lot.expiry_date)}
+                      {lot.quantity_boxes} {qtyUnit} · Hạn: {formatExpiryDate(lot.expiry_date)}
                     </Text>
                     {!!lot.barcode && <Text style={[styles.lotSub, { color: colors.sub }]}>Barcode: {lot.barcode}</Text>}
                     {!!lot.notes && <Text style={[styles.lotSub, { color: colors.sub }]}>{lot.notes}</Text>}
@@ -1389,7 +1391,7 @@ export default function ProductDetailScreen() {
 
                 {canWrite && editingLotId === lot.id && (
                   <View style={[styles.editBox, { borderColor: colors.border, backgroundColor: colors.bg }]}>
-                    <Text style={[styles.editLabel, { color: colors.sub }]}>Số thùng</Text>
+                    <Text style={[styles.editLabel, { color: colors.sub }]}>Số {qtyUnit}</Text>
                     <TextInput
                       style={[styles.editInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
                       keyboardType="numeric"

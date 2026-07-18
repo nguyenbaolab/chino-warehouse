@@ -82,7 +82,9 @@ export default function NotificationsScreen() {
     fetchInventoryByZone,
     togglePriceReduced,
     toggleDiscontinued,
+    getQtyUnit,
   } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [filterZoneId, setFilterZoneId] = useState<string | null>(null)
@@ -409,7 +411,7 @@ export default function NotificationsScreen() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => toggleExpanded(item.productId)}>
-                  <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} thùng</Text>
+                  <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} {qtyUnit}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -441,7 +443,7 @@ export default function NotificationsScreen() {
                   >
                     <View style={styles.lotInfo}>
                       <Text style={[styles.lotText, { color: colors.text }]}>
-                        {lot.quantityBoxes} thùng · Hạn: {formatExpiryDate(lot.expiryDate)}
+                        {lot.quantityBoxes} {qtyUnit} · Hạn: {formatExpiryDate(lot.expiryDate)}
                       </Text>
                     </View>
                     {canWrite ? (
@@ -502,7 +504,7 @@ export default function NotificationsScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} thùng</Text>
+        <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} {qtyUnit}</Text>
         {canWrite ? (
           <View style={styles.actionsRow}>
             <TouchableOpacity

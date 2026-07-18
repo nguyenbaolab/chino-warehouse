@@ -44,7 +44,7 @@ function getChangedFields(old_data: Record<string, unknown>, new_data: Record<st
 
 type D = Record<string, unknown>
 
-function formatAuditEntry(entry: AuditLog): string {
+function formatAuditEntry(entry: AuditLog, qtyUnit: string): string {
   const { table_name, action, old_data, new_data } = entry
   const od = old_data as D | null
   const nd = new_data as D | null
@@ -58,9 +58,9 @@ function formatAuditEntry(entry: AuditLog): string {
     const nQty = nd?.quantity_boxes as number | undefined
 
     if (action === 'INSERT')
-      return `Thêm lô · ${pName} · ${nZone} (${nLoc}) · ${nQty ?? '?'} thùng`
+      return `Thêm lô · ${pName} · ${nZone} (${nLoc}) · ${nQty ?? '?'} ${qtyUnit}`
     if (action === 'DELETE')
-      return `Xóa lô · ${pName} · ${oZone} (${(od?._location_name ?? '') as string}) · ${oQty ?? '?'} thùng`
+      return `Xóa lô · ${pName} · ${oZone} (${(od?._location_name ?? '') as string}) · ${oQty ?? '?'} ${qtyUnit}`
 
     if (action === 'UPDATE' && od && nd) {
       const fields = getChangedFields(od, nd)
@@ -68,11 +68,11 @@ function formatAuditEntry(entry: AuditLog): string {
       const zoneChanged = fields.includes('zone_id')
 
       if (qtyChanged && zoneChanged)
-        return `Chuyển ${pName}: ${oZone} → ${nZone} · ${oQty} → ${nQty} thùng`
+        return `Chuyển ${pName}: ${oZone} → ${nZone} · ${oQty} → ${nQty} ${qtyUnit}`
       if (zoneChanged)
         return `Chuyển ${pName}: ${oZone} → ${nZone}`
       if (qtyChanged)
-        return `Số thùng ${pName}: ${oQty} → ${nQty} thùng`
+        return `Số ${qtyUnit} ${pName}: ${oQty} → ${nQty} ${qtyUnit}`
       return `Sửa lô · ${pName} · ${nZone}`
     }
   }
@@ -181,7 +181,8 @@ export default function AuditLogScreen() {
   const route = useRoute()
   const params = (route.params as RouteParams) ?? {}
   const { colors } = useThemeStore()
-  const { fetchAuditLogs, products, locations, inventoryEntries, fetchZones, fetchInventoryByLocation, searchByBarcode } = useWarehouseStore()
+  const { fetchAuditLogs, products, locations, inventoryEntries, fetchZones, fetchInventoryByLocation, searchByBarcode, getQtyUnit } = useWarehouseStore()
+  const qtyUnit = getQtyUnit()
 
   const [pages, setPages] = useState<Record<number, AuditLog[]>>({})
   const [currentPage, setCurrentPage] = useState(0)
@@ -406,7 +407,7 @@ export default function AuditLogScreen() {
                     {entry.changed_by_name ?? 'Không rõ'}
                   </Text>
                   <Text style={[styles.entryDesc, { color: colors.text }]}>
-                    {formatAuditEntry(entry)}
+                    {formatAuditEntry(entry, qtyUnit)}
                   </Text>
                   <Text style={[styles.entryMeta, { color: colors.sub }]}>
                     {formatTime(entry.changed_at)}

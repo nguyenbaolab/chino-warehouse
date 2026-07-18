@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — C2: mode switcher UI — Warehouse ↔ Market
+
+- Store: `appMode` state + `setAppMode` (reset location, re-fetch); `fetchLocations` filter `.eq('type', appMode)`; `getQtyUnit()` helper.
+- MapScreen: header dropdown Chino's Warehouse ↔ Chino's Market.
+- App.tsx: tab Map label dynamic (Kho / Siêu thị).
+- ProductsScreen: toggle Chỉ hết lô (warehouse) ↔ Hàng đặc biệt (market).
+- Label "thùng" → dynamic `getQtyUnit()` trên ~20 chỗ (11 file).
+- Docs: CONTEXT, REQUIREMENTS v1.3.16, PLAN_4 C2 Done.
+
+---
+
 ## [tháng 7/2026] — C1: rollback shelf tables + migration Market mode columns
 
 - Migration `20260719_rollback_shelf_add_market_columns.sql`: DROP 3 bảng shelf + trigger/function; thu hẹp audit CHECK bỏ `shelf_items`; ADD `locations.type`, `inventory_entries.is_special`, `inventory_entries.is_checked`.
