@@ -81,11 +81,11 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 - **Follow-up:** `FilterModal` shared Products/Notifications/Dashboard; AuditLog + Mode filter (REQUIREMENTS v1.3.17)
 
 
-### C3 — Notifications nâng cấp
+### C3 — Notifications nâng cấp ✅ Done
 
-- Dropdown mới: **Tất cả** (mặc định) / **Kho** / **Siêu thị** — filter theo `location.type`
-- Date range filter (**tab Sắp hết hạn only**): **Từ** (hôm nay) — **Đến** (mặc định +30 ngày)
-- Tab Sắp hết hàng: chỉ dropdown type, **không** date range
+- Dropdown type: **FilterModal** Mode (Tất cả / Kho / Siêu thị) — đã có từ v1.3.17
+- Date range filter (**tab Sắp hết hạn only**): **Từ** (hôm nay) — **Đến** (mặc định +30 ngày); expired luôn hiện; warning filter by range
+- Tab Sắp hết hàng: chỉ FilterModal Mode/Kho/Zone, **không** date range
 
 ### C4 — Checklist kiểm hàng
 
@@ -223,7 +223,7 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 |-------|---------|-----|
 | **A — Bug / perf** | 3 | A1–A3 |
 | **B — Feature completion** | 1 | B1 (F27 mở rộng) |
-| **C — Market mode** | 4 | C1 ✅ Done, C2 ✅ Done, C3–C4 (F36 redesign) |
+| **C — Market mode** | 4 | C1 ✅ Done, C2 ✅ Done, C3 ✅ Done, C4 (F36 redesign) |
 | **D — Per-SP warning** | 3 | D1–D3 (F32) |
 | **E — Picking** | 3 | E1–E3 (F34) — **Deferred Phase 5** |
 | **F — Push** | 3 | F1–F3 (F35) — **Deferred Phase 5** |

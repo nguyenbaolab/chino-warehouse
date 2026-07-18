@@ -18,6 +18,7 @@ import FilterModal, { countActiveFilters, type FilterMode } from '../components/
 import { formatExpiryDate, getExpiryStatus, InventoryEntry, Location, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
+import { isoExpiryToDisplay, parseDisplayDateToIso } from '../utils/dateUtils'
 import {
   getDisplayColor,
   getDisplayColorContextFromEntry,
@@ -26,6 +27,17 @@ import {
 } from '../utils/statusUtils'
 
 const PAGE_SIZE = 10
+
+function todayISO(): string {
+  const d = new Date()
+  return d.toISOString().slice(0, 10)
+}
+
+function plus30ISO(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 30)
+  return d.toISOString().slice(0, 10)
+}
 
 type ExpiryLotRow = {
   entryId: string
@@ -99,6 +111,11 @@ export default function NotificationsScreen() {
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({})
   const [currentPageExpiry, setCurrentPageExpiry] = useState(0)
   const [currentPageLowStock, setCurrentPageLowStock] = useState(0)
+  /** C3: date range tab Sắp hết hạn — ISO YYYY-MM-DD */
+  const [dateFrom, setDateFrom] = useState<string>(() => todayISO())
+  const [dateTo, setDateTo] = useState<string>(() => plus30ISO())
+  const [dateFromDraft, setDateFromDraft] = useState(() => isoExpiryToDisplay(todayISO()) || '')
+  const [dateToDraft, setDateToDraft] = useState(() => isoExpiryToDisplay(plus30ISO()) || '')
 
   useEffect(() => {
     if (routeParams.initialTab) setActiveTab(routeParams.initialTab)
@@ -207,6 +224,8 @@ export default function NotificationsScreen() {
     showOutOfStockFilter,
     showLowStockFilter,
     activeTab,
+    dateFrom,
+    dateTo,
   ])
 
   const locationZoneSet = useMemo(() => {
@@ -332,13 +351,20 @@ export default function NotificationsScreen() {
   const expiryCardsFiltered = useMemo(() => {
     return expiryCardsSearched
       .map((card) => {
-        const filteredLots = card.lots.filter((lot) => {
-          if (!showExpiredFilter && !showWarningFilter) return true
-          if (showExpiredFilter && showWarningFilter) return true
-          if (showExpiredFilter) return lot.status === 'expired'
-          if (showWarningFilter) return lot.status === 'warning'
-          return true
-        })
+        const filteredLots = card.lots
+          .filter((lot) => {
+            if (!showExpiredFilter && !showWarningFilter) return true
+            if (showExpiredFilter && showWarningFilter) return true
+            if (showExpiredFilter) return lot.status === 'expired'
+            if (showWarningFilter) return lot.status === 'warning'
+            return true
+          })
+          .filter((lot) => {
+            // Expired luôn hiện; warning filter theo [dateFrom, dateTo]
+            if (lot.status === 'expired') return true
+            if (!lot.expiryDate) return true
+            return lot.expiryDate >= dateFrom && lot.expiryDate <= dateTo
+          })
         return {
           ...card,
           lots: filteredLots,
@@ -346,7 +372,7 @@ export default function NotificationsScreen() {
         }
       })
       .filter((card) => card.lots.length > 0)
-  }, [expiryCardsSearched, showExpiredFilter, showWarningFilter])
+  }, [expiryCardsSearched, showExpiredFilter, showWarningFilter, dateFrom, dateTo])
 
   const lowStockCardsSearched = useMemo(() => {
     if (!normalizedSearch) return lowStockCards
@@ -399,6 +425,26 @@ export default function NotificationsScreen() {
 
   function clearSearch() {
     setSearchQuery('')
+  }
+
+  function commitDateFrom() {
+    const iso = parseDisplayDateToIso(dateFromDraft)
+    if (iso) {
+      setDateFrom(iso)
+      setDateFromDraft(isoExpiryToDisplay(iso) || '')
+    } else {
+      setDateFromDraft(isoExpiryToDisplay(dateFrom) || '')
+    }
+  }
+
+  function commitDateTo() {
+    const iso = parseDisplayDateToIso(dateToDraft)
+    if (iso) {
+      setDateTo(iso)
+      setDateToDraft(isoExpiryToDisplay(iso) || '')
+    } else {
+      setDateToDraft(isoExpiryToDisplay(dateTo) || '')
+    }
   }
 
   function handleBarcodeScan(barcode: string) {
@@ -692,6 +738,37 @@ export default function NotificationsScreen() {
         </View>
       )}
 
+      {activeTab === 'expiry' && (
+        <View style={[styles.dateRangeRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.dateRangeLabel, { color: colors.sub }]}>Từ</Text>
+          <TextInput
+            style={[styles.dateRangeInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+            value={dateFromDraft}
+            onChangeText={setDateFromDraft}
+            onBlur={commitDateFrom}
+            onSubmitEditing={commitDateFrom}
+            placeholder="DD/MM/YYYY"
+            placeholderTextColor={colors.sub}
+            keyboardType="numbers-and-punctuation"
+            maxLength={10}
+            returnKeyType="done"
+          />
+          <Text style={[styles.dateRangeLabel, { color: colors.sub }]}>Đến</Text>
+          <TextInput
+            style={[styles.dateRangeInput, { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border }]}
+            value={dateToDraft}
+            onChangeText={setDateToDraft}
+            onBlur={commitDateTo}
+            onSubmitEditing={commitDateTo}
+            placeholder="DD/MM/YYYY"
+            placeholderTextColor={colors.sub}
+            keyboardType="numbers-and-punctuation"
+            maxLength={10}
+            returnKeyType="done"
+          />
+        </View>
+      )}
+
       {activeTab === 'lowStock' && (
         <View style={[styles.filterBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <TouchableOpacity
@@ -870,6 +947,27 @@ const styles = StyleSheet.create({
   },
   tickText: { fontSize: 12, fontWeight: '800' },
   filterText: { fontSize: 13, fontWeight: '600' },
+  dateRangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  dateRangeLabel: { fontSize: 12, fontWeight: '600' },
+  dateRangeInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    fontSize: 13,
+    minWidth: 88,
+  },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 32 },
   listWrap: { flex: 1 },
   list: { paddingHorizontal: 16, paddingBottom: 20 },

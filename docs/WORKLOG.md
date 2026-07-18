@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — C3: date range filter tab Sắp hết hạn
+
+- NotificationsScreen: state `dateFrom` (hôm nay) / `dateTo` (+30 ngày); TextInput DD/MM/YYYY.
+- Filter: lots expired luôn hiện bất kể range; lots warning filter `expiry_date ∈ [from, to]`.
+- Docs: CONTEXT, REQUIREMENTS v1.3.18, PLAN_4 C3 Done.
+
+---
+
 ## [tháng 7/2026] — fix: FilterModal shared + ProductsScreen 4 toggles + AuditLog mode filter
 
 - Tạo `components/FilterModal.tsx`: filter Mode (Tất cả/Kho/Siêu thị) + Kho + Zone + nút Xóa bộ lọc; badge count trên nút Lọc.
