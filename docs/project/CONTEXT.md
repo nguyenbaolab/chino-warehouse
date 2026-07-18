@@ -16,7 +16,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 
 **Mô hình bảo mật (client-direct BaaS):**
 - Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.
-- RLS bật trên tất cả **10 bảng** app: **9 bảng kho** — guest SELECT only / staff+ mutate (`is_current_user_at_least_staff`); **`user_profiles`** policy theo role F24; **`audit_logs`** SELECT only.
+- RLS bật trên tất cả bảng app: **bảng kho + shelf_*** — guest SELECT only / staff+ mutate (`is_current_user_at_least_staff`); **`user_profiles`** policy theo role F24; **`audit_logs`** SELECT only. C1 (F36): `shelf_zones` / `shelf_items` / `shelf_zone_items`.
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
 - Storage **`product-images`:** public read; staff+ upload/update/delete (KI-055).
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
@@ -103,8 +103,12 @@ supabase/migrations/
   # ... (hiện có)
   20260601000000_add_user_profiles.sql      # F24 Task 1
   20260601000100_add_user_profiles_to_audit.sql
+  20260717_create_internal_notes.sql        # F31
+  20260717_alter_internal_notes_nullable_product.sql
+  20260718_create_shelf_tables.sql          # C1 F36 — shelf_zones / shelf_items / shelf_zone_items
   # [timestamp]_add_discontinued_reason.sql # F28 — Phase 3
   # [timestamp]_f08_product_images_storage.sql # F08 — bucket product-images + RLS
+  schema.sql                                # Canonical schema v3.19
 supabase/db_dump_schema/   # Snapshot pg_dump (script dump_schema.bat — không thay schema.sql)
 dump_schema.bat            # Tiện ích dump schema public qua Session Pooler (xem §9)
 types/
@@ -176,6 +180,8 @@ README.md
 
 **Schema — `product_barcodes` (B1):** `id`, `product_id` → `products`, `barcode` **UNIQUE**, `first_scanned_at`, `last_scanned_at`; RLS authenticated; audit trigger SEC-11; backfill một lần từ `inventory_entries.barcode` (migration). **`audit_logs.action`:** thêm **`CONFLICT`** (B2) — RPC **`log_barcode_conflict`** ghi attempt gán barcode trùng SP khác.
 
+**Schema — Shelf Management (C1 / F36, schema v3.19):** `shelf_zones` (`id`, `name`, `sort_order`, `created_at`) — khu kệ do NV tạo, **tách** Category F30 và `zones` kho. `shelf_items` (`product_id`, `quantity` = cá thể không phải thùng, `expiry_date`, `is_price_reduced` độc lập inventory, `notes`, `created_at`, `updated_at`) — audit trigger SEC-11. `shelf_zone_items` (junction M:N, UNIQUE `(shelf_zone_id, shelf_item_id)`, `is_checked` checklist). RLS: guest SELECT / staff+ mutate. Migration: `20260718_create_shelf_tables.sql`. Store/UI → C3.
+
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
 
 **Actions — sản phẩm / cờ:** `toggleDeferred`, `togglePriceReduced`, `setProductDiscontinued`, `toggleDiscontinued`, `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`, `updateProductName`, `updateProductImage(productId, imageUrl)`, `removeProductImage(productId)` (xóa Storage + set `image_url` null). **Ẩn/khôi phục SP** (`ProductDetailScreen` `handleArchiveToggle`): cập nhật DB `is_archived` + store `products` (ẩn = remove khỏi list) **và** sync `inventoryEntries[].product` (cùng object `updated`, pattern như `updateProductName`) — KI-059; tránh Notifications fallback snapshot cũ.
@@ -202,7 +208,7 @@ README.md
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, **`InternalNote`** (F31), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (gồm `table_name: 'user_profiles' | 'internal_notes'`), `OrderList`, `OrderItem`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, **`InternalNote`** (F31), **`ShelfZone`** / **`ShelfItem`** / **`ShelfZoneItem`** (F36), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (gồm `table_name: 'user_profiles' | 'internal_notes' | 'shelf_items'`), `OrderList`, `OrderItem`
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 

@@ -6,9 +6,10 @@
 
 ## 1. Tổng quan / Mục tiêu Phase 4
 
-Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management F33+F36), **cảnh báo & thông báo** (F32 per-SP, F35 push), **picking list** (F34), hoàn thiện **F27 mở rộng** (carry Phase 3), cùng **performance / cleanup** (KI-039/040/050) và **security còn lại** (SEC-10/12/13/14). Offline / báo cáo / kiểm kho (F21/F25/F26) nằm trong Group G — **có thể defer Phase 5** tùy ưu tiên vận hành thực tế.
+Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management **F36**), **cảnh báo & thông báo** (F32 per-SP, F35 push), **picking list** (F34), hoàn thiện **F27 mở rộng** (carry Phase 3), cùng **performance / cleanup** (KI-039/040/050) và **security còn lại** (SEC-10/12/13/14). Offline / báo cáo / kiểm kho (F21/F25/F26) nằm trong Group G — **có thể defer Phase 5** tùy ưu tiên vận hành thực tế.
 
 **F19:** Dropped từ Phase 3 — không mở lại.
+**F33:** Dropped — không implement `is_on_shelf`; kho và kệ tách hoàn toàn (xem `DECISIONS.md`).
 
 **Nguồn tham chiếu:** `docs/project/REQUIREMENTS.md`, `docs/project/CONTEXT.md`, `docs/DECISIONS.md`, `docs/KNOWN_ISSUES.md`, `docs/phases/phase-3/SUMMARY_3.md`, `docs/phases/phase-3/PLAN_3.md`.
 
@@ -54,17 +55,18 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management F33+F36),
 
 ---
 
-## 4. Group C — Shelf Management (F33 + F36)
+## 4. Group C — Shelf Management (F36)
 
-### C1 — Migration schema shelf
+### C1 — Migration schema shelf — **Done**
 
-- **Files:** `supabase/migrations/[timestamp]_create_shelf_*.sql`, `schema.sql`, `types/index.ts`
+- **Files:** `supabase/migrations/20260718_create_shelf_tables.sql`, `schema.sql` v3.19, `types/index.ts`
 - **Mô tả:** Tạo `shelf_items`, `shelf_zones`, `shelf_zone_items` (+ RLS staff+ / guest SELECT). Tham chiếu DECISIONS F36.
 
-### C2 — Flag `inventory_entries.is_on_shelf` (F33)
+### C2 — Flag `inventory_entries.is_on_shelf` (F33) — **Dropped**
 
-- **Files:** migration, `types`, ProductDetail / ZoneDetailSheet, Map filter
-- **Mô tả:** Lô 0 thùng → nút **«Đã lên kệ»**; ẩn khỏi Map/ZoneDetail; giữ `expiry_date` → Notifications vẫn cảnh báo hạn; Products/Detail hiện «Đang bán trên kệ».
+- **Trạng thái:** Dropped — **không implement**.
+- **Lý do:** Tách hoàn toàn kho (thùng) và kệ siêu thị (cá thể); `is_on_shelf` thêm thao tác mà giá trị thấp cho cửa hàng nhỏ. Shelf Management (F36) đủ thông tin riêng, không link lại inventory.
+- **Tham chiếu:** `DECISIONS.md` — F33 Dropped; `REQUIREMENTS.md` F33 Dropped.
 
 ### C3 — ShelfManagementScreen (F36)
 
@@ -191,7 +193,7 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management F33+F36),
 |----------|---------|
 | **Group G** (F21 / F25 / F26) | Nếu không kịp / ưu tiên thấp hơn Shelf + F27 |
 | **KI-026** | AuditLog Realtime nếu H5 không làm |
-| **Dropped** | *(chưa có item mới; F19 vẫn Dropped)* |
+| **Dropped** | **F33** `is_on_shelf` (C2); F19 vẫn Dropped |
 
 ---
 
@@ -213,12 +215,12 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management F33+F36),
 |-------|---------|-----|
 | **A — Bug / perf** | 3 | A1–A3 (KI-039, KI-040, KI-050) |
 | **B — Feature completion** | 1 | B1 (F27 mở rộng) |
-| **C — Shelf** | 4 | C1–C4 (F33+F36) |
+| **C — Shelf** | 3 | C1 (Done), C3, C4 (F36); **C2 Dropped** |
 | **D — Per-SP warning** | 3 | D1–D3 (F32) |
 | **E — Picking** | 3 | E1–E3 (F34) |
 | **F — Push** | 3 | F1–F3 (F35) |
 | **G — Offline/Report/Stocktake** | 3 | G1–G3 (F21/F25/F26) — **có thể defer** |
 | **H — Security** | 5 | H1–H5 |
-| **Tổng ước tính** | **~25** | (~22 nếu defer toàn bộ G) |
+| **Tổng ước tính** | **~24** | (~21 nếu defer toàn bộ G; C2/F33 Dropped không tính) |
 
 **Ưu tiên đề xuất khi bắt đầu code:** B1 (F27) → C (Shelf) → D (F32) → E (F34) → F (F35) → A/H → G tùy thực tế.

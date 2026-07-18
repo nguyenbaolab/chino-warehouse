@@ -1,8 +1,12 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 3.18 | Tháng 7/2026
+-- Phiên bản: 3.19 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v3.18:
+--   - v3.19: C1 Shelf Management — shelf_zones, shelf_items, shelf_zone_items (F33+F36);
+--     RLS guest SELECT / staff+ mutate; audit trigger trên shelf_items;
+--     update_shelf_items_updated_at BEFORE UPDATE
 -- Thay đổi so với v3.17:
 --   - F31: internal_notes.product_id nullable + custom_product_name;
 --     CHECK product_id OR custom_product_name
@@ -205,10 +209,39 @@ CREATE TABLE internal_notes (
   )
 );
 
+-- 8c. Shelf Management (F36 — hàng đang bán trên kệ siêu thị; tách biệt zones kho)
+CREATE TABLE shelf_zones (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       TEXT        NOT NULL,
+  sort_order INTEGER     NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- quantity = cá thể (cái/chai/gói), KHÔNG phải thùng; is_price_reduced độc lập inventory_entries
+CREATE TABLE shelf_items (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id       UUID        NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  quantity         INTEGER     NOT NULL DEFAULT 0,
+  expiry_date      DATE,
+  is_price_reduced BOOLEAN     NOT NULL DEFAULT false,
+  notes            TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE shelf_zone_items (
+  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  shelf_zone_id  UUID        NOT NULL REFERENCES shelf_zones(id) ON DELETE CASCADE,
+  shelf_item_id  UUID        NOT NULL REFERENCES shelf_items(id) ON DELETE CASCADE,
+  is_checked     BOOLEAN     NOT NULL DEFAULT false,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (shelf_zone_id, shelf_item_id)
+);
+
 -- 9. Audit logs (SEC-11)
 CREATE TABLE audit_logs (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products', 'product_barcodes', 'user_profiles', 'internal_notes')),
+  table_name     TEXT        NOT NULL CHECK (table_name IN ('inventory_entries', 'products', 'product_barcodes', 'user_profiles', 'internal_notes', 'shelf_items')),
   action         TEXT        NOT NULL CHECK (action IN ('INSERT', 'UPDATE', 'DELETE', 'CONFLICT')),
   record_id      UUID,
   location_id    UUID        REFERENCES locations(id) ON DELETE SET NULL,
@@ -236,6 +269,9 @@ CREATE INDEX idx_user_profiles_role ON user_profiles(role);
 CREATE INDEX idx_user_profiles_is_disabled ON user_profiles(is_disabled);
 CREATE INDEX idx_internal_notes_product_id ON internal_notes(product_id);
 CREATE INDEX idx_internal_notes_created_at ON internal_notes(created_at DESC);
+CREATE INDEX idx_shelf_items_product_id ON shelf_items(product_id);
+CREATE INDEX idx_shelf_zone_items_shelf_zone_id ON shelf_zone_items(shelf_zone_id);
+CREATE INDEX idx_shelf_zone_items_shelf_item_id ON shelf_zone_items(shelf_item_id);
 
 -- Indexes cho audit_logs (SEC-11)
 CREATE INDEX ON audit_logs(changed_at DESC);
@@ -259,6 +295,9 @@ ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE internal_notes        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shelf_zones           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shelf_items           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shelf_zone_items      ENABLE ROW LEVEL SECURITY;
 
 -- F24 / KI-055: helpers bypass RLS khi check role (tránh infinite recursion trong policy)
 CREATE OR REPLACE FUNCTION public.is_current_user_admin()
@@ -404,6 +443,28 @@ CREATE POLICY user_profiles_update_admin ON user_profiles
 CREATE POLICY internal_notes_select_authenticated ON internal_notes
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY internal_notes_mutate_staff_plus ON internal_notes
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+-- F36: shelf_* — guest SELECT; staff+ mutate
+CREATE POLICY shelf_zones_select_authenticated ON shelf_zones
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY shelf_zones_mutate_staff_plus ON shelf_zones
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY shelf_items_select_authenticated ON shelf_items
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY shelf_items_mutate_staff_plus ON shelf_items
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY shelf_zone_items_select_authenticated ON shelf_zone_items
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY shelf_zone_items_mutate_staff_plus ON shelf_zone_items
   FOR ALL TO authenticated
   USING (public.is_current_user_at_least_staff())
   WITH CHECK (public.is_current_user_at_least_staff());
@@ -556,6 +617,10 @@ CREATE TRIGGER audit_internal_notes
   AFTER INSERT OR UPDATE OR DELETE ON internal_notes
   FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
 
+CREATE TRIGGER audit_shelf_items
+  AFTER INSERT OR UPDATE OR DELETE ON shelf_items
+  FOR EACH ROW EXECUTE FUNCTION audit_trigger_fn();
+
 -- F24: auto-insert user_profiles khi tạo auth.users
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
@@ -682,6 +747,19 @@ DROP TRIGGER IF EXISTS zones_updated_at_trigger ON zones;
 CREATE TRIGGER zones_updated_at_trigger
   BEFORE UPDATE ON zones
   FOR EACH ROW EXECUTE FUNCTION update_zones_updated_at();
+
+CREATE OR REPLACE FUNCTION update_shelf_items_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS shelf_items_updated_at_trigger ON shelf_items;
+CREATE TRIGGER shelf_items_updated_at_trigger
+  BEFORE UPDATE ON shelf_items
+  FOR EACH ROW EXECUTE FUNCTION update_shelf_items_updated_at();
 
 
 -- ============================================================

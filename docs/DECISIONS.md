@@ -4,6 +4,15 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F33 Dropped — bỏ `is_on_shelf`, tách hoàn toàn kho và kệ
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Bỏ cột `inventory_entries.is_on_shelf` (F33). Kho (`inventory_entries`, đơn vị thùng) và kệ siêu thị (`shelf_items`, đơn vị cá thể) hoạt động hoàn toàn độc lập — không link, không cờ đánh dấu giữa hai bên.
+- **Lý do:** Cửa hàng nhỏ, nhân viên tự biết hàng nào đã lên kệ; thao tác đánh dấu trên app giá trị thấp; hai bên quản lý đơn vị khác nhau (thùng vs cá thể), link lại chỉ thêm phức tạp.
+- **Thay thế đã xem xét:** Cờ `is_on_shelf` trên lô 0 thùng + ẩn Map + giữ cảnh báo hạn — từ chối.
+
+---
+
 ### Shelf Management (F36) — tách kho / kệ, giảm giá độc lập
 
 - **Ngày:** tháng 7/2026
@@ -13,7 +22,7 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
   - `shelf_zones` do nhân viên tự tạo (tên tùy ý) — **tách biệt** Category (F30 phân loại SP).
   - Checklist tab **Hàng đặc biệt**: reset **thủ công** (nút "Reset checklist") — **không** tự reset hàng ngày.
   - 1 SP có thể thuộc nhiều khu. RBAC: guest xem; staff+ CRUD.
-  - Gộp roadmap với F33 `is_on_shelf` (Phase 4).
+  - ~~Gộp roadmap với F33 `is_on_shelf` (Phase 4).~~ → **F33 Dropped** — kho/kệ độc lập hoàn toàn (xem entry trên).
 - **Lý do:** Siêu thị vận hành khác kho (đơn vị, checklist ngày, khu đặc biệt); tránh nhầm lẫn với Category và order list.
 
 ---

@@ -4,6 +4,23 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: F33 Dropped — bỏ is_on_shelf, tách hoàn toàn kho/kệ
+
+- F33 (`inventory_entries.is_on_shelf`) Dropped: kho và kệ siêu thị hoạt động độc lập.
+- PLAN_4 C2 Dropped; Group C còn C1 (Done), C3, C4.
+- Sync: REQUIREMENTS v1.3.13, DECISIONS, PLAN_4.
+
+---
+
+## [tháng 7/2026] — C1: migration Shelf Management (F36) — schema only
+
+- Tạo `20260718_create_shelf_tables.sql`: `shelf_zones`, `shelf_items`, `shelf_zone_items` + RLS staff+/guest SELECT + audit `shelf_items` + indexes.
+- `updated_at`: dùng `update_shelf_items_updated_at()` (pattern A5 — không có `set_updated_at()`).
+- Sync `schema.sql` v3.19; types `ShelfZone` / `ShelfItem` / `ShelfZoneItem`; REQUIREMENTS v1.3.12 (F36 In progress); CONTEXT.
+- Chưa store / screen / navigation (C3).
+
+---
+
 ## [tháng 7/2026] — docs: khởi động Phase 4 — PLAN_4.md + thư mục
 
 - Tạo `docs/phases/phase-4/PLAN_4.md` (Groups A–H, ~25 task).
