@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Tab Sản phẩm — luôn hiện tất cả SP, filter local
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Tab Sản phẩm không filter theo `appMode` global. Luôn hiện mọi SP. FilterModal (mode/kho/zone) là filter local trên từng màn, không thay đổi `appMode` store. `appMode` chỉ thay đổi từ MapScreen header.
+- **Lý do:** SP là catalog chung; user cần thấy toàn bộ rồi lọc theo nhu cầu.
+
+---
+
 ### Redesign F36 — Market mode thay Shelf tables
 
 - **Ngày:** tháng 7/2026

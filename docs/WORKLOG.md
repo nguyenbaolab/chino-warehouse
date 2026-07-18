@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: FilterModal shared + ProductsScreen 4 toggles + AuditLog mode filter
+
+- Tạo `components/FilterModal.tsx`: filter Mode (Tất cả/Kho/Siêu thị) + Kho + Zone + nút Xóa bộ lọc; badge count trên nút Lọc.
+- ProductsScreen: 4 toggles luôn hiện (Chỉ SP đã ẩn, Chỉ hết lô, Hàng đặc biệt, Chưa có ảnh); thay dropdown kho/zone bằng FilterModal.
+- NotificationsScreen: thay dropdown kho/zone bằng FilterModal.
+- DashboardScreen: thay dropdown kho/zone bằng FilterModal.
+- AuditLogScreen: thêm filter Mode (SearchableDropdownModal) vào bộ filter Kho/Người/SP.
+- Filter mode trên mỗi màn là local, không thay đổi appMode store global.
+- Docs: CONTEXT, REQUIREMENTS v1.3.17, DECISIONS, PLAN_4, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — C2: mode switcher UI — Warehouse ↔ Market
 
 - Store: `appMode` state + `setAppMode` (reset location, re-fetch); `fetchLocations` filter `.eq('type', appMode)`; `getQtyUnit()` helper.

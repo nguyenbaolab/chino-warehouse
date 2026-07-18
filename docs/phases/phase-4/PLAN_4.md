@@ -74,10 +74,12 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 ### C2 — Mode switcher UI ✅ Done
 
 - Header dropdown: **Chino's Warehouse** ↔ **Chino's Market**
-- Filter toàn app theo `location.type`
+- Filter toàn app theo `location.type` (Map / `fetchLocations`)
 - Tab **Kho** label → **Siêu thị** khi market mode
-- Tab Sản phẩm: market mode thay toggle «Chỉ hết lô» → **«Hàng đặc biệt»** (`is_special`)
-- Label qty: **«thùng»** (warehouse) → **«sản phẩm»** (market)
+- Tab Sản phẩm: **4 toggles luôn hiện** (không swap); FilterModal Mode/Kho/Zone **local** (không đổi `appMode`)
+- Label qty: **«thùng»** / **«sản phẩm»** via `getQtyUnit()`
+- **Follow-up:** `FilterModal` shared Products/Notifications/Dashboard; AuditLog + Mode filter (REQUIREMENTS v1.3.17)
+
 
 ### C3 — Notifications nâng cấp
 

@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.15 | Tháng 7/2026
+**Phiên bản:** 1.3.17 | Tháng 7/2026
 
+> **v1.3.17** — FilterModal shared (Products/Notifications/Dashboard): filter Mode + Kho + Zone + nút Reset; AuditLog thêm filter Mode; ProductsScreen 4 toggles luôn hiện (không swap theo mode).
 > **v1.3.16** — C2 Done: mode switcher Warehouse ↔ Market; dynamic tab label, qty unit, toggle; fetchLocations filter by type.
 > **v1.3.15** — C1 Done: rollback shelf tables; migration `locations.type` + `is_special` + `is_checked`; schema v4.1; types cleanup.
 > **v1.3.14** — Redesign F36: Market mode (`locations.type`) thay Shelf tables; F34/F35 → Phase 5; Notifications date range + dropdown Kho/Siêu thị. Xem `DECISIONS.md`, `PLAN_4.md` Group C.
@@ -287,21 +288,21 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 
 | Màn hình | Mô tả | Thành phần chính |
 |----------|-------|-----------------|
-| Bản đồ kho (Tab) | Màn hình chính | Header dropdown **Chino's Warehouse ↔ Market** (`appMode`) · Sheet chọn kho (filter theo `type`, tên + lưới, Thêm kho mới) · nút ▦ Zone Layout Editor · Lưới 2D · + Zone · Search toàn mode · Quét mã · Chấm màu |
-| Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng · Danh sách SP + chấm màu · **Chuyển lô** (modal ScrollView zone/tầng + nút Hủy/Xác nhận fixed) |
-| Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Mã vạch · Ảnh (Phase 2) · Tất cả zone+tầng · Số thùng · Hạn (màu) · Ghi chú · **Nút lô:** ✏️ \| 📍 \| 🗑️ — 📍 → tab Kho (`locateIntent`: đổi kho, highlight zone màu combined status, search + panel kết quả expanded) · **Xóa sản phẩm** (confirm; block nếu còn lô) · Ngưỡng cảnh báo · **Chi tiết (F30):** Cấp 1/2 · **Lịch sử:** 10 entries + Xem tất cả → AuditLogScreen |
-| Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Dropdown lọc theo kho (theo `appMode`) · Toggle **Chỉ hết lô** (warehouse) / **Hàng đặc biệt** (market `is_special`) · Tổng qty (`thùng`/`sản phẩm`) · Chấm màu · Tìm kiếm · Thêm mới (CRUD category **không** ở màn này — xem Settings / F30) |
-| Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · **list active** (hàng trong kho) vs **list tự tạo** (hàng mới) · trong chi tiết list: 2 tab **Hàng trong kho** (trái) / **Hàng mới** (phải) · một list active duy nhất; tạo mới + đặt tên (mặc định theo ngày) · nhóm theo category + nhóm **Chưa phân loại** · số thùng để trống đến khi Confirm · luồng Draft → Confirm → Xuất PDF (gộp 2 tab) → Đã đặt |
-| Thêm hàng (Stack) | Thêm lô hàng | **📷** quét tìm SP (`searchByBarcode`) + hint · **+ Tạo mới '[tên]'** trong gợi ý · Zone · Tầng · Số thùng · Hạn · Ghi chú lô · **F30:** category |
-| Thông báo (Tab) | Cảnh báo tồn kho & hạn | Dropdown **Tất cả / Kho / Siêu thị** (`location.type`) · search + pagination · Sắp hết hạn: checkbox + toggle giảm giá + **date range Từ–Đến** · Sắp hết hàng: checkbox + Thêm danh sách nhập + Không nhập nữa (không date range) |
-| Cài đặt (Tab) | Tuỳ chỉnh app | Theme · toggle cảnh báo · Quản lý kho · Phân loại · Tổng quan · Không nhập nữa · Ghi chú · **Kiểm hàng** (market `is_special` checklist — Phase 4 C4) · Lịch sử · User Management |
-| Kiểm hàng (Stack, F36 C4) | Checklist market | List entry market có `is_special`; tick `is_checked`; nút Reset tất cả |
-| Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả quét · Nút thêm thủ công nếu không nhận ra |
-| Tổng quan kho (Stack, F23) | Dashboard | Tổng quan kho. Các số: tổng SKU, tổng kho, sắp hết hàng/hết hàng, sắp hết hạn/đã hết hạn, không nhập nữa. Truy cập từ Settings. |
-| Quản lý người dùng (Stack, F24) | User Management | Quản lý người dùng (chỉ admin/super_admin). Danh sách user: email, role, `last_login_at`, trạng thái. Toggle guest/disabled. Super_admin: cấp admin, tạo tài khoản. |
-| Quản lý phân loại (Stack, F30) | CRUD category 2 cấp | Accordion Cấp 1 mở ra Cấp 2 · thêm/sửa/xóa nhóm & loại |
-| Zone Layout Editor | Sắp xếp lại vị trí zone trên lưới | Tile compact per zone · Badge kích thước · Drag onto grid · Footprint preview · Collision highlight · Nút Preview + Confirm |
-| AuditLogScreen | Tra cứu lịch sử | Filter người thay đổi · Filter sản phẩm · Danh sách 10 entries/trang · Pagination trái(mới hơn)/phải(cũ hơn) · Cache in-memory · Tên user = prefix email |
+| Bản đồ kho (Tab) | Màn hình chính | Header dropdown **Chino's Warehouse ↔ Market** (`appMode` global) · Sheet chọn kho · ▦ · Lưới · Search · Quét |
+| Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng · Danh sách SP · **Chuyển lô** |
+| Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Ảnh · Lô · qty label động · ✏️/📍/🗑️ · Chi tiết · Lịch sử |
+| Danh sách sản phẩm (Tab) | Catalog + lọc | **Luôn mọi SP**; 4 toggles (ẩn / hết lô / đặc biệt / chưa ảnh); nút **Lọc** → FilterModal Mode/Kho/Zone; qty `getQtyUnit()` |
+| Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · 2 tab · PDF (Phase 4) |
+| Thêm hàng (Stack) | Thêm lô hàng | Zone · Tầng · Số lượng · Hạn · F30 category |
+| Thông báo (Tab) | Cảnh báo tồn & hạn | Nút **Lọc** → FilterModal Mode/Kho/Zone; tabs hết hạn / hết hàng (+ date range C3 pending) |
+| Cài đặt (Tab) | Tuỳ chỉnh app | Theme · cảnh báo · Quản lý kho · … · **Kiểm hàng** (C4) · Audit · User |
+| Kiểm hàng (Stack, F36 C4) | Checklist market | List `is_special`; tick `is_checked`; Reset |
+| Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả |
+| Tổng quan kho (Stack, F23) | Dashboard | Nút **Lọc** → FilterModal; 8 stats + pie |
+| Quản lý người dùng (Stack, F24) | User Management | Admin only |
+| Quản lý phân loại (Stack, F30) | CRUD category 2 cấp | Accordion L1/L2 |
+| Zone Layout Editor | Sắp xếp zone | Drag tiles |
+| AuditLogScreen | Tra cứu lịch sử | Filter **Mode** + Kho + Người + SP · pagination |
 
 ---
 
@@ -364,6 +365,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Super app | Không đề cập | Ghi nhận trong §1 và F24 | Thông tin mới từ chủ cửa hàng |
 | Phase 3 scope v1.3.7 | — | PLAN_3: A1–A5, B1–B8, C1, D1–D3, E1–E2; F19 Dropped; F21/F25/F26 → Phase 4 | Chốt roadmap Phase 3 |
 | Phase 3 Group F v1.3.8 | — | PLAN_3 Group F: F1 navigation (KI-057), F2 block xóa lô (KI-058), F3 `is_archived`, F4 tap kho→Map, F5 filter ảnh, F31 Internal Notes; F07 sửa xóa lô; F32–F35 → Phase 4 | Ghi nhận backlog mới |
+| C2 Mode switcher + FilterModal v1.3.17 | — | FilterModal shared; 4 toggles Products; AuditLog Mode; catalog ≠ appMode | FilterModal |
 | C2 Mode switcher v1.3.16 | — | appMode + header dropdown; tab Kho/Siêu thị; getQtyUnit; Products Hàng đặc biệt | C2 Done |
 | C1 Market columns v1.3.15 | — | Rollback shelf; `locations.type` + is_special/is_checked; schema v4.1 | C1 Done |
 | F36 Market mode redesign v1.3.14 | — | Rollback shelf tables; `locations.type` + is_special/is_checked; F34/F35 → Phase 5; Notifications date range | Redesign F36 |

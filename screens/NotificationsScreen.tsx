@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   FlatList,
-  Modal,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,7 +14,8 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useCanWrite } from '../stores/authStore'
-import { formatExpiryDate, getExpiryStatus, InventoryEntry, Product, Zone } from '../types'
+import FilterModal, { countActiveFilters, type FilterMode } from '../components/FilterModal'
+import { formatExpiryDate, getExpiryStatus, InventoryEntry, Location, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
 import {
@@ -73,10 +71,8 @@ export default function NotificationsScreen() {
     lowStockWarningEnabled,
   } = useWarningStore()
   const {
-    locations,
     products,
     inventoryEntries,
-    fetchLocations,
     fetchProducts,
     fetchAllInventoryEntries,
     fetchInventoryByZone,
@@ -86,11 +82,13 @@ export default function NotificationsScreen() {
   } = useWarehouseStore()
   const qtyUnit = getQtyUnit()
 
+  const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [filterZoneId, setFilterZoneId] = useState<string | null>(null)
-  const [locationPickerOpen, setLocationPickerOpen] = useState(false)
-  const [zonePickerOpen, setZonePickerOpen] = useState(false)
+  const [filterModalOpen, setFilterModalOpen] = useState(false)
+  const [filterLocations, setFilterLocations] = useState<Location[]>([])
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
+  const [modeZoneIds, setModeZoneIds] = useState<Set<string> | null>(null)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'expiry' | 'lowStock'>('expiry')
@@ -121,9 +119,51 @@ export default function NotificationsScreen() {
   ])
 
   useEffect(() => {
-    fetchLocations()
     fetchProducts()
-  }, [fetchLocations, fetchProducts])
+  }, [fetchProducts])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadFilterLocations() {
+      let query = supabase.from('locations').select('*').order('name')
+      if (filterMode !== 'all') query = query.eq('type', filterMode)
+      const { data } = await query
+      if (!cancelled) setFilterLocations((data as Location[]) ?? [])
+    }
+    void loadFilterLocations()
+    return () => { cancelled = true }
+  }, [filterMode])
+
+  const filterModeMountedRef = useRef(false)
+  useEffect(() => {
+    if (!filterModeMountedRef.current) {
+      filterModeMountedRef.current = true
+      return
+    }
+    setFilterLocationId(null)
+    setFilterZoneId(null)
+  }, [filterMode])
+
+  useEffect(() => {
+    if (filterMode === 'all' || filterLocationId) {
+      setModeZoneIds(null)
+      return
+    }
+    const locIds = filterLocations.map((l) => l.id)
+    if (locIds.length === 0) {
+      setModeZoneIds(new Set())
+      return
+    }
+    let cancelled = false
+    void supabase
+      .from('zones')
+      .select('id')
+      .in('location_id', locIds)
+      .then(({ data }) => {
+        if (!cancelled) setModeZoneIds(new Set(((data as { id: string }[]) ?? []).map((z) => z.id)))
+      })
+    return () => { cancelled = true }
+  }, [filterMode, filterLocations, filterLocationId])
 
   useEffect(() => {
     if (filterLocationId) return
@@ -159,6 +199,7 @@ export default function NotificationsScreen() {
     setCurrentPageLowStock(0)
   }, [
     searchQuery,
+    filterMode,
     filterLocationId,
     filterZoneId,
     showExpiredFilter,
@@ -173,10 +214,7 @@ export default function NotificationsScreen() {
     return new Set(zonesForFilterLoc.map((z) => z.id))
   }, [filterLocationId, zonesForFilterLoc])
 
-  const sortedLocations = useMemo(
-    () => [...locations].sort((a, b) => a.name.localeCompare(b.name)),
-    [locations]
-  )
+  const activeFilterCount = countActiveFilters(filterMode, filterLocationId, filterZoneId)
 
   const inventoryEntriesForNotify = useMemo(() => {
     if (filterZoneId) {
@@ -185,8 +223,11 @@ export default function NotificationsScreen() {
     if (locationZoneSet) {
       return inventoryEntries.filter((e) => locationZoneSet.has(e.zone_id))
     }
+    if (modeZoneIds) {
+      return inventoryEntries.filter((e) => modeZoneIds.has(e.zone_id))
+    }
     return inventoryEntries
-  }, [inventoryEntries, locationZoneSet, filterZoneId])
+  }, [inventoryEntries, locationZoneSet, filterZoneId, modeZoneIds])
 
   const productIdToEntries = useMemo(() => {
     const map = new Map<string, InventoryEntry[]>()
@@ -534,41 +575,15 @@ export default function NotificationsScreen() {
       <Text style={[styles.title, { color: colors.text }]}>🔔 Thông báo</Text>
 
       <TouchableOpacity
-        style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => setLocationPickerOpen(true)}
+        style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => setFilterModalOpen(true)}
         activeOpacity={0.75}
       >
-        <Text style={[styles.locationFilterLabel, { color: colors.sub }]}>Kho</Text>
-        <Text style={[styles.locationFilterValue, { color: colors.text }]} numberOfLines={1}>
-          {filterLocationId
-            ? locations.find((l) => l.id === filterLocationId)?.name ?? '…'
-            : 'Tất cả kho'}
+        <Text style={[styles.filterBtnText, { color: colors.text }]}>
+          {activeFilterCount > 0 ? `Lọc (${activeFilterCount})` : 'Lọc'}
         </Text>
-        <Text style={[styles.locationFilterChevron, { color: colors.sub }]}>▾</Text>
+        <Text style={{ color: colors.sub }}>▾</Text>
       </TouchableOpacity>
-
-      {filterLocationId ? (
-        <TouchableOpacity
-          style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => setZonePickerOpen(true)}
-          activeOpacity={0.75}
-        >
-          <Text style={[styles.locationFilterLabel, { color: colors.sub }]}>Zone</Text>
-          <Text style={[styles.locationFilterValue, { color: colors.text }]} numberOfLines={1}>
-            {filterZoneId
-              ? zonesForFilterLoc.find((z) => z.id === filterZoneId)?.name ?? '…'
-              : 'Tất cả zone'}
-          </Text>
-          <Text style={[styles.locationFilterChevron, { color: colors.sub }]}>▾</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={[styles.locationFilterRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.locationFilterLabel, { color: colors.sub }]}>Zone</Text>
-          <Text style={[styles.locationFilterValue, { color: colors.statusWarning }]} numberOfLines={1}>
-            Vui lòng chọn kho trước
-          </Text>
-        </View>
-      )}
 
       <View style={styles.searchWrap}>
         <View style={styles.searchRow}>
@@ -596,102 +611,26 @@ export default function NotificationsScreen() {
         </View>
       </View>
 
-      <Modal visible={locationPickerOpen} transparent animationType="fade" onRequestClose={() => setLocationPickerOpen(false)}>
-        <Pressable style={styles.locationModalOverlay} onPress={() => setLocationPickerOpen(false)}>
-          <Pressable style={[styles.locationModalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.locationModalTitle, { color: colors.text }]}>Chọn kho</Text>
-            <ScrollView style={styles.locationModalList} keyboardShouldPersistTaps="handled">
-              <TouchableOpacity
-                style={[
-                  styles.locationOption,
-                  { borderColor: colors.border, backgroundColor: filterLocationId ? colors.bg : colors.accent + '22' },
-                ]}
-                onPress={() => {
-                  setFilterLocationId(null)
-                  setFilterZoneId(null)
-                  setLocationPickerOpen(false)
-                }}
-              >
-                <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: filterLocationId ? '500' : '700' }]}>
-                  Tất cả kho
-                </Text>
-                {!filterLocationId && <Text style={{ color: colors.accent }}>✓</Text>}
-              </TouchableOpacity>
-              {sortedLocations.map((loc) => {
-                const sel = filterLocationId === loc.id
-                return (
-                  <TouchableOpacity
-                    key={loc.id}
-                    style={[
-                      styles.locationOption,
-                      { borderColor: colors.border, backgroundColor: sel ? colors.accent + '22' : colors.bg },
-                    ]}
-                    onPress={() => {
-                      setFilterLocationId(loc.id)
-                      setFilterZoneId(null)
-                      setLocationPickerOpen(false)
-                    }}
-                  >
-                    <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]} numberOfLines={2}>
-                      {loc.name}
-                    </Text>
-                    {sel && <Text style={{ color: colors.accent }}>✓</Text>}
-                  </TouchableOpacity>
-                )
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <Modal visible={zonePickerOpen} transparent animationType="fade" onRequestClose={() => setZonePickerOpen(false)}>
-        <Pressable style={styles.locationModalOverlay} onPress={() => setZonePickerOpen(false)}>
-          <Pressable style={[styles.locationModalBox, { backgroundColor: colors.card }]} onPress={(e) => e.stopPropagation()}>
-            <Text style={[styles.locationModalTitle, { color: colors.text }]}>Chọn zone</Text>
-            <ScrollView style={styles.locationModalList} keyboardShouldPersistTaps="handled">
-              <TouchableOpacity
-                style={[
-                  styles.locationOption,
-                  { borderColor: colors.border, backgroundColor: filterZoneId ? colors.bg : colors.accent + '22' },
-                ]}
-                onPress={() => {
-                  setFilterZoneId(null)
-                  setZonePickerOpen(false)
-                }}
-              >
-                <Text style={[styles.locationOptionText, { color: colors.text, fontWeight: filterZoneId ? '500' : '700' }]}>
-                  Tất cả zone
-                </Text>
-                {!filterZoneId && <Text style={{ color: colors.accent }}>✓</Text>}
-              </TouchableOpacity>
-              {zonesForFilterLoc.map((zone) => {
-                const sel = filterZoneId === zone.id
-                return (
-                  <TouchableOpacity
-                    key={zone.id}
-                    style={[
-                      styles.locationOption,
-                      { borderColor: colors.border, backgroundColor: sel ? colors.accent + '22' : colors.bg },
-                    ]}
-                    onPress={() => {
-                      setFilterZoneId(zone.id)
-                      setZonePickerOpen(false)
-                    }}
-                  >
-                    <Text
-                      style={[styles.locationOptionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]}
-                      numberOfLines={2}
-                    >
-                      {zone.name}
-                    </Text>
-                    {sel && <Text style={{ color: colors.accent }}>✓</Text>}
-                  </TouchableOpacity>
-                )
-              })}
-            </ScrollView>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <FilterModal
+        visible={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        selectedMode={filterMode}
+        onChangeMode={setFilterMode}
+        locations={filterLocations}
+        selectedLocationId={filterLocationId}
+        onChangeLocation={(id) => {
+          setFilterLocationId(id)
+          setFilterZoneId(null)
+        }}
+        zones={zonesForFilterLoc}
+        selectedZoneId={filterZoneId}
+        onChangeZone={setFilterZoneId}
+        onReset={() => {
+          setFilterMode('all')
+          setFilterLocationId(null)
+          setFilterZoneId(null)
+        }}
+      />
 
       <View style={[styles.tabBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <TouchableOpacity
@@ -851,20 +790,18 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 16 },
   title: { fontSize: 18, fontWeight: '700', paddingHorizontal: 16, marginBottom: 8 },
-  locationFilterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  filterBtn: {
     marginHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 8,
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  locationFilterLabel: { fontSize: 12, width: 36 },
-  locationFilterValue: { flex: 1, fontSize: 14, fontWeight: '600' },
-  locationFilterChevron: { fontSize: 12 },
+  filterBtnText: { fontSize: 14, fontWeight: '600' },
   searchWrap: { paddingHorizontal: 16, marginBottom: 10 },
   searchRow: { flexDirection: 'row', alignItems: 'center' },
   searchInputWrap: { flex: 1, position: 'relative' },
@@ -895,30 +832,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scanBtnText: { fontSize: 16 },
-  locationModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  locationModalBox: {
-    borderRadius: 14,
-    padding: 16,
-    maxHeight: '70%',
-  },
-  locationModalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  locationModalList: { maxHeight: 360 },
-  locationOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginBottom: 8,
-  },
-  locationOptionText: { flex: 1, marginRight: 8, fontSize: 14 },
   tabBar: {
     flexDirection: 'row',
     marginHorizontal: 16,

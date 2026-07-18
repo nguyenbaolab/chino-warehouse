@@ -181,11 +181,13 @@ export default function AuditLogScreen() {
   const route = useRoute()
   const params = (route.params as RouteParams) ?? {}
   const { colors } = useThemeStore()
-  const { fetchAuditLogs, products, locations, inventoryEntries, fetchZones, fetchInventoryByLocation, searchByBarcode, getQtyUnit } = useWarehouseStore()
+  const { fetchAuditLogs, products, inventoryEntries, fetchZones, fetchInventoryByLocation, searchByBarcode, getQtyUnit } = useWarehouseStore()
   const qtyUnit = getQtyUnit()
 
   const [pages, setPages] = useState<Record<number, AuditLog[]>>({})
   const [currentPage, setCurrentPage] = useState(0)
+  const [filterMode, setFilterMode] = useState<'all' | 'warehouse' | 'market'>('all')
+  const [filterLocations, setFilterLocations] = useState<{ id: string; name: string; type: string }[]>([])
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [filterChangedBy, setFilterChangedBy] = useState<string | null>(null)
   const [filterProductId, setFilterProductId] = useState<string | null>(params.filterProductId ?? null)
@@ -216,6 +218,29 @@ export default function AuditLogScreen() {
     }
     void load()
   }, [filterLocationId])
+
+  // Filter Mode local — fetch locations theo type (không đụng appMode store)
+  useEffect(() => {
+    let cancelled = false
+    async function loadFilterLocations() {
+      let query = supabase.from('locations').select('id, name, type').order('name')
+      if (filterMode !== 'all') query = query.eq('type', filterMode)
+      const { data } = await query
+      if (!cancelled) setFilterLocations((data as { id: string; name: string; type: string }[]) ?? [])
+    }
+    void loadFilterLocations()
+    return () => { cancelled = true }
+  }, [filterMode])
+
+  const filterModeMountedRef = useRef(false)
+  useEffect(() => {
+    if (!filterModeMountedRef.current) {
+      filterModeMountedRef.current = true
+      return
+    }
+    // Đổi mode → clear kho; loadPage deps sẽ reload list
+    setFilterLocationId(null)
+  }, [filterMode])
 
   const currentEntries = pages[currentPage] ?? []
   const canGoOlder = currentEntries.length >= 10
@@ -321,9 +346,14 @@ export default function AuditLogScreen() {
   }
 
   // Dropdown options
+  const modeOptions: DropdownOption[] = [
+    { id: 'all', label: 'Tất cả' },
+    { id: 'warehouse', label: 'Kho' },
+    { id: 'market', label: 'Siêu thị' },
+  ]
   const locationOptions: DropdownOption[] = [
     { id: '__all__', label: 'Tất cả kho' },
-    ...locations.map((l) => ({ id: l.id, label: l.name })),
+    ...filterLocations.map((l) => ({ id: l.id, label: l.name })),
   ]
   const userOptions: DropdownOption[] = [
     { id: '__all__', label: uniqueUserNames.length === 0 ? 'Tất cả (chưa có lịch sử)' : 'Tất cả' },
@@ -335,7 +365,11 @@ export default function AuditLogScreen() {
   ]
 
   // Display labels
-  const locationLabel = filterLocationId ? locations.find((l) => l.id === filterLocationId)?.name ?? 'Tất cả kho' : 'Tất cả kho'
+  const modeLabel =
+    filterMode === 'warehouse' ? 'Kho' : filterMode === 'market' ? 'Siêu thị' : 'Tất cả'
+  const locationLabel = filterLocationId
+    ? filterLocations.find((l) => l.id === filterLocationId)?.name ?? 'Tất cả kho'
+    : 'Tất cả kho'
   const userLabel = filterChangedBy ?? (uniqueUserNames.length === 0 ? 'Tất cả (chưa có lịch sử)' : 'Tất cả')
   const productLabel = filterProductId ? productOptions.find((p) => p.id === filterProductId)?.name ?? 'Tất cả' : 'Tất cả'
 
@@ -349,9 +383,21 @@ export default function AuditLogScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 3 Filters — trigger buttons */}
+      {/* Filters — Mode / Kho / Người / Sản phẩm */}
       <View style={styles.filtersWrap}>
         <View style={styles.filtersRow}>
+          <View style={styles.filterCol}>
+            <Text style={[styles.filterLabel, { color: colors.sub }]}>Mode</Text>
+            <Pressable
+              style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setActiveModal('mode')}
+            >
+              <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>
+                Mode: {modeLabel}
+              </Text>
+            </Pressable>
+          </View>
+
           <View style={styles.filterCol}>
             <Text style={[styles.filterLabel, { color: colors.sub }]}>Kho</Text>
             <Pressable
@@ -361,7 +407,9 @@ export default function AuditLogScreen() {
               <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{locationLabel}</Text>
             </Pressable>
           </View>
+        </View>
 
+        <View style={styles.filtersRow}>
           <View style={styles.filterCol}>
             <Text style={[styles.filterLabel, { color: colors.sub }]}>Người</Text>
             <Pressable
@@ -371,10 +419,8 @@ export default function AuditLogScreen() {
               <Text style={{ color: colors.text, fontSize: 13 }} numberOfLines={1}>{userLabel}</Text>
             </Pressable>
           </View>
-        </View>
 
-        <View style={styles.filtersRow}>
-          <View style={styles.filterColFull}>
+          <View style={styles.filterCol}>
             <View style={styles.filterLabelRow}>
               <Text style={[styles.filterLabel, { color: colors.sub }]}>Sản phẩm</Text>
               <TouchableOpacity onPress={handleScanBarcode} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -439,6 +485,14 @@ export default function AuditLogScreen() {
       </View>
 
       {/* Modal dropdowns */}
+      <SearchableDropdownModal
+        visible={activeModal === 'mode'}
+        title="Chọn mode"
+        options={modeOptions}
+        colors={colors}
+        onSelect={(id) => setFilterMode(id as 'all' | 'warehouse' | 'market')}
+        onClose={() => setActiveModal(null)}
+      />
       <SearchableDropdownModal
         visible={activeModal === 'location'}
         title="Chọn kho"
