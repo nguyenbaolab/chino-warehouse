@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: redesign F36 — Market mode thay Shelf tables
+
+- Rollback C1 shelf tables (`shelf_zones`, `shelf_items`, `shelf_zone_items`) khỏi plan.
+- Redesign: `locations.type` warehouse/market, reuse zones/inventory_entries.
+- PLAN_4 Group C mới: C1 rollback+migration, C2 mode switcher, C3 Notifications, C4 Checklist.
+- F34/F35 → Deferred Phase 5.
+- Notifications: date range filter (Từ/Đến) + dropdown Kho/Siêu thị.
+- Sync: REQUIREMENTS v1.3.14, DECISIONS, PLAN_4, CONTEXT.
+
+---
+
 ## [tháng 7/2026] — docs: F33 Dropped — bỏ is_on_shelf, tách hoàn toàn kho/kệ
 
 - F33 (`inventory_entries.is_on_shelf`) Dropped: kho và kệ siêu thị hoạt động độc lập.

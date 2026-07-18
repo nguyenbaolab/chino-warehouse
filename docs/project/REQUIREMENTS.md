@@ -2,10 +2,11 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.13 | Tháng 7/2026
+**Phiên bản:** 1.3.14 | Tháng 7/2026
 
+> **v1.3.14** — Redesign F36: Market mode (`locations.type`) thay Shelf tables; F34/F35 → Phase 5; Notifications date range + dropdown Kho/Siêu thị. Xem `DECISIONS.md`, `PLAN_4.md` Group C.
 > **v1.3.13** — F33 Dropped (`is_on_shelf`); C2 bỏ; kho và kệ tách hoàn toàn. Xem `DECISIONS.md`, `PLAN_4.md` Group C.
-> **v1.3.12** — C1 Shelf Management schema: `shelf_zones` / `shelf_items` / `shelf_zone_items` (migration `20260718_create_shelf_tables.sql`, schema v4.0); F36 In progress (schema only — store/UI → C3). Xem `PLAN_4.md` Group C.
+> **v1.3.12** — C1 Shelf Management schema: `shelf_zones` / `shelf_items` / `shelf_zone_items` (migration `20260718_create_shelf_tables.sql`, schema v4.0); F36 In progress — **sau này rollback** (v1.3.14). Xem `PLAN_4.md` Group C.
 > **v1.3.11** — Khởi động Phase 4: tạo `PLAN_4.md` (Groups A–H: F27 mở rộng, Shelf F33+F36, F32–F35, F21/F25/F26 optional, SEC-10/12/13/14, KI-039/040/050). Xem `docs/phases/phase-4/PLAN_4.md`.
 > **v1.3.10** — Closeout Phase 3: F28 Done; F27 mở rộng vẫn Partial → Phase 4; sync SUMMARY_3 / HANDOFF_3 / TESTCASES_3. Xem `docs/phases/phase-3/SUMMARY_3.md`.
 > **v1.3.9** — Group F thêm F7 (barcode tự điền khi chọn SP sau quét AddInventory), F8 (dời lô bằng map toàn màn hình); F36 Shelf Management → Phase 4 (cùng F33 `is_on_shelf`). Xem `PLAN_3.md` Group F + §9 Deferred.
@@ -109,7 +110,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn, ghi chú, **barcode lô (optional)**. Ô tìm SP: **📷** — `searchByBarcode` (lô còn) hoặc fallback **`lookupProductByBarcode`** (`product_barcodes`, kể SP hết lô) → điền tên vào ô tìm (user tự chọn từ gợi ý, không auto-select) + hint tránh trùng tên · **+ Tạo mới '[tên]'** cuối gợi ý · không kết quả → **Tạo sản phẩm mới**. **F7 (Phase 3):** sau quét barcode, khi user **bấm chọn** SP từ dropdown → ô barcode lô **tự điền** mã vừa quét; gõ tên thủ công → barcode giữ trống. **B2:** trước save barcode → `checkBarcodeConflict` (block + Alert + audit `CONFLICT` qua RPC); sau save OK → `upsertProductBarcode`. Cùng pattern trên **ProductDetail** / **ZoneDetailSheet** inline edit lô. | P1 | MVP | Done *(barcode autofill: F7 Phase 3)* |
 | F16 | Sửa / Xóa / Chuyển lô hàng | Cập nhật số thùng, hạn, ghi chú. Xóa khi hết hàng. Truy cập từ màn hình chi tiết (F07). **Chuyển lô** tại `ZoneDetailSheet`: **F8 (Phase 3)** — chọn zone đích bằng **map toàn màn hình** (tap zone → chọn tầng → confirm), thay list dropdown. | P1 | MVP | Done *(dời lô map: F8 Phase 3)* |
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
-| F18 | Thông báo trong app | Tab Thông báo tách thành 2 tab con **Sắp hết hạn / Sắp hết hàng**. Tab Sắp hết hạn có toggle **Đã giảm giá** theo sản phẩm sắp hết hạn; sản phẩm hết hạn hiển thị đỏ nhạt + nhãn `Hết hạn rồi`, tap mở `ProductDetailScreen`. Tab Sắp hết hàng có nút **Thêm vào danh sách nhập** và **Không nhập nữa**. | P2 | MVP+ | Done |
+| F18 | Thông báo trong app | Tab Thông báo tách thành 2 tab con **Sắp hết hạn / Sắp hết hàng**. Tab Sắp hết hạn: toggle **Đã giảm giá**; **date range** Từ (mặc định hôm nay) — Đến (mặc định +30 ngày); dropdown **Tất cả / Kho / Siêu thị** (`location.type`). Tab Sắp hết hàng: checkbox hết/sắp hết + nút **Thêm vào danh sách nhập** / **Không nhập nữa**; chỉ dropdown type (không date range). | P2 | MVP+ | Done *(Phase 4: date range + type filter — PLAN_4 C3 Planned)* |
 | F19 | Chuyển hàng giữa khu vực | Chuyển hàng từ kho lên siêu thị hoặc giữa các kho: trừ thùng ở nguồn, cộng thùng ở đích. **(Dropped — không phù hợp nghiệp vụ thực tế, không implement)** | P2 | — | Dropped |
 | F20 | Bản đồ nhiều khu vực | Dropdown selector thay thế pill "Kho" trên MapScreen để chuyển đổi giữa các kho (bottom sheet: tên + grid size, ✓ kho đang chọn, nút Thêm kho mới → Cài đặt). Tạo kho mới: nhập tên + grid size (rows × cols, không giới hạn max). Sau khi tạo vẫn cho đổi grid size — tăng thoải mái, giảm chỉ được nếu không có zone nào bị cắt ra ngoài. Xóa kho: block nếu còn **bất kỳ** bản ghi `inventory_entries` nào trong zones của kho đó (kể cả lô 0 thùng chưa xóa thủ công). Tab Sản phẩm / Thông báo: dropdown lọc theo kho (không chọn = logic riêng từng màn — xem CONTEXT §3). Tab Đặt hàng không có dropdown kho. Quản lý kho (đổi tên, xóa) trong Settings → Quản lý kho. Fix KI-004 (đổi kho → clear search). | P2 | Phase 2 | Done |
 | F21 | Chế độ offline | Lưu dữ liệu cục bộ, queue thay đổi khi mất mạng, tự đồng bộ khi có mạng trở lại. | P3 | Phase 4 | Not started *(PLAN_4 Group G — có thể defer Phase 5)* |
@@ -124,10 +125,10 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F30 | Phân loại sản phẩm (Category system) | **2 cấp:** Cấp 1 (VD: Đồ khô, Đồ đông đá) + Cấp 2 (VD: Mì, sốt, …). **Quản lý** thêm/sửa/xóa trong **Settings**: card **Phân loại sản phẩm** hiển tóm tắt **"X nhóm · Y loại"**; bấm vào → màn **Quản lý phân loại** (accordion **Cấp 1** xổ ra **Cấp 2**). **Gắn vào sản phẩm**, optional **từng cấp** — chọn Cấp 1 **không** bắt buộc phải chọn Cấp 2. **Chi tiết sản phẩm** (section **Chi tiết**): dropdown Cấp 1 → chỉ sau khi chọn Cấp 1 mới hiện dropdown Cấp 2; lưu và sửa được. **AddInventoryScreen:** chọn sản phẩm có sẵn → category **chỉ đọc** (tự điền từ SP); **thêm sản phẩm mới** → dropdown Cấp 1 + Cấp 2 ngay dưới field tên sản phẩm. Phân loại sau → list đặt hàng (F27) cập nhật đúng nhóm. | P2 | Phase 2 | Done |
 | F31 | Ghi chú nội bộ (Internal Notes) | Màn **Ghi chú** trong Settings (card entry). Bảng `internal_notes` (`product_id` nullable, `custom_product_name`, reason, created_by, created_at). UI card: ảnh SP 64×64 + tên + lý do (hoặc placeholder + tên tự do + dòng "Sản phẩm chưa có trong hệ thống"). FAB (+) → bottom sheet: autocomplete SP có sẵn **hoặc** gõ tên tự do + lý do. Tap card có `product_id` → ProductDetail; card tên tự do không navigate. Sửa/xóa ghi chú. **RBAC:** guest xem; staff+ sửa/xóa mọi ghi chú. **Tách biệt** F27 Đặt hàng. | P2 | Phase 3 | Done |
 | F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Not started *(Planned — PLAN_4 Group D)* |
-| F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Kho (thùng) và kệ siêu thị (cá thể / F36) hoạt động **độc lập** — không link, không cờ đánh dấu giữa hai bên. | P2 | Phase 4 | Dropped *(tách hoàn toàn kho/kệ; cửa hàng nhỏ không cần thao tác đánh dấu)* |
-| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 4 | Not started *(Planned — PLAN_4 Group E)* |
-| F35 | Push notification (local) | `expo-notifications` — scheduled local notification mỗi ngày **11:00**. Check dữ liệu lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày"). | P3 | Phase 4 | Not started *(Planned — PLAN_4 Group F)* |
-| F36 | Shelf Management (Hàng đang bán) | Màn Settings **"Hàng đang bán"**. Schema `shelf_items` / `shelf_zones` / `shelf_zone_items`. 2 tab: **Tất cả** (list hàng trên kệ, ảnh + tên + hạn + qty cá thể + toggle giảm giá + notes; nút đánh dấu đặc biệt) / **Hàng đặc biệt** (chia khu do NV tạo, CRUD khu, checkbox checklist ngày, reset checklist thủ công). Qty = cá thể (cái/chai/gói), **không** thùng. Toggle giảm giá **độc lập** `inventory_entries.is_price_reduced`. 1 SP có thể thuộc nhiều khu. RBAC: guest xem; staff+ CRUD. **Tách hoàn toàn** inventory kho (F33 Dropped). | P2 | Phase 4 | In progress *(C1 schema Done — store/UI → C3)* |
+| F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
+| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | Deferred *(PLAN_4 Group E → Phase 5)* |
+| F35 | Push notification (local) | `expo-notifications` — scheduled local notification mỗi ngày **11:00**. Check dữ liệu lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày"). | P3 | Phase 5 | Deferred *(PLAN_4 Group F → Phase 5)* |
+| F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | In progress *(PLAN_4 Group C — docs; code chưa)* |
 
 ---
 
@@ -169,16 +170,19 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 - Tab **Sắp hết hạn**:
   - Checkbox **Hết hạn (X)** / **Sắp hết hạn (X)** — `X` = số card sau search có ít nhất một lô hết hạn / sắp hết hạn (`warning_days` per SP). Lọc: cả hai tắt hoặc cả hai bật → hiện tất cả; chỉ một bật → chỉ lô/cards thuộc loại đó.
   - Toggle **Đã giảm giá** / **Chưa giảm giá** theo lô; card hết hạn nền đỏ nhạt; tap lô/card → `ProductDetailScreen`.
+  - **Dropdown** Tất cả / Kho / Siêu thị — filter theo `locations.type` (Phase 4 C3).
+  - **Date range** Từ (mặc định hôm nay) — Đến (mặc định hôm nay +30 ngày); lọc theo `expiry_date` trong khoảng (Phase 4 C3).
 - Tab **Sắp hết hàng**:
   - Checkbox **Hết hàng (X)** / **Sắp hết hàng (X)** — `X` = số card sau search với `totalBoxes === 0` / `totalBoxes > 0` và ≤ `low_warning_boxes`. Lọc cùng quy ước hai checkbox như tab hết hạn.
   - Card có nút **Thêm vào danh sách nhập** và **Không nhập nữa** (Settings).
+  - **Dropdown** Tất cả / Kho / Siêu thị — **không** date range.
 - Không còn tab **Để sau** trong UI.
 
 ---
 
 ## 8. Mô hình dữ liệu
 
-### 8.1 Location (Kho)
+### 8.1 Location (Kho / Siêu thị)
 | Trường | Kiểu | Mô tả |
 |--------|------|-------|
 | id | UUID | Khoá chính |
@@ -187,6 +191,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | created_at | Timestamp | Tự sinh |
 | grid_rows | Integer | Số hàng của lưới (mặc định 6) |
 | grid_cols | Integer | Số cột của lưới (mặc định 6) |
+| type | TEXT | **Phase 4 (planned):** `'warehouse'` \| `'market'` — NOT NULL DEFAULT `'warehouse'`. Market mode reuse cùng Location/Zone/Inventory. |
 
 ### 8.2 Zone
 | Trường | Kiểu | Mô tả |
@@ -239,10 +244,12 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | product_id | UUID | Khoá ngoại → Product |
 | zone_id | UUID | Khoá ngoại → Zone |
 | tier | Integer | Tầng kệ (1 = thấp nhất) |
-| quantity_boxes | Integer | Số thùng nguyên |
+| quantity_boxes | Integer | Số lượng — UI label **«thùng»** (warehouse) / **«sản phẩm»** (market); không thêm cột qty riêng |
 | barcode | String | Mã vạch của lô (optional) |
 | expiry_date | Date | Hạn sử dụng của lô này |
-| is_expired_acknowledged | Boolean | Đã đánh dấu giảm giá cho lô/sản phẩm hết hạn hay chưa |
+| is_price_reduced | Boolean | Đã giảm giá (Notifications) |
+| is_special | Boolean | **Phase 4 (planned):** hàng đặc biệt trên market (default false) |
+| is_checked | Boolean | **Phase 4 (planned):** checklist Kiểm hàng (default false); chủ yếu market + `is_special` |
 | notes | String | Ghi chú lô hàng |
 | updated_at | Timestamp | Tự cập nhật |
 
@@ -268,45 +275,10 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 
 > Migration: `20260601000000_add_user_profiles.sql`, `20260601000100_add_user_profiles_to_audit.sql`. Cột `discontinued_reason` trên `products` (F28): `20260530002000_f28_add_discontinued_reason.sql`.
 
-### 8.9 `shelf_zones` (Khu kệ siêu thị — F36)
+### 8.9–8.11 Shelf tables — **Rolled back**
 
-Khu trưng bày do nhân viên tự tạo — **tách biệt** Category F30 và `zones` kho.
-
-| Trường | Kiểu | Mô tả |
-|--------|------|-------|
-| id | UUID | Khoá chính |
-| name | String | Tên khu (tuỳ ý) |
-| sort_order | Integer | Thứ tự hiển thị (default 0) |
-| created_at | Timestamp | Tự sinh |
-
-### 8.10 `shelf_items` (Hàng đang bán trên kệ — F36)
-
-Đơn vị **cá thể** (cái/chai/gói), **không** phải thùng. `is_price_reduced` **độc lập** `inventory_entries.is_price_reduced`. Có audit trigger SEC-11.
-
-| Trường | Kiểu | Mô tả |
-|--------|------|-------|
-| id | UUID | Khoá chính |
-| product_id | UUID | FK → `products` (ON DELETE CASCADE) |
-| quantity | Integer | Số lượng cá thể (default 0) |
-| expiry_date | Date | Hạn sử dụng trên kệ (optional) |
-| is_price_reduced | Boolean | Giảm giá trên kệ (default false) |
-| notes | String | Ghi chú (optional) |
-| created_at | Timestamp | Tự sinh |
-| updated_at | Timestamp | Auto-update qua trigger |
-
-### 8.11 `shelf_zone_items` (Junction M:N — F36)
-
-1 SP (`shelf_item`) có thể thuộc nhiều khu. Checklist `is_checked` reset **thủ công**.
-
-| Trường | Kiểu | Mô tả |
-|--------|------|-------|
-| id | UUID | Khoá chính |
-| shelf_zone_id | UUID | FK → `shelf_zones` (ON DELETE CASCADE) |
-| shelf_item_id | UUID | FK → `shelf_items` (ON DELETE CASCADE) |
-| is_checked | Boolean | Checklist ngày (default false) |
-| created_at | Timestamp | Tự sinh |
-
-> UNIQUE `(shelf_zone_id, shelf_item_id)`. Migration: `20260718_create_shelf_tables.sql`. RLS: guest SELECT / staff+ mutate. Schema canonical: v4.0.
+> **Rolled back — xem `DECISIONS.md` (Redesign F36 — Market mode).**  
+> Các bảng `shelf_zones`, `shelf_items`, `shelf_zone_items` (migration `20260718_create_shelf_tables.sql`, schema v4.0) **sẽ bị xóa / không dùng**. Thay bằng `locations.type` + `inventory_entries.is_special` / `is_checked` (schema mục tiêu **v4.1**).
 
 ---
 
@@ -320,9 +292,10 @@ Khu trưng bày do nhân viên tự tạo — **tách biệt** Category F30 và 
 | Danh sách sản phẩm (Tab) | Quản lý sản phẩm | Dropdown lọc theo kho (Tất cả kho / từng kho) · Danh sách sản phẩm · Tổng thùng · Chấm màu · Tìm kiếm · Thêm mới (CRUD category **không** ở màn này — xem Settings / F30) |
 | Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · **list active** (hàng trong kho) vs **list tự tạo** (hàng mới) · trong chi tiết list: 2 tab **Hàng trong kho** (trái) / **Hàng mới** (phải) · một list active duy nhất; tạo mới + đặt tên (mặc định theo ngày) · nhóm theo category + nhóm **Chưa phân loại** · số thùng để trống đến khi Confirm · luồng Draft → Confirm → Xuất PDF (gộp 2 tab) → Đã đặt |
 | Thêm hàng (Stack) | Thêm lô hàng | **📷** quét tìm SP (`searchByBarcode`) + hint · **+ Tạo mới '[tên]'** trong gợi ý · Zone · Tầng · Số thùng · Hạn · Ghi chú lô · **F30:** category |
-| Thông báo (Tab) | Cảnh báo tồn kho & hạn | Dropdown kho · search + pagination 10/trang · Sắp hết hạn: checkbox Hết hạn (X) / Sắp hết hạn (X) + toggle giảm giá theo lô · Sắp hết hàng: checkbox Hết hàng (X) / Sắp hết hàng (X) + Thêm danh sách nhập + Không nhập nữa |
+| Thông báo (Tab) | Cảnh báo tồn kho & hạn | Dropdown **Tất cả / Kho / Siêu thị** (`location.type`) · search + pagination · Sắp hết hạn: checkbox + toggle giảm giá + **date range Từ–Đến** · Sắp hết hàng: checkbox + Thêm danh sách nhập + Không nhập nữa (không date range) |
+| Cài đặt (Tab) | Tuỳ chỉnh app | Theme · toggle cảnh báo · Quản lý kho · Phân loại · Tổng quan · Không nhập nữa · Ghi chú · **Kiểm hàng** (market `is_special` checklist — Phase 4 C4) · Lịch sử · User Management |
+| Kiểm hàng (Stack, F36 C4) | Checklist market | List entry market có `is_special`; tick `is_checked`; nút Reset tất cả |
 | Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả quét · Nút thêm thủ công nếu không nhận ra |
-| Cài đặt (Tab) | Tuỳ chỉnh app | Theme sáng/tối · toggle cảnh báo hết hạn/hết hàng (global, AsyncStorage — áp dụng toàn app: Products, Map, ZoneDetail, ProductDetail, Notifications) · card **Quản lý kho** (F20) · card **Phân loại sản phẩm** (F30) · card **Tổng quan kho** (F23) · card **Quản lý người dùng** (F24, admin/super_admin) · card Không nhập nữa (F28) · Lịch sử thay đổi |
 | Tổng quan kho (Stack, F23) | Dashboard | Tổng quan kho. Các số: tổng SKU, tổng kho, sắp hết hàng/hết hàng, sắp hết hạn/đã hết hạn, không nhập nữa. Truy cập từ Settings. |
 | Quản lý người dùng (Stack, F24) | User Management | Quản lý người dùng (chỉ admin/super_admin). Danh sách user: email, role, `last_login_at`, trạng thái. Toggle guest/disabled. Super_admin: cấp admin, tạo tài khoản. |
 | Quản lý phân loại (Stack, F30) | CRUD category 2 cấp | Accordion Cấp 1 mở ra Cấp 2 · thêm/sửa/xóa nhóm & loại |
@@ -355,7 +328,7 @@ Khu trưng bày do nhân viên tự tạo — **tách biệt** Category F30 và 
 | **Phase 1+ → Phase 2** | PDF & nối list đặt hàng, field lý do discontinued | Ổn định và khép kín nghiệp vụ đã mở |
 | **Phase 2** | Đã giao: **F20**, **F29**, **F30**, fix Thông báo. Kế hoạch / design: **F27** mở rộng (2 tab, active list, PDF tổng hợp, grouping); còn F08 ảnh, F19 chuyển hàng, F21 offline, F26 kiểm kho, … | Mở rộng vận hành đa kho, đặt hàng, phân loại |
 | **Phase 3** | **Bug fixes (A1–A5):** DD/MM/YYYY hạn (KI-044), ProductsScreen barcode/X/search (KI-045), zone overlap (KI-046), Map barcode text search (KI-047), conflict detection `updated_at` (KI-048). **UX (B1–B8):** badge giảm giá, chuyển lô cùng zone, `normalizeText`, MM/YYYY→ngày 1, hint AddInventory, sửa tên ZoneDetail, Map scan→sheet scroll, toggle cảnh báo global. **Realtime (C1):** zones Realtime trên Map. **Hoàn thiện:** F27 (2 tab + PDF), F28 (`discontinued_reason`), F08 (ảnh SP). **Mới:** F23 Dashboard, F24 RBAC (`user_profiles`), **F31 Internal Notes**. **Bổ sung (Group F):** F1 navigation scanner (KI-057), F2 block xóa lô (KI-058), F3 sync `is_archived`, F4 tap kho→Map, F5 filter chưa ảnh, **F7** barcode autofill AddInventory, **F8** dời lô bằng map. **Security:** SEC-05, SEC-06. **Dropped:** F19. | Ổn định multi-user, UX vận hành, đặt hàng/PDF, RBAC, ghi chú nội bộ |
-| **Phase 4** | **F27 mở rộng** (2 tab + PDF); **F36** Shelf Management (C1 Done → C3/C4); **F32** cảnh báo per SP; **F34** picking list; **F35** push 11:00; F21/F25/F26 (Group G — có thể defer Phase 5); SEC-10/12/13/14; KI-039/040/050. Xem `PLAN_4.md`. **F19 Dropped. F33 Dropped** (`is_on_shelf`). | Siêu thị + vận hành dài hạn |
+| **Phase 4** | **F36 Market mode** (C1 rollback shelf + `locations.type` / `is_special` / `is_checked`; C2 switcher; C3 Notifications date range + type; C4 Kiểm hàng); **F32** cảnh báo per SP; **F27 mở rộng**; SEC-10/12/13/14; KI-039/040/050; Group G optional. **F34/F35 → Phase 5.** **F19/F33 Dropped.** Xem `PLAN_4.md`. | Market first-class + vận hành |
 
 ---
 
@@ -390,6 +363,7 @@ Khu trưng bày do nhân viên tự tạo — **tách biệt** Category F30 và 
 | Super app | Không đề cập | Ghi nhận trong §1 và F24 | Thông tin mới từ chủ cửa hàng |
 | Phase 3 scope v1.3.7 | — | PLAN_3: A1–A5, B1–B8, C1, D1–D3, E1–E2; F19 Dropped; F21/F25/F26 → Phase 4 | Chốt roadmap Phase 3 |
 | Phase 3 Group F v1.3.8 | — | PLAN_3 Group F: F1 navigation (KI-057), F2 block xóa lô (KI-058), F3 `is_archived`, F4 tap kho→Map, F5 filter ảnh, F31 Internal Notes; F07 sửa xóa lô; F32–F35 → Phase 4 | Ghi nhận backlog mới |
+| F36 Market mode redesign v1.3.14 | — | Rollback shelf tables; `locations.type` + is_special/is_checked; F34/F35 → Phase 5; Notifications date range | Redesign F36 |
 | F33 Dropped v1.3.13 | — | Bỏ `is_on_shelf`; C2 Dropped; kho/kệ tách hoàn toàn | Quyết định vận hành cửa hàng nhỏ |
 | Phase 4 C1 schema v1.3.12 | — | `shelf_zones` / `shelf_items` / `shelf_zone_items`; schema v4.0; F36 In progress (schema only) | C1 Shelf Management |
 | Phase 4 kickoff v1.3.11 | — | Tạo `PLAN_4.md` Groups A–H; F27/Shelf/F32–F35 ưu tiên; G có thể defer | Khởi động Phase 4 |

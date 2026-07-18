@@ -6,10 +6,12 @@
 
 ## 1. Tổng quan / Mục tiêu Phase 4
 
-Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management **F36**), **cảnh báo & thông báo** (F32 per-SP, F35 push), **picking list** (F34), hoàn thiện **F27 mở rộng** (carry Phase 3), cùng **performance / cleanup** (KI-039/040/050) và **security còn lại** (SEC-10/12/13/14). Offline / báo cáo / kiểm kho (F21/F25/F26) nằm trong Group G — **có thể defer Phase 5** tùy ưu tiên vận hành thực tế.
+Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse ↔ Market reuse schema `locations` / `zones` / `inventory_entries`; **cảnh báo per SP (F32)**; hoàn thiện **F27 mở rộng** (carry Phase 3); **performance / cleanup** (KI-039/040/050) và **security còn lại** (SEC-10/12/13/14). Offline / báo cáo / kiểm kho (F21/F25/F26) nằm trong Group G — **có thể defer Phase 5**.
 
 **F19:** Dropped từ Phase 3 — không mở lại.
-**F33:** Dropped — không implement `is_on_shelf`; kho và kệ tách hoàn toàn (xem `DECISIONS.md`).
+**F33:** Dropped — không implement `is_on_shelf` (xem `DECISIONS.md`).
+**F34 / F35:** Deferred → **Phase 5** (picking list, push notification).
+**Shelf tables C1:** sẽ **rollback** — thay bằng Market mode (xem Group C + `DECISIONS.md`).
 
 **Nguồn tham chiếu:** `docs/project/REQUIREMENTS.md`, `docs/project/CONTEXT.md`, `docs/DECISIONS.md`, `docs/KNOWN_ISSUES.md`, `docs/phases/phase-3/SUMMARY_3.md`, `docs/phases/phase-3/PLAN_3.md`.
 
@@ -55,28 +57,40 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management **F36**),
 
 ---
 
-## 4. Group C — Shelf Management (F36)
+## 4. Group C — Market mode (thay thế F33+F36 Shelf Management)
 
-### C1 — Migration schema shelf — **Done**
+> **Redesign (tháng 7/2026):** Bỏ 3 bảng shelf riêng. Market = `locations.type = 'market'`, reuse zones + `inventory_entries`. Qty cùng cột `quantity_boxes` — UI label **«thùng»** (warehouse) / **«sản phẩm»** (market). Xem `DECISIONS.md`.
 
-- **Files:** `supabase/migrations/20260718_create_shelf_tables.sql`, `schema.sql` v3.19, `types/index.ts`
-- **Mô tả:** Tạo `shelf_items`, `shelf_zones`, `shelf_zone_items` (+ RLS staff+ / guest SELECT). Tham chiếu DECISIONS F36.
+### C1 — Rollback shelf tables + migration mới
 
-### C2 — Flag `inventory_entries.is_on_shelf` (F33) — **Dropped**
+- Xóa migration `20260718_create_shelf_tables.sql` (hoặc migration drop tương đương nếu đã apply trên DB)
+- Xóa 3 types `ShelfZone`, `ShelfItem`, `ShelfZoneItem` khỏi `types/index.ts`
+- `schema.sql`: rollback 3 bảng shelf + audit CHECK bỏ `shelf_items`
+- Migration mới:
+  - `locations.type` TEXT NOT NULL DEFAULT `'warehouse'` (`'warehouse' | 'market'`)
+  - `inventory_entries.is_special` BOOLEAN NOT NULL DEFAULT false
+  - `inventory_entries.is_checked` BOOLEAN NOT NULL DEFAULT false
+- `schema.sql` bump **v4.1**
 
-- **Trạng thái:** Dropped — **không implement**.
-- **Lý do:** Tách hoàn toàn kho (thùng) và kệ siêu thị (cá thể); `is_on_shelf` thêm thao tác mà giá trị thấp cho cửa hàng nhỏ. Shelf Management (F36) đủ thông tin riêng, không link lại inventory.
-- **Tham chiếu:** `DECISIONS.md` — F33 Dropped; `REQUIREMENTS.md` F33 Dropped.
+### C2 — Mode switcher UI
 
-### C3 — ShelfManagementScreen (F36)
+- Header dropdown: **Chino's Warehouse** ↔ **Chino's Market**
+- Filter toàn app theo `location.type`
+- Tab **Kho** label → **Siêu thị** khi market mode
+- Tab Sản phẩm: market mode thay toggle «Chỉ hết lô» → **«Hàng đặc biệt»** (`is_special`)
+- Label qty: **«thùng»** (warehouse) → **«sản phẩm»** (market)
 
-- **Files:** `screens/ShelfManagementScreen.tsx` (mới), Settings entry, store CRUD
-- **Mô tả:** 2 tab **Tất cả** / **Hàng đặc biệt**; list hàng trên kệ (ảnh, tên, hạn, qty **cá thể**, toggle giảm giá **độc lập** kho, notes); CRUD khu; checklist tick; 1 SP nhiều khu; RBAC guest xem / staff+ CRUD.
+### C3 — Notifications nâng cấp
 
-### C4 — Reset checklist thủ công
+- Dropdown mới: **Tất cả** (mặc định) / **Kho** / **Siêu thị** — filter theo `location.type`
+- Date range filter (**tab Sắp hết hạn only**): **Từ** (hôm nay) — **Đến** (mặc định +30 ngày)
+- Tab Sắp hết hàng: chỉ dropdown type, **không** date range
 
-- **File:** ShelfManagementScreen + store
-- **Mô tả:** Nút **Reset checklist** — **không** tự reset hàng ngày (DECISIONS F36).
+### C4 — Checklist kiểm hàng
+
+- Settings → màn **Kiểm hàng**: list market items có `is_special = true`
+- Mỗi item: checkbox tick → `is_checked = true`
+- Nút **Reset** → set tất cả `is_checked = false` (market + `is_special`)
 
 ---
 
@@ -99,45 +113,35 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management **F36**),
 
 ---
 
-## 6. Group E — Picking list (F34)
+## 6. Group E — Picking list (F34) — **Deferred Phase 5**
 
-### E1 — Schema picking
+### E1 — Schema picking *(Phase 5)*
 
-- **Files:** migration `picking_lists`, `picking_list_items`, types, RLS
-- **Mô tả:** Schema đơn lấy hàng + item (product, qty, zone/tier hints, checked).
+- Schema `picking_lists`, `picking_list_items`, types, RLS.
 
-### E2 — PickingListScreen
+### E2 — PickingListScreen *(Phase 5)*
 
-- **Files:** screen mới, nav (Settings hoặc tab), store
-- **Mô tả:** Tạo đơn; thêm SP autocomplete + ảnh; chỉnh qty; nhóm theo kho/zone/tầng.
+- Tạo đơn; autocomplete + ảnh; nhóm kho/zone/tầng.
 
-### E3 — Checklist + confirm trừ tồn
+### E3 — Checklist + confirm trừ tồn *(Phase 5)*
 
-- **Mô tả:** Tick khi lấy xong; confirm → trừ `quantity_boxes` trên `inventory_entries` (transaction / validate đủ tồn).
+- Tick khi lấy xong; confirm → trừ `quantity_boxes`.
 
 ---
 
-## 7. Group F — Push notification (F35)
+## 7. Group F — Push notification (F35) — **Deferred Phase 5**
 
-### F1 — Local scheduled 11:00
+### F1 — Local scheduled 11:00 *(Phase 5)*
 
-- **Package:** `expo-notifications` (cần thêm khi implement)
-- **Mô tả:** Schedule local notification mỗi ngày **11:00**.
+### F2 — Nội dung từ dữ liệu hạn *(Phase 5)*
 
-### F2 — Nội dung từ dữ liệu hạn
-
-- **Mô tả:** Check lô sắp hết hạn (theo `warning_days` / global toggles) → text kiểu «N lô sắp hết hạn trong X ngày».
-
-### F3 — Permission + opt-out Settings
-
-- **Files:** SettingsScreen, permission OS
-- **Mô tả:** Xin quyền notification; toggle opt-out trong Settings; guest/staff behavior theo RBAC nếu cần.
+### F3 — Permission + opt-out Settings *(Phase 5)*
 
 ---
 
 ## 8. Group G — Offline / Báo cáo / Kiểm kho (có thể defer Phase 5)
 
-> **Lưu ý:** Có thể **defer** một hoặc nhiều task sang Phase 5 tùy độ ưu tiên vận hành thực tế. Không chặn closeout Group C–F nếu G chưa làm.
+> **Lưu ý:** Có thể **defer** một hoặc nhiều task sang Phase 5. Không chặn closeout Group C–D nếu G chưa làm.
 
 ### G1 — F21 Offline mode
 
@@ -150,6 +154,7 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management **F36**),
 ### G3 — F26 Kiểm kho
 
 - Chọn zone → đếm từng tầng → diff vs hiện tại → confirm cập nhật.
+- *Khác C4 «Kiểm hàng» market checklist (`is_special` / `is_checked`).*
 
 ---
 
@@ -168,7 +173,7 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management **F36**),
 ## 10. Barcode & dữ liệu mã
 
 - Phase 3 đã có `product_barcodes` UNIQUE + audit CONFLICT + F7 autofill AddInventory.
-- Phase 4: không bắt buộc đổi schema barcode; nếu Shelf/Picking cần quét mã → **reuse** `searchByBarcode` / `lookupProductByBarcode` / `onScanFillBarcode`.
+- Phase 4 Market mode: **reuse** `searchByBarcode` / `lookupProductByBarcode` / `onScanFillBarcode` trên cả warehouse và market locations.
 - Edge case BLK-001 Closed — không mở lại trừ nghiệp vụ mới.
 
 ---
@@ -191,9 +196,11 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management **F36**),
 
 | Hạng mục | Ghi chú |
 |----------|---------|
-| **Group G** (F21 / F25 / F26) | Nếu không kịp / ưu tiên thấp hơn Shelf + F27 |
+| **F34** Picking list (Group E) | Defer — không chặn vận hành Market mode |
+| **F35** Push notification (Group F) | Defer — không chặn vận hành |
+| **Group G** (F21 / F25 / F26) | Có thể defer tiếp nếu ưu tiên thấp hơn Market + F32 |
 | **KI-026** | AuditLog Realtime nếu H5 không làm |
-| **Dropped** | **F33** `is_on_shelf` (C2); F19 vẫn Dropped |
+| **Dropped** | **F33** `is_on_shelf`; F19; Shelf tables (rollback C1) |
 
 ---
 
@@ -213,14 +220,14 @@ Phase 4 tập trung vào **vận hành siêu thị** (Shelf Management **F36**),
 
 | Group | Số task | Mã |
 |-------|---------|-----|
-| **A — Bug / perf** | 3 | A1–A3 (KI-039, KI-040, KI-050) |
+| **A — Bug / perf** | 3 | A1–A3 |
 | **B — Feature completion** | 1 | B1 (F27 mở rộng) |
-| **C — Shelf** | 3 | C1 (Done), C3, C4 (F36); **C2 Dropped** |
+| **C — Market mode** | 4 | C1–C4 (F36 redesign) |
 | **D — Per-SP warning** | 3 | D1–D3 (F32) |
-| **E — Picking** | 3 | E1–E3 (F34) |
-| **F — Push** | 3 | F1–F3 (F35) |
-| **G — Offline/Report/Stocktake** | 3 | G1–G3 (F21/F25/F26) — **có thể defer** |
+| **E — Picking** | 3 | E1–E3 (F34) — **Deferred Phase 5** |
+| **F — Push** | 3 | F1–F3 (F35) — **Deferred Phase 5** |
+| **G — Offline/Report/Stocktake** | 3 | G1–G3 — có thể defer |
 | **H — Security** | 5 | H1–H5 |
-| **Tổng ước tính** | **~24** | (~21 nếu defer toàn bộ G; C2/F33 Dropped không tính) |
+| **Tổng active Phase 4** | **~16** | A+B+C+D+H (không tính E/F; G optional) |
 
-**Ưu tiên đề xuất khi bắt đầu code:** B1 (F27) → C (Shelf) → D (F32) → E (F34) → F (F35) → A/H → G tùy thực tế.
+**Ưu tiên đề xuất:** **C1 → C2 → C3 → C4 → D (F32) → A/H** → B1 / G tùy thực tế. E/F không làm trong Phase 4.

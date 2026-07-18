@@ -16,7 +16,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 
 **Mô hình bảo mật (client-direct BaaS):**
 - Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.
-- RLS bật trên tất cả bảng app: **bảng kho + shelf_*** — guest SELECT only / staff+ mutate (`is_current_user_at_least_staff`); **`user_profiles`** policy theo role F24; **`audit_logs`** SELECT only. C1 (F36): `shelf_zones` / `shelf_items` / `shelf_zone_items`.
+- RLS bật trên tất cả bảng app: **bảng kho** — guest SELECT only / staff+ mutate (`is_current_user_at_least_staff`); **`user_profiles`** policy theo role F24; **`audit_logs`** SELECT only. **F36 redesign:** 3 bảng `shelf_*` sẽ **rollback**; thay bằng `locations.type` + `inventory_entries.is_special` / `is_checked` (schema mục tiêu v4.1).
 - Realtime channel dùng `private: true` + RLS policy trên `realtime.messages`.
 - Storage **`product-images`:** public read; staff+ upload/update/delete (KI-055).
 - Không có server backend riêng — phù hợp app nội bộ quy mô nhỏ (xem `DECISIONS.md`).
@@ -105,10 +105,9 @@ supabase/migrations/
   20260601000100_add_user_profiles_to_audit.sql
   20260717_create_internal_notes.sql        # F31
   20260717_alter_internal_notes_nullable_product.sql
-  20260718_create_shelf_tables.sql          # C1 F36 — shelf_zones / shelf_items / shelf_zone_items
-  # [timestamp]_add_discontinued_reason.sql # F28 — Phase 3
-  # [timestamp]_f08_product_images_storage.sql # F08 — bucket product-images + RLS
-  schema.sql                                # Canonical schema v4.0
+  20260718_create_shelf_tables.sql          # C1 F36 shelf — SẼ ROLLBACK (Market mode redesign)
+  # [timestamp]_market_mode_columns.sql     # PLAN_4 C1 — locations.type + is_special/is_checked (planned)
+  schema.sql                                # Canonical schema v4.0 → v4.1 sau C1 rollback+migration
 supabase/db_dump_schema/   # Snapshot pg_dump (script dump_schema.bat — không thay schema.sql)
 dump_schema.bat            # Tiện ích dump schema public qua Session Pooler (xem §9)
 types/
@@ -130,7 +129,8 @@ README.md
 - **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading bootstrap / **đang fetch `user_profiles`** → `<ActivityIndicator />`; có session + profile OK → `SafeAreaProvider` → `NavigationContainer`. **F24:** sau login gọi `authStore.fetchCurrentUserProfile()`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC `update_my_last_login()`. **Realtime (F24):** sau profile OK — subscribe `postgres_changes` UPDATE own `user_profiles` (kick disable + silent refetch role); join presence `presence:warehouse-online` qua `lib/presence.ts`; cleanup khi logout.
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar. **Flow quét (search/locate):** `searchByBarcode` (lô) → nếu không có → `lookupProductByBarcode` (`product_barcodes`) → Alert **"Hàng đã hết"** + **Xem chi tiết** → `returnTab` với **state tường minh** `[Main, ProductDetail]` (`tabsParamsForProductDetail` / `getMainScreenName` trong `lib/tabNavigation.ts`) — KI-057 lần 2, tránh stack cụt; fallback tab `'Products'`; nếu vẫn không có SP → Alert **Không tìm thấy** (Thử lại / Thêm thủ công / Huỷ).
-- **Bottom tabs:** `Map` (nhãn **Kho**) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
+- **Bottom tabs:** `Map` (nhãn **Kho** / **Siêu thị** theo Market mode — Phase 4 C2) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
+- **Market mode (F36 redesign, planned):** header dropdown **Chino's Warehouse** ↔ **Chino's Market** filter theo `locations.type`; label qty «thùng» / «sản phẩm»; Products market: toggle «Hàng đặc biệt» (`is_special`); Settings card **Kiểm hàng** (`is_checked` checklist). Không màn Shelf riêng.
 - **Map tab:** `MapStack` (`MapMain` → `ZoneLayoutEditor` → **`ZonePicker`** (F8) → `ProductDetail` → `AddInventory` → `AuditLog`).
 - **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
 - **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail`).
@@ -180,7 +180,7 @@ README.md
 
 **Schema — `product_barcodes` (B1):** `id`, `product_id` → `products`, `barcode` **UNIQUE**, `first_scanned_at`, `last_scanned_at`; RLS authenticated; audit trigger SEC-11; backfill một lần từ `inventory_entries.barcode` (migration). **`audit_logs.action`:** thêm **`CONFLICT`** (B2) — RPC **`log_barcode_conflict`** ghi attempt gán barcode trùng SP khác.
 
-**Schema — Shelf Management (C1 / F36, schema v4.0):** `shelf_zones` (`id`, `name`, `sort_order`, `created_at`) — khu kệ do NV tạo, **tách** Category F30 và `zones` kho. `shelf_items` (`product_id`, `quantity` = cá thể không phải thùng, `expiry_date`, `is_price_reduced` độc lập inventory, `notes`, `created_at`, `updated_at`) — audit trigger SEC-11. `shelf_zone_items` (junction M:N, UNIQUE `(shelf_zone_id, shelf_item_id)`, `is_checked` checklist). RLS: guest SELECT / staff+ mutate. Migration: `20260718_create_shelf_tables.sql`. Store/UI → C3.
+**Schema — Shelf Management (C1 / F36, schema v4.0) — ROLLED BACK (docs):** `shelf_zones` / `shelf_items` / `shelf_zone_items` sẽ bị xóa. **Thay bằng Market mode:** `locations.type` (`warehouse`|`market`); `inventory_entries.is_special`, `is_checked`; reuse zones; schema mục tiêu **v4.1**. Xem `DECISIONS.md` Redesign F36.
 
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
 
@@ -208,7 +208,7 @@ README.md
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location` (gồm `grid_rows`, `grid_cols`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry`, **`InternalNote`** (F31), **`ShelfZone`** / **`ShelfItem`** / **`ShelfZoneItem`** (F36), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (gồm `table_name: 'user_profiles' | 'internal_notes' | 'shelf_items'`), `OrderList`, `OrderItem`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`; **planned:** `type: 'warehouse' | 'market'`), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry` (**planned:** `is_special`, `is_checked`), **`InternalNote`** (F31), ~~`ShelfZone` / `ShelfItem` / `ShelfZoneItem`~~ (**sẽ rollback**), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (bỏ `'shelf_items'` sau rollback), `OrderList`, `OrderItem`
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 

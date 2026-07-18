@@ -4,26 +4,53 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Redesign F36 — Market mode thay Shelf tables
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Rollback 3 bảng shelf (`shelf_zones`, `shelf_items`, `shelf_zone_items`). Thay bằng cột `locations.type = 'warehouse' | 'market'` — reuse toàn bộ schema locations/zones/inventory_entries. Warehouse = thùng, Market = cá thể (label «sản phẩm»). Mode switcher dropdown ở header. Market là first-class citizen, không phải màn phụ trong Settings.
+- **Lý do:** Cửa hàng nhỏ, UX kho đã quen; reuse schema ít code mới, dễ bảo trì; market cần map/zone/tier giống kho. 3 bảng shelf tạo duplicate không cần thiết.
+- **Thay thế đã xem xét:** 3 bảng riêng (shelf_zones/items/zone_items) — đã implement C1 rồi rollback; bảng song song (market_locations/zones/items) — duplicate quá nhiều.
+
+---
+
+### Hàng đặc biệt — toggle is_special + checklist is_checked
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Cột `inventory_entries.is_special` (BOOLEAN) đánh dấu hàng đặc biệt trên siêu thị. Cột `is_checked` (BOOLEAN) cho checklist kiểm hàng. Chỉ có ý nghĩa với market entries. Reset checklist: set tất cả `is_checked = false` cho mọi market entry có `is_special = true`. Màn Kiểm hàng đặt trong Settings.
+- **Lý do:** Đơn giản, reuse bảng hiện có, không cần junction table.
+
+---
+
+### Notifications — date range filter + dropdown warehouse/market
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Tab Sắp hết hạn thêm date range (Từ: hôm nay, Đến: mặc định +30 ngày). Dropdown Tất cả / Kho / Siêu thị filter theo `location.type`. Tab Sắp hết hàng: chỉ dropdown, không date range.
+- **Lý do:** User cần xem hàng hết hạn theo khoảng thời gian tùy ý (ví dụ quý tới, nửa năm sau).
+
+---
+
+### F34/F35 Deferred Phase 5
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** F34 (Picking list) và F35 (Push notification) defer sang Phase 5. Phase 4 tập trung Market mode + F32 + perf/security.
+- **Lý do:** Market mode redesign chiếm scope lớn; F34/F35 không chặn vận hành.
+
+---
+
 ### F33 Dropped — bỏ `is_on_shelf`, tách hoàn toàn kho và kệ
 
 - **Ngày:** tháng 7/2026
-- **Quyết định:** Bỏ cột `inventory_entries.is_on_shelf` (F33). Kho (`inventory_entries`, đơn vị thùng) và kệ siêu thị (`shelf_items`, đơn vị cá thể) hoạt động hoàn toàn độc lập — không link, không cờ đánh dấu giữa hai bên.
-- **Lý do:** Cửa hàng nhỏ, nhân viên tự biết hàng nào đã lên kệ; thao tác đánh dấu trên app giá trị thấp; hai bên quản lý đơn vị khác nhau (thùng vs cá thể), link lại chỉ thêm phức tạp.
+- **Quyết định:** Bỏ cột `inventory_entries.is_on_shelf` (F33). Không cờ link lô kho ↔ siêu thị. Siêu thị dùng **Market mode** (F36 redesign) — cùng bảng inventory, khác `locations.type`.
+- **Lý do:** Cửa hàng nhỏ, nhân viên tự biết hàng nào đã lên kệ; thao tác đánh dấu trên app giá trị thấp.
 - **Thay thế đã xem xét:** Cờ `is_on_shelf` trên lô 0 thùng + ẩn Map + giữ cảnh báo hạn — từ chối.
 
 ---
 
-### Shelf Management (F36) — tách kho / kệ, giảm giá độc lập
+### ~~Shelf Management (F36) — tách kho / kệ, giảm giá độc lập~~ — **SUPERSEDED**
 
-- **Ngày:** tháng 7/2026
-- **Quyết định:**
-  - Màn **Hàng đang bán** (`shelf_items` / `shelf_zones` / `shelf_zone_items`) **tách biệt** inventory kho: đơn vị **cá thể** (cái/chai/gói), không phải thùng (`quantity_boxes`).
-  - Toggle giảm giá `shelf_items.is_price_reduced` **độc lập** `inventory_entries.is_price_reduced` (Notifications) — bật một chỗ không tự bật chỗ kia (double-check).
-  - `shelf_zones` do nhân viên tự tạo (tên tùy ý) — **tách biệt** Category (F30 phân loại SP).
-  - Checklist tab **Hàng đặc biệt**: reset **thủ công** (nút "Reset checklist") — **không** tự reset hàng ngày.
-  - 1 SP có thể thuộc nhiều khu. RBAC: guest xem; staff+ CRUD.
-  - ~~Gộp roadmap với F33 `is_on_shelf` (Phase 4).~~ → **F33 Dropped** — kho/kệ độc lập hoàn toàn (xem entry trên).
-- **Lý do:** Siêu thị vận hành khác kho (đơn vị, checklist ngày, khu đặc biệt); tránh nhầm lẫn với Category và order list.
+- **Ngày:** tháng 7/2026 (superseded cùng tháng bởi Redesign F36 — Market mode)
+- **Quyết định gốc (không còn áp dụng):** 3 bảng `shelf_*` tách biệt inventory; qty cá thể riêng; `shelf_zones` do NV tạo; checklist reset thủ công.
+- **Thay bằng:** Market mode — xem entry **Redesign F36** phía trên.
 
 ---
 
