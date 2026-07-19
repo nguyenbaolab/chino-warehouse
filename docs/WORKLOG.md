@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: EAS slug mismatch → hoàn nguyên `chino-warehouse`
+
+- Build fail: `projectId` (chino-warehouse) ≠ `slug` (chinos-store).
+- `app.json`: `expo.slug` → `"chino-warehouse"`; giữ `expo.name` = `"Chino's Store"`.
+- Package Android / UI brand vẫn Chino's Store — chỉ slug EAS phải khớp project cũ.
+
+---
+
 ## [tháng 7/2026] — rename: getGroupedLotsByExpiry → getFilteredLotsByExpiry
 
 - `ProductsScreen.tsx`: đổi tên hàm (chỉ filter + sort theo hạn, không group). Logic giữ nguyên.
