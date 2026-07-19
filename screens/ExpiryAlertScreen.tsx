@@ -380,11 +380,15 @@ export default function ExpiryAlertScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={12}>
-          <Text style={{ color: colors.accent, fontSize: 16 }}>‹ Quay lại</Text>
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+          ⏰ Thông báo hết hạn
+        </Text>
+        <TouchableOpacity
+          style={[styles.backBtn, { backgroundColor: colors.card }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={{ color: colors.sub }}>Đóng</Text>
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>⏰ Thông báo hết hạn</Text>
-        <View style={{ width: 72 }} />
       </View>
 
       {loading && !dataReady ? (
@@ -559,10 +563,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'android' ? 8 : 0,
-    paddingBottom: 12,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === 'android' ? 16 : 12,
   },
-  title: { fontSize: 17, fontWeight: '700', flex: 1, textAlign: 'center' },
+  title: { fontSize: 17, fontWeight: '700', flex: 1, marginRight: 8 },
+  backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   scroll: { paddingHorizontal: 16, paddingBottom: 32 },
   note: {
     fontSize: 13,
