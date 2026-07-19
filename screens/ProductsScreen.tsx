@@ -89,9 +89,13 @@ export default function ProductsScreen() {
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [filterLocations, setFilterLocations] = useState<Location[]>([])
+  /** false khi đang fetch locations theo filterMode (tránh dùng list kho cũ) */
+  const [filterLocationsReady, setFilterLocationsReady] = useState(true)
   /** All locations — đơn vị thùng/sản phẩm theo type (cách A) */
   const [allLocations, setAllLocations] = useState<Location[]>([])
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
+  /** false khi đang fetch zones của kho đã chọn (tránh Set zone rỗng lọc hết mọi lô) */
+  const [filterZonesReady, setFilterZonesReady] = useState(true)
   /** Zone IDs thuộc filterMode khi chưa chọn kho cụ thể (null khi Mode = all) */
   const [modeZoneIds, setModeZoneIds] = useState<Set<string> | null>(null)
 
@@ -165,14 +169,19 @@ export default function ProductsScreen() {
     })
   }, [fetchProductsPage, debouncedSearch, showArchived, showNoImageOnly])
 
-  // FilterModal: danh sách kho theo filterMode (all = mọi type)
+  // FilterModal: danh sách kho theo filterMode (all = mọi type) — clear stale trước khi fetch
   useEffect(() => {
     let cancelled = false
+    setFilterLocations([])
+    setFilterLocationsReady(false)
     async function loadFilterLocations() {
       let query = supabase.from('locations').select('*').order('name')
       if (filterMode !== 'all') query = query.eq('type', filterMode)
       const { data } = await query
-      if (!cancelled) setFilterLocations((data as Location[]) ?? [])
+      if (!cancelled) {
+        setFilterLocations((data as Location[]) ?? [])
+        setFilterLocationsReady(true)
+      }
     }
     void loadFilterLocations()
     return () => {
@@ -189,6 +198,10 @@ export default function ProductsScreen() {
   // Mode all hoặc đã chọn kho → không dùng modeZoneIds
   useEffect(() => {
     if (filterMode === 'all' || filterLocationId) {
+      setModeZoneIds(null)
+      return
+    }
+    if (!filterLocationsReady) {
       setModeZoneIds(null)
       return
     }
@@ -210,7 +223,7 @@ export default function ProductsScreen() {
     return () => {
       cancelled = true
     }
-  }, [filterMode, filterLocations, filterLocationId])
+  }, [filterMode, filterLocations, filterLocationId, filterLocationsReady])
 
   // KI-064: đảm bảo inventoryEntries đủ cho filter Mode/Kho (không phụ thuộc Map realtime)
   useEffect(() => {
@@ -225,8 +238,10 @@ export default function ProductsScreen() {
   useEffect(() => {
     if (!filterLocationId) {
       setZonesForFilterLoc([])
+      setFilterZonesReady(true)
       return
     }
+    setFilterZonesReady(false)
     let cancelled = false
     void supabase
       .from('zones')
@@ -234,7 +249,10 @@ export default function ProductsScreen() {
       .eq('location_id', filterLocationId)
       .order('name')
       .then(({ data }) => {
-        if (!cancelled) setZonesForFilterLoc((data as Zone[]) ?? [])
+        if (!cancelled) {
+          setZonesForFilterLoc((data as Zone[]) ?? [])
+          setFilterZonesReady(true)
+        }
       })
     return () => {
       cancelled = true
@@ -276,9 +294,17 @@ export default function ProductsScreen() {
   }
 
   const locationZoneSet = useMemo(() => {
-    if (!filterLocationId) return null
+    if (!filterLocationId || !filterZonesReady) return null
     return new Set(zonesForFilterLoc.map((z) => z.id))
-  }, [filterLocationId, zonesForFilterLoc])
+  }, [filterLocationId, filterZonesReady, zonesForFilterLoc])
+
+  /** Có lọc Mode/Kho/Zone → list theo SP có lô trong scope; Không → catalog đủ */
+  const placeFilterActive =
+    filterMode !== 'all' || filterLocationId != null || selectedZoneId != null
+
+  const placeFilterReady =
+    !(filterMode !== 'all' && !filterLocationId && (!filterLocationsReady || modeZoneIds === null)) &&
+    !(filterLocationId != null && !filterZonesReady)
 
   const filterSummary = formatFilterSummary({
     mode: filterMode,
@@ -288,9 +314,20 @@ export default function ProductsScreen() {
     zones: zonesForFilterLoc,
   })
 
+  const productById = useMemo(() => {
+    const map = new Map<string, Product>()
+    for (const p of products) map.set(p.id, p)
+    for (const p of productsPage) map.set(p.id, p)
+    for (const entry of inventoryEntries) {
+      if (entry.product?.id) map.set(entry.product.id, entry.product)
+    }
+    return map
+  }, [products, productsPage, inventoryEntries])
+
   function entryInFilterScope(entry: { zone_id: string }): boolean {
-    const hasZoneFilter = selectedZoneId != null
-    if (hasZoneFilter && entry.zone_id !== selectedZoneId) return false
+    if (selectedZoneId != null && entry.zone_id !== selectedZoneId) return false
+    // Đã chọn kho nhưng zone set chưa sẵn → chưa match
+    if (filterLocationId && locationZoneSet === null) return false
     if (locationZoneSet && !locationZoneSet.has(entry.zone_id)) return false
     if (!locationZoneSet && modeZoneIds && !modeZoneIds.has(entry.zone_id)) return false
     return true
@@ -308,15 +345,40 @@ export default function ProductsScreen() {
       map.set(entry.product_id, prev)
     }
     return map
-  }, [inventoryEntries, selectedZoneId, locationZoneSet, modeZoneIds, locationById])
+  }, [inventoryEntries, selectedZoneId, filterLocationId, locationZoneSet, modeZoneIds, locationById])
 
-  // Catalog đủ (productsPage) + filter local hết lô / đặc biệt theo scope inventory
   const filteredProducts = useMemo(() => {
+    if (placeFilterActive && !placeFilterReady) return []
+
     const searchNorm = normalizeText(debouncedSearch.trim())
     const looksLikeBarcode = /^\d{4,}$/.test(debouncedSearch.trim())
 
+    let candidates: Product[]
+    if (!placeFilterActive) {
+      // Mode Tất cả + không chọn kho/zone → catalog đủ (kể cả chưa có lô)
+      candidates = [...productsPage]
+    } else {
+      // Mode Kho/Siêu thị hoặc kho/zone → chỉ SP có lô trong scope
+      const idsInScope = new Set<string>()
+      for (const entry of inventoryEntries) {
+        if (entryInFilterScope(entry)) idsInScope.add(entry.product_id)
+      }
+      candidates = []
+      for (const id of idsInScope) {
+        const product = productById.get(id)
+        if (product) candidates.push(product)
+      }
+    }
+
     const list: Product[] = []
-    for (const product of productsPage) {
+    for (const product of candidates) {
+      if (showArchived) {
+        if (!product.is_archived) continue
+      } else if (product.is_archived) {
+        continue
+      }
+      if (showNoImageOnly && product.image_url) continue
+
       if (showOutOfStockOnly && (qtySplitByProduct.get(product.id)?.total ?? 0) !== 0) {
         continue
       }
@@ -328,7 +390,6 @@ export default function ProductsScreen() {
         if (!hasSpecial) continue
       }
 
-      // Search server đã lọc productsPage; bổ sung barcode lô local
       if (searchNorm && looksLikeBarcode) {
         const nameOk = normalizeText(product.name).includes(searchNorm)
         const barcodeOk = inventoryEntries.some(
@@ -338,6 +399,9 @@ export default function ProductsScreen() {
             entry.barcode.toLowerCase().includes(debouncedSearch.trim().toLowerCase()),
         )
         if (!nameOk && !barcodeOk) continue
+      } else if (searchNorm && placeFilterActive) {
+        // Inventory-scoped list: search tên local (productsPage đã search khi catalog)
+        if (!normalizeText(product.name).includes(searchNorm)) continue
       }
 
       list.push(product)
@@ -346,11 +410,17 @@ export default function ProductsScreen() {
     list.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
     return list
   }, [
+    placeFilterActive,
+    placeFilterReady,
     productsPage,
+    productById,
     inventoryEntries,
     selectedZoneId,
+    filterLocationId,
     locationZoneSet,
     modeZoneIds,
+    showArchived,
+    showNoImageOnly,
     showOutOfStockOnly,
     showSpecialOnly,
     qtySplitByProduct,
@@ -801,7 +871,8 @@ export default function ProductsScreen() {
         </View>
       </View>
 
-      {!filterLocationId && modeZoneIds === null ? (
+      {/* Chờ zone IDs (Mode Kho/Siêu thị) hoặc zones của kho đã chọn */}
+      {!placeFilterReady || (productsPageLoading && !placeFilterActive && filteredProducts.length === 0) ? (
         <View style={styles.emptyWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>

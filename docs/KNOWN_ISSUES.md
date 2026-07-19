@@ -14,6 +14,17 @@
 
 ---
 
+### [KI-068] ProductsScreen spinner kẹt khi Mode Tất cả
+
+- **Mức độ:** High (UX — list không hiện)
+- **File liên quan:** `screens/ProductsScreen.tsx` (gate `modeZoneIds === null`)
+- **Mô tả:** Sau khi trả Mode «Tất cả», `modeZoneIds` cố ý = `null` nhưng UI vẫn coi null = đang load → spinner vĩnh viễn.
+- **Trạng thái:** Resolved
+- **Đã fix:** chỉ chờ `modeZoneIds` khi Mode Kho/Siêu thị; spinner catalog dùng `productsPageLoading`.
+- **Tham chiếu:** v1.3.34 catalog Tất cả
+
+---
+
 ### [KI-067] ProductDetail tên kho `—` khi location ngoài appMode
 
 - **Mức độ:** Medium (UX)

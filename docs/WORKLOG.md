@@ -4,6 +4,21 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: Products filter Mode/Kho/Zone lại đúng scope
+
+- Mode Tất cả + không kho/zone → catalog đủ.
+- Mode Kho/Siêu thị hoặc chọn kho/zone → list chỉ SP có lô trong scope (inventory).
+- `filterZonesReady`: tránh Set zone rỗng lúc đang fetch làm lọc hết / sai.
+
+---
+
+## [tháng 7/2026] — fix: Products spinner kẹt khi Mode Tất cả
+
+- Nguyên nhân: gate `modeZoneIds === null` hiểu nhầm Mode «Tất cả» (null = không giới hạn zone) là đang load.
+- Đổi: chỉ chờ modeZoneIds khi Mode Kho/Siêu thị; thêm spinner `productsPageLoading` khi list trống.
+
+---
+
 ## [tháng 7/2026] — Products catalog Tất cả + fix tên kho ProductDetail
 
 - Products: Mode **Tất cả** default (catalog đủ); qty theo `locations.type` (cách A); FilterModal `allowAllMode`.
