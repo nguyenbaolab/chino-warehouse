@@ -61,6 +61,11 @@ docs/
       USER_GUIDE_3.md
     phase-4/
       PLAN_4.md
+      HANDOFF_4.md
+      SUMMARY_4.md
+      TESTCASES_4.md
+    phase-5/
+      PLAN_5.md
   DECISIONS.md
   WORKLOG.md
   BLOCKERS.md

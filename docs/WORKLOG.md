@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: closeout Phase 4
+
+- SUMMARY_4.md, HANDOFF_4.md, TESTCASES_4.md đầy đủ (14 Done / 1 carry B1).
+- PLAN_4 → Closed; F36 Done; F27 carry → Phase 5.
+- Tạo PLAN_5.md (Groups A–E: F27, F34, F35, F21/F25/F26 optional, Expo upgrade).
+- Sync: REQUIREMENTS v1.3.24, CONTEXT cây file.
+
+---
+
 ## [tháng 7/2026] — Group H: Security H1–H4
 
 - SEC-12 (H2): wrap `__DEV__` ~55 chỗ console.log/error trong stores/screens/utils; giữ backup.ts CLI + ErrorBoundary.

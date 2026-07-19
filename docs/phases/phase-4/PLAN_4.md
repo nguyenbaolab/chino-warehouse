@@ -1,6 +1,6 @@
 # Phase 4 — Kế hoạch
 
-**Trạng thái:** In progress | Tháng 7/2026
+**Trạng thái:** Closed | Tháng 7/2026
 
 ---
 
@@ -210,11 +210,12 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 
 | File | Mục đích |
 |------|----------|
-| `docs/phases/phase-4/PLAN_4.md` | File này |
-| `docs/phases/phase-4/HANDOFF_4.md` | Tạo khi Phase 4 kết thúc |
-| `docs/phases/phase-4/TESTCASES_4.md` | Tạo khi Phase 4 kết thúc |
-| `docs/phases/phase-4/SUMMARY_4.md` | Tạo khi Phase 4 kết thúc |
+| `docs/phases/phase-4/PLAN_4.md` | File này — **Closed** |
+| `docs/phases/phase-4/HANDOFF_4.md` | Handoff Phase 4 |
+| `docs/phases/phase-4/TESTCASES_4.md` | Test cases Phase 4 |
+| `docs/phases/phase-4/SUMMARY_4.md` | Tóm tắt Phase 4 |
 | `docs/phases/phase-4/USER_GUIDE_4.md` | (optional) hướng dẫn user Phase 4 |
+| `docs/phases/phase-5/PLAN_5.md` | Kế hoạch Phase 5 |
 
 ---
 
