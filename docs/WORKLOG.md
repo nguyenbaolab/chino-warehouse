@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — Branding: Chino's Warehouse → Chino's Store (toàn bộ code)
+
+- UI: Login, Map mode switcher, biometric prompt, notification titles.
+- Config: `app.json` name/slug `chinos-store`, package `com.nguyenbaolab.chinosstore`, Face ID copy; `package.json` name `chinos-store` (+ npm install).
+- Backend comments: `schema.sql`, `dump_schema.bat`; README + `.cursorrules` + CONTEXT.
+- **Lưu ý:** package Android đổi → coi là app mới (gỡ APK cũ rồi cài lại). Slug EAS đổi `chinos-store` — nếu build EAS fail do projectId/slug cũ, cần tạo/link project EAS mới hoặc chỉnh lại.
+
+---
+
 ## [tháng 7/2026] — UX: tap-to-zoom ảnh SP + tap card → ProductDetail
 
 - ImageViewerModal: ExpiryAlert, InternalNotes, PickingDetail `renderThumb`, Products create-preview.

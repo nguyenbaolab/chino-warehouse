@@ -153,7 +153,7 @@ export default function LoginScreen() {
           <View style={styles.logoSection}>
             <Text style={styles.logoEmoji}>📦</Text>
             <Text style={[styles.appName, { color: colors.text }]}>
-              Chino's Warehouse
+              Chino's Store
             </Text>
             <Text style={[styles.appSub, { color: colors.sub }]}>
               Quản lý kho hàng nội bộ

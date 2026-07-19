@@ -1,5 +1,5 @@
 -- ============================================================
--- Chino's Warehouse — Full Database Schema
+-- Chino's Store — Full Database Schema
 -- Phiên bản: 5.1 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================

@@ -74,7 +74,7 @@ export async function clearBiometricCredentials(): Promise<void> {
 export async function authenticateBiometric(): Promise<boolean> {
   try {
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: "Đăng nhập Chino's Warehouse",
+      promptMessage: "Đăng nhập Chino's Store",
       fallbackLabel: 'Nhập mật khẩu',
       cancelLabel: 'Huỷ',
       disableDeviceFallback: false,

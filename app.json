@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Chino's Store",
-    "slug": "chino-warehouse",
+    "slug": "chinos-store",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSFaceIDUsageDescription": "Cho phép dùng Face ID để đăng nhập nhanh vào Chino's Warehouse."
+        "NSFaceIDUsageDescription": "Cho phép dùng Face ID để đăng nhập nhanh vào Chino's Store."
       }
     },
     "android": {
@@ -32,7 +32,7 @@
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.SCHEDULE_EXACT_ALARM"
       ],
-      "package": "com.nguyenbaolab.chinowarehouse"
+      "package": "com.nguyenbaolab.chinosstore"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -49,7 +49,7 @@
       [
         "expo-local-authentication",
         {
-          "faceIDPermission": "Cho phép dùng Face ID để đăng nhập nhanh vào Chino's Warehouse."
+          "faceIDPermission": "Cho phép dùng Face ID để đăng nhập nhanh vào Chino's Store."
         }
       ]
     ],

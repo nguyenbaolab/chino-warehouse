@@ -769,7 +769,7 @@ export default function MapScreen() {
           onPress={() => setModeSheetOpen(true)}
         >
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
-            {appMode === 'warehouse' ? "🏪 Chino's Warehouse" : "🏪 Chino's Market"}
+            {appMode === 'warehouse' ? "🏪 Chino's Store" : "🏪 Chino's Market"}
           </Text>
           <Text style={[styles.modeTitleChevron, { color: colors.sub }]}>▾</Text>
         </Pressable>
@@ -816,7 +816,7 @@ export default function MapScreen() {
             <Text style={[styles.locationSheetTitle, { color: colors.text }]}>Chọn chế độ</Text>
             {(
               [
-                { mode: 'warehouse' as const, label: "Chino's Warehouse" },
+                { mode: 'warehouse' as const, label: "Chino's Store" },
                 { mode: 'market' as const, label: "Chino's Market" },
               ] as const
             ).map((opt) => {

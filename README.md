@@ -1,4 +1,4 @@
-# Chino's Warehouse
+# Chino's Store
 
 Ứng dụng React Native (Expo) quản lý tồn kho nội bộ — bản đồ zone, sản phẩm, lô, hạn dùng, barcode.
 

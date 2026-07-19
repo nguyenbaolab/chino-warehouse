@@ -2,7 +2,7 @@
 setlocal
 
 :: ============================================================
-:: Chino Warehouse — snapshot schema Supabase (pg_dump)
+:: Chino's Store — snapshot schema Supabase (pg_dump)
 :: KHONG thay the quy tac maintain supabase/migrations/schema.sql thu cong.
 ::
 :: Session Pooler — lay HOST va USER tu Supabase Dashboard:
@@ -37,7 +37,7 @@ set FILENAME=schema_dump_%STAMP%.sql
 
 echo.
 echo ============================================
-echo   Chino Warehouse - Supabase Schema Dump
+echo   Chino's Store - Supabase Schema Dump
 echo ============================================
 echo Host   : %HOST%
 echo User   : %USER%

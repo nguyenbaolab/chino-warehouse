@@ -116,7 +116,7 @@ export async function scheduleAllNotifications(
     await Notifications.scheduleNotificationAsync({
       identifier: 'daily-expiry',
       content: {
-        title: "Chino's Warehouse — Hết hạn",
+        title: "Chino's Store — Hết hạn",
         body: dailyBody,
         sound: true,
       },
@@ -134,7 +134,7 @@ export async function scheduleAllNotifications(
     await Notifications.scheduleNotificationAsync({
       identifier: 'weekly-expiry',
       content: {
-        title: "Chino's Warehouse — Hết hạn tuần",
+        title: "Chino's Store — Hết hạn tuần",
         body: weeklyBody,
         sound: true,
       },
@@ -153,7 +153,7 @@ export async function scheduleAllNotifications(
     await Notifications.scheduleNotificationAsync({
       identifier: 'monthly-expiry',
       content: {
-        title: "Chino's Warehouse — Hết hạn tháng",
+        title: "Chino's Store — Hết hạn tháng",
         body: monthlyBody,
         sound: true,
       },
