@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — C-part2: F35 màn Cảnh báo hết hạn danh sách — F35 Done
+
+- ExpiryAlertScreen: 6 section collapsible (4 mốc exact + tuần + tháng), entry cards (ảnh + tên + zone + qty + hạn + badge kho/siêu thị).
+- expiryCountUtils: `getExpiringEntriesExactDay`, `getExpiringEntriesRange` (loại trừ trùng lặp giữa sections).
+- `ExpiringEntryItem` type. Tap entry → ProductDetail.
+- F35 Done (C-part1 setup + schedule, C-part2 danh sách).
+- Docs: REQUIREMENTS v1.3.30 F35 Done, CONTEXT, DECISIONS, WORKLOG, PLAN_5 Group C ✅.
+
+---
+
 ## [tháng 7/2026] — fix: F35 daily notification đếm ngược 4 mốc
 
 - Daily body: 4 mốc riêng (hôm nay / 1 ngày / 2 ngày / 3 ngày) thay gộp.

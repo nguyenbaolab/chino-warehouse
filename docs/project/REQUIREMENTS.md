@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.29 | Tháng 7/2026
+**Phiên bản:** 1.3.30 | Tháng 7/2026
 
+> **v1.3.30** — C-part2 F35 Done: ExpiryAlert 6 section danh sách entries; tap → ProductDetail
 > **v1.3.29** — F35 fix: daily 4 mốc exact-day; 3 notification riêng; ExpiryAlert 6 section counts
 > **v1.3.28** — C-part1 F35: expo-notifications + app_settings + ExpiryAlertScreen (admin toggle/time); C-part2 danh sách chưa
 > **v1.3.27** — B3 F34 confirm trừ tồn batch; F34 Done
@@ -142,7 +143,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Done |
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
 | F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | Done |
-| F35 | Push notification (local) | `expo-notifications` — **3 notification riêng** (daily/weekly/monthly, cùng giờ; OS hiện 3 dòng khi trùng). **Daily:** 4 mốc exact-day (hôm nay / 1 / 2 / 3 ngày tới), body xuống dòng, bỏ mốc count=0. **Weekly** thứ Hai (range 7 ngày). **Monthly** ngày 1 (cả tháng). Title riêng từng loại. Settings admin → `app_settings`. KI-062 nội dung tĩnh. C-part2: danh sách 6 section. | P3 | Phase 5 | In progress (C-part1 + đếm ngược done) |
+| F35 | Push notification (local) | `expo-notifications` — **3 notification riêng** (daily/weekly/monthly). **Daily:** 4 mốc exact-day. **Weekly/Monthly:** range. Settings admin → `app_settings`. **Màn Cảnh báo hết hạn:** 6 section (4 mốc đếm ngược + tuần + tháng), danh sách entries (không trùng section), collapsible, tap → ProductDetail. KI-062 nội dung tĩnh. | P3 | Phase 5 | Done |
 | F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | Done |
 
 ---

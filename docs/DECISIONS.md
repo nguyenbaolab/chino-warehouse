@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F35 Màn Cảnh báo hết hạn — 6 section không trùng lặp
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** 6 section: Hôm nay / 1 ngày / 2 ngày / 3 ngày / Tuần / Tháng. Entries trong section sau loại trừ entries đã hiện ở section trước (tránh trùng). Tuần loại 4 mốc exact day; Tháng loại tuần + 4 mốc. Collapsible sections. Tap entry → ProductDetail.
+- **Lý do:** Đếm ngược 3-2-1 trực quan cho vận hành hàng ngày; loại trừ tránh nhầm đếm trùng.
+
+---
+
 ### F35 Push notification — local scheduled + shared config
 
 - **Ngày:** tháng 7/2026

@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Switch,
@@ -21,11 +22,13 @@ import {
   type AppSettings,
 } from '../lib/notifications'
 import {
-  buildScheduleExpiryCounts,
+  countFromExpiringItems,
   formatWhMarketLabel,
-  type ExpiryModeCounts,
-  type ScheduleExpiryCounts,
+  getExpiringEntriesExactDay,
+  getExpiringEntriesRange,
+  type ExpiringEntryItem,
 } from '../utils/expiryCountUtils'
+import { isoExpiryToDisplay } from '../utils/dateUtils'
 import type { InventoryEntry, Location, Product, Zone } from '../types'
 
 type SectionDef =
@@ -42,25 +45,7 @@ const SECTION_DEFS: SectionDef[] = [
   { key: 'month', label: 'Tháng này', kind: 'month' },
 ]
 
-function countsForSection(
-  def: SectionDef,
-  schedule: ScheduleExpiryCounts | null,
-): ExpiryModeCounts {
-  if (!schedule) return { warehouse: 0, market: 0 }
-  if (def.kind === 'exact') {
-    const map = [
-      schedule.daily.day0,
-      schedule.daily.day1,
-      schedule.daily.day2,
-      schedule.daily.day3,
-    ] as const
-    return map[def.daysFromToday]
-  }
-  if (def.kind === 'week') return schedule.weekly
-  return schedule.monthly
-}
-
-/** F35 — cài đặt thông báo + 6 section count (C-part2: danh sách). */
+/** F35 Done — cài đặt thông báo + 6 section danh sách hết hạn. */
 export default function ExpiryAlertScreen() {
   const navigation = useNavigation<any>()
   const { colors } = useThemeStore()
@@ -71,8 +56,15 @@ export default function ExpiryAlertScreen() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [hourDraft, setHourDraft] = useState('11')
   const [minuteDraft, setMinuteDraft] = useState('00')
-  const [scheduleCounts, setScheduleCounts] = useState<ScheduleExpiryCounts | null>(
-    null,
+
+  const [inventoryEntries, setInventoryEntries] = useState<InventoryEntry[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [allLocations, setAllLocations] = useState<Location[]>([])
+  const [zones, setZones] = useState<Zone[]>([])
+  const [dataReady, setDataReady] = useState(false)
+
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(
+    {},
   )
 
   const lastFetchRef = useRef(0)
@@ -118,14 +110,11 @@ export default function ExpiryAlertScreen() {
         console.error('[ExpiryAlert] fetch zones:', zonesRes.error)
       }
 
-      setScheduleCounts(
-        buildScheduleExpiryCounts(
-          (entriesRes.data ?? []) as InventoryEntry[],
-          (productsRes.data ?? []) as Product[],
-          (locationsRes.data ?? []) as Location[],
-          (zonesRes.data ?? []) as Zone[],
-        ),
-      )
+      setInventoryEntries((entriesRes.data ?? []) as InventoryEntry[])
+      setProducts((productsRes.data ?? []) as Product[])
+      setAllLocations((locationsRes.data ?? []) as Location[])
+      setZones((zonesRes.data ?? []) as Zone[])
+      setDataReady(true)
     } finally {
       setLoading(false)
     }
@@ -140,19 +129,123 @@ export default function ExpiryAlertScreen() {
     }, [loadAll]),
   )
 
-  const sections = useMemo(
-    () =>
-      SECTION_DEFS.map((def) => {
-        const c = countsForSection(def, scheduleCounts)
-        const labelCounts = formatWhMarketLabel(c.warehouse, c.market)
-        return {
-          ...def,
-          subtitle: labelCounts ?? 'Không có',
-          counts: c,
-        }
-      }),
-    [scheduleCounts],
+  const sectionLists = useMemo(() => {
+    if (!dataReady) {
+      return {
+        today: [] as ExpiringEntryItem[],
+        day1: [] as ExpiringEntryItem[],
+        day2: [] as ExpiringEntryItem[],
+        day3: [] as ExpiringEntryItem[],
+        week: [] as ExpiringEntryItem[],
+        month: [] as ExpiringEntryItem[],
+      }
+    }
+
+    const today = getExpiringEntriesExactDay(
+      inventoryEntries,
+      products,
+      allLocations,
+      zones,
+      0,
+    )
+    const day1 = getExpiringEntriesExactDay(
+      inventoryEntries,
+      products,
+      allLocations,
+      zones,
+      1,
+    )
+    const day2 = getExpiringEntriesExactDay(
+      inventoryEntries,
+      products,
+      allLocations,
+      zones,
+      2,
+    )
+    const day3 = getExpiringEntriesExactDay(
+      inventoryEntries,
+      products,
+      allLocations,
+      zones,
+      3,
+    )
+
+    const excludeExact = new Set<string>([
+      ...today.map((i) => i.entryId),
+      ...day1.map((i) => i.entryId),
+      ...day2.map((i) => i.entryId),
+      ...day3.map((i) => i.entryId),
+    ])
+
+    const week = getExpiringEntriesRange(
+      inventoryEntries,
+      products,
+      allLocations,
+      zones,
+      7,
+      excludeExact,
+    )
+
+    const excludeWeekAndExact = new Set<string>([
+      ...excludeExact,
+      ...week.map((i) => i.entryId),
+    ])
+
+    const month = getExpiringEntriesRange(
+      inventoryEntries,
+      products,
+      allLocations,
+      zones,
+      30,
+      excludeWeekAndExact,
+    )
+
+    return { today, day1, day2, day3, week, month }
+  }, [dataReady, inventoryEntries, products, allLocations, zones])
+
+  const sections = useMemo(() => {
+    return SECTION_DEFS.map((def) => {
+      const entries =
+        def.kind === 'exact'
+          ? sectionLists[
+              (['today', 'day1', 'day2', 'day3'] as const)[def.daysFromToday]
+            ]
+          : def.kind === 'week'
+            ? sectionLists.week
+            : sectionLists.month
+      const counts = countFromExpiringItems(entries)
+      const labelCounts = formatWhMarketLabel(counts.warehouse, counts.market)
+      return {
+        ...def,
+        entries,
+        counts,
+        subtitle: labelCounts ?? 'Không có',
+      }
+    })
+  }, [sectionLists])
+
+  const allEmpty = useMemo(
+    () => sections.every((s) => s.entries.length === 0),
+    [sections],
   )
+
+  // Default expand: mở nếu có entries (reset mỗi lần data load)
+  useEffect(() => {
+    if (!dataReady) return
+    const next: Record<string, boolean> = {
+      today: sectionLists.today.length > 0,
+      day1: sectionLists.day1.length > 0,
+      day2: sectionLists.day2.length > 0,
+      day3: sectionLists.day3.length > 0,
+      week: sectionLists.week.length > 0,
+      month: sectionLists.month.length > 0,
+    }
+    setExpandedSections(next)
+  }, [dataReady, sectionLists])
+
+  function toggleSection(key: string) {
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
 
   async function persistAndReschedule(patch: {
     notification_enabled?: boolean
@@ -214,6 +307,76 @@ export default function ExpiryAlertScreen() {
     void persistAndReschedule({ notification_time: next })
   }
 
+  function renderEntryCard(item: ExpiringEntryItem) {
+    const qtyLabel =
+      item.locationType === 'warehouse'
+        ? `${item.quantityBoxes} thùng`
+        : `${item.quantityBoxes} SP`
+    const expiryDisplay = isoExpiryToDisplay(item.expiryDate) || item.expiryDate
+    const expiryColor =
+      item.daysUntilExpiry <= 0 ? colors.statusExpired : colors.statusWarning
+
+    return (
+      <TouchableOpacity
+        key={item.entryId}
+        style={[
+          styles.entryCard,
+          { backgroundColor: colors.bg, borderColor: colors.border },
+        ]}
+        activeOpacity={0.75}
+        onPress={() =>
+          navigation.navigate('ProductDetail', { productId: item.productId })
+        }
+      >
+        {item.productImageUrl ? (
+          <Image
+            source={{ uri: item.productImageUrl }}
+            style={styles.thumb}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.thumb, { backgroundColor: colors.border }]} />
+        )}
+        <View style={styles.entryBody}>
+          <View style={styles.entryTopRow}>
+            <Text
+              style={[styles.entryName, { color: colors.text }]}
+              numberOfLines={2}
+            >
+              {item.productName}
+            </Text>
+            <Text style={[styles.entryQty, { color: colors.text }]}>{qtyLabel}</Text>
+          </View>
+          <View style={styles.entryMidRow}>
+            <Text style={[styles.entryMeta, { color: colors.sub }]} numberOfLines={1}>
+              {item.zoneName} — Tầng {item.tier}
+            </Text>
+            <Text style={[styles.entryExpiry, { color: expiryColor }]}>
+              {expiryDisplay}
+            </Text>
+          </View>
+          <View style={styles.entryBottomRow}>
+            <Text style={[styles.entryLoc, { color: colors.sub }]} numberOfLines={1}>
+              {item.locationName}
+            </Text>
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: colors.border,
+                },
+              ]}
+            >
+              <Text style={[styles.badgeText, { color: colors.sub }]}>
+                {item.locationType === 'warehouse' ? 'Kho' : 'Siêu thị'}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    )
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
@@ -224,7 +387,7 @@ export default function ExpiryAlertScreen() {
         <View style={{ width: 72 }} />
       </View>
 
-      {loading && !settings && !scheduleCounts ? (
+      {loading && !dataReady ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={colors.accent} />
       ) : (
         <ScrollView
@@ -337,33 +500,52 @@ Số liệu trong thông báo được cập nhật mỗi khi có người mở 
             Hàng hết hạn
           </Text>
 
-          {sections.map((sec) => (
-            <View
-              key={sec.key}
-              style={[
-                styles.sectionCard,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-            >
-              <Text style={[styles.sectionLabel, { color: colors.text }]}>
-                {sec.label}
-              </Text>
-              <Text
+          {allEmpty ? (
+            <Text style={[styles.emptyAll, { color: colors.sub }]}>
+              Không có hàng hết hạn
+            </Text>
+          ) : null}
+
+          {sections.map((sec) => {
+            const expanded = expandedSections[sec.key] === true
+            return (
+              <View
+                key={sec.key}
                 style={[
-                  styles.sectionCount,
-                  {
-                    color:
-                      sec.counts.warehouse === 0 && sec.counts.market === 0
-                        ? colors.sub
-                        : colors.text,
-                  },
+                  styles.sectionCard,
+                  { backgroundColor: colors.card, borderColor: colors.border },
                 ]}
               >
-                {sec.subtitle}
-              </Text>
-              {/* C-part2: FlatList danh sách entries */}
-            </View>
-          ))}
+                <TouchableOpacity
+                  onPress={() => toggleSection(sec.key)}
+                  activeOpacity={0.7}
+                  style={styles.sectionHeader}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.sectionLabel, { color: colors.text }]}>
+                      {expanded ? '▾ ' : '▸ '}
+                      {sec.label}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.sectionCount,
+                        {
+                          color:
+                            sec.entries.length === 0 ? colors.sub : colors.text,
+                        },
+                      ]}
+                    >
+                      {sec.subtitle}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                {expanded
+                  ? sec.entries.map((item) => renderEntryCard(item))
+                  : null}
+              </View>
+            )
+          })}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -434,12 +616,60 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textTransform: 'uppercase',
   },
+  emptyAll: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
   sectionCard: {
-    padding: 14,
+    padding: 12,
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 10,
   },
+  sectionHeader: { marginBottom: 4 },
   sectionLabel: { fontSize: 15, fontWeight: '700' },
   sectionCount: { fontSize: 13, marginTop: 4 },
+  entryCard: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 8,
+    gap: 10,
+  },
+  thumb: { width: 48, height: 48, borderRadius: 8 },
+  entryBody: { flex: 1, minWidth: 0 },
+  entryTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  entryName: { flex: 1, fontSize: 14, fontWeight: '700' },
+  entryQty: { fontSize: 13, fontWeight: '600' },
+  entryMidRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    gap: 8,
+  },
+  entryMeta: { flex: 1, fontSize: 12 },
+  entryExpiry: { fontSize: 12, fontWeight: '600' },
+  entryBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    gap: 8,
+  },
+  entryLoc: { flex: 1, fontSize: 11 },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  badgeText: { fontSize: 11, fontWeight: '600' },
 })

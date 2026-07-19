@@ -47,7 +47,7 @@ Phase 5 hoàn thiện các feature deferred từ Phase 3–4: **F27 mở rộng*
 
 ---
 
-## 4. Group C — Push notification (F35)
+## 4. Group C — Push notification (F35) ✅ Done
 
 ### C1 — Local scheduled 11:00 ✅ Done
 - `expo-notifications` + `app_settings.notification_time`; schedule daily/weekly/monthly.
@@ -58,7 +58,7 @@ Phase 5 hoàn thiện các feature deferred từ Phase 3–4: **F27 mở rộng*
 ### C3 — Permission + opt-out Settings ✅ Done
 - Permission sau login (denied = im lặng); admin toggle trên ExpiryAlertScreen.
 
-> **C-part2** (màn danh sách hết hạn 4 section) — chưa implement.
+> **C-part2** danh sách hết hạn 6 section — ✅ Done (collapsible + ProductDetail).
 
 ---
 

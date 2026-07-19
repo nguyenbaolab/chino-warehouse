@@ -101,7 +101,7 @@ screens/
   PickingDetailScreen.tsx      # F34 — chi tiết đơn lấy hàng (OrdersStack)
   ProductDetailScreen.tsx
   ProductsScreen.tsx
-  ExpiryAlertScreen.tsx        # F35 — cài đặt thông báo hết hạn (SettingsStack)
+  ExpiryAlertScreen.tsx        # F35 — 6 section hết hạn + admin toggle/time (SettingsStack)
   SettingsScreen.tsx
   UserManagementScreen.tsx     # F24 — quản lý người dùng (admin/super_admin, Phase 3)
 lib/
@@ -109,7 +109,7 @@ lib/
   notifications.ts             # F35 — permission + schedule/cancel + bootstrap
   presence.ts
 utils/
-  expiryCountUtils.ts          # F35 — countExpiringEntriesExactDay + range; warehouse=lô / market=SP
+  expiryCountUtils.ts          # F35 — exact-day/range count + getExpiringEntries* + ExpiringEntryItem
 stores/
   authStore.ts        # F24 — currentUserProfile, fetch/clear, updateLastLogin RPC
   themeStore.ts
@@ -234,11 +234,11 @@ README.md
 
 **Config shared:** bảng `app_settings` (1 row) — `notification_enabled`, `notification_time` (`HH:MM`). RLS: mọi authenticated đọc; admin+ update.
 
-**Code:** `lib/notifications.ts` (`setupNotificationHandler`, `requestNotificationPermission`, `scheduleAllNotifications`, `cancelAllNotifications`, `bootstrapExpiryNotifications`); `utils/expiryCountUtils.ts` — `countExpiringEntriesExactDay` (0–3), `countExpiringEntries` (7/30 range), `buildScheduleExpiryCounts`.
+**Code:** `lib/notifications.ts` (`setupNotificationHandler`, `requestNotificationPermission`, `scheduleAllNotifications`, `cancelAllNotifications`, `bootstrapExpiryNotifications`); `utils/expiryCountUtils.ts` — `countExpiringEntriesExactDay` / `getExpiringEntriesExactDay` (0–3), `countExpiringEntries` / `getExpiringEntriesRange` (7/30 + exclude), `ExpiringEntryItem`, `buildScheduleExpiryCounts`.
 
 **Daily body:** 4 mốc exact-day (Hôm nay / 1 / 2 / 3 ngày tới), join `\n`, bỏ mốc count=0; title «… — Hết hạn». **Weekly / Monthly:** range; title «… — Hết hạn tuần/tháng». **3 identifier riêng** — schedule độc lập cùng giờ (không gộp khi trùng ngày).
 
-**UI:** `ExpiryAlertScreen` — note + admin Switch + HH:MM; **6 section** count headers (4 mốc + tuần + tháng); C-part2 = FlatList entries.
+**UI:** `ExpiryAlertScreen` — note + admin Switch + HH:MM; **6 section collapsible** (entries không trùng: tuần loại 4 mốc, tháng loại tuần+4 mốc); card ảnh 48×48 + zone/tầng/qty/hạn/badge; tap → `ProductDetail`.
 
 **Bootstrap:** sau login → permission (denied = im lặng) → `buildScheduleExpiryCounts` → schedule 3 loại. Logout → cancel all.
 
