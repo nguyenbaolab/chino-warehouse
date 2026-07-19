@@ -45,9 +45,11 @@ export default function LocationManagementScreen() {
   const { colors } = useThemeStore()
   const canWrite = useCanWrite()
   const isReadOnly = useIsReadOnly()
-  const { locations, fetchLocations, addLocation, updateLocation, deleteLocation, setSelectedLocation } =
+  const { fetchLocations, addLocation, updateLocation, deleteLocation, setSelectedLocation } =
     useWarehouseStore()
 
+  const [viewMode, setViewMode] = useState<'all' | 'warehouse' | 'market'>('all')
+  const [allLocations, setAllLocations] = useState<Location[]>([])
   const [skuCounts, setSkuCounts] = useState<Map<string, number>>(new Map())
   const [countsLoading, setCountsLoading] = useState(false)
 
@@ -70,14 +72,19 @@ export default function LocationManagementScreen() {
     setTimeout(() => ref.current?.scrollToEnd({ animated: true }), 100)
   }
 
+  async function refetchAllLocations() {
+    const { data } = await supabase.from('locations').select('*').order('name')
+    if (data) setAllLocations(data as Location[])
+  }
+
   async function refreshCounts() {
-    if (locations.length === 0) {
+    if (allLocations.length === 0) {
       setSkuCounts(new Map())
       return
     }
     setCountsLoading(true)
     try {
-      const m = await buildSkuCountByLocation(locations)
+      const m = await buildSkuCountByLocation(allLocations)
       setSkuCounts(m)
     } finally {
       setCountsLoading(false)
@@ -86,13 +93,18 @@ export default function LocationManagementScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void fetchLocations()
+      void (async () => {
+        // Vẫn gọi fetchLocations() cho store (các màn khác cần)
+        await fetchLocations()
+        // Fetch riêng tất cả locations cho màn này
+        await refetchAllLocations()
+      })()
     }, [fetchLocations])
   )
 
   useEffect(() => {
     void refreshCounts()
-  }, [locations])
+  }, [allLocations])
 
   useEffect(() => {
     if (route.params?.openCreateModal === true) {
@@ -111,10 +123,11 @@ export default function LocationManagementScreen() {
     }
   }, [isReadOnly, navigation])
 
-  const sortedLocations = useMemo(
-    () => [...locations].sort((a, b) => a.name.localeCompare(b.name)),
-    [locations]
-  )
+  const sortedLocations = useMemo(() => {
+    const filtered =
+      viewMode === 'all' ? allLocations : allLocations.filter((l) => l.type === viewMode)
+    return [...filtered].sort((a, b) => a.name.localeCompare(b.name))
+  }, [allLocations, viewMode])
 
   function openEdit(loc: Location) {
     setEditing(loc)
@@ -141,6 +154,7 @@ export default function LocationManagementScreen() {
         Alert.alert('Không tạo được', error)
         return
       }
+      await refetchAllLocations()
       setCreateOpen(false)
       setNewName('')
       setNewRows('6')
@@ -173,6 +187,7 @@ export default function LocationManagementScreen() {
         Alert.alert('Không cập nhật được', error)
         return
       }
+      await refetchAllLocations()
       setEditing(null)
     } finally {
       setEditSaving(false)
@@ -191,6 +206,8 @@ export default function LocationManagementScreen() {
             const stockBlocked =
               error.includes('lô hàng') || error.includes('Còn') || error.includes('còn')
             Alert.alert('Không xóa được', stockBlocked ? 'Kho còn hàng, không thể xóa.' : error)
+          } else {
+            await refetchAllLocations()
           }
         },
       },
@@ -206,6 +223,42 @@ export default function LocationManagementScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.modeRow}>
+        {(
+          [
+            { value: 'all' as const, label: 'Tất cả' },
+            { value: 'warehouse' as const, label: 'Kho' },
+            { value: 'market' as const, label: 'Siêu thị' },
+          ] as const
+        ).map((opt) => {
+          const active = viewMode === opt.value
+          return (
+            <TouchableOpacity
+              key={opt.value}
+              style={[
+                styles.modeBtn,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: active ? colors.accent + '22' : colors.card,
+                },
+              ]}
+              onPress={() => setViewMode(opt.value)}
+              activeOpacity={0.75}
+            >
+              <Text
+                style={{
+                  color: colors.text,
+                  fontSize: 13,
+                  fontWeight: active ? '700' : '500',
+                }}
+              >
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          )
+        })}
+      </View>
+
       {countsLoading && sortedLocations.length === 0 ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
@@ -216,6 +269,7 @@ export default function LocationManagementScreen() {
             const gr = loc.grid_rows ?? DEFAULT_GRID
             const gc = loc.grid_cols ?? DEFAULT_GRID
             const sku = skuCounts.get(loc.id) ?? 0
+            const typeLabel = loc.type === 'market' ? 'Siêu thị' : 'Kho'
             return (
               <View key={loc.id} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={styles.cardTop}>
@@ -228,9 +282,24 @@ export default function LocationManagementScreen() {
                       navigation.getParent()?.navigate('Map' as never)
                     }}
                   >
-                    <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={2}>
-                      {loc.name}
-                    </Text>
+                    <View style={styles.cardNameRow}>
+                      <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={2}>
+                        {loc.name}
+                      </Text>
+                      {viewMode === 'all' ? (
+                        <View
+                          style={[
+                            styles.typeBadge,
+                            {
+                              borderColor: colors.border,
+                              backgroundColor: colors.bg,
+                            },
+                          ]}
+                        >
+                          <Text style={[styles.typeBadgeText, { color: colors.sub }]}>{typeLabel}</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={[styles.cardLine, { color: colors.sub }]}>Grid size: {gr} × {gc}</Text>
                     <Text style={[styles.cardLine, { color: colors.sub }]}>Số sản phẩm: {sku}</Text>
                   </TouchableOpacity>
@@ -404,11 +473,32 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 17, fontWeight: 'bold', flex: 1 },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  modeBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
   loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: 16, paddingBottom: 100 },
   card: { borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 10 },
   cardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  cardName: { fontSize: 15, fontWeight: '700' },
+  cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  cardName: { fontSize: 15, fontWeight: '700', flexShrink: 1 },
+  typeBadge: {
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  typeBadgeText: { fontSize: 11, fontWeight: '600' },
   cardLine: { fontSize: 13, marginTop: 6 },
   cardActions: { flexDirection: 'row', gap: 8 },
   iconBtn: {

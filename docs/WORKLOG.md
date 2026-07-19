@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: LocationManagement dropdown mode + hiện kho cả 2 type
+
+- Fetch allLocations riêng (không phụ thuộc store filter appMode).
+- Dropdown viewMode: Tất cả / Kho / Siêu thị; badge type trên card khi xem Tất cả.
+
+---
+
 ## [tháng 7/2026] — fix: addLocation truyền type theo appMode
 
 - `addLocation` insert `type: get().appMode` — tạo kho đúng mode (warehouse/market).
