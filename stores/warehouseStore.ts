@@ -62,6 +62,8 @@ type WarehouseStore = {
   ) => Promise<{ error: string | null }>
   deleteLocation: (id: string) => Promise<{ error: string | null }>
   fetchZones: (locationId: string) => Promise<void>
+  /** Realtime / background — không bật isLoading (tránh unmount Map grid) */
+  fetchZonesSilent: (locationId: string) => Promise<void>
   fetchProducts: () => Promise<void>
   /** KI-040 — ProductsScreen: search server-side + giảm payload (max 200) */
   fetchProductsPage: (params: {
@@ -74,6 +76,8 @@ type WarehouseStore = {
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
   /** Một query cho mọi zone của kho — set inventoryEntries một lần. */
   fetchInventoryByLocation: (locationId: string) => Promise<void>
+  /** Realtime — cùng logic fetchInventoryByLocation (không đụng isLoading) */
+  fetchInventoryByLocationSilent: (locationId: string) => Promise<void>
   fetchAllInventoryEntries: () => Promise<{ error: string | null }>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
   /** Mọi lô có barcode khớp (toàn kho) — chỉ return, không ghi store. */
@@ -374,6 +378,14 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     set({ isLoading: false })
   },
 
+  fetchZonesSilent: async (locationId) => {
+    const { data } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('location_id', locationId)
+    if (data) set({ zones: data })
+  },
+
   fetchProducts: async () => {
     const { data } = await supabase
       .from('products')
@@ -640,6 +652,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   fetchInventoryByLocation: async (locationId) => {
+    await get().fetchInventoryByLocationSilent(locationId)
+  },
+
+  fetchInventoryByLocationSilent: async (locationId) => {
     const zoneList = get().zones.filter((z) => z.location_id === locationId)
     const zoneIds = zoneList.map((z) => z.id)
     const zoneIdSet = new Set(zoneIds)

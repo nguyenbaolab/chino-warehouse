@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: Realtime silent refresh (KI-063)
+
+- `warehouseStore`: thêm `fetchZonesSilent` / `fetchInventoryByLocationSilent` (không set `isLoading`).
+- MapScreen Realtime: dùng silent refs thay `fetchZones` + `fetchInventoryByLocation` (tránh spinner unmount grid).
+- DashboardScreen: `refreshData('realtime' | 'manual')` — realtime chỉ refetch inventory; manual giữ locations+products+inventory.
+- SettingsScreen Realtime: chỉ `fetchDiscontinuedProducts()` (không `refreshDiscontinuedContext` / inventory).
+- Docs: CONTEXT Realtime note, KNOWN_ISSUES KI-063 Resolved.
+
+---
+
 ## [tháng 7/2026] — fix: giữ expo.slug = chino-warehouse (EAS)
 
 - EAS build fail: projectId gắn slug cố định `chino-warehouse` (không đổi được) ≠ local `chinos-store`.

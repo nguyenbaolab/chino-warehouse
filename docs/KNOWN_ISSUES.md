@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-063] Realtime refetch → Map spinner / mất form đang nhập
+
+- **Mức độ:** High (UX multi-user)
+- **File liên quan:** `stores/warehouseStore.ts`, `screens/MapScreen.tsx`, `screens/DashboardScreen.tsx`, `screens/SettingsScreen.tsx`
+- **Mô tả:** Realtime callback gọi `fetchZones` (set `isLoading: true`) → Map unmount grid hiện spinner (“reset màn kho”). Settings/Dashboard Realtime refetch `locations`/`products`/toàn bộ inventory → re-render rộng, form đang nhập bị ảnh hưởng.
+- **Hướng fix:** `fetchZonesSilent` / `fetchInventoryByLocationSilent` (không `isLoading`) cho Map Realtime; Dashboard `refreshData('realtime')` chỉ inventory; Settings Realtime chỉ `fetchDiscontinuedProducts()`.
+- **Trạng thái:** Resolved
+- **Đã fix:** silent fetch + giới hạn scope Realtime (giữ channel/debounce; load thủ công vẫn dùng `isLoading`).
+- **Tham chiếu:** KI-002, KI-053, F17 / SEC-08
+
+---
+
 ### [KI-062] F35 — Local notification nội dung tĩnh (cần mở app để cập nhật)
 
 - **Mức độ:** Low (accepted limitation)

@@ -29,6 +29,7 @@ export default function SettingsScreen() {
     productCategoriesL2,
     internalNotes,
     refreshDiscontinuedContext,
+    fetchDiscontinuedProducts,
     fetchLatestAuditEntry,
     fetchInternalNotes,
   } = useWarehouseStore()
@@ -184,11 +185,12 @@ export default function SettingsScreen() {
   )
 
   useEffect(() => {
+    // Realtime: chỉ products discontinued — không refetch inventory (tránh đụng form đang nhập)
     const scheduleRefreshDiscontinued = () => {
       if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
       realtimeDebounceRef.current = setTimeout(() => {
         realtimeDebounceRef.current = null
-        void refreshDiscontinuedContext()
+        void fetchDiscontinuedProducts()
       }, REALTIME_DEBOUNCE_MS)
     }
 
@@ -213,7 +215,7 @@ export default function SettingsScreen() {
       realtimeDebounceRef.current = null
       void supabase.removeChannel(channel)
     }
-  }, [refreshDiscontinuedContext])
+  }, [fetchDiscontinuedProducts])
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>

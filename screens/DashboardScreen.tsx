@@ -209,11 +209,14 @@ export default function DashboardScreen() {
     [stats.expiryPie],
   )
 
-  const refreshData = useCallback(async () => {
+  const refreshData = useCallback(async (source: 'realtime' | 'manual' = 'manual') => {
     setIsRefreshing(true)
     try {
-      await fetchLocations()
-      await fetchProducts()
+      // Realtime: chỉ inventory — tránh refetch locations/products làm re-render rộng
+      if (source === 'manual') {
+        await fetchLocations()
+        await fetchProducts()
+      }
       if (!filterLocationId) {
         await fetchAllInventoryEntries()
       } else if (zonesForFilterLoc.length > 0) {
@@ -235,7 +238,7 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       if (Date.now() - lastFetchedAt.current <= FOCUS_FETCH_TTL_MS) return
-      void refreshData()
+      void refreshData('manual')
     }, [refreshData]),
   )
 
@@ -276,7 +279,7 @@ export default function DashboardScreen() {
       if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
       realtimeDebounceRef.current = setTimeout(() => {
         realtimeDebounceRef.current = null
-        void refreshData()
+        void refreshData('realtime')
       }, REALTIME_DEBOUNCE_MS)
     }
 

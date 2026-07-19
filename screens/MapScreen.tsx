@@ -116,8 +116,9 @@ export default function MapScreen() {
     appMode,
     fetchLocations,
     fetchProducts,
-    fetchZones,
     fetchInventoryByLocation,
+    fetchZonesSilent,
+    fetchInventoryByLocationSilent,
     setSelectedLocation,
     setAppMode,
     getQtyUnit,
@@ -130,11 +131,12 @@ export default function MapScreen() {
   } = useWarehouseStore()
   const qtyUnit = getQtyUnit()
 
-  const fetchZonesRef = useRef(fetchZones)
-  const fetchInventoryByLocationRef = useRef(fetchInventoryByLocation)
+  // Realtime dùng silent (không isLoading) — giữ fetchZones/fetchInventoryByLocation cho load chủ động
+  const fetchZonesSilentRef = useRef(fetchZonesSilent)
+  const fetchInventoryByLocationSilentRef = useRef(fetchInventoryByLocationSilent)
   useEffect(() => {
-    fetchZonesRef.current = fetchZones
-    fetchInventoryByLocationRef.current = fetchInventoryByLocation
+    fetchZonesSilentRef.current = fetchZonesSilent
+    fetchInventoryByLocationSilentRef.current = fetchInventoryByLocationSilent
   })
 
   const { colors, loadTheme } = useThemeStore()
@@ -270,8 +272,8 @@ export default function MapScreen() {
       if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
       realtimeDebounceRef.current = setTimeout(() => {
         realtimeDebounceRef.current = null
-        void fetchZonesRef.current(selectedLocationId)
-        void fetchInventoryByLocationRef.current(selectedLocationId)
+        void fetchZonesSilentRef.current(selectedLocationId)
+        void fetchInventoryByLocationSilentRef.current(selectedLocationId)
       }, REALTIME_DEBOUNCE_MS)
     }
 
