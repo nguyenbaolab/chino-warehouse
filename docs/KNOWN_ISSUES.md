@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-066] ProductsScreen Mode filter giao `productsPage` (max 200) → thiếu SP siêu thị
+
+- **Mức độ:** High (UX — list Mode Siêu thị / Kho thiếu SP)
+- **File liên quan:** `screens/ProductsScreen.tsx` (`filteredProducts`, KI-040)
+- **Mô tả:** List lấy `productsPage` (≤200 SP theo tên) rồi mới lọc SP có lô trong mode. SP siêu thị ngoài 200 đầu (hoặc ít giao với page) biến mất; Map/ZoneDetail vẫn xem được vì đọc inventory theo zone.
+- **Hướng fix:** List theo `product_id` có lô trong scope Mode/Kho/Zone; resolve tên/ảnh từ `products` + `productsPage` + nested `entry.product`; `fetchProducts` khi không archived.
+- **Trạng thái:** Resolved
+- **Đã fix:** inventory-scoped `filteredProducts` (KI-066).
+- **Tham chiếu:** KI-040, KI-064, F36
+
+---
+
 ### [KI-065] Custom location mode + đơn vị — deferred
 
 - **Mức độ:** Low (enhancement)
@@ -585,7 +597,7 @@
 - **Mô tả:** Hiện tại `fetchProducts()` không có limit, load toàn bộ `products` về store. Với quy mô vài trăm SP thì ổn. Nếu lên vài nghìn SP: load chậm lúc đầu; tốn RAM; `useMemo` filter lag khi gõ search.
 - **Hướng fix (Phase 4):** Cursor-based pagination từ DB giống `AuditLogScreen`, kết hợp server-side filter theo search/kho/zone. Cần refactor `fetchProducts` + `filteredProducts` useMemo + pagination bar.
 - **Trạng thái:** Mitigated (hybrid)
-- **Đã fix:** `fetchProductsPage` — search `.ilike` server-side + debounce 300ms + max 200; barcode digits → `product_barcodes`; zone/stock/special vẫn filter local; UI page ←→ giữ. `fetchProducts` full vẫn dùng cho Notifications/Dashboard/Notes.
+- **Đã fix:** `fetchProductsPage` — search `.ilike` server-side + debounce 300ms + max 200; barcode digits → `product_barcodes`; zone/stock/special vẫn filter local; UI page ←→ giữ. `fetchProducts` full vẫn dùng cho Notifications/Dashboard/Notes. **(KI-066)** List Mode/Kho không còn giao `productsPage` trước — list theo SP có lô trong scope inventory.
 
 ---
 

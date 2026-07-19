@@ -122,13 +122,19 @@ export default function ProductsScreen() {
     }
   }, [showCreateProductModal, fetchCategories])
 
+  // Catalog full (không archived) — resolve SP có lô trong mode nhưng ngoài productsPage (max 200)
+  useEffect(() => {
+    if (showArchived) return
+    void fetchProducts()
+  }, [fetchProducts, showArchived])
+
   // KI-040: debounce search 300ms trước khi gọi server
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchQuery), 300)
     return () => clearTimeout(t)
   }, [searchQuery])
 
-  // KI-040: fetchProductsPage (server search + archived + image); giữ fetchProducts cho create/modal khác
+  // KI-040: productsPage cho search/archived/no-image; list mode vẫn ưu tiên SP có lô trong scope
   useEffect(() => {
     void fetchProductsPage({
       page: 0,
@@ -170,7 +176,8 @@ export default function ProductsScreen() {
     }
     const locIds = filterLocations.map((l) => l.id)
     if (locIds.length === 0) {
-      setModeZoneIds(new Set())
+      // Chưa load xong locations hoặc mode chưa có kho — null = chưa sẵn sàng (không dùng Set rỗng)
+      setModeZoneIds(null)
       return
     }
     let cancelled = false
@@ -260,6 +267,16 @@ export default function ProductsScreen() {
     countMode: false,
   })
 
+  const productById = useMemo(() => {
+    const map = new Map<string, Product>()
+    for (const p of products) map.set(p.id, p)
+    for (const p of productsPage) map.set(p.id, p)
+    for (const entry of inventoryEntries) {
+      if (entry.product?.id) map.set(entry.product.id, entry.product)
+    }
+    return map
+  }, [products, productsPage, inventoryEntries])
+
   const totalBoxesByProduct = useMemo(() => {
     const map = new Map<string, number>()
     const hasZoneFilter = selectedZoneId != null
@@ -273,32 +290,48 @@ export default function ProductsScreen() {
     return map
   }, [inventoryEntries, selectedZoneId, locationZoneSet, modeZoneIds])
 
+  // KI-066: list theo SP có lô trong scope Mode/Kho/Zone — không giao productsPage(max 200) trước
   const filteredProducts = useMemo(() => {
     const hasZoneFilter = selectedZoneId != null
-    // KI-040: nguồn từ productsPage (đã search/archived/image trên server)
-    const source = productsPage
+    const searchNorm = normalizeText(debouncedSearch.trim())
+    const looksLikeBarcode = /^\d{4,}$/.test(debouncedSearch.trim())
 
-    return source.filter((product) => {
-      // FilterModal: mode / kho / zone
-      if (hasZoneFilter) {
-        const inZone = inventoryEntries.some(
-          (entry) => entry.product_id === product.id && entry.zone_id === selectedZoneId,
-        )
-        if (!inZone) return false
-      } else if (locationZoneSet) {
-        const inLoc = inventoryEntries.some(
-          (entry) => entry.product_id === product.id && locationZoneSet.has(entry.zone_id),
-        )
-        if (!inLoc) return false
-      } else if (modeZoneIds) {
-        const inMode = inventoryEntries.some(
-          (entry) => entry.product_id === product.id && modeZoneIds.has(entry.zone_id),
-        )
-        if (!inMode) return false
+    const idsInScope = new Set<string>()
+    for (const entry of inventoryEntries) {
+      if (hasZoneFilter && entry.zone_id !== selectedZoneId) continue
+      if (locationZoneSet && !locationZoneSet.has(entry.zone_id)) continue
+      if (!locationZoneSet && modeZoneIds && !modeZoneIds.has(entry.zone_id)) continue
+      // modeZoneIds null khi đang chọn kho cụ thể (dùng locationZoneSet); khi chưa có zone set → chờ
+      if (!hasZoneFilter && !locationZoneSet && modeZoneIds === null) continue
+      idsInScope.add(entry.product_id)
+    }
+
+    const list: Product[] = []
+    for (const id of idsInScope) {
+      const product = productById.get(id)
+      if (!product) continue
+      if (showArchived) {
+        if (!product.is_archived) continue
+      } else if (product.is_archived) {
+        continue
+      }
+      if (showNoImageOnly && product.image_url) continue
+
+      if (searchNorm) {
+        const nameOk = normalizeText(product.name).includes(searchNorm)
+        const barcodeOk =
+          looksLikeBarcode &&
+          inventoryEntries.some(
+            (entry) =>
+              entry.product_id === product.id &&
+              entry.barcode &&
+              entry.barcode.toLowerCase().includes(debouncedSearch.trim().toLowerCase()),
+          )
+        if (!nameOk && !barcodeOk) continue
       }
 
       if (showOutOfStockOnly && (totalBoxesByProduct.get(product.id) ?? 0) !== 0) {
-        return false
+        continue
       }
       if (showSpecialOnly) {
         const hasSpecial = inventoryEntries.some((entry) => {
@@ -308,11 +341,26 @@ export default function ProductsScreen() {
           if (!locationZoneSet && modeZoneIds && !modeZoneIds.has(entry.zone_id)) return false
           return true
         })
-        if (!hasSpecial) return false
+        if (!hasSpecial) continue
       }
-      return true
-    })
-  }, [productsPage, selectedZoneId, inventoryEntries, locationZoneSet, modeZoneIds, showOutOfStockOnly, showSpecialOnly, totalBoxesByProduct])
+      list.push(product)
+    }
+
+    list.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+    return list
+  }, [
+    inventoryEntries,
+    productById,
+    selectedZoneId,
+    locationZoneSet,
+    modeZoneIds,
+    showArchived,
+    showNoImageOnly,
+    showOutOfStockOnly,
+    showSpecialOnly,
+    totalBoxesByProduct,
+    debouncedSearch,
+  ])
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE))
   const pagedProducts = useMemo(
@@ -763,15 +811,13 @@ export default function ProductsScreen() {
         </View>
       </View>
 
-      {productsPageLoading && productsPage.length === 0 ? (
+      {!filterLocationId && modeZoneIds === null ? (
         <View style={styles.emptyWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
       ) : filteredProducts.length === 0 ? (
         <View style={styles.emptyWrap}>
-          <Text style={{ color: colors.sub }}>
-            {productsPage.length === 0 ? 'Chưa có sản phẩm.' : 'Không có sản phẩm phù hợp.'}
-          </Text>
+          <Text style={{ color: colors.sub }}>Không có sản phẩm phù hợp.</Text>
         </View>
       ) : (
         <View style={styles.listWrap}>

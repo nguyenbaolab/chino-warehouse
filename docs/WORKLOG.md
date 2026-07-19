@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: ProductsScreen list theo lô trong Mode (KI-066)
+
+- Nguyên nhân: `filteredProducts` giao `productsPage` (max 200) với inventory mode → thiếu SP siêu thị.
+- Đổi: lấy `product_id` từ `inventoryEntries` trong scope Mode/Kho/Zone; resolve Product từ store + page + nested; `fetchProducts` khi không archived.
+- Docs: KNOWN_ISSUES KI-066 Resolved.
+
+---
+
 ## [tháng 7/2026] — ProductsScreen: bắt buộc filter Mode Kho/Siêu thị
 
 - FilterModal `allowAllMode={false}` trên Products; default `filterMode` = `appMode`; Reset về `appMode`.
