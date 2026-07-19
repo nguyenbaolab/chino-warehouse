@@ -961,7 +961,7 @@ export default function ProductDetailScreen() {
                 await deleteProduct(product.id)
                 navigation.goBack()
               } catch (err) {
-                console.error('[ProductDetail] deleteProduct failed:', err)
+                if (__DEV__) console.error('[ProductDetail] deleteProduct failed:', err)
                 const msg = err instanceof Error ? err.message : getErrorMessage(err, 'delete')
                 Alert.alert('Không thể xóa', msg)
               }

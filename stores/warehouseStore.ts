@@ -234,7 +234,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*')
       .single()
     if (error || !created) {
-      if (error) console.error('[warehouseStore] addLocation:', error)
+      if (__DEV__ && error) console.error('[warehouseStore] addLocation:', error)
       return { error: getErrorMessage(error, 'create') }
     }
     const location = created as Location
@@ -285,7 +285,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('locations').update(payload).eq('id', id)
     if (error) {
-      console.error('[warehouseStore] updateLocation:', error)
+      if (__DEV__) console.error('[warehouseStore] updateLocation:', error)
       return { error: getErrorMessage(error, 'update') }
     }
     await get().fetchLocations()
@@ -295,7 +295,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   deleteLocation: async (id) => {
     const { data: zones, error: zErr } = await supabase.from('zones').select('id').eq('location_id', id)
     if (zErr) {
-      console.error('[warehouseStore] deleteLocation (zones):', zErr)
+      if (__DEV__) console.error('[warehouseStore] deleteLocation (zones):', zErr)
       return { error: getErrorMessage(zErr, 'delete') }
     }
     const zoneIds = (zones ?? []).map((z) => z.id)
@@ -305,7 +305,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         .select('id', { count: 'exact', head: true })
         .in('zone_id', zoneIds)
       if (cErr) {
-        console.error('[warehouseStore] deleteLocation (inventory check):', cErr)
+        if (__DEV__) console.error('[warehouseStore] deleteLocation (inventory check):', cErr)
         return { error: getErrorMessage(cErr, 'delete') }
       }
       if ((count ?? 0) > 0) {
@@ -319,7 +319,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     const wasSelected = get().selectedLocationId === id
     const { error: delErr } = await supabase.from('locations').delete().eq('id', id)
     if (delErr) {
-      console.error('[warehouseStore] deleteLocation:', delErr)
+      if (__DEV__) console.error('[warehouseStore] deleteLocation:', delErr)
       return { error: getErrorMessage(delErr, 'delete') }
     }
     await get().fetchLocations()
@@ -379,7 +379,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
       const { data, count, error } = await query
       if (error) {
-        console.error('[warehouseStore] fetchProductsPage:', error)
+        if (__DEV__) console.error('[warehouseStore] fetchProductsPage:', error)
         set({ productsPage: [], productsTotalCount: 0, productsPageLoading: false })
         return
       }
@@ -437,7 +437,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         productsPageLoading: false,
       })
     } catch (e) {
-      console.error('[warehouseStore] fetchProductsPage:', e)
+      if (__DEV__) console.error('[warehouseStore] fetchProductsPage:', e)
       set({ productsPage: [], productsTotalCount: 0, productsPageLoading: false })
     }
   },
@@ -449,7 +449,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     ])
     const err = e1 ?? e2
     if (err) {
-      console.error('[warehouseStore] fetchCategories:', err)
+      if (__DEV__) console.error('[warehouseStore] fetchCategories:', err)
       return { error: getErrorMessage(err, 'fetch') }
     }
     set({
@@ -470,7 +470,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*')
       .single()
     if (error || !created) {
-      if (error) console.error('[warehouseStore] addCategoryL1:', error)
+      if (__DEV__ && error) console.error('[warehouseStore] addCategoryL1:', error)
       return { error: getErrorMessage(error, 'create') }
     }
     const row = created as ProductCategoryL1
@@ -489,7 +489,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('product_categories_l1').update({ name: trimmed }).eq('id', id)
     if (error) {
-      console.error('[warehouseStore] updateCategoryL1:', error)
+      if (__DEV__) console.error('[warehouseStore] updateCategoryL1:', error)
       return { error: getErrorMessage(error, 'update') }
     }
     set((s) => ({
@@ -518,7 +518,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('product_categories_l1').delete().eq('id', id)
     if (error) {
-      console.error('[warehouseStore] deleteCategoryL1:', error)
+      if (__DEV__) console.error('[warehouseStore] deleteCategoryL1:', error)
       return { error: getErrorMessage(error, 'delete') }
     }
     set((s) => ({
@@ -546,7 +546,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*')
       .single()
     if (error || !created) {
-      if (error) console.error('[warehouseStore] addCategoryL2:', error)
+      if (__DEV__ && error) console.error('[warehouseStore] addCategoryL2:', error)
       return { error: getErrorMessage(error, 'create') }
     }
     const row = created as ProductCategoryL2
@@ -565,7 +565,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('product_categories_l2').update({ name: trimmed }).eq('id', id)
     if (error) {
-      console.error('[warehouseStore] updateCategoryL2:', error)
+      if (__DEV__) console.error('[warehouseStore] updateCategoryL2:', error)
       return { error: getErrorMessage(error, 'update') }
     }
     set((s) => ({
@@ -586,7 +586,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { error } = await supabase.from('product_categories_l2').delete().eq('id', id)
     if (error) {
-      console.error('[warehouseStore] deleteCategoryL2:', error)
+      if (__DEV__) console.error('[warehouseStore] deleteCategoryL2:', error)
       return { error: getErrorMessage(error, 'delete') }
     }
     set((s) => ({
@@ -640,7 +640,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .from('inventory_entries')
       .select('*, product:products(*), zone:zones(*)')
     if (error) {
-      console.error('[warehouseStore] fetchAllInventoryEntries:', error)
+      if (__DEV__) console.error('[warehouseStore] fetchAllInventoryEntries:', error)
       return { error: getErrorMessage(error, 'fetch') }
     }
     set({ inventoryEntries: data ?? [] })
@@ -763,7 +763,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
             .update({ product_id: productId, last_scanned_at: now })
             .eq('id', existing.id)
           if (error) {
-            console.error('[warehouseStore] upsertProductBarcode (reassign):', error)
+            if (__DEV__) console.error('[warehouseStore] upsertProductBarcode (reassign):', error)
             throw new Error(getErrorMessage(error, 'update'))
           }
           return
@@ -775,7 +775,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         .update({ last_scanned_at: now })
         .eq('id', existing.id)
       if (error) {
-        console.error('[warehouseStore] upsertProductBarcode (update):', error)
+        if (__DEV__) console.error('[warehouseStore] upsertProductBarcode (update):', error)
         throw new Error(getErrorMessage(error, 'update'))
       }
       return
@@ -790,7 +790,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         last_scanned_at: now,
       })
     if (error) {
-      console.error('[warehouseStore] upsertProductBarcode (insert):', error)
+      if (__DEV__) console.error('[warehouseStore] upsertProductBarcode (insert):', error)
       throw new Error(getErrorMessage(error, 'update'))
     }
   },
@@ -802,7 +802,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .eq('product_id', productId)
       .order('last_scanned_at', { ascending: false })
     if (error) {
-      console.error('[warehouseStore] fetchProductBarcodes:', error)
+      if (__DEV__) console.error('[warehouseStore] fetchProductBarcodes:', error)
       throw new Error(getErrorMessage(error, 'fetch'))
     }
     return (data as ProductBarcode[]) ?? []
@@ -811,7 +811,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   deleteProductBarcode: async (barcodeId) => {
     const { error } = await supabase.from('product_barcodes').delete().eq('id', barcodeId)
     if (error) {
-      console.error('[warehouseStore] deleteProductBarcode:', error)
+      if (__DEV__) console.error('[warehouseStore] deleteProductBarcode:', error)
       throw new Error(getErrorMessage(error, 'delete'))
     }
   },
@@ -827,7 +827,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .maybeSingle()
 
     if (fetchError) {
-      console.error('[warehouseStore] updateProductBarcode (fetch):', fetchError)
+      if (__DEV__) console.error('[warehouseStore] updateProductBarcode (fetch):', fetchError)
       return { error: getErrorMessage(fetchError, 'fetch') }
     }
     if (!row) return { error: 'Không tìm thấy mã vạch.' }
@@ -850,7 +850,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .eq('id', barcodeId)
 
     if (error) {
-      console.error('[warehouseStore] updateProductBarcode (update):', error)
+      if (__DEV__) console.error('[warehouseStore] updateProductBarcode (update):', error)
       return { error: getErrorMessage(error, 'update') }
     }
     return {}
@@ -910,7 +910,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
     const { error } = await supabase.from('products').delete().eq('id', productId)
     if (error) {
-      console.error('[warehouseStore] deleteProduct:', error)
+      if (__DEV__) console.error('[warehouseStore] deleteProduct:', error)
       throw new Error(getErrorMessage(error, 'delete'))
     }
 
@@ -1012,7 +1012,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .single()
 
     if (error) {
-      console.error('[warehouseStore] updateProductCategory:', error)
+      if (__DEV__) console.error('[warehouseStore] updateProductCategory:', error)
       return { error: getErrorMessage(error, 'update'), product: null }
     }
     if (updated) {
@@ -1055,7 +1055,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .eq('id', productId)
 
     if (error) {
-      console.error('[warehouseStore] updateProductImage:', error)
+      if (__DEV__) console.error('[warehouseStore] updateProductImage:', error)
       throw new Error(getErrorMessage(error, 'upload'))
     }
 
@@ -1081,7 +1081,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .eq('id', productId)
 
     if (error) {
-      console.error('[warehouseStore] removeProductImage:', error)
+      if (__DEV__) console.error('[warehouseStore] removeProductImage:', error)
       throw new Error(getErrorMessage(error, 'delete'))
     }
 
@@ -1128,7 +1128,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     for (const u of updates) {
       const { error } = await supabase.from('zones').update({ cells: u.cells }).eq('id', u.id)
       if (error) {
-        console.error('[warehouseStore] batchUpdateZoneCells:', error)
+        if (__DEV__) console.error('[warehouseStore] batchUpdateZoneCells:', error)
         return { error: getErrorMessage(error, 'update') }
       }
     }
@@ -1415,7 +1415,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*, product:products(id, name, image_url)')
       .order('created_at', { ascending: false })
     if (error) {
-      console.error('[warehouseStore] fetchInternalNotes:', error)
+      if (__DEV__) console.error('[warehouseStore] fetchInternalNotes:', error)
       return { error: getErrorMessage(error, 'fetch') }
     }
     set({ internalNotes: (data as InternalNote[]) ?? [] })
@@ -1445,7 +1445,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*, product:products(id, name, image_url)')
       .single()
     if (error || !data) {
-      if (error) console.error('[warehouseStore] addInternalNote:', error)
+      if (__DEV__ && error) console.error('[warehouseStore] addInternalNote:', error)
       return { error: getErrorMessage(error, 'create') }
     }
     const note = data as InternalNote
@@ -1465,7 +1465,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*, product:products(id, name, image_url)')
       .single()
     if (error || !data) {
-      if (error) console.error('[warehouseStore] updateInternalNote:', error)
+      if (__DEV__ && error) console.error('[warehouseStore] updateInternalNote:', error)
       return { error: getErrorMessage(error, 'update') }
     }
     const note = data as InternalNote
@@ -1478,7 +1478,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   deleteInternalNote: async (id) => {
     const { error } = await supabase.from('internal_notes').delete().eq('id', id)
     if (error) {
-      console.error('[warehouseStore] deleteInternalNote:', error)
+      if (__DEV__) console.error('[warehouseStore] deleteInternalNote:', error)
       return { error: getErrorMessage(error, 'delete') }
     }
     set((s) => ({

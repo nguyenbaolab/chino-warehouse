@@ -95,7 +95,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   updateLastLogin: async () => {
     const { error } = await supabase.rpc('update_my_last_login')
     if (error) {
-      console.error('[authStore] updateLastLogin failed:', error)
+      if (__DEV__) console.error('[authStore] updateLastLogin failed:', error)
     }
   },
 
@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       const { data, error } = await supabase.rpc('list_user_profiles_with_email')
       if (error) {
-        console.error('[authStore] fetchUsers:', error)
+        if (__DEV__) console.error('[authStore] fetchUsers:', error)
         set({ isLoadingUsers: false })
         return getErrorMessage(error, 'fetch')
       }
@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ users: rows, isLoadingUsers: false })
       return null
     } catch (e) {
-      console.error('[authStore] fetchUsers:', e)
+      if (__DEV__) console.error('[authStore] fetchUsers:', e)
       set({ isLoadingUsers: false })
       return getErrorMessage(e, 'fetch')
     }
@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   updateUserRole: async (userId, newRole) => {
     const { error } = await supabase.from('user_profiles').update({ role: newRole }).eq('id', userId)
     if (error) {
-      console.error('[authStore] updateUserRole:', error)
+      if (__DEV__) console.error('[authStore] updateUserRole:', error)
       return getErrorMessage(error, 'update')
     }
     return get().fetchUsers()
@@ -130,7 +130,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   updateUserDisabled: async (userId, isDisabled) => {
     const { error } = await supabase.from('user_profiles').update({ is_disabled: isDisabled }).eq('id', userId)
     if (error) {
-      console.error('[authStore] updateUserDisabled:', error)
+      if (__DEV__) console.error('[authStore] updateUserDisabled:', error)
       return getErrorMessage(error, 'update')
     }
     return get().fetchUsers()

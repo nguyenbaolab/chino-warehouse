@@ -82,9 +82,9 @@ async function compressImage(uri: string): Promise<string> {
  * Nén ảnh (JPEG 80%, max 1200px cạnh dài), upload lên Storage và trả về public URL.
  */
 export async function uploadProductImage(productId: string, uri: string): Promise<string> {
-  console.log('[F08] compress start:', uri)
+  if (__DEV__) console.log('[F08] compress start:', uri)
   const compressed = { uri: await compressImage(uri) }
-  console.log('[F08] compress done:', compressed.uri)
+  if (__DEV__) console.log('[F08] compress done:', compressed.uri)
   const base64 = await FileSystem.readAsStringAsync(compressed.uri, {
     encoding: FileSystem.EncodingType.Base64,
   })
@@ -93,21 +93,21 @@ export async function uploadProductImage(productId: string, uri: string): Promis
   for (let i = 0; i < binaryString.length; i++) {
     bytes[i] = binaryString.charCodeAt(i)
   }
-  console.log('[F08] blob size:', bytes.length)
+  if (__DEV__) console.log('[F08] blob size:', bytes.length)
   const path = storagePath(productId)
-  console.log('[F08] upload start to path:', productId + '.jpg')
+  if (__DEV__) console.log('[F08] upload start to path:', productId + '.jpg')
 
   const { data: uploadData, error: uploadError } = await supabase.storage.from(BUCKET).upload(path, bytes.buffer, {
     contentType: 'image/jpeg',
     upsert: true,
   })
-  console.log('[F08] upload result:', uploadData, uploadError)
+  if (__DEV__) console.log('[F08] upload result:', uploadData, uploadError)
 
   if (uploadError) throw new Error('Upload that bai')
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
   const publicUrl = data.publicUrl
-  console.log('[F08] publicUrl:', publicUrl)
+  if (__DEV__) console.log('[F08] publicUrl:', publicUrl)
   return `${publicUrl}?v=${Date.now()}`
 }
 

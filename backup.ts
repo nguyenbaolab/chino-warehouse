@@ -49,25 +49,30 @@ type TableName =
   | 'product_categories_l1'
   | 'product_categories_l2'
   | 'products'
+  | 'product_barcodes'
   | 'inventory_entries'
   | 'order_lists'
   | 'order_items'
+  | 'internal_notes'
   | 'audit_logs'
+  | 'user_profiles'
 
 type Backup = Record<TableName, unknown[]>
 
-// Thêm bảng mới vào DB thì phải bổ sung vào đây — nếu không backup sẽ sót bảng
-// (kỷ luật tương tự maintain supabase/migrations/schema.sql).
+// Danh sách bảng backup — cập nhật khi thêm bảng mới vào schema
 const tables: TableName[] = [
   'locations',
   'zones',
   'product_categories_l1',
   'product_categories_l2',
   'products',
+  'product_barcodes',
   'inventory_entries',
   'order_lists',
   'order_items',
+  'internal_notes',
   'audit_logs',
+  'user_profiles',
 ]
 
 async function fetchAllRows(table: TableName): Promise<unknown[]> {

@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — Group H: Security H1–H4
+
+- SEC-12 (H2): wrap `__DEV__` ~55 chỗ console.log/error trong stores/screens/utils; giữ backup.ts CLI + ErrorBoundary.
+- SEC-14 (H4): `.gitignore` thêm `.env.*` cover mọi biến thể.
+- SEC-10 (H1): `backup.ts` thêm product_barcodes, user_profiles, internal_notes (12 bảng).
+- SEC-13 (H3): `npm audit fix` (không force); transitive vulns expo/ws chờ major upgrade.
+- Docs: REQUIREMENTS v1.3.23, KNOWN_ISSUES KI-021/023/024/025 updated, PLAN_4 H1-H4 Done, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — Group A: TTL cache + Products pagination + dead path cleanup
 
 - KI-039: TTL 30s trên 8 màn (InternalNotes, StockCheck, LocationManagement, Discontinued, ProductDetail, ZoneLayoutEditor, OrderList, UserManagement).

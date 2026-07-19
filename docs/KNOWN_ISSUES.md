@@ -409,12 +409,13 @@
 - **Mức độ:** Medium
 - **File liên quan:** `backup.ts`, `dump_schema.bat`
 - **Mô tả:** Script backup JSON local cho bảng public qua Supabase Data API.
-- **Trạng thái:** **Mitigated** — auth và phân trang đã fix; caveat RBAC khi SEC-09.
+- **Trạng thái:** **Mitigated** — backup.ts bảng đầy đủ (12 bảng); auth anon+login giữ nguyên.
 - **Quyết định auth (đã chốt):** Giữ **anon key + `signInWithPassword`** — xem **DECISIONS § SEC-10** (thay thế hướng fix cũ “dùng service_role”).
 - **Đã fix:**
   - Phân trang `.range(from, from+999)` + `order('id')`, page 1000 — tránh giới hạn ~1000 row/request (audit_logs, inventory_entries…).
   - Tên file `backup_YYYYMMDD_HHmmss.json` — không ghi đè khi chạy nhiều lần/ngày.
   - Comment: bổ sung bảng mới vào mảng `tables`; phạm vi không gồm Storage F08.
+  - Phase 4 H1: thêm `product_barcodes`, `internal_notes`, `user_profiles` (12 bảng).
 - **Caveat:** Khi **RBAC (SEC-09)** — user không full SELECT có thể backup thiếu; cần tài khoản admin hoặc cân nhắc lại service_role server-side.
 - **Ghi chú (dump schema):** `dump_schema.bat` — snapshot DDL qua Session Pooler; tách khỏi backup dữ liệu.
 
@@ -436,8 +437,8 @@
 - **Mức độ:** Low
 - **File liên quan:** `stores/warehouseStore.ts`, nhiều screens
 - **Mô tả:** 8+ `console.log`/`console.error` trong store và screens — leak thông tin khi build production.
-- **Trạng thái:** Open
-- **Hướng fix:** Wrap bằng `__DEV__` guard hoặc tắt hoàn toàn ở production build.
+- **Trạng thái:** **Resolved** — mọi `console.*` có `__DEV__` guard (trừ backup CLI + ErrorBoundary).
+- **Đã fix (Phase 4 H2):** wrap ~55 chỗ trong stores/screens/utils; giữ `backup.ts` CLI + `StartupErrorBoundary` log production.
 
 ---
 
@@ -446,8 +447,8 @@
 - **Mức độ:** Low
 - **File liên quan:** `package.json`
 - **Mô tả:** Cần chạy `npm audit` định kỳ; `@supabase/supabase-js` là bề mặt tấn công chính.
-- **Trạng thái:** Open
-- **Hướng fix:** Chạy `npm audit` trước mỗi release; update `@supabase/supabase-js` khi có patch security.
+- **Trạng thái:** **Mitigated** — `npm audit fix` done; transitive vulns (expo/ws) chờ major upgrade.
+- **Đã fix (Phase 4 H3):** `npm audit fix` (không `--force`); còn 13 moderate (postcss/uuid qua expo) — cần `expo@57` breaking change.
 
 ---
 
@@ -456,8 +457,8 @@
 - **Mức độ:** Low
 - **File liên quan:** `.gitignore`
 - **Mô tả:** Các file `.env.production`, `.env.staging` tạo sau này phải được ignore.
-- **Trạng thái:** Open
-- **Hướng fix:** Kiểm tra `.gitignore` có pattern `*.env*` hoặc liệt kê từng file.
+- **Trạng thái:** **Resolved** — `.gitignore` cover `.env.*`.
+- **Đã fix (Phase 4 H4):** pattern `.env` / `.env.*` / `.env*.local`.
 
 ---
 

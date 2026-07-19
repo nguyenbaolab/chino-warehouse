@@ -637,7 +637,7 @@ export default function NotificationsScreen() {
             <TouchableOpacity
               style={[styles.secondaryBtn, { backgroundColor: colors.bg, borderColor: colors.border }]}
               onPress={() => {
-                console.log('[Notifications] add to purchase list placeholder', item.productId)
+                if (__DEV__) console.log('[Notifications] add to purchase list placeholder', item.productId)
               }}
             >
               <Text style={[styles.secondaryBtnText, { color: colors.text }]}>Thêm vào danh sách nhập</Text>

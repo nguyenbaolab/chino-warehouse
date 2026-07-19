@@ -89,7 +89,7 @@ export default function UserManagementScreen() {
   const loadUsers = useCallback(async () => {
     const err = await fetchUsers()
     if (err) {
-      console.log('[UserManagement] fetchUsers failed:', err)
+      if (__DEV__) console.log('[UserManagement] fetchUsers failed:', err)
       Alert.alert('Không thể tải danh sách người dùng')
     }
   }, [fetchUsers])

@@ -421,7 +421,7 @@ export default function OrderDetailScreen() {
       </ScrollView>
 
       <View style={styles.footerActions}>
-        <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.bg, borderColor: colors.border }]} onPress={() => console.log('[Order] export PDF placeholder', orderList.id)}>
+        <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.bg, borderColor: colors.border }]} onPress={() => { if (__DEV__) console.log('[Order] export PDF placeholder', orderList.id) }}>
           <Text style={{ color: colors.text, fontWeight: '700' }}>Xuất PDF</Text>
         </TouchableOpacity>
         {canWrite && orderList.status === 'draft' && (

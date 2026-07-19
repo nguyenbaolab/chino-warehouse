@@ -164,11 +164,11 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 
 | Task | SEC / KI | Mô tả | Mức độ |
 |------|----------|-------|--------|
-| **H1** | SEC-10 / KI-021 | Backup script — tinh chỉnh auth (service_role hoặc admin backup); hiện Mitigated anon+login | Medium |
-| **H2** | SEC-12 / KI-023 | Wrap `console.log` / `console.error` bằng `__DEV__` | Low |
-| **H3** | SEC-13 / KI-024 | `npm audit` trước release; patch deps | Low |
-| **H4** | SEC-14 / KI-025 | Đảm bảo `.gitignore` cover `.env.*` | Low |
-| **H5** | KI-026 | AuditLogScreen Realtime — **có thể defer tiếp** (pagination phức tạp) | Low |
+| **H1** ✅ Done | SEC-10 / KI-021 | Backup script — tinh chỉnh auth (service_role hoặc admin backup); hiện Mitigated anon+login | Medium |
+| **H2** ✅ Done | SEC-12 / KI-023 | Wrap `console.log` / `console.error` bằng `__DEV__` | Low |
+| **H3** ✅ Done | SEC-13 / KI-024 | `npm audit` trước release; patch deps | Low |
+| **H4** ✅ Done | SEC-14 / KI-025 | Đảm bảo `.gitignore` cover `.env.*` | Low |
+| **H5** | KI-026 | AuditLogScreen Realtime — **Deferred** (pagination phức tạp) | Low |
 
 ---
 
@@ -184,10 +184,10 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 
 | SEC | KI | Mô tả | Trạng thái đầu Phase 4 |
 |-----|-----|-------|------------------------|
-| SEC-10 | KI-021 | Backup script | Mitigated → H1 refine |
-| SEC-12 | KI-023 | console.log production | Open → H2 |
-| SEC-13 | KI-024 | Dependency audit | Open → H3 |
-| SEC-14 | KI-025 | `.env.*` gitignore | Open → H4 |
+| SEC-10 | KI-021 | Backup script | Mitigated (H1 ✅ — 12 bảng) |
+| SEC-12 | KI-023 | console.log production | Resolved (H2 ✅) |
+| SEC-13 | KI-024 | Dependency audit | Mitigated (H3 ✅ — transitive expo) |
+| SEC-14 | KI-025 | `.env.*` gitignore | Resolved (H4 ✅) |
 | — | KI-026 | AuditLog Realtime | Deferred (H5 optional) |
 
 *(SEC-05/06/09 đã Done Phase 3.)*

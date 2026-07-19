@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.22 | Tháng 7/2026
+**Phiên bản:** 1.3.23 | Tháng 7/2026
 
+> **v1.3.23** — Group H Done (H1–H4): SEC-12 wrap __DEV__ ~55 chỗ; SEC-14 .gitignore .env.*; SEC-10 backup.ts thêm 3 bảng; SEC-13 npm audit fix.
 > **v1.3.22** — Group A Done: KI-039 TTL 30s trên 8 màn; KI-040 Products search server-side + giảm payload; KI-050 xóa toggleDeferred dead path.
 > **v1.3.21** — F32 Done (Group D): products.ignore_expiry_warning / ignore_stock_warning; 2 switch ProductDetail; Notifications + Dashboard skip SP có flag.
 > **v1.3.20** — C4 Done: màn Kiểm hàng (Settings) — list market entries is_special, tick is_checked, Reset batch; StockCheckScreen + route.

@@ -475,23 +475,23 @@ export default function ProductsScreen() {
 
   function showImageOptions(product: Product) {
     if (isReadOnly) return
-    console.log('[F08] showImageOptions called', product.id)
+    if (__DEV__) console.log('[F08] showImageOptions called', product.id)
     const pickAndUpload = async (source: 'camera' | 'library') => {
       setUploadingProductId(product.id)
       try {
         const uri = await pickImage(source)
-        console.log('[F08] pickImage result:', uri)
+        if (__DEV__) console.log('[F08] pickImage result:', uri)
         if (!uri) {
           setUploadingProductId(null)
           return
         }
         const url = await uploadProductImage(product.id, uri)
-        console.log('[F08] uploadProductImage result:', url)
+        if (__DEV__) console.log('[F08] uploadProductImage result:', url)
         await updateProductImage(product.id, url)
-        console.log('[F08] updateProductImage done')
+        if (__DEV__) console.log('[F08] updateProductImage done')
         setUploadingProductId(null)
       } catch (e) {
-        console.log('[F08] ERROR:', e)
+        if (__DEV__) console.log('[F08] ERROR:', e)
         setUploadingProductId(null)
         Alert.alert('Lỗi', 'Có lỗi khi tải ảnh lên')
       }

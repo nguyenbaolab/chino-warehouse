@@ -194,7 +194,7 @@ export default function BarcodeScannerScreen() {
     setIsScanLocked(true)
     setIsSearching(true)
 
-    console.log('[BarcodeScanner] confirmed barcode:', barcode, 'mode:', mode)
+    if (__DEV__) console.log('[BarcodeScanner] confirmed barcode:', barcode, 'mode:', mode)
 
     if (mode === 'search' && typeof onScanFillBarcode === 'function') {
       setIsSearching(false)
@@ -240,7 +240,7 @@ export default function BarcodeScannerScreen() {
 
     const entry = await searchByBarcode(barcode)
     setIsSearching(false)
-    console.log('[BarcodeScanner] searchByBarcode lot:', entry?.id ?? null)
+    if (__DEV__) console.log('[BarcodeScanner] searchByBarcode lot:', entry?.id ?? null)
 
     if (mode === 'locate') {
       if (entry) {
@@ -250,7 +250,7 @@ export default function BarcodeScannerScreen() {
           scannedProductName: entry.product?.name,
           locateScannedAt: Date.now(),
         }
-        console.log('[BarcodeScanner][locate] lot found, navigating params:', params)
+        if (__DEV__) console.log('[BarcodeScanner][locate] lot found, navigating params:', params)
         navigateTabsThenCloseModal({
           screen: 'Map',
           params: {
@@ -259,7 +259,7 @@ export default function BarcodeScannerScreen() {
           },
         })
       } else {
-        console.log('[BarcodeScanner][locate] product not found for barcode')
+        if (__DEV__) console.log('[BarcodeScanner][locate] product not found for barcode')
         await tryLookupOrNotFound(barcode, returnTab || 'Map')
       }
       return

@@ -53,7 +53,7 @@ export default function StockCheckScreen() {
           .select('*')
           .eq('type', 'market')
         if (locErr) {
-          console.error('[StockCheck] fetch market locations:', locErr)
+          if (__DEV__) console.error('[StockCheck] fetch market locations:', locErr)
         }
         const marketLocs = (locs ?? []) as Location[]
         const locIds = marketLocs.map((l) => l.id)
@@ -65,7 +65,7 @@ export default function StockCheckScreen() {
             .select('id')
             .in('location_id', locIds)
           if (zoneErr) {
-            console.error('[StockCheck] fetch market zones:', zoneErr)
+            if (__DEV__) console.error('[StockCheck] fetch market zones:', zoneErr)
           } else {
             zoneIdSet = new Set((zones ?? []).map((z) => z.id as string))
           }
@@ -111,7 +111,7 @@ export default function StockCheckScreen() {
       await updateInventoryEntry(entry.id, { is_checked: !entry.is_checked })
     } catch (e) {
       Alert.alert('Lỗi', 'Không thể cập nhật trạng thái kiểm hàng.')
-      console.error('[StockCheck] toggle is_checked:', e)
+      if (__DEV__) console.error('[StockCheck] toggle is_checked:', e)
     }
   }
 
@@ -129,7 +129,7 @@ export default function StockCheckScreen() {
               await resetMarketChecklist()
             } catch (e) {
               Alert.alert('Lỗi', 'Không thể reset checklist.')
-              console.error('[StockCheck] resetMarketChecklist:', e)
+              if (__DEV__) console.error('[StockCheck] resetMarketChecklist:', e)
             } finally {
               setResetting(false)
             }
