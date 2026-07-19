@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.31 | Tháng 7/2026
+**Phiên bản:** 1.3.32 | Tháng 7/2026
 
+> **v1.3.32** — F34: revert `in_progress` → `draft` (Quay lại chỉnh sửa); giữ `is_picked`
 > **v1.3.31** — F37 Biometric login (vân tay / Face ID) + SecureStore credentials; persistSession vẫn false
 > **v1.3.30** — C-part2 F35 Done: ExpiryAlert 6 section danh sách entries; tap → ProductDetail
 > **v1.3.29** — F35 fix: daily 4 mốc exact-day; 3 notification riêng; ExpiryAlert 6 section counts
@@ -143,7 +144,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F31 | Ghi chú nội bộ (Internal Notes) | Màn **Ghi chú** trong Settings (card entry). Bảng `internal_notes` (`product_id` nullable, `custom_product_name`, reason, created_by, created_at). UI card: ảnh SP 64×64 + tên + lý do (hoặc placeholder + tên tự do + dòng "Sản phẩm chưa có trong hệ thống"). FAB (+) → bottom sheet: autocomplete SP có sẵn **hoặc** gõ tên tự do + lý do. Tap card có `product_id` → ProductDetail; card tên tự do không navigate. Sửa/xóa ghi chú. **RBAC:** guest xem; staff+ sửa/xóa mọi ghi chú. **Tách biệt** F27 Đặt hàng. | P2 | Phase 3 | Done |
 | F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Done |
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
-| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | Done |
+| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. **Revert:** khi `in_progress`, staff+ có thể «Quay lại chỉnh sửa» → `draft` (giữ nguyên `is_picked`; không revert từ `completed`). | P2 | Phase 5 | Done |
 | F35 | Push notification (local) | `expo-notifications` — **3 notification riêng** (daily/weekly/monthly). **Daily:** 4 mốc exact-day. **Weekly/Monthly:** range. Settings admin → `app_settings`. **Màn Cảnh báo hết hạn:** 6 section (4 mốc đếm ngược + tuần + tháng), danh sách entries (không trùng section), collapsible, tap → ProductDetail. KI-062 nội dung tĩnh. | P3 | Phase 5 | Done |
 | F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | Done |
 | F37 | Đăng nhập sinh trắc học | Vân tay / Face ID tự bật sau login password đầu. Credentials lưu SecureStore. Toggle tắt trong Settings. Giữ `persistSession: false` + timer 20 phút. Password sai → xoá credentials + fallback form. | P2 | Phase 5 | Done |
@@ -327,7 +328,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | created_at | Timestamp | Tự sinh |
 | updated_at | Timestamp | Tự cập nhật |
 
-> Confirm đơn → trừ `inventory_entries.quantity_boxes` theo batch (không trừ khi tick `is_picked`). Xem `DECISIONS.md` F34.
+> Confirm đơn → trừ `inventory_entries.quantity_boxes` theo batch (không trừ khi tick `is_picked`). Có thể revert `in_progress` → `draft` để sửa checklist (giữ `is_picked`). Xem `DECISIONS.md` F34.
 
 ### 8.14 `app_settings` (F35 — shared notification config)
 

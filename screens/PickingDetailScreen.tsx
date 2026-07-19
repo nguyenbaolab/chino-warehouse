@@ -75,6 +75,7 @@ export default function PickingDetailScreen() {
     updatePickingList,
     deletePickingList,
     startPicking,
+    revertPickingToDraft,
     completePicking,
   } = useWarehouseStore()
 
@@ -326,6 +327,24 @@ export default function PickingDetailScreen() {
         },
       },
     ])
+  }
+
+  function requestRevertToDraft() {
+    if (!pickingList || !canWrite || isReadOnly) return
+    if (pickingList.status !== 'in_progress') return
+    Alert.alert(
+      'Quay lại chỉnh sửa?',
+      'Đơn sẽ quay về trạng thái nháp, bạn có thể thêm/xóa lô.',
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        {
+          text: 'Đồng ý',
+          onPress: () => {
+            void revertPickingToDraft(pickingList.id)
+          },
+        },
+      ],
+    )
   }
 
   async function runComplete() {
@@ -724,6 +743,20 @@ export default function PickingDetailScreen() {
                 <Text style={{ color: colors.sub, width: '100%', marginBottom: 4 }}>
                   Đã lấy {pickedCount}/{totalCount}
                 </Text>
+                {canWrite && !isReadOnly ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.footerBtn,
+                      { backgroundColor: colors.card, borderColor: colors.border },
+                    ]}
+                    onPress={requestRevertToDraft}
+                    disabled={isCompleting}
+                  >
+                    <Text style={{ color: colors.text, fontWeight: '700' }}>
+                      ✏️ Quay lại chỉnh sửa
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
                 <TouchableOpacity
                   style={[
                     styles.footerBtn,

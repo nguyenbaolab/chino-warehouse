@@ -212,7 +212,7 @@ README.md
 
 **Actions — đặt hàng:** `fetchOrderLists`, `createOrderList`, `updateOrderList`, `deleteOrderList`, `addOrderItem`, `updateOrderItem`, `deleteOrderItem`, `confirmOrderList`, `markOrderPlaced`.
 
-**State / actions — picking (F34):** `pickingLists`, `pickingListItems`; `fetchPickingLists`, `createPickingList`, `updatePickingList`, `deletePickingList`, `addPickingItem`, `updatePickingItem`, `deletePickingItem`, `togglePickedItem`, `startPicking`, `completePicking` (re-fetch qty → sequential trừ tồn picked items → status `completed` nếu all OK; partial fail giữ `in_progress`).
+**State / actions — picking (F34):** `pickingLists`, `pickingListItems`; `fetchPickingLists`, `createPickingList`, `updatePickingList`, `deletePickingList`, `addPickingItem`, `updatePickingItem`, `deletePickingItem`, `togglePickedItem`, `startPicking`, **`revertPickingToDraft`** (`in_progress` → `draft`, giữ `is_picked`), `completePicking` (re-fetch qty → sequential trừ tồn picked items → status `completed` nếu all OK; partial fail giữ `in_progress`). **PickingDetailScreen:** draft = thêm/xóa lô; in_progress = tick + «✏️ Quay lại chỉnh sửa» (outline) + «Hoàn thành»; completed = không revert.
 
 **Actions — ghi chú nội bộ (F31):** `fetchInternalNotes`, `addInternalNote({ productId?, customName?, reason })`, `updateInternalNote`, `deleteInternalNote` (join `product:products(id, name, image_url)`; `product_id` nullable + `custom_product_name`).
 

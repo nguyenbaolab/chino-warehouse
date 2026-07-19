@@ -172,6 +172,8 @@ type WarehouseStore = {
   deletePickingItem: (id: string) => Promise<void>
   togglePickedItem: (id: string, is_picked: boolean) => Promise<void>
   startPicking: (id: string) => Promise<void>
+  /** in_progress → draft; giữ nguyên is_picked trên items */
+  revertPickingToDraft: (id: string) => Promise<void>
   completePicking: (id: string) => Promise<{
     success: boolean
     deducted: number
@@ -1541,6 +1543,11 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
   startPicking: async (id) => {
     await get().updatePickingList(id, { status: 'in_progress' })
+  },
+
+  // Chỉ đổi status; không đụng is_picked (user có thể đã tick một phần)
+  revertPickingToDraft: async (id) => {
+    await get().updatePickingList(id, { status: 'draft' })
   },
 
   completePicking: async (id) => {
