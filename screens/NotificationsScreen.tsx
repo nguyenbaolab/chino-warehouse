@@ -18,7 +18,7 @@ import FilterModal, { formatFilterSummary, type FilterMode } from '../components
 import { formatExpiryDate, getExpiryStatus, InventoryEntry, Location, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
-import { formatSplitQtyLabel, qtyUnitForLocationType } from '../utils/qtyUnitUtils'
+import { formatSplitQtyLabel, qtyUnitForLocationType, locationTypeOfEntry } from '../utils/qtyUnitUtils'
 import { isoExpiryToDisplay, parseDisplayDateToIso } from '../utils/dateUtils'
 import {
   getDisplayColor,
@@ -37,19 +37,6 @@ function plus30ISO(): string {
   const d = new Date()
   d.setDate(d.getDate() + 30)
   return d.toISOString().slice(0, 10)
-}
-
-/** Resolve loại location từ zone join + map locations (fallback warehouse). */
-function locationTypeOfEntry(
-  entry: InventoryEntry,
-  locationById: Map<string, Location>,
-): 'warehouse' | 'market' {
-  const locId = entry.zone?.location_id
-  if (locId) {
-    const t = locationById.get(locId)?.type
-    if (t === 'warehouse' || t === 'market') return t
-  }
-  return 'warehouse'
 }
 
 type ExpiryLotRow = {

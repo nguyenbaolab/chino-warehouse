@@ -8,9 +8,20 @@
 - **File liên quan:** `screens/ProductsScreen.tsx` (`filteredProducts`, KI-040)
 - **Mô tả:** List lấy `productsPage` (≤200 SP theo tên) rồi mới lọc SP có lô trong mode. SP siêu thị ngoài 200 đầu (hoặc ít giao với page) biến mất; Map/ZoneDetail vẫn xem được vì đọc inventory theo zone.
 - **Hướng fix:** List theo `product_id` có lô trong scope Mode/Kho/Zone; resolve tên/ảnh từ `products` + `productsPage` + nested `entry.product`; `fetchProducts` khi không archived.
-- **Trạng thái:** Resolved
-- **Đã fix:** inventory-scoped `filteredProducts` (KI-066).
+- **Trạng thái:** Resolved *(catalog Mode Tất cả lại dùng `productsPage`; khi lọc Mode/Kho/Zone, qty/lots scoped inventory — không còn cắt list chỉ SP có lô)*
+- **Đã fix:** inventory-scoped list (lần 1); sau đó user chọn catalog A + đơn vị theo type (v1.3.34).
 - **Tham chiếu:** KI-040, KI-064, F36
+
+---
+
+### [KI-067] ProductDetail tên kho `—` khi location ngoài appMode
+
+- **Mức độ:** Medium (UX)
+- **File liên quan:** `screens/ProductDetailScreen.tsx` (`lotPlaceTitle`); `store.locations` filter `appMode`
+- **Mô tả:** Lô siêu thị hiện `— · Tủ 4 · Tầng 1` vì `locations.find` chỉ có kho của Map mode hiện tại.
+- **Trạng thái:** Resolved
+- **Đã fix:** load all locations trên ProductDetail; Map search fallback all location names.
+- **Tham chiếu:** F36 appMode
 
 ---
 

@@ -8,7 +8,7 @@ import { useFocusEffect, useIsFocused, useNavigation, useRoute } from '@react-na
 import { supabase } from '../lib/supabase'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore, type ThemeColors } from '../stores/themeStore'
-import { Zone, ZoneCell, InventoryEntry, Product, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
+import { Zone, ZoneCell, InventoryEntry, Product, Location, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
 import { useWarningStore } from '../stores/warningStore'
 import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { getDisplayColorForEntry } from '../utils/statusUtils'
@@ -178,6 +178,8 @@ export default function MapScreen() {
   const [tierCount, setTierCount] = useState('1')
   const [selectedColor, setSelectedColor] = useState(ZONE_COLORS[0])
   const [isSavingZone, setIsSavingZone] = useState(false)
+  /** Bổ sung tên kho khi search trả location ngoài store.locations (appMode) */
+  const [allLocationNames, setAllLocationNames] = useState<Map<string, string>>(new Map())
   const scannedProductName: string | undefined = route.params?.scannedProductName
   const scannedBarcode: string | undefined = route.params?.scannedBarcode
   const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
@@ -211,6 +213,24 @@ export default function MapScreen() {
     loadTheme()
     fetchLocations()
     fetchProducts()
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    void supabase
+      .from('locations')
+      .select('id, name')
+      .then(({ data }) => {
+        if (cancelled) return
+        const map = new Map<string, string>()
+        for (const row of (data as Location[]) ?? []) {
+          map.set(row.id, row.name)
+        }
+        setAllLocationNames(map)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -361,7 +381,9 @@ export default function MapScreen() {
       const locationId = entry.zone?.location_id
       if (!locationId) continue
       const locationName =
-        locations.find((l) => l.id === locationId)?.name ?? 'Kho không xác định'
+        locations.find((l) => l.id === locationId)?.name
+        ?? allLocationNames.get(locationId)
+        ?? 'Kho không xác định'
       const existing = groupMap.get(locationId)
       if (existing) {
         existing.entries.push(entry)
@@ -380,7 +402,7 @@ export default function MapScreen() {
         if (worstA !== worstB) return worstA - worstB
         return a.locationName.localeCompare(b.locationName)
       })
-  }, [searchResults, locations])
+  }, [searchResults, locations, allLocationNames])
 
   const collapsedSearchSummaries = useMemo(() => {
     const map = new Map<

@@ -29,6 +29,7 @@ import {
   formatExpiryDate,
   getCombinedStatus,
   InventoryEntry,
+  Location,
   Product,
   ProductBarcode,
   Zone,
@@ -38,6 +39,11 @@ import { checkConflict } from '../utils/conflictUtils'
 import { isoExpiryToDisplay, isValidDisplayDate, parseDisplayDateToIso } from '../utils/dateUtils'
 import { pickImage, uploadProductImage, deleteProductImage } from '../utils/imageUtils'
 import { getErrorMessage } from '../utils/errorMessages'
+import {
+  formatSplitQtyLabel,
+  locationTypeOfEntry,
+  qtyUnitForLocationType,
+} from '../utils/qtyUnitUtils'
 
 type ProductDetailRouteParams = {
   productId: string
@@ -71,8 +77,6 @@ export default function ProductDetailScreen() {
   const isReadOnly = useIsReadOnly()
   const {
     zones,
-    locations,
-    fetchLocations,
     updateInventoryEntry,
     deleteInventoryEntry,
     checkBarcodeConflict,
@@ -91,13 +95,13 @@ export default function ProductDetailScreen() {
     setLocateIntent,
     updateProductImage,
     removeProductImage,
-    getQtyUnit,
   } = useWarehouseStore()
-  const qtyUnit = getQtyUnit()
 
   const [product, setProduct] = useState<Product | null>(null)
   const [lots, setLots] = useState<InventoryEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  /** All locations — tên kho + đơn vị không phụ thuộc appMode Map */
+  const [allLocations, setAllLocations] = useState<Location[]>([])
 
   // A5: snapshot used for optimistic locking (conflict detection)
   const lotSnapshotsRef = useRef<Record<string, string>>({})
@@ -135,10 +139,27 @@ export default function ProductDetailScreen() {
   const [barcodeInputValue, setBarcodeInputValue] = useState('')
   const [barcodeInputTargetId, setBarcodeInputTargetId] = useState<string | null>(null)
 
-  const totalLotBoxes = useMemo(
-    () => lots.reduce((sum, lot) => sum + lot.quantity_boxes, 0),
-    [lots]
+  const locationById = useMemo(
+    () => new Map(allLocations.map((l) => [l.id, l])),
+    [allLocations],
   )
+
+  const lotQtySplit = useMemo(() => {
+    let warehouse = 0
+    let market = 0
+    for (const lot of lots) {
+      if (locationTypeOfEntry(lot, locationById) === 'warehouse') warehouse += lot.quantity_boxes
+      else market += lot.quantity_boxes
+    }
+    return { warehouse, market }
+  }, [lots, locationById])
+
+  const editingLotUnit = useMemo(() => {
+    if (!editingLotId) return 'thùng'
+    const lot = lots.find((l) => l.id === editingLotId)
+    if (!lot) return 'thùng'
+    return qtyUnitForLocationType(locationTypeOfEntry(lot, locationById))
+  }, [editingLotId, lots, locationById])
 
   const hasThresholdChanged =
     editWarningDays !== originalWarningDays ||
@@ -164,10 +185,17 @@ export default function ProductDetailScreen() {
   }, [fetchCategories])
 
   useEffect(() => {
-    if (useWarehouseStore.getState().locations.length === 0) {
-      void fetchLocations()
+    let cancelled = false
+    void supabase
+      .from('locations')
+      .select('id, type, name')
+      .then(({ data }) => {
+        if (!cancelled) setAllLocations((data as Location[]) ?? [])
+      })
+    return () => {
+      cancelled = true
     }
-  }, [fetchLocations])
+  }, [])
 
   const categoryL2Options = useMemo(() => {
     const l1 = product?.category_level1_id
@@ -498,7 +526,7 @@ export default function ProductDetailScreen() {
   async function handleSaveLot(lot: InventoryEntry) {
     const quantity = Number(editQuantity)
     if (!Number.isFinite(quantity) || quantity < 0 || quantity !== Math.floor(quantity)) {
-      Alert.alert(`Số ${qtyUnit} không hợp lệ`, `Số ${qtyUnit} phải là số nguyên lớn hơn hoặc bằng 0.`)
+      Alert.alert(`Số ${editingLotUnit} không hợp lệ`, `Số ${editingLotUnit} phải là số nguyên lớn hơn hoặc bằng 0.`)
       return
     }
     if (!isValidDisplayDate(editExpiryDate)) {
@@ -1120,11 +1148,11 @@ export default function ProductDetailScreen() {
               )}
               {canWrite ? (
                 <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
-                  Ngưỡng cảnh báo sắp hết ({qtyUnit}): {product?.low_warning_boxes ?? 3}
+                  Ngưỡng cảnh báo sắp hết (đơn vị): {product?.low_warning_boxes ?? 3}
                 </Text>
               ) : (
                 <Text style={[styles.infoText, { color: colors.sub, marginTop: 10 }]}>
-                  Ngưỡng cảnh báo sắp hết ({qtyUnit}): {product?.low_warning_boxes ?? 3}
+                  Ngưỡng cảnh báo sắp hết (đơn vị): {product?.low_warning_boxes ?? 3}
                 </Text>
               )}
               {canWrite ? (
@@ -1147,7 +1175,7 @@ export default function ProductDetailScreen() {
                   maxLength={6}
                 />
               ) : (
-                <Text style={[styles.infoText, { color: colors.text }]}>{product?.low_warning_boxes ?? 3} {qtyUnit}</Text>
+                <Text style={[styles.infoText, { color: colors.text }]}>{product?.low_warning_boxes ?? 3} đơn vị</Text>
               )}
 
               {/* F32 — bỏ qua cảnh báo per SP */}
@@ -1338,7 +1366,9 @@ export default function ProductDetailScreen() {
         </View>
 
         <View style={[styles.lotsToolbar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.totalBoxesToolbar, { color: colors.text }]}>Tổng {totalLotBoxes} {qtyUnit}</Text>
+          <Text style={[styles.totalBoxesToolbar, { color: colors.text }]}>
+            Tổng {formatSplitQtyLabel(lotQtySplit.warehouse, lotQtySplit.market)}
+          </Text>
           <View style={styles.issuesToggleInner}>
             <Text style={{ color: colors.sub, fontSize: 13 }}>Có vấn đề</Text>
             <Switch
@@ -1380,10 +1410,15 @@ export default function ProductDetailScreen() {
               getDisplayColorContextFromEntry(lot, product ?? lot.product),
             )
             const zoneResolved = (lot.zone as Zone | undefined) ?? zones.find((z) => z.id === lot.zone_id)
+            const locType = locationTypeOfEntry(
+              { zone: zoneResolved ?? lot.zone },
+              locationById,
+            )
             const locationName = zoneResolved?.location_id
-              ? locations.find((l) => l.id === zoneResolved.location_id)?.name
+              ? locationById.get(zoneResolved.location_id)?.name
               : undefined
             const lotPlaceTitle = `${locationName ?? '—'} · ${zoneResolved?.name ?? '—'} · Tầng ${lot.tier}`
+            const lotUnit = qtyUnitForLocationType(locType)
             return (
               <View key={lot.id} style={[styles.lotWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 {lot.quantity_boxes === 0 && (
@@ -1415,7 +1450,7 @@ export default function ProductDetailScreen() {
                   >
                     <Text style={[styles.lotTitle, { color: colors.text }]}>{lotPlaceTitle}</Text>
                     <Text style={[styles.lotSub, { color: colors.sub }]}>
-                      {lot.quantity_boxes} {qtyUnit} · Hạn: {formatExpiryDate(lot.expiry_date)}
+                      {lot.quantity_boxes} {lotUnit} · Hạn: {formatExpiryDate(lot.expiry_date)}
                     </Text>
                     {!!lot.barcode && <Text style={[styles.lotSub, { color: colors.sub }]}>Barcode: {lot.barcode}</Text>}
                     {!!lot.notes && <Text style={[styles.lotSub, { color: colors.sub }]}>{lot.notes}</Text>}
@@ -1451,7 +1486,7 @@ export default function ProductDetailScreen() {
 
                 {canWrite && editingLotId === lot.id && (
                   <View style={[styles.editBox, { borderColor: colors.border, backgroundColor: colors.bg }]}>
-                    <Text style={[styles.editLabel, { color: colors.sub }]}>Số {qtyUnit}</Text>
+                    <Text style={[styles.editLabel, { color: colors.sub }]}>Số {editingLotUnit}</Text>
                     <TextInput
                       style={[styles.editInput, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]}
                       keyboardType="numeric"

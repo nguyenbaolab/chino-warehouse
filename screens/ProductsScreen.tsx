@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import ImageViewerModal from '../components/ImageViewerModal'
-import FilterModal, { formatFilterSummary } from '../components/FilterModal'
+import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
@@ -32,6 +32,11 @@ import {
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
 import { pickImage, uploadProductImage } from '../utils/imageUtils'
+import {
+  formatSplitQtyLabel,
+  locationTypeOfEntry,
+  qtyUnitForLocationType,
+} from '../utils/qtyUnitUtils'
 import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 
 const PAGE_SIZE = 10
@@ -59,14 +64,7 @@ export default function ProductsScreen() {
     upsertProductBarcode,
     logBarcodeConflict,
     lookupProductByBarcode,
-    appMode,
   } = useWarehouseStore()
-  // Đơn vị theo filterMode local (không dùng getQtyUnit / appMode global)
-  const [filterMode, setFilterMode] = useState<'warehouse' | 'market'>(() => {
-    const mode = useWarehouseStore.getState().appMode
-    return mode === 'market' ? 'market' : 'warehouse'
-  })
-  const qtyUnit = filterMode === 'warehouse' ? 'thùng' : 'sản phẩm'
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
   const canWrite = useCanWrite()
@@ -86,12 +84,15 @@ export default function ProductsScreen() {
   const [viewingImage, setViewingImage] = useState<{ uri: string; productId: string } | null>(null)
   const [uploadingProductId, setUploadingProductId] = useState<string | null>(null)
 
-  /** FilterModal — mode bắt buộc Kho/Siêu thị (local; initial = appMode Map) */
+  /** FilterModal — mặc định Tất cả (catalog đủ cả 2 mode) */
+  const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [filterLocations, setFilterLocations] = useState<Location[]>([])
+  /** All locations — đơn vị thùng/sản phẩm theo type (cách A) */
+  const [allLocations, setAllLocations] = useState<Location[]>([])
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
-  /** Zone IDs thuộc filterMode khi chưa chọn kho cụ thể */
+  /** Zone IDs thuộc filterMode khi chưa chọn kho cụ thể (null khi Mode = all) */
   const [modeZoneIds, setModeZoneIds] = useState<Set<string> | null>(null)
 
   const [showCreateProductModal, setShowCreateProductModal] = useState(false)
@@ -122,11 +123,30 @@ export default function ProductsScreen() {
     }
   }, [showCreateProductModal, fetchCategories])
 
-  // Catalog full (không archived) — resolve SP có lô trong mode nhưng ngoài productsPage (max 200)
+  // Catalog full (không archived) — dùng khi resolve + tạo SP
   useEffect(() => {
     if (showArchived) return
     void fetchProducts()
   }, [fetchProducts, showArchived])
+
+  // All locations cho đơn vị theo type (không phụ thuộc filterMode / appMode)
+  useEffect(() => {
+    let cancelled = false
+    void supabase
+      .from('locations')
+      .select('id, type, name')
+      .then(({ data }) => {
+        if (!cancelled) setAllLocations((data as Location[]) ?? [])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const locationById = useMemo(
+    () => new Map(allLocations.map((l) => [l.id, l])),
+    [allLocations],
+  )
 
   // KI-040: debounce search 300ms trước khi gọi server
   useEffect(() => {
@@ -134,7 +154,7 @@ export default function ProductsScreen() {
     return () => clearTimeout(t)
   }, [searchQuery])
 
-  // KI-040: productsPage cho search/archived/no-image; list mode vẫn ưu tiên SP có lô trong scope
+  // KI-040: productsPage = catalog base (search/archived/no-image)
   useEffect(() => {
     void fetchProductsPage({
       page: 0,
@@ -145,15 +165,13 @@ export default function ProductsScreen() {
     })
   }, [fetchProductsPage, debouncedSearch, showArchived, showNoImageOnly])
 
-  // FilterModal: danh sách kho theo filterMode (luôn Kho hoặc Siêu thị)
+  // FilterModal: danh sách kho theo filterMode (all = mọi type)
   useEffect(() => {
     let cancelled = false
     async function loadFilterLocations() {
-      const { data } = await supabase
-        .from('locations')
-        .select('*')
-        .eq('type', filterMode)
-        .order('name')
+      let query = supabase.from('locations').select('*').order('name')
+      if (filterMode !== 'all') query = query.eq('type', filterMode)
+      const { data } = await query
       if (!cancelled) setFilterLocations((data as Location[]) ?? [])
     }
     void loadFilterLocations()
@@ -168,16 +186,15 @@ export default function ProductsScreen() {
     setSelectedZoneId(null)
   }, [filterMode])
 
-  // Chưa chọn kho → lấy mọi zone thuộc các kho của filterMode
+  // Mode all hoặc đã chọn kho → không dùng modeZoneIds
   useEffect(() => {
-    if (filterLocationId) {
+    if (filterMode === 'all' || filterLocationId) {
       setModeZoneIds(null)
       return
     }
     const locIds = filterLocations.map((l) => l.id)
     if (locIds.length === 0) {
-      // Chưa load xong locations hoặc mode chưa có kho — null = chưa sẵn sàng (không dùng Set rỗng)
-      setModeZoneIds(null)
+      setModeZoneIds(new Set())
       return
     }
     let cancelled = false
@@ -269,101 +286,74 @@ export default function ProductsScreen() {
     zoneId: selectedZoneId,
     locations: filterLocations,
     zones: zonesForFilterLoc,
-    requireMode: true,
   })
 
-  const productById = useMemo(() => {
-    const map = new Map<string, Product>()
-    for (const p of products) map.set(p.id, p)
-    for (const p of productsPage) map.set(p.id, p)
-    for (const entry of inventoryEntries) {
-      if (entry.product?.id) map.set(entry.product.id, entry.product)
-    }
-    return map
-  }, [products, productsPage, inventoryEntries])
-
-  const totalBoxesByProduct = useMemo(() => {
-    const map = new Map<string, number>()
+  function entryInFilterScope(entry: { zone_id: string }): boolean {
     const hasZoneFilter = selectedZoneId != null
+    if (hasZoneFilter && entry.zone_id !== selectedZoneId) return false
+    if (locationZoneSet && !locationZoneSet.has(entry.zone_id)) return false
+    if (!locationZoneSet && modeZoneIds && !modeZoneIds.has(entry.zone_id)) return false
+    return true
+  }
+
+  const qtySplitByProduct = useMemo(() => {
+    const map = new Map<string, { warehouse: number; market: number; total: number }>()
     for (const entry of inventoryEntries) {
-      if (locationZoneSet && !locationZoneSet.has(entry.zone_id)) continue
-      if (hasZoneFilter && entry.zone_id !== selectedZoneId) continue
-      if (!locationZoneSet && modeZoneIds && !modeZoneIds.has(entry.zone_id)) continue
-      const id = entry.product_id
-      map.set(id, (map.get(id) ?? 0) + entry.quantity_boxes)
+      if (!entryInFilterScope(entry)) continue
+      const locType = locationTypeOfEntry(entry, locationById)
+      const prev = map.get(entry.product_id) ?? { warehouse: 0, market: 0, total: 0 }
+      if (locType === 'warehouse') prev.warehouse += entry.quantity_boxes
+      else prev.market += entry.quantity_boxes
+      prev.total = prev.warehouse + prev.market
+      map.set(entry.product_id, prev)
     }
     return map
-  }, [inventoryEntries, selectedZoneId, locationZoneSet, modeZoneIds])
+  }, [inventoryEntries, selectedZoneId, locationZoneSet, modeZoneIds, locationById])
 
-  // KI-066: list theo SP có lô trong scope Mode/Kho/Zone — không giao productsPage(max 200) trước
+  // Catalog đủ (productsPage) + filter local hết lô / đặc biệt theo scope inventory
   const filteredProducts = useMemo(() => {
-    const hasZoneFilter = selectedZoneId != null
     const searchNorm = normalizeText(debouncedSearch.trim())
     const looksLikeBarcode = /^\d{4,}$/.test(debouncedSearch.trim())
 
-    const idsInScope = new Set<string>()
-    for (const entry of inventoryEntries) {
-      if (hasZoneFilter && entry.zone_id !== selectedZoneId) continue
-      if (locationZoneSet && !locationZoneSet.has(entry.zone_id)) continue
-      if (!locationZoneSet && modeZoneIds && !modeZoneIds.has(entry.zone_id)) continue
-      // modeZoneIds null khi đang chọn kho cụ thể (dùng locationZoneSet); khi chưa có zone set → chờ
-      if (!hasZoneFilter && !locationZoneSet && modeZoneIds === null) continue
-      idsInScope.add(entry.product_id)
-    }
-
     const list: Product[] = []
-    for (const id of idsInScope) {
-      const product = productById.get(id)
-      if (!product) continue
-      if (showArchived) {
-        if (!product.is_archived) continue
-      } else if (product.is_archived) {
-        continue
-      }
-      if (showNoImageOnly && product.image_url) continue
-
-      if (searchNorm) {
-        const nameOk = normalizeText(product.name).includes(searchNorm)
-        const barcodeOk =
-          looksLikeBarcode &&
-          inventoryEntries.some(
-            (entry) =>
-              entry.product_id === product.id &&
-              entry.barcode &&
-              entry.barcode.toLowerCase().includes(debouncedSearch.trim().toLowerCase()),
-          )
-        if (!nameOk && !barcodeOk) continue
-      }
-
-      if (showOutOfStockOnly && (totalBoxesByProduct.get(product.id) ?? 0) !== 0) {
+    for (const product of productsPage) {
+      if (showOutOfStockOnly && (qtySplitByProduct.get(product.id)?.total ?? 0) !== 0) {
         continue
       }
       if (showSpecialOnly) {
         const hasSpecial = inventoryEntries.some((entry) => {
           if (entry.product_id !== product.id || !entry.is_special) return false
-          if (hasZoneFilter && entry.zone_id !== selectedZoneId) return false
-          if (locationZoneSet && !locationZoneSet.has(entry.zone_id)) return false
-          if (!locationZoneSet && modeZoneIds && !modeZoneIds.has(entry.zone_id)) return false
-          return true
+          return entryInFilterScope(entry)
         })
         if (!hasSpecial) continue
       }
+
+      // Search server đã lọc productsPage; bổ sung barcode lô local
+      if (searchNorm && looksLikeBarcode) {
+        const nameOk = normalizeText(product.name).includes(searchNorm)
+        const barcodeOk = inventoryEntries.some(
+          (entry) =>
+            entry.product_id === product.id &&
+            entry.barcode &&
+            entry.barcode.toLowerCase().includes(debouncedSearch.trim().toLowerCase()),
+        )
+        if (!nameOk && !barcodeOk) continue
+      }
+
       list.push(product)
     }
 
     list.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
     return list
   }, [
+    productsPage,
     inventoryEntries,
-    productById,
     selectedZoneId,
     locationZoneSet,
     modeZoneIds,
-    showArchived,
-    showNoImageOnly,
     showOutOfStockOnly,
     showSpecialOnly,
-    totalBoxesByProduct,
+    qtySplitByProduct,
     debouncedSearch,
   ])
 
@@ -587,10 +577,10 @@ export default function ProductsScreen() {
       lowStockWarningEnabled,
     )
     const isUploading = uploadingProductId === product.id
-    const totalBoxes = totalBoxesByProduct.get(product.id) ?? 0
+    const totalSplit = qtySplitByProduct.get(product.id) ?? { warehouse: 0, market: 0, total: 0 }
     const metaLine = categoryLine
-      ? `Tổng ${totalBoxes} ${qtyUnit} · ${categoryLine}`
-      : `Tổng ${totalBoxes} ${qtyUnit}`
+      ? `Tổng ${formatSplitQtyLabel(totalSplit.warehouse, totalSplit.market)} · ${categoryLine}`
+      : `Tổng ${formatSplitQtyLabel(totalSplit.warehouse, totalSplit.market)}`
     return (
       <View style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.itemRow}>
@@ -672,7 +662,8 @@ export default function ProductsScreen() {
                       <View style={styles.lotRow}>
                         <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
                         <Text style={[styles.lotText, { color: colors.sub }]}>
-                          Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes} {qtyUnit}
+                          Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes}{' '}
+                          {qtyUnitForLocationType(locationTypeOfEntry(lot, locationById))}
                         </Text>
                       </View>
                     </View>
@@ -687,12 +678,9 @@ export default function ProductsScreen() {
   }
 
   function getGroupedLotsByExpiry(productId: string) {
-    const hasZoneFilter = selectedZoneId != null
-    const relevantEntries = inventoryEntries.filter((entry) => (
-      entry.product_id === productId &&
-      (!locationZoneSet || locationZoneSet.has(entry.zone_id)) &&
-      (!hasZoneFilter || entry.zone_id === selectedZoneId)
-    ))
+    const relevantEntries = inventoryEntries.filter(
+      (entry) => entry.product_id === productId && entryInFilterScope(entry),
+    )
 
     return [...relevantEntries].sort((a, b) => {
       const aTime = a.expiry_date ? new Date(`${a.expiry_date}T00:00:00`).getTime() : Number.POSITIVE_INFINITY
@@ -702,12 +690,9 @@ export default function ProductsScreen() {
   }
 
   function getWorstStatusForProduct(productId: string): CombinedStatus {
-    const hasZoneFilter = selectedZoneId != null
-    const entries = inventoryEntries.filter((entry) => (
-      entry.product_id === productId &&
-      (!locationZoneSet || locationZoneSet.has(entry.zone_id)) &&
-      (!hasZoneFilter || entry.zone_id === selectedZoneId)
-    ))
+    const entries = inventoryEntries.filter(
+      (entry) => entry.product_id === productId && entryInFilterScope(entry),
+    )
     if (entries.length === 0) return 'ok'
 
     let worstStatus: CombinedStatus = 'ok'
@@ -862,19 +847,16 @@ export default function ProductsScreen() {
         visible={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
         selectedMode={filterMode}
-        onChangeMode={(mode) => {
-          if (mode === 'warehouse' || mode === 'market') setFilterMode(mode)
-        }}
+        onChangeMode={setFilterMode}
         locations={filterLocations}
         selectedLocationId={filterLocationId}
         onChangeLocation={setFilterLocationId}
         zones={zonesForFilterLoc}
         selectedZoneId={selectedZoneId}
         onChangeZone={setSelectedZoneId}
-        allowAllMode={false}
+        allowAllMode
         onReset={() => {
-          const mode = appMode === 'market' ? 'market' : 'warehouse'
-          setFilterMode(mode)
+          setFilterMode('all')
           setFilterLocationId(null)
           setSelectedZoneId(null)
         }}

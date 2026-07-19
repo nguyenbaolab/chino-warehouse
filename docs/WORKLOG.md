@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — Products catalog Tất cả + fix tên kho ProductDetail
+
+- Products: Mode **Tất cả** default (catalog đủ); qty theo `locations.type` (cách A); FilterModal `allowAllMode`.
+- ProductDetail: tên kho từ all locations (hết `— · Zone · Tầng`); qty split + đơn vị theo type.
+- Map search: fallback tên kho từ all locations.
+- Docs: REQUIREMENTS v1.3.34, DECISIONS supersede v1.3.33 Products, CONTEXT, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — Notifications: đơn vị theo location type (cách A)
 
 - Header card: `Còn 5 thùng · 3 sản phẩm` (`formatSplitQtyLabel`); mỗi lô dùng `qtyUnitForLocationType`.

@@ -2,9 +2,10 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.33 | Tháng 7/2026
+**Phiên bản:** 1.3.34 | Tháng 7/2026
 
-> **v1.3.33** — ProductsScreen FilterModal: bỏ Mode «Tất cả»; bắt buộc Kho/Siêu thị; qty unit theo filterMode local
+> **v1.3.34** — Products: Mode Tất cả (catalog đủ) default; qty theo location type (cách A); ProductDetail tên kho không phụ thuộc appMode
+> **v1.3.33** — ProductsScreen FilterModal: bỏ Mode «Tất cả»; bắt buộc Kho/Siêu thị; qty unit theo filterMode local *(superseded bởi v1.3.34)*
 > **v1.3.32** — F34: revert `in_progress` → `draft` (Quay lại chỉnh sửa); giữ `is_picked`
 > **v1.3.31** — F37 Biometric login (vân tay / Face ID) + SecureStore credentials; persistSession vẫn false
 > **v1.3.30** — C-part2 F35 Done: ExpiryAlert 6 section danh sách entries; tap → ProductDetail
@@ -351,7 +352,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Bản đồ kho (Tab) | Màn hình chính | Header dropdown **Chino's Warehouse ↔ Market** (`appMode` global) · Sheet chọn kho · ▦ · Lưới · Search · Quét |
 | Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng · Danh sách SP · **Chuyển lô** |
 | Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Ảnh · Lô · qty label động · ✏️/📍/🗑️ · Chi tiết · Lịch sử |
-| Danh sách sản phẩm (Tab) | Catalog + lọc | **Luôn mọi SP**; 4 toggles (ẩn / hết lô / đặc biệt / chưa ảnh); nút **Lọc** → FilterModal **Mode bắt buộc Kho/Siêu thị** (không «Tất cả»; default = `appMode` Map) + Kho/Zone; qty unit theo `filterMode` local («thùng» / «sản phẩm») |
+| Danh sách sản phẩm (Tab) | Catalog + lọc | **Luôn mọi SP** (catalog, kể cả chưa có lô); 4 toggles (ẩn / hết lô / đặc biệt / chưa ảnh); nút **Lọc** → FilterModal Mode (**Tất cả** default / Kho / Siêu thị) + Kho/Zone; qty unit theo `locations.type` từng lô («thùng» / «sản phẩm»; header tách tổng) |
 | Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · 2 tab · PDF (Phase 4) |
 | Lấy hàng (Tab Orders, tab con) | Danh sách đơn lấy hàng | Tab switcher Đặt hàng/Lấy hàng · Cards · Tạo đơn |
 | Chi tiết đơn lấy hàng (Stack) | Thêm lô, nhóm, tick | Search SP + chọn lô · Nhóm Kho/Zone/Tầng · Checkbox is_picked |

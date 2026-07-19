@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### ProductsScreen — Mode Tất cả (catalog) + đơn vị theo location type
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Products **trả lại** Mode «Tất cả» (default). List = **catalog đủ** (`productsPage`, kể cả SP chưa có lô). Filter Mode/Kho/Zone vẫn có (giống Notifications). Đơn vị số lượng **theo `locations.type` từng lô** (kho → thùng, siêu thị → sản phẩm); header tách `Tổng 5 thùng · 3 sản phẩm` — cùng cách A với Notifications. **Thay thế** quyết định «bắt buộc Kho/Siêu thị + qty theo filterMode» (v1.3.33).
+- **Lý do:** User cần xem mọi SP mặc định; khi lẫn 2 mode, một đơn vị theo filterMode/appMode dễ nhầm.
+
+---
+
 ### Notifications — đơn vị số lượng theo location type (cách A)
 
 - **Ngày:** tháng 7/2026
@@ -16,8 +24,9 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 ### ProductsScreen — bỏ Mode «Tất cả»; đơn vị theo filterMode local
 
 - **Ngày:** tháng 7/2026
-- **Quyết định:** FilterModal trên Products **không** còn option «Tất cả». User bắt buộc chọn **Kho** hoặc **Siêu thị**. Default khi mở màn = `appMode` đang dùng trên Map. Label số lượng trên Products dùng `filterMode` local (`warehouse` → thùng, `market` → sản phẩm), **không** gọi `getQtyUnit()` (global `appMode`). Dashboard / Notifications vẫn giữ Mode «Tất cả».
-- **Lý do:** Catalog cần scope mode rõ để tồn kho và đơn vị không lẫn; «Tất cả» làm qty unit và filter entries mơ hồ khi SP có lô cả kho lẫn siêu thị.
+- **Trạng thái:** **Superseded** — xem «ProductsScreen — Mode Tất cả (catalog) + đơn vị theo location type».
+- **Quyết định (cũ):** FilterModal trên Products **không** còn option «Tất cả». User bắt buộc chọn **Kho** hoặc **Siêu thị**. Default khi mở màn = `appMode` đang dùng trên Map. Label số lượng trên Products dùng `filterMode` local (`warehouse` → thùng, `market` → sản phẩm), **không** gọi `getQtyUnit()` (global `appMode`). Dashboard / Notifications vẫn giữ Mode «Tất cả».
+- **Lý do (cũ):** Catalog cần scope mode rõ để tồn kho và đơn vị không lẫn; «Tất cả» làm qty unit và filter entries mơ hồ khi SP có lô cả kho lẫn siêu thị.
 - **Deferred:** User tự thêm mode + đơn vị custom (bảng `location_types`) — KI-065.
 
 ---
