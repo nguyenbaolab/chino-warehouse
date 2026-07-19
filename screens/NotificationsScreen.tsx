@@ -267,6 +267,7 @@ export default function NotificationsScreen() {
       if (entries.length === 0) continue
       const product: Product | undefined = products.find((p) => p.id === productId) ?? entries[0]?.product
       if (!product || product.is_archived) continue
+      if (product.ignore_expiry_warning) continue
 
       let totalBoxes = 0
       let hasExpired = false
@@ -339,6 +340,7 @@ export default function NotificationsScreen() {
       if (entries.length === 0) continue
       const product: Product | undefined = products.find((p) => p.id === productId) ?? entries[0]?.product
       if (!product || product.is_archived || product.is_discontinued === true) continue
+      if (product.ignore_stock_warning) continue
 
       const totalBoxes = entries.reduce((sum, e) => sum + e.quantity_boxes, 0)
       const lowWarning = product.low_warning_boxes ?? 3

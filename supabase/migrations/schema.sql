@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 4.1 | Tháng 7/2026
+-- Phiên bản: 4.2 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v4.1:
+--   - v4.2: F32 — products.ignore_expiry_warning, ignore_stock_warning (BOOLEAN DEFAULT false)
 -- Thay đổi so với v4.0:
 --   - v4.1: Rollback shelf tables; thêm locations.type, inventory_entries.is_special,
 --     inventory_entries.is_checked (Market mode C1)
@@ -135,6 +137,8 @@ CREATE TABLE products (
   warning_days        INTEGER     NOT NULL DEFAULT 30,
   low_warning_boxes   INTEGER     NOT NULL DEFAULT 3,
   low_critical_boxes  INTEGER     NOT NULL DEFAULT 1,
+  ignore_expiry_warning BOOLEAN NOT NULL DEFAULT false,
+  ignore_stock_warning  BOOLEAN NOT NULL DEFAULT false,
   category_level1_id  UUID        REFERENCES product_categories_l1(id) ON DELETE SET NULL,
   category_level2_id  UUID        REFERENCES product_categories_l2(id) ON DELETE SET NULL,
   created_at          TIMESTAMPTZ DEFAULT now(),

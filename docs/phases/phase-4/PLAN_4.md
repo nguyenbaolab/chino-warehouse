@@ -98,19 +98,19 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 
 ## 5. Group D — Cảnh báo per SP (F32)
 
-### D1 — Migration ignore flags
+### D1 — Migration ignore flags ✅ Done
 
-- **Files:** migration, `types` Product
+- **Files:** migration `20260719_f32_ignore_warning_flags.sql`, `types` Product, schema.sql v4.2
 - **Mô tả:** `products.ignore_expiry_warning`, `ignore_stock_warning` BOOLEAN default false.
 
-### D2 — Switch trên ProductDetail
+### D2 — Switch trên ProductDetail ✅ Done
 
 - **File:** `screens/ProductDetailScreen.tsx` section Chi tiết
-- **Mô tả:** 2 switch bật/tắt ignore; lưu qua store.
+- **Mô tả:** 2 switch bật/tắt ignore; lưu supabase trực tiếp + patch store.
 
-### D3 — Notifications + Dashboard skip
+### D3 — Notifications + Dashboard skip ✅ Done
 
-- **Files:** `NotificationsScreen`, `DashboardScreen` / `dashboardStats.ts`
+- **Files:** `NotificationsScreen`, `dashboardStats.ts`
 - **Mô tả:** SP có flag tương ứng không vào count/list cảnh báo hết hạn hoặc hết hàng.
 
 ---
@@ -225,7 +225,7 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 | **A — Bug / perf** | 3 | A1–A3 |
 | **B — Feature completion** | 1 | B1 (F27 mở rộng) |
 | **C — Market mode** | 4 | C1 ✅ Done, C2 ✅ Done, C3 ✅ Done, C4 ✅ Done (F36 redesign — Group C complete) |
-| **D — Per-SP warning** | 3 | D1–D3 (F32) |
+| **D — Per-SP warning** | 3 | D1–D3 ✅ Done (F32) |
 | **E — Picking** | 3 | E1–E3 (F34) — **Deferred Phase 5** |
 | **F — Push** | 3 | F1–F3 (F35) — **Deferred Phase 5** |
 | **G — Offline/Report/Stocktake** | 3 | G1–G3 — có thể defer |

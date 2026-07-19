@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — F32: cảnh báo per SP — ignore_expiry_warning / ignore_stock_warning
+
+- Migration: 2 cột BOOLEAN DEFAULT false trên products; schema.sql v4.2.
+- types: Product thêm ignore_expiry_warning, ignore_stock_warning.
+- ProductDetailScreen: 2 Switch trong section Chi tiết; save trực tiếp supabase + patch store.
+- NotificationsScreen: expiryCards skip ignore_expiry_warning; lowStockCards skip ignore_stock_warning.
+- dashboardStats: stock loop skip ignore_stock_warning; expiry loop skip ignore_expiry_warning.
+- Docs: REQUIREMENTS v1.3.21 F32 Done, CONTEXT, PLAN_4 Group D Done, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — fix: LocationManagement dropdown mode + hiện kho cả 2 type
 
 - Fetch allLocations riêng (không phụ thuộc store filter appMode).

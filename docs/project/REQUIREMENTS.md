@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.20 | Tháng 7/2026
+**Phiên bản:** 1.3.21 | Tháng 7/2026
 
+> **v1.3.21** — F32 Done (Group D): products.ignore_expiry_warning / ignore_stock_warning; 2 switch ProductDetail; Notifications + Dashboard skip SP có flag.
 > **v1.3.20** — C4 Done: màn Kiểm hàng (Settings) — list market entries is_special, tick is_checked, Reset batch; StockCheckScreen + route.
 > **v1.3.19** — C3 fix: date range mode hiện mọi lô trong khoảng [Từ, Đến]; nút ➜ kích hoạt / ✕ tắt; checkbox expired/warning disable khi date range active.
 > **v1.3.18** — C3 Done: date range Từ/Đến trên tab Sắp hết hạn (lots expired luôn hiện, lots warning filter theo range).
@@ -130,7 +131,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F29 | Zone Layout Editor | Màn hình riêng để sắp xếp lại vị trí zone trên lưới. Zone hiển thị dưới dạng tile nhỏ cố định (tên + màu + badge kích thước thật, ví dụ "2×1"). Kéo tile vào grid → đặt zone vào vị trí mới, bóng mờ hiện footprint thật của zone. Collision check theo tọa độ thật, báo đỏ nếu chồng chéo. Nút Preview xem map thật trước khi lưu. Confirm → lưu toàn bộ vị trí mới (`batchUpdateZoneCells`). Truy cập từ MapScreen (nút ▦) khi đang xem một kho. | P2 | Phase 2 | Done |
 | F30 | Phân loại sản phẩm (Category system) | **2 cấp:** Cấp 1 (VD: Đồ khô, Đồ đông đá) + Cấp 2 (VD: Mì, sốt, …). **Quản lý** thêm/sửa/xóa trong **Settings**: card **Phân loại sản phẩm** hiển tóm tắt **"X nhóm · Y loại"**; bấm vào → màn **Quản lý phân loại** (accordion **Cấp 1** xổ ra **Cấp 2**). **Gắn vào sản phẩm**, optional **từng cấp** — chọn Cấp 1 **không** bắt buộc phải chọn Cấp 2. **Chi tiết sản phẩm** (section **Chi tiết**): dropdown Cấp 1 → chỉ sau khi chọn Cấp 1 mới hiện dropdown Cấp 2; lưu và sửa được. **AddInventoryScreen:** chọn sản phẩm có sẵn → category **chỉ đọc** (tự điền từ SP); **thêm sản phẩm mới** → dropdown Cấp 1 + Cấp 2 ngay dưới field tên sản phẩm. Phân loại sau → list đặt hàng (F27) cập nhật đúng nhóm. | P2 | Phase 2 | Done |
 | F31 | Ghi chú nội bộ (Internal Notes) | Màn **Ghi chú** trong Settings (card entry). Bảng `internal_notes` (`product_id` nullable, `custom_product_name`, reason, created_by, created_at). UI card: ảnh SP 64×64 + tên + lý do (hoặc placeholder + tên tự do + dòng "Sản phẩm chưa có trong hệ thống"). FAB (+) → bottom sheet: autocomplete SP có sẵn **hoặc** gõ tên tự do + lý do. Tap card có `product_id` → ProductDetail; card tên tự do không navigate. Sửa/xóa ghi chú. **RBAC:** guest xem; staff+ sửa/xóa mọi ghi chú. **Tách biệt** F27 Đặt hàng. | P2 | Phase 3 | Done |
-| F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Not started *(Planned — PLAN_4 Group D)* |
+| F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Done |
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
 | F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | Deferred *(PLAN_4 Group E → Phase 5)* |
 | F35 | Push notification (local) | `expo-notifications` — scheduled local notification mỗi ngày **11:00**. Check dữ liệu lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày"). | P3 | Phase 5 | Deferred *(PLAN_4 Group F → Phase 5)* |
@@ -223,6 +224,8 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | notes | String | Ghi chú chung |
 | warning_days | Integer | Ngưỡng cảnh báo hạn (mặc định 30) |
 | low_warning_boxes | Integer | Ngưỡng cảnh báo tồn (mặc định 3) |
+| ignore_expiry_warning | Boolean | **F32 Done:** bỏ qua cảnh báo hết hạn cho SP (default false) |
+| ignore_stock_warning | Boolean | **F32 Done:** bỏ qua cảnh báo hết hàng cho SP (default false) |
 | is_archived | Boolean | True = đã ẩn (không xóa cứng) |
 | created_at | Timestamp | Tự sinh |
 | category_level1_id | UUID | Optional. FK → `product_categories_l1` |
@@ -368,6 +371,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Super app | Không đề cập | Ghi nhận trong §1 và F24 | Thông tin mới từ chủ cửa hàng |
 | Phase 3 scope v1.3.7 | — | PLAN_3: A1–A5, B1–B8, C1, D1–D3, E1–E2; F19 Dropped; F21/F25/F26 → Phase 4 | Chốt roadmap Phase 3 |
 | Phase 3 Group F v1.3.8 | — | PLAN_3 Group F: F1 navigation (KI-057), F2 block xóa lô (KI-058), F3 `is_archived`, F4 tap kho→Map, F5 filter ảnh, F31 Internal Notes; F07 sửa xóa lô; F32–F35 → Phase 4 | Ghi nhận backlog mới |
+| F32 ignore warning flags v1.3.21 | — | ignore_expiry_warning / ignore_stock_warning; ProductDetail switches; Notifications + Dashboard skip | F32 Done |
 | C4 Kiểm hàng v1.3.20 | — | Settings StockCheck: market is_special list, tick is_checked, Reset batch | C4 Done |
 | C3 Date range Notifications v1.3.19 | — | Tab Sắp hết hạn: ➜ date range mode (mọi lô ∈ [from,to]); ✕ về mặc định; checkbox disable khi active | C3 Done |
 | C2 Mode switcher + FilterModal v1.3.17 | — | FilterModal shared; 4 toggles Products; AuditLog Mode; catalog ≠ appMode | FilterModal |

@@ -49,6 +49,10 @@ export type Product = {
   warning_days: number
   low_warning_boxes: number
   low_critical_boxes: number
+  /** F32 — bỏ qua cảnh báo hết hạn cho SP này */
+  ignore_expiry_warning: boolean
+  /** F32 — bỏ qua cảnh báo hết hàng cho SP này */
+  ignore_stock_warning: boolean
   is_archived: boolean
   /** A5 — thời điểm cập nhật gần nhất của record products */
   updated_at?: string

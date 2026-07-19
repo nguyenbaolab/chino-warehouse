@@ -621,6 +621,29 @@ export default function ProductDetailScreen() {
     return true
   }
 
+  async function handleToggleIgnoreWarning(
+    field: 'ignore_expiry_warning' | 'ignore_stock_warning',
+    value: boolean,
+  ) {
+    if (!product) return
+    const { data: updated, error } = await supabase
+      .from('products')
+      .update({ [field]: value })
+      .eq('id', product.id)
+      .select('*')
+      .single()
+
+    if (error || !updated) {
+      Alert.alert('Lỗi', 'Không thể lưu.')
+      return
+    }
+    setProduct(updated)
+    productSnapshotRef.current = updated.updated_at ?? productSnapshotRef.current
+    useWarehouseStore.setState((s) => ({
+      products: s.products.map((p) => (p.id === updated.id ? { ...p, ...updated } : p)),
+    }))
+  }
+
   async function handleSaveThresholds(): Promise<boolean> {
     if (!product) return false
     const productId = product.id
@@ -1115,6 +1138,32 @@ export default function ProductDetailScreen() {
               ) : (
                 <Text style={[styles.infoText, { color: colors.text }]}>{product?.low_warning_boxes ?? 3} {qtyUnit}</Text>
               )}
+
+              {/* F32 — bỏ qua cảnh báo per SP */}
+              <View style={[styles.ignoreWarningRow, { borderColor: colors.border }]}>
+                <Text style={[styles.ignoreWarningLabel, { color: colors.text }]}>
+                  Bỏ qua cảnh báo hết hạn
+                </Text>
+                <Switch
+                  value={product?.ignore_expiry_warning === true}
+                  onValueChange={(v) => void handleToggleIgnoreWarning('ignore_expiry_warning', v)}
+                  disabled={!canWrite}
+                  trackColor={{ false: '#ccc', true: colors.accent }}
+                  thumbColor="#fff"
+                />
+              </View>
+              <View style={[styles.ignoreWarningRow, { borderColor: colors.border }]}>
+                <Text style={[styles.ignoreWarningLabel, { color: colors.text }]}>
+                  Bỏ qua cảnh báo hết hàng
+                </Text>
+                <Switch
+                  value={product?.ignore_stock_warning === true}
+                  onValueChange={(v) => void handleToggleIgnoreWarning('ignore_stock_warning', v)}
+                  disabled={!canWrite}
+                  trackColor={{ false: '#ccc', true: colors.accent }}
+                  thumbColor="#fff"
+                />
+              </View>
 
               <Text style={[styles.infoText, { color: colors.sub, marginTop: 12 }]}>Nhóm (Cấp 1)</Text>
               {canWrite ? (
@@ -1779,6 +1828,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
   },
+  ignoreWarningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+  },
+  ignoreWarningLabel: { flex: 1, fontSize: 14, fontWeight: '500' },
   thresholdEditBtn: {
     width: 28,
     height: 28,
