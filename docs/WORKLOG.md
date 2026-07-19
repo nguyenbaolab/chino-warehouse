@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — B2: F34 Picking list UI + store
+
+- OrderListScreen: tab switcher Đặt hàng / Lấy hàng; picking cards + status.
+- PickingDetailScreen: search SP warehouse (ảnh 48x48), chọn lô, nhập qty (validate ≤ tồn), nhóm Kho/Zone/Tầng, tick is_picked (in_progress), footer draft/in_progress/completed.
+- Store: pickingLists + pickingListItems state; CRUD + togglePickedItem + startPicking + completePicking (chưa trừ tồn).
+- App.tsx: OrdersStack thêm PickingDetail route.
+- RBAC: canWrite gate tạo/sửa/xóa; guest xem only.
+- Docs: REQUIREMENTS v1.3.26, CONTEXT, DECISIONS, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — B1: F34 Picking list schema + types
 
 - Migration `20260720_create_picking_tables.sql`: 2 bảng picking_lists + picking_list_items.

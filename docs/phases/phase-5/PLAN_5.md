@@ -37,8 +37,9 @@ Phase 5 hoàn thiện các feature deferred từ Phase 3–4: **F27 mở rộng*
 - Schema `picking_lists`, `picking_list_items`, types, RLS (migration `20260720_create_picking_tables.sql`, schema v5.0).
 - Không audit; `inventory_entry_id` NOT NULL; status draft → in_progress → completed.
 
-### B2 — PickingListScreen
-- Tạo đơn; autocomplete + ảnh; nhóm kho/zone/tầng.
+### B2 — PickingListScreen ✅ Done
+
+- Tab switcher Đặt hàng / Lấy hàng trên OrderListScreen; PickingDetailScreen (search lô, nhóm, tick); store CRUD + start/complete (chưa trừ tồn).
 
 ### B3 — Checklist + confirm trừ tồn
 - Tick khi lấy xong; confirm → trừ `quantity_boxes`.

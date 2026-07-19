@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F34 Picking — UI trong tab Orders (tab con)
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Picking list nằm trong tab Orders dưới dạng tab con (Đặt hàng / Lấy hàng) trên OrderListScreen. Không thêm tab bottom mới. PickingDetailScreen là route riêng trong OrdersStack.
+- **Lý do:** Đặt hàng và lấy hàng cùng domain "quản lý hàng ra/vào"; gom chung giảm số tab; UX quen thuộc.
+
+---
+
 ### F34 Picking list — schema design
 
 - **Ngày:** tháng 7/2026

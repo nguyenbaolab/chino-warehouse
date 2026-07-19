@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.25 | Tháng 7/2026
+**Phiên bản:** 1.3.26 | Tháng 7/2026
 
+> **v1.3.26** — B2 F34 PickingDetailScreen + store actions + tab switcher Orders
 > **v1.3.25** — B1 F34 schema picking_lists + picking_list_items; schema v5.0
 > **v1.3.24** — Closeout Phase 4: SUMMARY_4, HANDOFF_4, TESTCASES_4; F36 Done; B1 F27 carry → Phase 5; tạo PLAN_5.
 > **v1.3.23** — Group H Done (H1–H4): SEC-12 wrap __DEV__ ~55 chỗ; SEC-14 .gitignore .env.*; SEC-10 backup.ts thêm 3 bảng; SEC-13 npm audit fix.
@@ -137,7 +138,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F31 | Ghi chú nội bộ (Internal Notes) | Màn **Ghi chú** trong Settings (card entry). Bảng `internal_notes` (`product_id` nullable, `custom_product_name`, reason, created_by, created_at). UI card: ảnh SP 64×64 + tên + lý do (hoặc placeholder + tên tự do + dòng "Sản phẩm chưa có trong hệ thống"). FAB (+) → bottom sheet: autocomplete SP có sẵn **hoặc** gõ tên tự do + lý do. Tap card có `product_id` → ProductDetail; card tên tự do không navigate. Sửa/xóa ghi chú. **RBAC:** guest xem; staff+ sửa/xóa mọi ghi chú. **Tách biệt** F27 Đặt hàng. | P2 | Phase 3 | Done |
 | F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Done |
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
-| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | In progress (B1 schema done) |
+| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | In progress (B1 schema + B2 UI done) |
 | F35 | Push notification (local) | `expo-notifications` — scheduled local notification mỗi ngày **11:00**. Check dữ liệu lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày"). | P3 | Phase 5 | Deferred *(PLAN_5 Group C)* |
 | F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | Done |
 
@@ -333,6 +334,8 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Ảnh · Lô · qty label động · ✏️/📍/🗑️ · Chi tiết · Lịch sử |
 | Danh sách sản phẩm (Tab) | Catalog + lọc | **Luôn mọi SP**; 4 toggles (ẩn / hết lô / đặc biệt / chưa ảnh); nút **Lọc** → FilterModal Mode/Kho/Zone; qty `getQtyUnit()` |
 | Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · 2 tab · PDF (Phase 4) |
+| Lấy hàng (Tab Orders, tab con) | Danh sách đơn lấy hàng | Tab switcher Đặt hàng/Lấy hàng · Cards · Tạo đơn |
+| Chi tiết đơn lấy hàng (Stack) | Thêm lô, nhóm, tick | Search SP + chọn lô · Nhóm Kho/Zone/Tầng · Checkbox is_picked |
 | Thêm hàng (Stack) | Thêm lô hàng | Zone · Tầng · Số lượng · Hạn · F30 category |
 | Thông báo (Tab) | Cảnh báo tồn & hạn | Nút **Lọc** → FilterModal Mode/Kho/Zone; tab Sắp hết hạn: checkbox + **date range** (➜ kích hoạt mọi lô ∈ [Từ,Đến]; ✕ về mặc định expired/warning); tab Sắp hết hàng: checkbox (không date range) |
 | Cài đặt (Tab) | Tuỳ chỉnh app | Theme · cảnh báo · Quản lý kho · … · **Kiểm hàng** (C4) · Audit · User |

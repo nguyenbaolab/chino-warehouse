@@ -97,6 +97,7 @@ screens/
   NotificationsScreen.tsx
   OrderDetailScreen.tsx
   OrderListScreen.tsx
+  PickingDetailScreen.tsx      # F34 — chi tiết đơn lấy hàng (OrdersStack)
   ProductDetailScreen.tsx
   ProductsScreen.tsx
   SettingsScreen.tsx
@@ -142,7 +143,7 @@ README.md
 - **Market mode (F36 redesign, C2–C4 Done):** `warehouseStore.appMode` + header Map dropdown **Chino's Warehouse** ↔ **Chino's Market**; `fetchLocations` `.eq('type', appMode)`; label qty `getQtyUnit()` «thùng» / «sản phẩm»; Products: toggle «Hàng đặc biệt» (`is_special`); Settings **📋 Kiểm hàng** → `StockCheck` (`is_checked` checklist + Reset). Không màn Shelf riêng.
 - **Map tab:** `MapStack` (`MapMain` → `ZoneLayoutEditor` → **`ZonePicker`** (F8) → `ProductDetail` → `AddInventory` → `AuditLog`).
 - **Products tab:** `ProductsStack` (`ProductsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
-- **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail`).
+- **Orders tab:** `OrdersStack` (`OrderListMain` → `OrderDetail` | `PickingDetail`). **OrderListScreen:** tab con **Đặt hàng / Lấy hàng** (F34); tap picking card → `PickingDetail` (`pickingListId`).
 - **Notifications tab:** `NotificationsStack` (`NotificationsMain` → `ProductDetail` → `AddInventory` → `AuditLog`).
 - **Settings tab:** `SettingsStack` (`SettingsMain` → `LocationManagement` → `CategoryManagement` → `DiscontinuedProducts` → **`InternalNotes`** (F31) → **`StockCheck`** (C4) → **`ProductDetail`** → `Dashboard` → **`NotificationsFromDashboard`** (reuse `NotificationsScreen`) → `UserManagement` → `AuditLog`). Card **📝 Ghi chú** trên Settings (sau "Không nhập nữa") → `InternalNotes`; subtitle = số ghi chú từ store. Card **📋 Kiểm hàng** (sau Ghi chú) → `StockCheck`; subtitle `X/Y đã kiểm` hoặc «Chưa có hàng đặc biệt». **`StockCheckScreen` (C4):** luôn list market (`locations.type=market`) entries `is_special=true` (không phụ thuộc `appMode`); checkbox → `updateInventoryEntry({ is_checked })`; **Reset** → `resetMarketChecklist` (batch `is_checked=false`); `useCanWrite` gate; sort chưa checked trước + tên SP a–z. **`DiscontinuedProductsScreen`:** nút Đóng — `canGoBack() ? goBack() : navigate('SettingsMain')` (KI-061). **`InternalNotesScreen` (F31):** `useFocusEffect` → luôn `fetchProducts()` + `fetchInternalNotes`; FlatList card ảnh 64×64 + tên + lý do + ngày; card có `product_id` → tap mở `ProductDetail`; card `custom_product_name` → placeholder + dòng "Sản phẩm chưa có trong hệ thống" (không navigate); FAB (+) staff+ → modal autocomplete SP **hoặc** tên tự do + lý do → `addInternalNote({ productId?, customName?, reason })`; ✏️/`updateInternalNote`; 🗑️ confirm/`deleteInternalNote`; guest chỉ xem. `LocationManagement` nhận optional param `openCreateModal` (boolean): `true` thì mở modal tạo kho khi mount. **`DashboardScreen`** (F23): card **Tổng quan kho**; stat cards `push` sang `NotificationsFromDashboard` / `DiscontinuedProducts` (back về Dashboard). **`UserManagementScreen`** (F24): card **Quản lý người dùng** — chỉ hiện với role `admin` và `super_admin` (guard trên Settings card).
 - **ZoneDetailSheet:** component / sheet trên `MapScreen`, **không** phải route riêng. Sheet: `paddingBottom` động (`useSafeAreaInsets().bottom`). Inline edit lô (gồm barcode): cùng pattern **`checkBarcodeConflict`** / **`logBarcodeConflict`** / **`upsertProductBarcode`** như ProductDetail. **F8 — Chuyển lô:** nút → navigate `ZonePicker` (map fullscreen); bỏ modal dropdown zone/tầng; `useIsFocused` reload inventory khi quay lại từ picker. **🗑️ xóa lô chỉ khi `quantity_boxes = 0`** (KI-058). **F3:** filter `!entry.product?.is_archived` trong `currentTierEntries` — lô SP ẩn không hiện trong sheet (zone có thể trống nếu mọi SP đều archived).
@@ -199,6 +200,8 @@ README.md
 **Actions — sản phẩm / cờ:** `toggleDeferred`, `togglePriceReduced`, `setProductDiscontinued`, `toggleDiscontinued`, `fetchDiscontinuedProducts`, `refreshDiscontinuedContext`, `updateProductName`, `updateProductImage(productId, imageUrl)`, `removeProductImage(productId)` (xóa Storage + set `image_url` null). **Ẩn/khôi phục SP** (`ProductDetailScreen` `handleArchiveToggle`): cập nhật DB `is_archived` + store `products` (ẩn = remove khỏi list) **và** sync `inventoryEntries[].product` (cùng object `updated`, pattern như `updateProductName`) — KI-059; tránh Notifications fallback snapshot cũ.
 
 **Actions — đặt hàng:** `fetchOrderLists`, `createOrderList`, `updateOrderList`, `deleteOrderList`, `addOrderItem`, `updateOrderItem`, `deleteOrderItem`, `confirmOrderList`, `markOrderPlaced`.
+
+**State / actions — picking (F34):** `pickingLists`, `pickingListItems`; `fetchPickingLists`, `createPickingList`, `updatePickingList`, `deletePickingList`, `addPickingItem`, `updatePickingItem`, `deletePickingItem`, `togglePickedItem`, `startPicking`, `completePicking` (B2: đổi status only — trừ tồn ở B3).
 
 **Actions — ghi chú nội bộ (F31):** `fetchInternalNotes`, `addInternalNote({ productId?, customName?, reason })`, `updateInternalNote`, `deleteInternalNote` (join `product:products(id, name, image_url)`; `product_id` nullable + `custom_product_name`).
 

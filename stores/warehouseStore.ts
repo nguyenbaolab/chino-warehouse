@@ -14,6 +14,8 @@ import {
   OrderItem,
   OrderList,
   OrderListStatus,
+  PickingList,
+  PickingListItem,
   AuditLog,
   LocateIntent,
   ProductBarcode,
@@ -36,6 +38,8 @@ type WarehouseStore = {
   inventoryEntries: InventoryEntry[]
   orderLists: OrderList[]
   orderItems: OrderItem[]
+  pickingLists: PickingList[]
+  pickingListItems: PickingListItem[]
   internalNotes: InternalNote[]
   isLoading: boolean
   locateIntent: LocateIntent | null
@@ -145,6 +149,26 @@ type WarehouseStore = {
   deleteOrderItem: (id: string) => Promise<void>
   confirmOrderList: (id: string) => Promise<void>
   markOrderPlaced: (id: string) => Promise<void>
+  fetchPickingLists: () => Promise<void>
+  createPickingList: (title: string) => Promise<PickingList | null>
+  updatePickingList: (id: string, data: Partial<PickingList>) => Promise<void>
+  deletePickingList: (id: string) => Promise<void>
+  addPickingItem: (
+    pickingListId: string,
+    data: {
+      inventory_entry_id: string
+      product_id: string
+      zone_id: string
+      tier: number
+      quantity_boxes: number
+      notes?: string | null
+    },
+  ) => Promise<void>
+  updatePickingItem: (id: string, data: Partial<PickingListItem>) => Promise<void>
+  deletePickingItem: (id: string) => Promise<void>
+  togglePickedItem: (id: string, is_picked: boolean) => Promise<void>
+  startPicking: (id: string) => Promise<void>
+  completePicking: (id: string) => Promise<void>
   fetchLatestAuditEntry: () => Promise<AuditLog | null>
   fetchAuditLogs: (params: {
     cursor?: string
@@ -179,6 +203,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   inventoryEntries: [],
   orderLists: [],
   orderItems: [],
+  pickingLists: [],
+  pickingListItems: [],
   internalNotes: [],
   isLoading: false,
   locateIntent: null,
@@ -1340,16 +1366,166 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   markOrderPlaced: async (id) => {
-    const { data: updated } = await supabase
+    const { data: updated, error } = await supabase
       .from('order_lists')
       .update({ status: 'placed' })
       .eq('id', id)
       .select('*')
       .single()
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] markOrderPlaced:', error)
+      return
+    }
     if (!updated) return
     set((s) => ({
       orderLists: s.orderLists.map((list) => (list.id === id ? (updated as OrderList) : list)),
     }))
+  },
+
+  fetchPickingLists: async () => {
+    const [{ data: lists, error: listsErr }, { data: items, error: itemsErr }] = await Promise.all([
+      supabase.from('picking_lists').select('*').order('created_at', { ascending: false }),
+      supabase
+        .from('picking_list_items')
+        .select('*, product:products(*), zone:zones(*)')
+        .order('created_at', { ascending: true }),
+    ])
+    if (listsErr) {
+      if (__DEV__) console.error('[warehouseStore] fetchPickingLists (lists):', listsErr)
+    }
+    if (itemsErr) {
+      if (__DEV__) console.error('[warehouseStore] fetchPickingLists (items):', itemsErr)
+    }
+    set({
+      pickingLists: (lists as PickingList[]) ?? [],
+      pickingListItems: (items as PickingListItem[]) ?? [],
+    })
+  },
+
+  createPickingList: async (title) => {
+    const payload = {
+      title: title.trim() || `Đơn lấy hàng ${new Date().toLocaleDateString('vi-VN')}`,
+      status: 'draft' as const,
+    }
+    const { data, error } = await supabase.from('picking_lists').insert(payload).select('*').single()
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] createPickingList:', error)
+      return null
+    }
+    const created = data as PickingList | null
+    if (created) {
+      set((s) => ({ pickingLists: [created, ...s.pickingLists] }))
+    }
+    return created
+  },
+
+  updatePickingList: async (id, data) => {
+    const { data: updated, error } = await supabase
+      .from('picking_lists')
+      .update(data)
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] updatePickingList:', error)
+      return
+    }
+    if (!updated) return
+    set((s) => ({
+      pickingLists: s.pickingLists.map((list) =>
+        list.id === id ? (updated as PickingList) : list,
+      ),
+    }))
+  },
+
+  deletePickingList: async (id) => {
+    const { error: itemsErr } = await supabase
+      .from('picking_list_items')
+      .delete()
+      .eq('picking_list_id', id)
+    if (itemsErr) {
+      if (__DEV__) console.error('[warehouseStore] deletePickingList (items):', itemsErr)
+      return
+    }
+    const { error } = await supabase.from('picking_lists').delete().eq('id', id)
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] deletePickingList:', error)
+      return
+    }
+    set((s) => ({
+      pickingLists: s.pickingLists.filter((list) => list.id !== id),
+      pickingListItems: s.pickingListItems.filter((item) => item.picking_list_id !== id),
+    }))
+  },
+
+  addPickingItem: async (pickingListId, data) => {
+    const payload = {
+      picking_list_id: pickingListId,
+      inventory_entry_id: data.inventory_entry_id,
+      product_id: data.product_id,
+      zone_id: data.zone_id,
+      tier: data.tier,
+      quantity_boxes: data.quantity_boxes,
+      notes: data.notes ?? null,
+      is_picked: false,
+    }
+    const { data: created, error } = await supabase
+      .from('picking_list_items')
+      .insert(payload)
+      .select('*, product:products(*), zone:zones(*)')
+      .single()
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] addPickingItem:', error)
+      return
+    }
+    if (created) {
+      set((s) => ({
+        pickingListItems: [...s.pickingListItems, created as PickingListItem],
+      }))
+    }
+  },
+
+  updatePickingItem: async (id, data) => {
+    const { data: updated, error } = await supabase
+      .from('picking_list_items')
+      .update(data)
+      .eq('id', id)
+      .select('*, product:products(*), zone:zones(*)')
+      .single()
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] updatePickingItem:', error)
+      return
+    }
+    if (!updated) return
+    set((s) => ({
+      pickingListItems: s.pickingListItems.map((item) =>
+        item.id === id ? (updated as PickingListItem) : item,
+      ),
+    }))
+  },
+
+  deletePickingItem: async (id) => {
+    const { error } = await supabase.from('picking_list_items').delete().eq('id', id)
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] deletePickingItem:', error)
+      return
+    }
+    set((s) => ({
+      pickingListItems: s.pickingListItems.filter((item) => item.id !== id),
+    }))
+  },
+
+  togglePickedItem: async (id, is_picked) => {
+    await get().updatePickingItem(id, { is_picked })
+  },
+
+  startPicking: async (id) => {
+    await get().updatePickingList(id, { status: 'in_progress' })
+  },
+
+  completePicking: async (id) => {
+    // B2: chỉ đổi status — B3 sẽ thêm trừ tồn trước khi completed
+    await get().updatePickingList(id, { status: 'completed' })
   },
 
   fetchLatestAuditEntry: async () => {

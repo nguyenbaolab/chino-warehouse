@@ -27,6 +27,7 @@ import NotificationsScreen from './screens/NotificationsScreen'
 import BarcodeScannerScreen from './screens/BarcodeScannerScreen'
 import OrderListScreen from './screens/OrderListScreen'
 import OrderDetailScreen from './screens/OrderDetailScreen'
+import PickingDetailScreen from './screens/PickingDetailScreen'
 import ZoneLayoutEditorScreen from './screens/ZoneLayoutEditorScreen'
 import ZonePickerScreen from './screens/ZonePickerScreen'
 import AuditLogScreen from './screens/AuditLogScreen'
@@ -83,6 +84,7 @@ function OrdersStackNavigator() {
     <OrdersStack.Navigator screenOptions={{ headerShown: false }}>
       <OrdersStack.Screen name="OrderListMain" component={OrderListScreen} />
       <OrdersStack.Screen name="OrderDetail" component={OrderDetailScreen} />
+      <OrdersStack.Screen name="PickingDetail" component={PickingDetailScreen} />
     </OrdersStack.Navigator>
   )
 }

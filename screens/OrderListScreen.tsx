@@ -1,15 +1,23 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useCanWrite, useIsReadOnly } from '../stores/authStore'
-import { OrderListStatus } from '../types'
+import { OrderListStatus, PickingListStatus } from '../types'
 
-function statusLabel(status: OrderListStatus): string {
+type ListTab = 'orders' | 'picking'
+
+function orderStatusLabel(status: OrderListStatus): string {
   if (status === 'confirmed') return 'Đã confirm'
   if (status === 'placed') return 'Đã đặt hàng'
+  return 'Đang soạn'
+}
+
+function pickingStatusLabel(status: PickingListStatus): string {
+  if (status === 'in_progress') return 'Đang lấy'
+  if (status === 'completed') return 'Hoàn thành'
   return 'Đang soạn'
 }
 
@@ -18,20 +26,53 @@ export default function OrderListScreen() {
   const { colors } = useThemeStore()
   const canWrite = useCanWrite()
   const isReadOnly = useIsReadOnly()
-  const { orderLists, orderItems, fetchOrderLists, createOrderList } = useWarehouseStore()
+  const {
+    orderLists,
+    orderItems,
+    fetchOrderLists,
+    createOrderList,
+    pickingLists,
+    pickingListItems,
+    fetchPickingLists,
+    createPickingList,
+  } = useWarehouseStore()
 
-  // KI-039: TTL 30s
+  const [activeTab, setActiveTab] = useState<ListTab>('orders')
+
+  // KI-039: TTL 30s — riêng từng tab
   const FOCUS_FETCH_TTL_MS = 30_000
-  const lastFetchRef = useRef(0)
+  const lastOrderFetchRef = useRef(0)
+  const lastPickingFetchRef = useRef(0)
 
   useFocusEffect(
     useCallback(() => {
       const now = Date.now()
-      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
-      lastFetchRef.current = now
-      void fetchOrderLists()
-    }, [fetchOrderLists])
+      if (activeTab === 'orders') {
+        if (now - lastOrderFetchRef.current < FOCUS_FETCH_TTL_MS) return
+        lastOrderFetchRef.current = now
+        void fetchOrderLists()
+      } else {
+        if (now - lastPickingFetchRef.current < FOCUS_FETCH_TTL_MS) return
+        lastPickingFetchRef.current = now
+        void fetchPickingLists()
+      }
+    }, [activeTab, fetchOrderLists, fetchPickingLists]),
   )
+
+  // Prefetch khi đổi tab (nếu TTL đã hết)
+  function switchTab(tab: ListTab) {
+    setActiveTab(tab)
+    const now = Date.now()
+    if (tab === 'orders') {
+      if (now - lastOrderFetchRef.current >= FOCUS_FETCH_TTL_MS) {
+        lastOrderFetchRef.current = now
+        void fetchOrderLists()
+      }
+    } else if (now - lastPickingFetchRef.current >= FOCUS_FETCH_TTL_MS) {
+      lastPickingFetchRef.current = now
+      void fetchPickingLists()
+    }
+  }
 
   async function handleCreateList() {
     if (isReadOnly) return
@@ -43,43 +84,156 @@ export default function OrderListScreen() {
     navigation.navigate('OrderDetail', { orderListId: created.id })
   }
 
+  async function handleCreatePicking() {
+    if (isReadOnly) return
+    const title = `Đơn lấy hàng ${new Date().toLocaleDateString('vi-VN')}`
+    const created = await createPickingList(title)
+    if (!created) {
+      Alert.alert('Lỗi', 'Không tạo được đơn lấy hàng.')
+      return
+    }
+    navigation.navigate('PickingDetail', { pickingListId: created.id })
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <Text style={[styles.title, { color: colors.text }]}>🧾 Đặt hàng</Text>
+      <Text style={[styles.title, { color: colors.text }]}>🧾 Đặt hàng / Lấy hàng</Text>
 
-      {canWrite ? (
-        <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.accent }]} onPress={handleCreateList}>
-          <Text style={[styles.createBtnText, { color: colors.card }]}>+ Tạo list mới</Text>
+      <View style={[styles.tabRow, { borderBottomColor: colors.border }]}>
+        <TouchableOpacity
+          style={[
+            styles.tabBtn,
+            activeTab === 'orders' && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
+          ]}
+          onPress={() => switchTab('orders')}
+        >
+          <Text
+            style={[
+              styles.tabLabel,
+              {
+                color: activeTab === 'orders' ? colors.accent : colors.sub,
+                fontWeight: activeTab === 'orders' ? '700' : '500',
+              },
+            ]}
+          >
+            Đặt hàng
+          </Text>
         </TouchableOpacity>
-      ) : null}
+        <TouchableOpacity
+          style={[
+            styles.tabBtn,
+            activeTab === 'picking' && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
+          ]}
+          onPress={() => switchTab('picking')}
+        >
+          <Text
+            style={[
+              styles.tabLabel,
+              {
+                color: activeTab === 'picking' ? colors.accent : colors.sub,
+                fontWeight: activeTab === 'picking' ? '700' : '500',
+              },
+            ]}
+          >
+            Lấy hàng
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-      {orderLists.length === 0 ? (
-        <View style={styles.emptyWrap}>
-          <Text style={{ color: colors.sub }}>Chưa có list đặt hàng.</Text>
-        </View>
+      {activeTab === 'orders' ? (
+        <>
+          {canWrite ? (
+            <TouchableOpacity
+              style={[styles.createBtn, { backgroundColor: colors.accent }]}
+              onPress={handleCreateList}
+            >
+              <Text style={[styles.createBtnText, { color: colors.card }]}>+ Tạo list mới</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {orderLists.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Text style={{ color: colors.sub }}>Chưa có list đặt hàng.</Text>
+            </View>
+          ) : (
+            <ScrollView contentContainerStyle={styles.list}>
+              {orderLists.map((list) => {
+                const itemsCount = orderItems.filter((item) => item.order_list_id === list.id).length
+                return (
+                  <TouchableOpacity
+                    key={list.id}
+                    activeOpacity={0.8}
+                    style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => navigation.navigate('OrderDetail', { orderListId: list.id })}
+                  >
+                    <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+                      {list.title}
+                    </Text>
+                    <Text style={[styles.cardSub, { color: colors.sub }]}>
+                      Ngày tạo: {new Date(list.created_at).toLocaleDateString('vi-VN')}
+                    </Text>
+                    <Text style={[styles.cardSub, { color: colors.sub }]}>
+                      Số sản phẩm: {itemsCount}
+                    </Text>
+                    <Text style={[styles.status, { color: colors.text }]}>
+                      Trạng thái: {orderStatusLabel(list.status)}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+          )}
+        </>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
-          {orderLists.map((list) => {
-            const itemsCount = orderItems.filter((item) => item.order_list_id === list.id).length
-            return (
-              <TouchableOpacity
-                key={list.id}
-                activeOpacity={0.8}
-                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => navigation.navigate('OrderDetail', { orderListId: list.id })}
-              >
-                <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-                  {list.title}
-                </Text>
-                <Text style={[styles.cardSub, { color: colors.sub }]}>
-                  Ngày tạo: {new Date(list.created_at).toLocaleDateString('vi-VN')}
-                </Text>
-                <Text style={[styles.cardSub, { color: colors.sub }]}>Số sản phẩm: {itemsCount}</Text>
-                <Text style={[styles.status, { color: colors.text }]}>Trạng thái: {statusLabel(list.status)}</Text>
-              </TouchableOpacity>
-            )
-          })}
-        </ScrollView>
+        <>
+          {canWrite ? (
+            <TouchableOpacity
+              style={[styles.createBtn, { backgroundColor: colors.accent }]}
+              onPress={() => void handleCreatePicking()}
+            >
+              <Text style={[styles.createBtnText, { color: colors.card }]}>
+                + Tạo đơn lấy hàng
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {pickingLists.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Text style={{ color: colors.sub }}>Chưa có đơn lấy hàng.</Text>
+            </View>
+          ) : (
+            <ScrollView contentContainerStyle={styles.list}>
+              {pickingLists.map((list) => {
+                const itemsCount = pickingListItems.filter(
+                  (item) => item.picking_list_id === list.id,
+                ).length
+                return (
+                  <TouchableOpacity
+                    key={list.id}
+                    activeOpacity={0.8}
+                    style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() =>
+                      navigation.navigate('PickingDetail', { pickingListId: list.id })
+                    }
+                  >
+                    <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+                      {list.title}
+                    </Text>
+                    <Text style={[styles.cardSub, { color: colors.sub }]}>
+                      Ngày tạo: {new Date(list.created_at).toLocaleDateString('vi-VN')}
+                    </Text>
+                    <Text style={[styles.cardSub, { color: colors.sub }]}>
+                      Số lô: {itemsCount}
+                    </Text>
+                    <Text style={[styles.status, { color: colors.text }]}>
+                      Trạng thái: {pickingStatusLabel(list.status)}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </ScrollView>
+          )}
+        </>
       )}
     </SafeAreaView>
   )
@@ -88,6 +242,18 @@ export default function OrderListScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 16 },
   title: { fontSize: 18, fontWeight: '700', paddingHorizontal: 16, marginBottom: 10 },
+  tabRow: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderBottomWidth: 1,
+  },
+  tabBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  tabLabel: { fontSize: 14 },
   createBtn: {
     marginHorizontal: 16,
     borderRadius: 10,
