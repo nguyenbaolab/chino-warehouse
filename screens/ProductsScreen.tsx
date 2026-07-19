@@ -637,7 +637,7 @@ export default function ProductsScreen() {
   }
 
   function renderProductItem({ item: product }: { item: Product }) {
-    const groupedLots = getGroupedLotsByExpiry(product.id)
+    const groupedLots = getFilteredLotsByExpiry(product.id)
     const categoryLine = getProductCategoryLine(product)
     const productDotColor = getWorstDisplayColorForEntries(
       groupedLots,
@@ -747,7 +747,7 @@ export default function ProductsScreen() {
     )
   }
 
-  function getGroupedLotsByExpiry(productId: string) {
+  function getFilteredLotsByExpiry(productId: string) {
     const relevantEntries = inventoryEntries.filter(
       (entry) => entry.product_id === productId && entryInFilterScope(entry),
     )

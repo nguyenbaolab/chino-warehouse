@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — rename: getGroupedLotsByExpiry → getFilteredLotsByExpiry
+
+- `ProductsScreen.tsx`: đổi tên hàm (chỉ filter + sort theo hạn, không group). Logic giữ nguyên.
+
+---
+
 ## [tháng 7/2026] — Branding: Chino's Warehouse → Chino's Store (toàn bộ code)
 
 - UI: Login, Map mode switcher, biometric prompt, notification titles.
