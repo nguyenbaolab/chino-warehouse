@@ -262,6 +262,7 @@ export default function NotificationsScreen() {
   }, [inventoryEntriesForNotify])
 
   const expiryCards = useMemo(() => {
+    if (!expiryWarningEnabled) return []
     const cards: ExpiryCard[] = []
     for (const [productId, entries] of productIdToEntries.entries()) {
       if (entries.length === 0) continue
@@ -332,9 +333,10 @@ export default function NotificationsScreen() {
       if (a.hasExpiredLot !== b.hasExpiredLot) return a.hasExpiredLot ? -1 : 1
       return a.productName.localeCompare(b.productName)
     })
-  }, [productIdToEntries, products, dateRangeActive, dateFrom, dateTo])
+  }, [productIdToEntries, products, dateRangeActive, dateFrom, dateTo, expiryWarningEnabled])
 
   const lowStockCards = useMemo(() => {
+    if (!lowStockWarningEnabled) return []
     const cards: LowStockCard[] = []
     for (const [productId, entries] of productIdToEntries.entries()) {
       if (entries.length === 0) continue
@@ -354,7 +356,7 @@ export default function NotificationsScreen() {
       }
     }
     return cards.sort((a, b) => a.productName.localeCompare(b.productName))
-  }, [productIdToEntries, products])
+  }, [productIdToEntries, products, lowStockWarningEnabled])
 
   const normalizedSearch = normalizeText(searchQuery.trim())
 
@@ -884,12 +886,16 @@ export default function NotificationsScreen() {
 
       {listEmpty ? (
         <View style={styles.emptyWrap}>
-          <Text style={{ color: colors.sub }}>
+          <Text style={{ color: colors.sub, textAlign: 'center', paddingHorizontal: 24 }}>
             {hasSearch
               ? 'Không có sản phẩm phù hợp.'
-              : activeTab === 'expiry'
-                ? 'Không có sản phẩm sắp hết hạn / hết hạn.'
-                : 'Không có sản phẩm sắp hết hàng.'}
+              : activeTab === 'expiry' && !expiryWarningEnabled
+                ? 'Cảnh báo hết hạn đã tắt. Bật lại trong Cài đặt.'
+                : activeTab === 'lowStock' && !lowStockWarningEnabled
+                  ? 'Cảnh báo hết hàng đã tắt. Bật lại trong Cài đặt.'
+                  : activeTab === 'expiry'
+                    ? 'Không có sản phẩm sắp hết hạn / hết hạn.'
+                    : 'Không có sản phẩm sắp hết hàng.'}
           </Text>
         </View>
       ) : (

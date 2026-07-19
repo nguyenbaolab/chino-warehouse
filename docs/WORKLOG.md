@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: warning toggles ẩn list Notifications khi tắt
+
+- NotificationsScreen: expiryCards return [] khi expiryWarningEnabled = false; lowStockCards return [] khi lowStockWarningEnabled = false.
+- Empty state message khi toggle off: "Cảnh báo đã tắt. Bật lại trong Cài đặt."
+- Map chấm zone đã đúng (getDisplayColorForEntry filter theo toggle).
+
+---
+
 ## [tháng 7/2026] — F32: cảnh báo per SP — ignore_expiry_warning / ignore_stock_warning
 
 - Migration: 2 cột BOOLEAN DEFAULT false trên products; schema.sql v4.2.
