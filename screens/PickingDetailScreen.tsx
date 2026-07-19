@@ -83,6 +83,7 @@ export default function PickingDetailScreen() {
   const [lotQtyInputs, setLotQtyInputs] = useState<Record<string, string>>({})
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
+  const [isCompleting, setIsCompleting] = useState(false)
   const [warehouseLocations, setWarehouseLocations] = useState<Location[]>([])
   const [warehouseZoneIds, setWarehouseZoneIds] = useState<Set<string>>(new Set())
 
@@ -327,21 +328,58 @@ export default function PickingDetailScreen() {
     ])
   }
 
+  async function runComplete() {
+    if (!pickingList || isCompleting) return
+    setIsCompleting(true)
+    try {
+      const result = await completePicking(pickingList.id)
+      if (result.success) {
+        Alert.alert('Hoàn thành!', `Đã trừ ${result.deducted} mặt hàng.`)
+        return
+      }
+      if (result.deducted > 0 && result.failed.length > 0) {
+        Alert.alert(
+          'Trừ tồn không hoàn tất',
+          `Đã trừ ${result.deducted} mặt hàng.\nLỗi ${result.failed.length} mặt hàng:\n${result.failed.join('\n')}\n\nĐơn vẫn ở trạng thái Đang lấy — kiểm tra và thử lại.`,
+        )
+        return
+      }
+      const reason =
+        result.failed.length > 0
+          ? result.failed.join('\n')
+          : 'Chưa có hàng nào được đánh dấu đã lấy.'
+      Alert.alert('Không thể trừ tồn', reason)
+    } finally {
+      setIsCompleting(false)
+    }
+  }
+
   function requestComplete() {
-    if (!pickingList || !canWrite) return
-    Alert.alert(
-      'Hoàn thành đơn?',
-      'B2: chỉ đổi trạng thái — trừ tồn kho sẽ có ở bước B3.',
-      [
-        { text: 'Huỷ', style: 'cancel' },
-        {
-          text: 'Hoàn thành',
-          onPress: () => {
-            void completePicking(pickingList.id)
-          },
-        },
-      ],
-    )
+    if (!pickingList || !canWrite || isCompleting) return
+
+    const unpickedCount = items.filter((i) => !i.is_picked).length
+
+    if (pickedCount === 0) {
+      Alert.alert('Chưa có hàng nào được đánh dấu đã lấy.')
+      return
+    }
+
+    if (unpickedCount > 0) {
+      Alert.alert(
+        `Có ${unpickedCount} mặt hàng chưa lấy`,
+        `Chỉ trừ tồn kho cho ${pickedCount} mặt hàng đã lấy. Bỏ qua ${unpickedCount} mặt hàng chưa lấy?`,
+        [
+          { text: 'Huỷ', style: 'cancel' },
+          { text: 'Tiếp tục', onPress: () => void runComplete() },
+        ],
+      )
+      return
+    }
+
+    Alert.alert('Hoàn thành đơn?', `Sẽ trừ tồn kho cho ${pickedCount} mặt hàng đã lấy.`, [
+      { text: 'Huỷ', style: 'cancel' },
+      { text: 'Hoàn thành', onPress: () => void runComplete() },
+    ])
   }
 
   function renderThumb(uri?: string | null, size = 48) {
@@ -687,10 +725,16 @@ export default function PickingDetailScreen() {
                   Đã lấy {pickedCount}/{totalCount}
                 </Text>
                 <TouchableOpacity
-                  style={[styles.footerBtn, { backgroundColor: colors.accent }]}
+                  style={[
+                    styles.footerBtn,
+                    { backgroundColor: isCompleting ? colors.border : colors.accent },
+                  ]}
                   onPress={requestComplete}
+                  disabled={isCompleting}
                 >
-                  <Text style={{ color: colors.card, fontWeight: '700' }}>Hoàn thành</Text>
+                  <Text style={{ color: colors.card, fontWeight: '700' }}>
+                    {isCompleting ? 'Đang xử lý...' : 'Hoàn thành'}
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.footerBtn, { backgroundColor: colors.card, borderColor: colors.border }]}

@@ -168,7 +168,11 @@ type WarehouseStore = {
   deletePickingItem: (id: string) => Promise<void>
   togglePickedItem: (id: string, is_picked: boolean) => Promise<void>
   startPicking: (id: string) => Promise<void>
-  completePicking: (id: string) => Promise<void>
+  completePicking: (id: string) => Promise<{
+    success: boolean
+    deducted: number
+    failed: string[]
+  }>
   fetchLatestAuditEntry: () => Promise<AuditLog | null>
   fetchAuditLogs: (params: {
     cursor?: string
@@ -1524,8 +1528,82 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   completePicking: async (id) => {
-    // B2: chỉ đổi status — B3 sẽ thêm trừ tồn trước khi completed
-    await get().updatePickingList(id, { status: 'completed' })
+    const picked = get().pickingListItems.filter(
+      (i) => i.picking_list_id === id && i.is_picked,
+    )
+    if (picked.length === 0) {
+      return { success: false, deducted: 0, failed: [] }
+    }
+
+    const pickedEntryIds = [...new Set(picked.map((i) => i.inventory_entry_id))]
+    const { data: rows, error: fetchErr } = await supabase
+      .from('inventory_entries')
+      .select('id, quantity_boxes')
+      .in('id', pickedEntryIds)
+
+    if (fetchErr) {
+      if (__DEV__) console.error('[warehouseStore] completePicking (fetch entries):', fetchErr)
+      return {
+        success: false,
+        deducted: 0,
+        failed: ['Không tải được tồn kho hiện tại. Thử lại.'],
+      }
+    }
+
+    const qtyById = new Map<string, number>()
+    for (const row of rows ?? []) {
+      qtyById.set(row.id as string, row.quantity_boxes as number)
+    }
+
+    let deducted = 0
+    const failed: string[] = []
+
+    for (const item of picked) {
+      const label =
+        item.product?.name ??
+        get().products.find((p) => p.id === item.product_id)?.name ??
+        `Lô ${item.inventory_entry_id.slice(0, 8)}`
+
+      if (!qtyById.has(item.inventory_entry_id)) {
+        failed.push(`${label}: lô đã bị xóa`)
+        continue
+      }
+
+      const currentQty = qtyById.get(item.inventory_entry_id)!
+      if (currentQty < item.quantity_boxes) {
+        failed.push(
+          `${label}: tồn không đủ (còn ${currentQty}, cần ${item.quantity_boxes})`,
+        )
+        continue
+      }
+
+      const newQty = currentQty - item.quantity_boxes
+      const { error: updErr } = await supabase
+        .from('inventory_entries')
+        .update({ quantity_boxes: newQty })
+        .eq('id', item.inventory_entry_id)
+
+      if (updErr) {
+        if (__DEV__) console.error('[warehouseStore] completePicking (update):', updErr)
+        failed.push(`${label}: lỗi cập nhật tồn`)
+        continue
+      }
+
+      // Cập nhật map để item sau cùng lô (nếu có) thấy qty mới
+      qtyById.set(item.inventory_entry_id, newQty)
+      deducted++
+    }
+
+    if (deducted > 0) {
+      await get().fetchAllInventoryEntries()
+    }
+
+    if (failed.length === 0 && deducted > 0) {
+      await get().updatePickingList(id, { status: 'completed' })
+      return { success: true, deducted, failed: [] }
+    }
+
+    return { success: false, deducted, failed }
   },
 
   fetchLatestAuditEntry: async () => {

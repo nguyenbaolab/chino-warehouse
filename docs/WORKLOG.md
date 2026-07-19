@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — B3: F34 confirm trừ tồn batch — F34 Done
+
+- completePicking: re-fetch qty → sequential trừ tồn picked items → status completed.
+- Validate: skip lô bị xóa, skip tồn không đủ, tiếp tục items còn lại.
+- Partial fail: giữ in_progress, Alert chi tiết lỗi.
+- PickingDetailScreen: Alert unpicked items, disable nút double-tap, hiện kết quả trừ tồn.
+- F34 Picking list hoàn thành (B1 schema + B2 UI + B3 trừ tồn).
+- Docs: REQUIREMENTS v1.3.27 F34 Done, CONTEXT, DECISIONS, WORKLOG, PLAN_5 B3 ✅.
+
+---
+
 ## [tháng 7/2026] — B2: F34 Picking list UI + store
 
 - OrderListScreen: tab switcher Đặt hàng / Lấy hàng; picking cards + status.

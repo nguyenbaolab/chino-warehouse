@@ -30,7 +30,7 @@ Phase 5 hoàn thiện các feature deferred từ Phase 3–4: **F27 mở rộng*
 
 ---
 
-## 3. Group B — Picking list (F34)
+## 3. Group B — Picking list (F34) ✅ Done
 
 ### B1 — Schema picking ✅ Done
 
@@ -41,8 +41,9 @@ Phase 5 hoàn thiện các feature deferred từ Phase 3–4: **F27 mở rộng*
 
 - Tab switcher Đặt hàng / Lấy hàng trên OrderListScreen; PickingDetailScreen (search lô, nhóm, tick); store CRUD + start/complete (chưa trừ tồn).
 
-### B3 — Checklist + confirm trừ tồn
-- Tick khi lấy xong; confirm → trừ `quantity_boxes`.
+### B3 — Checklist + confirm trừ tồn ✅ Done
+
+- Confirm chỉ trừ items `is_picked`; re-fetch qty → sequential update; partial fail giữ `in_progress`.
 
 ---
 

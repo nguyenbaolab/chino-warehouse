@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F34 Picking — trừ tồn batch confirm (B3)
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Confirm chỉ trừ tồn cho items đã tick `is_picked`. Items chưa tick bỏ qua (Alert hỏi trước). Sequential update, không RPC transaction. Re-fetch qty hiện tại trước trừ; skip item nếu tồn không đủ. Partial success: giữ status `in_progress`, báo lỗi cụ thể. Lô trừ về 0 giữ nguyên (không auto-delete).
+- **Lý do:** App nội bộ nhỏ (2-3 user), sequential đủ tin cậy; partial fail hiếm nhưng handle rõ ràng; tick = đã lấy thực tế nên chỉ trừ phần đã lấy.
+
+---
+
 ### F34 Picking — UI trong tab Orders (tab con)
 
 - **Ngày:** tháng 7/2026
