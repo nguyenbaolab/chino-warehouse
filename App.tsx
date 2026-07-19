@@ -315,6 +315,7 @@ export default function App() {
   useEffect(() => {
     if (!session) {
       clearCurrentUserProfile()
+      // F37: giữ credentials SecureStore — chỉ xoá khi tắt toggle / password sai
       void cancelAllNotifications()
       return
     }

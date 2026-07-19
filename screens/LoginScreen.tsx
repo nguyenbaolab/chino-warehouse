@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -9,11 +9,20 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useThemeStore } from '../stores/themeStore'
 import { supabase } from '../lib/supabase'
 import { getErrorMessage } from '../utils/errorMessages'
+import {
+  authenticateBiometric,
+  clearBiometricCredentials,
+  getBiometricCredentials,
+  isBiometricAvailable,
+  isBiometricEnabled,
+  saveBiometricCredentials,
+} from '../lib/biometricAuth'
 
 export default function LoginScreen() {
   const { colors } = useThemeStore()
@@ -23,8 +32,68 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [biometricAvailable, setBiometricAvailable] = useState(false)
+  const [biometricReady, setBiometricReady] = useState(false)
+  const [attemptingBiometric, setAttemptingBiometric] = useState(false)
 
-  // Đăng nhập bằng email + password qua Supabase Auth
+  const attemptBiometricLogin = useCallback(
+    async (creds: { email: string; password: string }) => {
+      setError(null)
+      setAttemptingBiometric(true)
+      const authOk = await authenticateBiometric()
+      if (!authOk) {
+        setAttemptingBiometric(false)
+        return
+      }
+
+      setLoading(true)
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: creds.email,
+        password: creds.password,
+      })
+      setLoading(false)
+      setAttemptingBiometric(false)
+
+      if (authError) {
+        if (authError.message.includes('Invalid login credentials')) {
+          Alert.alert(
+            'Mật khẩu đã thay đổi',
+            'Vui lòng đăng nhập lại bằng mật khẩu.',
+          )
+          await clearBiometricCredentials()
+          setBiometricReady(false)
+        } else {
+          setError(getErrorMessage(authError, 'auth'))
+        }
+      }
+      // Thành công → App.tsx onAuthStateChange
+    },
+    [],
+  )
+
+  // Cold start: auto biometric nếu đã bật + có credentials
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const available = await isBiometricAvailable()
+      if (cancelled) return
+      setBiometricAvailable(available)
+      if (!available) return
+
+      const enabled = await isBiometricEnabled()
+      if (cancelled || !enabled) return
+
+      const creds = await getBiometricCredentials()
+      if (cancelled || !creds) return
+
+      setBiometricReady(true)
+      await attemptBiometricLogin(creds)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [attemptBiometricLogin])
+
   const handleLogin = async () => {
     setError(null)
 
@@ -47,9 +116,28 @@ export default function LoginScreen() {
       } else {
         setError(getErrorMessage(authError, 'auth'))
       }
+      return
     }
-    // Login thành công → App.tsx useEffect(session) tự reset inactivity timer
+
+    // Login OK → tự bật biometric nếu thiết bị hỗ trợ
+    const available = await isBiometricAvailable()
+    if (available) {
+      await saveBiometricCredentials(trimmedEmail, password)
+      setBiometricReady(true)
+      setBiometricAvailable(true)
+    }
   }
+
+  async function handleBiometricButton() {
+    const creds = await getBiometricCredentials()
+    if (!creds) {
+      setBiometricReady(false)
+      return
+    }
+    await attemptBiometricLogin(creds)
+  }
+
+  const busy = loading || attemptingBiometric
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
@@ -62,7 +150,6 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Logo / tên app */}
           <View style={styles.logoSection}>
             <Text style={styles.logoEmoji}>📦</Text>
             <Text style={[styles.appName, { color: colors.text }]}>
@@ -73,7 +160,15 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          {/* Form đăng nhập */}
+          {attemptingBiometric ? (
+            <View style={styles.bioBusy}>
+              <ActivityIndicator size="large" color={colors.accent} />
+              <Text style={[styles.bioBusyText, { color: colors.sub }]}>
+                Đang xác thực...
+              </Text>
+            </View>
+          ) : null}
+
           <View style={styles.form}>
             <TextInput
               style={[
@@ -92,7 +187,7 @@ export default function LoginScreen() {
               keyboardType="email-address"
               textContentType="emailAddress"
               autoComplete="email"
-              editable={!loading}
+              editable={!busy}
               maxLength={100}
             />
 
@@ -113,42 +208,67 @@ export default function LoginScreen() {
                 secureTextEntry={!showPassword}
                 textContentType="password"
                 autoComplete="password"
-                editable={!loading}
+                editable={!busy}
                 maxLength={100}
-                onSubmitEditing={handleLogin}
+                onSubmitEditing={() => void handleLogin()}
               />
               <TouchableOpacity
-                style={[styles.eyeBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+                style={[
+                  styles.eyeBtn,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
                 onPress={() => setShowPassword((v) => !v)}
                 accessibilityLabel={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                disabled={loading}
+                disabled={busy}
               >
                 <Text style={styles.eyeBtnText}>{showPassword ? '🙈' : '👁'}</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Hiển thị lỗi */}
-            {error && (
+            {error ? (
               <Text style={[styles.errorText, { color: colors.statusExpired }]}>
                 {error}
               </Text>
-            )}
+            ) : null}
 
             <TouchableOpacity
               style={[
                 styles.loginBtn,
-                { backgroundColor: colors.accent, opacity: loading ? 0.6 : 1 },
+                { backgroundColor: colors.accent, opacity: busy ? 0.6 : 1 },
               ]}
               activeOpacity={0.8}
-              onPress={handleLogin}
-              disabled={loading}
+              onPress={() => void handleLogin()}
+              disabled={busy}
             >
-              {loading ? (
+              {loading && !attemptingBiometric ? (
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.loginBtnText}>Đăng nhập</Text>
               )}
             </TouchableOpacity>
+
+            {biometricReady && !attemptingBiometric ? (
+              <TouchableOpacity
+                style={[
+                  styles.bioBtn,
+                  { borderColor: colors.border, backgroundColor: colors.card },
+                ]}
+                activeOpacity={0.8}
+                onPress={() => void handleBiometricButton()}
+                disabled={busy}
+              >
+                <Text style={styles.bioBtnEmoji}>🔐</Text>
+                <Text style={[styles.bioBtnText, { color: colors.text }]}>
+                  Đăng nhập bằng vân tay
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            {biometricAvailable && !biometricReady && !attemptingBiometric ? (
+              <Text style={[styles.bioHint, { color: colors.sub }]}>
+                Đăng nhập bằng mật khẩu một lần để bật vân tay / Face ID.
+              </Text>
+            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -172,6 +292,12 @@ const styles = StyleSheet.create({
   logoEmoji: { fontSize: 56 },
   appName: { fontSize: 24, fontWeight: 'bold', marginTop: 12 },
   appSub: { fontSize: 14, marginTop: 4 },
+  bioBusy: {
+    alignItems: 'center',
+    marginBottom: 24,
+    gap: 12,
+  },
+  bioBusyText: { fontSize: 14 },
   form: { gap: 14 },
   input: {
     height: 50,
@@ -218,4 +344,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  bioBtn: {
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  bioBtnEmoji: { fontSize: 18 },
+  bioBtnText: { fontSize: 15, fontWeight: '600' },
+  bioHint: { fontSize: 12, textAlign: 'center', marginTop: 4 },
 })

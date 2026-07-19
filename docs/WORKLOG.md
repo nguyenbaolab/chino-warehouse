@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — F37: Biometric login (vân tay / Face ID)
+
+- Install expo-local-authentication; tạo `lib/biometricAuth.ts` (SecureStore credentials, authenticate prompt).
+- LoginScreen: auto biometric prompt khi mount nếu enabled + credentials có; fallback form; password sai → xoá credentials + Alert.
+- Sau login password thành công: tự bật biometric + lưu credentials (không hỏi).
+- SettingsScreen: toggle «Đăng nhập bằng vân tay» (section Bảo mật); tắt = xoá credentials.
+- App.tsx: logout giữ credentials SecureStore; timer 20 phút giữ nguyên.
+- Docs: REQUIREMENTS v1.3.31 F37 Done, CONTEXT, DECISIONS, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — C-part2: F35 màn Cảnh báo hết hạn danh sách — F35 Done
 
 - ExpiryAlertScreen: 6 section collapsible (4 mốc exact + tuần + tháng), entry cards (ảnh + tên + zone + qty + hạn + badge kho/siêu thị).

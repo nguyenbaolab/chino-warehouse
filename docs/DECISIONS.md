@@ -4,6 +4,15 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F37 Biometric login — credentials SecureStore + persistSession vẫn false
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Lưu email + password trong SecureStore (OS encrypted) sau login thành công đầu tiên, tự động bật biometric. Mở app → vân tay/Face ID → `signInWithPassword` tự động. Giữ `persistSession: false` + timer 20 phút (DECISIONS cũ không đổi). Logout giữ credentials → lần sau biometric lại. Tắt toggle = xoá credentials. Password đổi → login fail → xoá credentials + Alert.
+- **Lý do:** UX nhanh cho app nội bộ mở hàng ngày; SecureStore đủ an toàn (OS keychain); không cần persist session JWT vì biometric re-login nhanh tương đương.
+- **Thay thế đã xem xét:** Persist session (`persistSession: true`) — từ chối, giữ đúng DECISIONS memory-only; lưu refresh token thay password — phức tạp hơn, không cần cho app nội bộ 2–3 user.
+
+---
+
 ### F35 Màn Cảnh báo hết hạn — 6 section không trùng lặp
 
 - **Ngày:** tháng 7/2026

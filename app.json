@@ -12,7 +12,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Cho phép dùng Face ID để đăng nhập nhanh vào Chino's Warehouse."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -42,7 +45,13 @@
         }
       ],
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Cho phép dùng Face ID để đăng nhập nhanh vào Chino's Warehouse."
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch, ScrollView, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -7,6 +7,13 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { supabase } from '../lib/supabase'
 import { useIsAdmin } from '../stores/authStore'
+import {
+  clearBiometricCredentials,
+  getBiometricCredentials,
+  isBiometricAvailable,
+  isBiometricEnabled,
+  saveBiometricCredentials,
+} from '../lib/biometricAuth'
 
 export default function SettingsScreen() {
   const navigation = useNavigation<any>()
@@ -37,6 +44,8 @@ export default function SettingsScreen() {
   const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
   const [stockCheckSubtitle, setStockCheckSubtitle] = useState('Chưa có hàng đặc biệt')
   const [notifSubtitle, setNotifSubtitle] = useState('Đang tải…')
+  const [biometricAvailable, setBiometricAvailable] = useState(false)
+  const [biometricEnabled, setBiometricEnabled] = useState(false)
   const lastFetchedAt = useRef(0)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const FOCUS_FETCH_TTL_MS = 30_000
@@ -104,6 +113,14 @@ export default function SettingsScreen() {
     }
   }, [])
 
+  /** F37 — trạng thái biometric */
+  const refreshBiometric = useCallback(async () => {
+    const available = await isBiometricAvailable()
+    setBiometricAvailable(available)
+    const enabled = available ? await isBiometricEnabled() : false
+    setBiometricEnabled(enabled)
+  }, [])
+
   useEffect(() => {
     loadTheme()
     void fetchLocations()
@@ -115,9 +132,10 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // Subtitle Kiểm hàng + thông báo luôn refresh khi vào Settings
+      // Subtitle Kiểm hàng + thông báo + biometric luôn refresh khi vào Settings
       void refreshStockCheckSubtitle()
       void refreshNotifSubtitle()
+      void refreshBiometric()
 
       if (Date.now() - lastFetchedAt.current <= FOCUS_FETCH_TTL_MS) return
 
@@ -157,6 +175,7 @@ export default function SettingsScreen() {
       fetchInternalNotes,
       refreshStockCheckSubtitle,
       refreshNotifSubtitle,
+      refreshBiometric,
       fetchCategories,
       fetchLatestAuditEntry,
       productCategoriesL1.length,
@@ -382,6 +401,46 @@ export default function SettingsScreen() {
         <Switch
           value={isDark}
           onValueChange={toggleTheme}
+          trackColor={{ false: '#ccc', true: colors.accent }}
+          thumbColor="#fff"
+        />
+      </View>
+
+      {/* F37 — Biometric login */}
+      <Text style={[styles.sectionTitle, { color: colors.sub }]}>Bảo mật</Text>
+      <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.settingRowLabel}>
+          <Text style={[styles.settingLabel, { color: colors.text }]}>
+            Đăng nhập bằng vân tay
+          </Text>
+          <Text style={[styles.settingDesc, { color: colors.sub }]}>
+            {biometricAvailable
+              ? 'Face ID / vân tay sau khi đăng nhập một lần'
+              : '(Thiết bị không hỗ trợ)'}
+          </Text>
+        </View>
+        <Switch
+          value={biometricEnabled}
+          disabled={!biometricAvailable}
+          onValueChange={(value) => {
+            void (async () => {
+              if (!value) {
+                await clearBiometricCredentials()
+                setBiometricEnabled(false)
+                return
+              }
+              const creds = await getBiometricCredentials()
+              if (!creds) {
+                Alert.alert(
+                  'Chưa kích hoạt',
+                  'Đăng nhập bằng mật khẩu một lần để kích hoạt vân tay / Face ID.',
+                )
+                return
+              }
+              await saveBiometricCredentials(creds.email, creds.password)
+              setBiometricEnabled(true)
+            })()
+          }}
           trackColor={{ false: '#ccc', true: colors.accent }}
           thumbColor="#fff"
         />

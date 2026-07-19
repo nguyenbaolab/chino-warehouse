@@ -12,8 +12,9 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - **React Navigation** — Bottom Tabs + Native Stack
 - **expo-camera** — `CameraView`, quét barcode
 - **expo-notifications** — F35 local scheduled (daily/weekly/monthly expiry alerts)
-- **expo-secure-store** — không còn dùng cho session auth; có thể dùng cho mục đích khác nếu cần
-- **Supabase Auth** — email/password sign-in, `persistSession: false` (session trong RAM của Supabase client, không custom storage — kill app = logout), inactivity timer 20 phút trong App.tsx
+- **expo-local-authentication** — F37 vân tay / Face ID
+- **expo-secure-store** — F37 lưu biometric credentials (email/password); **không** dùng cho session JWT
+- **Supabase Auth** — email/password sign-in, `persistSession: false` (session trong RAM của Supabase client, không custom storage — kill app = logout), inactivity timer 20 phút trong App.tsx; F37 re-login nhanh qua biometric
 
 **Mô hình bảo mật (client-direct BaaS):**
 - Anon key bundle trong APK — hợp lệ vì RLS chặn mọi request không có JWT authenticated.
@@ -107,6 +108,7 @@ screens/
 lib/
   supabase.ts
   notifications.ts             # F35 — permission + schedule/cancel + bootstrap
+  biometricAuth.ts             # F37 — SecureStore credentials + LocalAuthentication
   presence.ts
 utils/
   expiryCountUtils.ts          # F35 — exact-day/range count + getExpiringEntries* + ExpiringEntryItem
@@ -145,7 +147,7 @@ README.md
 
 ## §3 Navigation structure
 
-- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />`; loading bootstrap / **đang fetch `user_profiles`** → `<ActivityIndicator />`; có session + profile OK → `SafeAreaProvider` → `NavigationContainer`. **F24:** sau login gọi `authStore.fetchCurrentUserProfile()`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC `update_my_last_login()`. **Realtime (F24):** sau profile OK — subscribe `postgres_changes` UPDATE own `user_profiles` (kick disable + silent refetch role); join presence `presence:warehouse-online` qua `lib/presence.ts`; cleanup khi logout.
+- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />` (**F37:** auto biometric prompt nếu SecureStore credentials + enabled); loading bootstrap / **đang fetch `user_profiles`** → `<ActivityIndicator />`; có session + profile OK → `SafeAreaProvider` → `NavigationContainer`. **F24:** sau login gọi `authStore.fetchCurrentUserProfile()`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC `update_my_last_login()`. Logout **giữ** biometric credentials. **Realtime (F24):** sau profile OK — subscribe `postgres_changes` UPDATE own `user_profiles` (kick disable + silent refetch role); join presence `presence:warehouse-online` qua `lib/presence.ts`; cleanup khi logout.
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar. **Flow quét (search/locate):** `searchByBarcode` (lô) → nếu không có → `lookupProductByBarcode` (`product_barcodes`) → Alert **"Hàng đã hết"** + **Xem chi tiết** → `returnTab` với **state tường minh** `[Main, ProductDetail]` (`tabsParamsForProductDetail` / `getMainScreenName` trong `lib/tabNavigation.ts`) — KI-057 lần 2, tránh stack cụt; fallback tab `'Products'`; nếu vẫn không có SP → Alert **Không tìm thấy** (Thử lại / Thêm thủ công / Huỷ).
 - **Bottom tabs:** `Map` — `tabBarLabel` **dynamic** theo `appMode` (**Kho** warehouse / **Siêu thị** market) → `Products` (**Sản phẩm**) → `Orders` (**Đặt hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).
@@ -162,7 +164,7 @@ README.md
 **UI bản đồ & lọc (đối chiếu code):**
 
 - **UserManagementScreen (F24):** mount guard `useIsAdmin()`; `useFocusEffect` → `fetchUsers` (RPC); mỗi user một card (tên = phần trước `@`, badge role, trạng thái, đăng nhập cuối); Switch **Guest** / **Vô hiệu hóa** / **Admin** (chỉ super_admin) — logic ẩn theo viewer/target; Alert confirm → `updateUserRole` / `updateUserDisabled`.
-- **SettingsScreen:** hai card ngang **Quản lý kho** / **Phân loại sản phẩm** (subtext `X nhóm · Y loại`); `useFocusEffect` gọi `fetchCategories` khi cả hai danh sách category rỗng; card phân loại → `CategoryManagement`. Card **Tổng quan kho** (F23) — subtitle `{SKU không archived} · {số kho}` → `Dashboard`. Card **Lịch sử thay đổi** — subtitle audit gần nhất từ `fetchLatestAuditEntry`; navigate `AuditLog`. Realtime `products` + `inventory_entries` (debounce 2s) → `refreshDiscontinuedContext`.
+- **SettingsScreen:** hai card ngang **Quản lý kho** / **Phân loại sản phẩm** (subtext `X nhóm · Y loại`); `useFocusEffect` gọi `fetchCategories` khi cả hai danh sách category rỗng; card phân loại → `CategoryManagement`. Card **Tổng quan kho** (F23) — subtitle `{SKU không archived} · {số kho}` → `Dashboard`. Card **Lịch sử thay đổi** — subtitle audit gần nhất từ `fetchLatestAuditEntry`; navigate `AuditLog`. Section **Bảo mật** (F37): Switch «Đăng nhập bằng vân tay» — tắt = `clearBiometricCredentials`; bật khi chưa có credentials → Alert hướng dẫn login password. Realtime `products` + `inventory_entries` (debounce 2s) → `refreshDiscontinuedContext`.
 - **DashboardScreen (F23):** nút **Lọc (N)** → `FilterModal` (Mode / Kho / Zone — filter **local**, không đổi `appMode` store). Stats qua `computeDashboardStats` với `effectiveZoneSet` (kho hoặc mọi zone thuộc mode). **8 stat cards** (lưới 2 cột): tổng SP, SKU có lô, SP hết/sắp hết, lô hết/sắp hết hạn, không nhập nữa, tổng kho — màu `#EF4444` / `#FACC15` / `#22C55E`. **Pie chart** (`SimplePieChart` + `react-native-svg`). `useFocusEffect` fetch; Realtime debounce 2s → refetch.
 - **AuditLogScreen:** Settings / ProductDetail. **4 filter** (`SearchableDropdownModal`): **Mode** (Tất cả / Kho / Siêu thị — local; locations query theo `type`) · **Kho** · **Người** · **Sản phẩm** (+ 📷). Đổi mode → reset kho. `fetchAuditLogs` theo `filterLocationId`. Pagination cursor `changed_at`, 10/trang.
 - **MapScreen:** thanh header — **mode switcher** (`Pressable` + ▾): **🏪 Chino's Warehouse** / **🏪 Chino's Market** → bottom sheet → `setAppMode` (reset location/zones/inventory + `fetchLocations`); nút **▦** (`ZoneLayoutEditor`) và **+ Zone**. **Chọn kho:** bottom sheet — danh sách theo `appMode` + lưới; **Thêm kho mới** → Settings `LocationManagement`. Đổi kho → `clearSearch` (KI-004). **Realtime:** `zones` + `inventory_entries` debounce 2s; `markOwnMutation`. **Tìm kiếm** toàn mode; bấm lô → đổi kho + highlight + `ZoneDetailSheet`. **Locate intent** từ ProductDetail.
