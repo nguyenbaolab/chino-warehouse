@@ -22,6 +22,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useCanWrite } from '../stores/authStore'
 import { normalizeText } from '../utils/textUtils'
 import type { InternalNote, Product } from '../types'
+import ImageViewerModal from '../components/ImageViewerModal'
 
 /** Format created_at ISO → DD/MM/YYYY HH:mm */
 function formatNoteDate(iso: string): string {
@@ -55,6 +56,8 @@ export default function InternalNotesScreen() {
 
   const [editNote, setEditNote] = useState<InternalNote | null>(null)
   const [editReason, setEditReason] = useState('')
+  /** Tap-to-zoom ảnh SP */
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
 
   // KI-039: TTL 30s — tránh fetchProducts mỗi lần re-focus
   const FOCUS_FETCH_TTL_MS = 30_000
@@ -187,7 +190,9 @@ export default function InternalNotesScreen() {
       <View style={styles.cardRowMain}>
         <View style={styles.thumbnailContainer}>
           {hasLinkedProduct && imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.thumbnail} resizeMode="cover" />
+            <TouchableOpacity activeOpacity={0.85} onPress={() => setZoomImageUrl(imageUrl)}>
+              <Image source={{ uri: imageUrl }} style={styles.thumbnail} resizeMode="cover" />
+            </TouchableOpacity>
           ) : (
             <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
               <Text style={{ fontSize: 22 }}>{isCustomOnly ? '📝' : '📷'}</Text>
@@ -305,11 +310,16 @@ export default function InternalNotesScreen() {
                 {selectedProduct ? (
                   <View style={[styles.selectedProductRow, { borderColor: colors.border, backgroundColor: colors.bg }]}>
                     {selectedProduct.image_url ? (
-                      <Image
-                        source={{ uri: selectedProduct.image_url }}
-                        style={styles.selectedThumb}
-                        resizeMode="cover"
-                      />
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() => setZoomImageUrl(selectedProduct.image_url ?? null)}
+                      >
+                        <Image
+                          source={{ uri: selectedProduct.image_url }}
+                          style={styles.selectedThumb}
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
                     ) : (
                       <View
                         style={[
@@ -476,6 +486,7 @@ export default function InternalNotesScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+      <ImageViewerModal uri={zoomImageUrl} onClose={() => setZoomImageUrl(null)} />
     </SafeAreaView>
   )
 }

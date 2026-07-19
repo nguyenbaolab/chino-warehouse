@@ -91,6 +91,7 @@ function OrdersStackNavigator() {
       <OrdersStack.Screen name="OrderListMain" component={OrderListScreen} />
       <OrdersStack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <OrdersStack.Screen name="PickingDetail" component={PickingDetailScreen} />
+      <OrdersStack.Screen name="ProductDetail" component={ProductDetailScreen} />
     </OrdersStack.Navigator>
   )
 }

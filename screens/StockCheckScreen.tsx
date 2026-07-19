@@ -164,13 +164,20 @@ export default function StockCheckScreen() {
           </View>
         </TouchableOpacity>
         <View style={styles.cardBody}>
-          <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-            {productName(item)}
-          </Text>
-          <Text style={[styles.meta, { color: colors.sub }]}>
-            {item.quantity_boxes} sản phẩm
-            {expiry ? ` · HSD ${expiry}` : ''}
-          </Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() =>
+              navigation.navigate('ProductDetail', { productId: item.product_id })
+            }
+          >
+            <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+              {productName(item)}
+            </Text>
+            <Text style={[styles.meta, { color: colors.sub }]}>
+              {item.quantity_boxes} sản phẩm
+              {expiry ? ` · HSD ${expiry}` : ''}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     )

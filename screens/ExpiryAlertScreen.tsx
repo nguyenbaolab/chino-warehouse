@@ -30,6 +30,7 @@ import {
 } from '../utils/expiryCountUtils'
 import { isoExpiryToDisplay } from '../utils/dateUtils'
 import type { InventoryEntry, Location, Product, Zone } from '../types'
+import ImageViewerModal from '../components/ImageViewerModal'
 
 type SectionDef =
   | { key: string; label: string; kind: 'exact'; daysFromToday: 0 | 1 | 2 | 3 }
@@ -66,6 +67,8 @@ export default function ExpiryAlertScreen() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(
     {},
   )
+  /** Tap-to-zoom ảnh SP */
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
 
   const lastFetchRef = useRef(0)
   const FOCUS_FETCH_TTL_MS = 30_000
@@ -329,11 +332,16 @@ export default function ExpiryAlertScreen() {
         }
       >
         {item.productImageUrl ? (
-          <Image
-            source={{ uri: item.productImageUrl }}
-            style={styles.thumb}
-            resizeMode="cover"
-          />
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setZoomImageUrl(item.productImageUrl)}
+          >
+            <Image
+              source={{ uri: item.productImageUrl }}
+              style={styles.thumb}
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
         ) : (
           <View style={[styles.thumb, { backgroundColor: colors.border }]} />
         )}
@@ -552,6 +560,7 @@ Số liệu trong thông báo được cập nhật mỗi khi có người mở 
           })}
         </ScrollView>
       )}
+      <ImageViewerModal uri={zoomImageUrl} onClose={() => setZoomImageUrl(null)} />
     </SafeAreaView>
   )
 }

@@ -18,6 +18,7 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
+import ImageViewerModal from '../components/ImageViewerModal'
 import {
   EXPIRY_COLORS,
   formatExpiryDate,
@@ -87,6 +88,8 @@ export default function PickingDetailScreen() {
   const [isCompleting, setIsCompleting] = useState(false)
   const [warehouseLocations, setWarehouseLocations] = useState<Location[]>([])
   const [warehouseZoneIds, setWarehouseZoneIds] = useState<Set<string>>(new Set())
+  /** Tap-to-zoom ảnh SP */
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
 
   const FOCUS_FETCH_TTL_MS = 30_000
   const lastFetchRef = useRef(0)
@@ -404,11 +407,13 @@ export default function PickingDetailScreen() {
   function renderThumb(uri?: string | null, size = 48) {
     if (uri) {
       return (
-        <Image
-          source={{ uri }}
-          style={{ width: size, height: size, borderRadius: 8 }}
-          resizeMode="cover"
-        />
+        <TouchableOpacity activeOpacity={0.85} onPress={() => setZoomImageUrl(uri)}>
+          <Image
+            source={{ uri }}
+            style={{ width: size, height: size, borderRadius: 8 }}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
       )
     }
     return (
@@ -684,18 +689,27 @@ export default function PickingDetailScreen() {
                           ) : null}
                           {renderThumb(product?.image_url)}
                           <View style={{ flex: 1, minWidth: 0, marginLeft: 10 }}>
-                            <Text
-                              style={[
-                                styles.itemName,
-                                {
-                                  color: colors.text,
-                                  textDecorationLine: item.is_picked ? 'line-through' : 'none',
-                                },
-                              ]}
-                              numberOfLines={2}
+                            <TouchableOpacity
+                              activeOpacity={0.7}
+                              onPress={() =>
+                                navigation.navigate('ProductDetail', {
+                                  productId: item.product_id,
+                                })
+                              }
                             >
-                              {product?.name ?? 'Sản phẩm'}
-                            </Text>
+                              <Text
+                                style={[
+                                  styles.itemName,
+                                  {
+                                    color: colors.text,
+                                    textDecorationLine: item.is_picked ? 'line-through' : 'none',
+                                  },
+                                ]}
+                                numberOfLines={2}
+                              >
+                                {product?.name ?? 'Sản phẩm'}
+                              </Text>
+                            </TouchableOpacity>
                             <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
                               {item.quantity_boxes} thùng
                             </Text>
@@ -793,6 +807,7 @@ export default function PickingDetailScreen() {
           </View>
         ) : null}
       </SafeAreaView>
+      <ImageViewerModal uri={zoomImageUrl} onClose={() => setZoomImageUrl(null)} />
     </KeyboardAvoidingView>
   )
 }

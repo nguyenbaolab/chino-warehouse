@@ -937,7 +937,7 @@ export default function ProductsScreen() {
         uri={viewingImage?.uri ?? null}
         onClose={() => setViewingImage(null)}
         onChangeImage={
-          canWrite
+          canWrite && viewingImage?.productId
             ? () => {
                 const product = products.find((p) => p.id === viewingImage?.productId)
                 setViewingImage(null)
@@ -1047,7 +1047,12 @@ export default function ProductsScreen() {
                 <View style={styles.createImageWrap}>
                   {createImageUri ? (
                     <>
-                      <Image source={{ uri: createImageUri }} style={styles.createImagePreview} resizeMode="cover" />
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() => setViewingImage({ uri: createImageUri, productId: '' })}
+                      >
+                        <Image source={{ uri: createImageUri }} style={styles.createImagePreview} resizeMode="cover" />
+                      </TouchableOpacity>
                       <View style={styles.createImageActions}>
                         <TouchableOpacity onPress={showCreateImageOptions}>
                           <Text style={{ color: colors.accent, fontSize: 13 }}>Đổi ảnh</Text>

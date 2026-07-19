@@ -162,15 +162,20 @@ export default function DiscontinuedProductsScreen() {
                 key={product.id}
                 style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
               >
-                <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-                  {product.name}
-                </Text>
-                <Text style={[styles.line, { color: colors.text }]}>Tồn kho: {stockLabel}</Text>
-                {!!product.notes?.trim() && (
-                  <Text style={[styles.reason, { color: colors.sub }]} numberOfLines={4}>
-                    Lý do: {product.notes.trim()}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+                >
+                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
+                    {product.name}
                   </Text>
-                )}
+                  <Text style={[styles.line, { color: colors.text }]}>Tồn kho: {stockLabel}</Text>
+                  {!!product.notes?.trim() && (
+                    <Text style={[styles.reason, { color: colors.sub }]} numberOfLines={4}>
+                      Lý do: {product.notes.trim()}
+                    </Text>
+                  )}
+                </TouchableOpacity>
                 {canWrite ? (
                   <TouchableOpacity
                     style={[

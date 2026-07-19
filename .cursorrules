@@ -144,3 +144,18 @@ BẮT BUỘC phải cập nhật supabase/migrations/schema.sql:
 3. Thêm dòng changelog mô tả thay đổi ở đầu file
 
 Không tạo migration mà không cập nhật schema.sql.
+
+## Product Image Rule
+
+Mọi chỗ hiển thị ảnh sản phẩm (thumbnail, preview, hero image) PHẢI có
+tap-to-zoom dùng `ImageViewerModal` (`components/ImageViewerModal.tsx`).
+Wrap ảnh trong `TouchableOpacity`, bấm → mở modal (`uri` + `onClose`).
+Không bao giờ hiện ảnh SP mà không bấm zoom được.
+
+## Product Card Navigation Rule
+
+Mọi chỗ hiển thị card/list item sản phẩm (có tên SP, thông tin SP) PHẢI
+có onPress navigate tới `ProductDetailScreen` với param
+`{ productId: product.id }`. Ngoại trừ: suggestion list khi đang chọn SP
+cho form (ví dụ AddInventoryScreen, OrderDetailScreen, PickingDetail
+suggestion) — những chỗ này giữ behavior chọn SP.

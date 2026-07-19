@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — UX: tap-to-zoom ảnh SP + tap card → ProductDetail
+
+- ImageViewerModal: ExpiryAlert, InternalNotes, PickingDetail `renderThumb`, Products create-preview.
+- Navigate ProductDetail: DiscontinuedProducts, StockCheck (trừ checkbox), PickingDetail item name.
+- OrdersStack thêm `ProductDetail`. Suggestion lists (AddInventory / picking search) giữ chọn SP.
+- `.cursorrules`: Product Image Rule + Product Card Navigation Rule; CONTEXT.
+
+---
+
 ## [tháng 7/2026] — fix: Products filter Mode/Kho/Zone lại đúng scope
 
 - Mode Tất cả + không kho/zone → catalog đủ.
