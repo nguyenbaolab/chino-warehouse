@@ -4,9 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: giữ expo.slug = chino-warehouse (EAS)
+
+- EAS build fail: projectId gắn slug cố định `chino-warehouse` (không đổi được) ≠ local `chinos-store`.
+- Hoàn nguyên `expo.slug` → `"chino-warehouse"`; giữ `expo.name` = `"Chino's Store"`.
+
+---
+
 ## [tháng 7/2026] — Đổi tên app Expo: Chino's Store
 
-- `app.json`: `expo.name` `"chino-warehouse"` → `"Chino's Store"`; `expo.slug` → `"chinos-store"`.
+- `app.json`: `expo.name` `"chino-warehouse"` → `"Chino's Store"`; slug thử `chinos-store` rồi hoàn nguyên (xem entry trên).
 - Giữ nguyên path icon / splash / adaptiveIcon / favicon (file mới đã đúng tên).
 - Xóa 4 file ảnh cũ: `adaptive-icon1.png`, `favicon1.png`, `icon1.png`, `splash-icon1.png`.
 - CONTEXT: không có chuỗi `chino-warehouse` — không sửa.
