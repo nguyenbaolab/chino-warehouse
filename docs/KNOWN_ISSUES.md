@@ -526,7 +526,8 @@
 - **File liên quan:** Nhiều screens (`useFocusEffect`, `useEffect` mount)
 - **Mô tả:** Một số màn hình fetch lại dữ liệu không cần thiết khi re-focus, gây load chậm.
 - **Hướng fix (Phase 4):** Xác định các `useFocusEffect` đang fetch thừa; thêm TTL cache hoặc điều kiện skip fetch khi data còn mới.
-- **Trạng thái:** Deferred — Phase 4
+- **Trạng thái:** Resolved
+- **Đã fix:** TTL 30s trên 8 màn (InternalNotes, StockCheck, LocationManagement, Discontinued, ProductDetail [reset khi đổi productId], ZoneLayoutEditor, OrderList, UserManagement). Settings/Dashboard đã có TTL từ trước.
 
 ---
 
@@ -536,7 +537,8 @@
 - **File liên quan:** `stores/warehouseStore.ts` (`fetchProducts`), `screens/ProductsScreen.tsx` (`filteredProducts`, pagination client)
 - **Mô tả:** Hiện tại `fetchProducts()` không có limit, load toàn bộ `products` về store. Với quy mô vài trăm SP thì ổn. Nếu lên vài nghìn SP: load chậm lúc đầu; tốn RAM; `useMemo` filter lag khi gõ search.
 - **Hướng fix (Phase 4):** Cursor-based pagination từ DB giống `AuditLogScreen`, kết hợp server-side filter theo search/kho/zone. Cần refactor `fetchProducts` + `filteredProducts` useMemo + pagination bar.
-- **Trạng thái:** Deferred — Phase 4
+- **Trạng thái:** Mitigated (hybrid)
+- **Đã fix:** `fetchProductsPage` — search `.ilike` server-side + debounce 300ms + max 200; barcode digits → `product_barcodes`; zone/stock/special vẫn filter local; UI page ←→ giữ. `fetchProducts` full vẫn dùng cho Notifications/Dashboard/Notes.
 
 ---
 
@@ -649,7 +651,8 @@
 - **Mức độ:** Low
 - **File liên quan:** `stores/warehouseStore.ts`, `types/index.ts`, `20260511_add_product_is_deferred.sql`
 - **Mô tả:** `toggleDeferred` vẫn ghi `products.is_deferred` qua Supabase nhưng UI không gọi (tab Để sau đã bỏ) — dead path; dọn khi nào quyết retire feature.
-- **Trạng thái:** Open (chấp nhận tạm — giữ store/type theo DECISIONS)
+- **Trạng thái:** Resolved
+- **Đã fix:** Xóa `toggleDeferred` store + field `is_deferred` khỏi type Product. Cột DB `products.is_deferred` **giữ** backward compat (orphan; có thể DROP migration sau). `schema.sql` ghi chú DEPRECATED.
 
 ---
 

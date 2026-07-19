@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — Group A: TTL cache + Products pagination + dead path cleanup
+
+- KI-039: TTL 30s trên 8 màn (InternalNotes, StockCheck, LocationManagement, Discontinued, ProductDetail, ZoneLayoutEditor, OrderList, UserManagement).
+- KI-040: fetchProductsPage server-side search (.ilike) + giảm payload; ProductsScreen debounce 300ms; giữ fetchProducts full cho các màn khác.
+- KI-050: xóa toggleDeferred store + is_deferred type; cột DB giữ backward compat.
+- Docs: REQUIREMENTS v1.3.22, CONTEXT, KNOWN_ISSUES resolved, PLAN_4 A1-A3 Done, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — fix: warning toggles ẩn list Notifications khi tắt
 
 - NotificationsScreen: expiryCards return [] khi expiryWarningEnabled = false; lowStockCards return [] khi lowStockWarningEnabled = false.

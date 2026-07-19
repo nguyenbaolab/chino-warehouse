@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   View,
   Text,
@@ -118,6 +118,10 @@ export default function ZoneLayoutEditorScreen() {
   const [zoneSearchQuery, setZoneSearchQuery] = useState('')
   const [zoneMeta, setZoneMeta] = useState<Map<string, { name: string; color: string }>>(new Map())
 
+  // KI-039: TTL 30s
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const lastFetchRef = useRef(0)
+
   useEffect(() => {
     loadTheme()
   }, [loadTheme])
@@ -131,6 +135,9 @@ export default function ZoneLayoutEditorScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now()
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
       if (locationId) void fetchZones(locationId)
     }, [locationId, fetchZones])
   )

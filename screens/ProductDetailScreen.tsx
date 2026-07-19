@@ -212,8 +212,19 @@ export default function ProductDetailScreen() {
   }, [productId])
 
   // Refetch khi màn có focus (ví dụ quay lại từ AddInventory) — state `lots` là local, không đọc từ store
+  // KI-039: TTL 30s; đổi productId → force fetch
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const lastFetchRef = useRef(0)
+  const lastProductIdRef = useRef<string | null>(null)
+
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now()
+      const productChanged = lastProductIdRef.current !== productId
+      if (!productChanged && now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
+      lastProductIdRef.current = productId
+
       void loadData()
       void loadProductBarcodes()
       void fetchAuditLogsForProduct(productId, 10).then(setAuditEntries)

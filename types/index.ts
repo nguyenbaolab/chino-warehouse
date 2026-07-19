@@ -56,8 +56,6 @@ export type Product = {
   is_archived: boolean
   /** A5 — thời điểm cập nhật gần nhất của record products */
   updated_at?: string
-  /** Tab Thông báo: đánh dấu Để sau (Supabase `products.is_deferred`). */
-  is_deferred?: boolean
   /** Tab Sắp hết hàng: không nhập nữa. */
   is_discontinued?: boolean
   /** F28 — lý do không nhập nữa (tách khỏi notes). */

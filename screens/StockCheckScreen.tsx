@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -35,8 +35,16 @@ export default function StockCheckScreen() {
   const [marketLocations, setMarketLocations] = useState<Location[]>([])
   const [marketZoneIds, setMarketZoneIds] = useState<Set<string>>(() => new Set())
 
+  // KI-039: TTL 30s
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const lastFetchRef = useRef(0)
+
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now()
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
+
       let cancelled = false
       void (async () => {
         setLoading(true)

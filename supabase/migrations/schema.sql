@@ -131,7 +131,7 @@ CREATE TABLE products (
   image_url           TEXT,
   notes               TEXT,
   is_archived         BOOLEAN     NOT NULL DEFAULT false,
-  is_deferred         BOOLEAN     NOT NULL DEFAULT false,
+  is_deferred         BOOLEAN     NOT NULL DEFAULT false, -- DEPRECATED: UI dead path KI-050; cột giữ backward compat
   is_discontinued     BOOLEAN     NOT NULL DEFAULT false,
   discontinued_reason TEXT,
   warning_days        INTEGER     NOT NULL DEFAULT 30,

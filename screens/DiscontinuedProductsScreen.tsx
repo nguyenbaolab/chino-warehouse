@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   ScrollView,
@@ -36,6 +36,10 @@ export default function DiscontinuedProductsScreen() {
   const [savingId, setSavingId] = useState<string | null>(null)
   const [initialBusy, setInitialBusy] = useState(true)
 
+  // KI-039: TTL 30s
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const lastFetchRef = useRef(0)
+
   useEffect(() => {
     void fetchLocations()
   }, [fetchLocations])
@@ -46,6 +50,10 @@ export default function DiscontinuedProductsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now()
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
+
       let cancelled = false
       setInitialBusy(true)
       void (async () => {

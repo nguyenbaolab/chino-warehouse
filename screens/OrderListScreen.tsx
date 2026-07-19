@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
@@ -20,8 +20,15 @@ export default function OrderListScreen() {
   const isReadOnly = useIsReadOnly()
   const { orderLists, orderItems, fetchOrderLists, createOrderList } = useWarehouseStore()
 
+  // KI-039: TTL 30s
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const lastFetchRef = useRef(0)
+
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now()
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
       void fetchOrderLists()
     }, [fetchOrderLists])
   )

@@ -21,23 +21,23 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 
 ## 2. Group A — Bug fix + performance (carry Phase 3)
 
-### A1 — KI-039: TTL cache / giảm fetch thừa `useFocusEffect`
+### A1 — KI-039: TTL cache / giảm fetch thừa `useFocusEffect` ✅ Done
 
-- **File:** nhiều screens dùng `useFocusEffect` / mount fetch; có thể `warehouseStore` helpers
-- **Mô tả:** Xác định màn fetch lại không cần thiết khi re-focus; thêm TTL hoặc điều kiện skip khi data còn mới.
-- **KNOWN_ISSUES:** KI-039 (Medium) — Deferred Phase 4.
+- **File:** InternalNotes, StockCheck, LocationManagement, Discontinued, ProductDetail, ZoneLayoutEditor, OrderList, UserManagement
+- **Mô tả:** TTL 30s (`FOCUS_FETCH_TTL_MS`); ProductDetail force fetch khi đổi `productId`.
+- **KNOWN_ISSUES:** KI-039 → Resolved.
 
-### A2 — KI-040: Pagination DB Products (cursor-based)
+### A2 — KI-040: Pagination DB Products (hybrid) ✅ Done
 
-- **File:** `stores/warehouseStore.ts` (`fetchProducts`), `screens/ProductsScreen.tsx`
-- **Mô tả:** `fetchProducts()` hiện không limit — load toàn bộ `products`. Refactor cursor pagination DB (pattern `AuditLogScreen`) + server-side filter search/kho/zone khi scale lớn.
-- **KNOWN_ISSUES:** KI-040 (Medium) — Deferred Phase 4.
+- **File:** `stores/warehouseStore.ts` (`fetchProductsPage`), `screens/ProductsScreen.tsx`
+- **Mô tả:** Giữ `fetchProducts` full cho màn khác. ProductsScreen: search server-side `.ilike` (debounce 300ms), max 200; barcode digits → `product_barcodes`; zone/stock/special filter local; pagination UI client giữ nguyên.
+- **KNOWN_ISSUES:** KI-040 → Mitigated (hybrid).
 
-### A3 — KI-050: Xóa dead path `toggleDeferred`
+### A3 — KI-050: Xóa dead path `toggleDeferred` ✅ Done
 
-- **File:** `stores/warehouseStore.ts`, `types/index.ts`, (optional) migration deprecate `products.is_deferred`
-- **Mô tả:** UI không còn tab «Để sau»; `toggleDeferred` là dead path. Dọn store/type; quyết định có drop cột DB hay giữ.
-- **KNOWN_ISSUES:** KI-050 (Low, Open chấp nhận tạm).
+- **File:** `stores/warehouseStore.ts`, `types/index.ts`, `schema.sql` (comment DEPRECATED)
+- **Mô tả:** Xóa store action + type field; cột DB `is_deferred` giữ backward compat.
+- **KNOWN_ISSUES:** KI-050 → Resolved.
 
 ---
 
@@ -222,7 +222,7 @@ Phase 4 tập trung vào **Market mode (F36 redesign)** — switcher Warehouse �
 
 | Group | Số task | Mã |
 |-------|---------|-----|
-| **A — Bug / perf** | 3 | A1–A3 |
+| **A — Bug / perf** | 3 | A1–A3 ✅ Done (KI-039/040/050) |
 | **B — Feature completion** | 1 | B1 (F27 mở rộng) |
 | **C — Market mode** | 4 | C1 ✅ Done, C2 ✅ Done, C3 ✅ Done, C4 ✅ Done (F36 redesign — Group C complete) |
 | **D — Per-SP warning** | 3 | D1–D3 ✅ Done (F32) |

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -56,8 +56,16 @@ export default function InternalNotesScreen() {
   const [editNote, setEditNote] = useState<InternalNote | null>(null)
   const [editReason, setEditReason] = useState('')
 
+  // KI-039: TTL 30s — tránh fetchProducts mỗi lần re-focus
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const lastFetchRef = useRef(0)
+
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now()
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
+
       let cancelled = false
       void (async () => {
         setLoading(true)

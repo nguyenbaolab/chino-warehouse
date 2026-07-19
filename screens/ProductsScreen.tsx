@@ -43,10 +43,13 @@ export default function ProductsScreen() {
   const route = useRoute<any>()
   const {
     products,
+    productsPage,
+    productsPageLoading,
     inventoryEntries,
     productCategoriesL1,
     productCategoriesL2,
     fetchProducts,
+    fetchProductsPage,
     fetchInventoryByZone,
     fetchAllInventoryEntries,
     fetchCategories,
@@ -64,6 +67,8 @@ export default function ProductsScreen() {
   const canWrite = useCanWrite()
   const isReadOnly = useIsReadOnly()
   const [searchQuery, setSearchQuery] = useState('')
+  /** Debounced search cho KI-040 server-side */
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   /** null = Tất cả zone (chỉ khi đã chọn kho cụ thể) */
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
@@ -71,8 +76,6 @@ export default function ProductsScreen() {
   const [showOutOfStockOnly, setShowOutOfStockOnly] = useState(false)
   const [showSpecialOnly, setShowSpecialOnly] = useState(false)
   const [showNoImageOnly, setShowNoImageOnly] = useState(false)
-  /** KI-061: list archived local — không ghi đè store.products */
-  const [archivedProducts, setArchivedProducts] = useState<Product[]>([])
 
   const [scannedLotId, setScannedLotId] = useState<string | null>(null)
   const [viewingImage, setViewingImage] = useState<{ uri: string; productId: string } | null>(null)
@@ -115,30 +118,22 @@ export default function ProductsScreen() {
     }
   }, [showCreateProductModal, fetchCategories])
 
+  // KI-040: debounce search 300ms trước khi gọi server
   useEffect(() => {
-    let cancelled = false
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300)
+    return () => clearTimeout(t)
+  }, [searchQuery])
 
-    // KI-061: archived → local state; non-archived → fetchProducts (store)
-    async function loadProductsForToggle() {
-      if (showArchived) {
-        const { data } = await supabase
-          .from('products')
-          .select('*')
-          .eq('is_archived', true)
-          .order('name')
-        if (!cancelled && data) {
-          setArchivedProducts(data as Product[])
-        }
-      } else {
-        await fetchProducts()
-      }
-    }
-
-    void loadProductsForToggle()
-    return () => {
-      cancelled = true
-    }
-  }, [fetchProducts, showArchived])
+  // KI-040: fetchProductsPage (server search + archived + image); giữ fetchProducts cho create/modal khác
+  useEffect(() => {
+    void fetchProductsPage({
+      page: 0,
+      pageSize: PAGE_SIZE,
+      search: debouncedSearch,
+      showArchived,
+      showNoImageOnly,
+    })
+  }, [fetchProductsPage, debouncedSearch, showArchived, showNoImageOnly])
 
   // FilterModal: danh sách kho theo filterMode (local — không đụng store.appMode)
   useEffect(() => {
@@ -273,27 +268,11 @@ export default function ProductsScreen() {
   }, [inventoryEntries, selectedZoneId, locationZoneSet, modeZoneIds])
 
   const filteredProducts = useMemo(() => {
-    const normalizedQuery = normalizeText(searchQuery.trim())
     const hasZoneFilter = selectedZoneId != null
-    const source = showArchived ? archivedProducts : products
-
-    const barcodeMatchedProductIds = new Set(
-      inventoryEntries
-        .filter(
-          (e) =>
-            e.barcode &&
-            normalizeText(e.barcode).includes(normalizedQuery),
-        )
-        .map((e) => e.product_id),
-    )
+    // KI-040: nguồn từ productsPage (đã search/archived/image trên server)
+    const source = productsPage
 
     return source.filter((product) => {
-      const matchSearch =
-        normalizedQuery.length === 0 ||
-        normalizeText(product.name).includes(normalizedQuery) ||
-        barcodeMatchedProductIds.has(product.id)
-      if (!matchSearch) return false
-
       // FilterModal: mode / kho / zone
       if (hasZoneFilter) {
         const inZone = inventoryEntries.some(
@@ -325,13 +304,9 @@ export default function ProductsScreen() {
         })
         if (!hasSpecial) return false
       }
-      // F5: chỉ SP chưa có ảnh
-      if (showNoImageOnly && !!product.image_url) {
-        return false
-      }
       return true
     })
-  }, [products, archivedProducts, searchQuery, selectedZoneId, inventoryEntries, locationZoneSet, modeZoneIds, showOutOfStockOnly, showSpecialOnly, showArchived, showNoImageOnly, totalBoxesByProduct])
+  }, [productsPage, selectedZoneId, inventoryEntries, locationZoneSet, modeZoneIds, showOutOfStockOnly, showSpecialOnly, totalBoxesByProduct])
 
   const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE))
   const pagedProducts = useMemo(
@@ -489,6 +464,13 @@ export default function ProductsScreen() {
 
     setIsCreatingProduct(false)
     closeCreateProductModal()
+    void fetchProducts()
+    void fetchProductsPage({
+      page: 0,
+      search: debouncedSearch,
+      showArchived,
+      showNoImageOnly,
+    })
   }
 
   function showImageOptions(product: Product) {
@@ -775,10 +757,14 @@ export default function ProductsScreen() {
         </View>
       </View>
 
-      {filteredProducts.length === 0 ? (
+      {productsPageLoading && productsPage.length === 0 ? (
+        <View style={styles.emptyWrap}>
+          <ActivityIndicator size="large" color={colors.accent} />
+        </View>
+      ) : filteredProducts.length === 0 ? (
         <View style={styles.emptyWrap}>
           <Text style={{ color: colors.sub }}>
-            {products.length === 0 ? 'Chưa có sản phẩm.' : 'Không có sản phẩm phù hợp.'}
+            {productsPage.length === 0 ? 'Chưa có sản phẩm.' : 'Không có sản phẩm phù hợp.'}
           </Text>
         </View>
       ) : (

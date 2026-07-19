@@ -27,6 +27,10 @@ type WarehouseStore = {
   appMode: 'warehouse' | 'market'
   zones: Zone[]
   products: Product[]
+  /** KI-040 — trang SP cho ProductsScreen (search server-side, max 200) */
+  productsPage: Product[]
+  productsTotalCount: number
+  productsPageLoading: boolean
   productCategoriesL1: ProductCategoryL1[]
   productCategoriesL2: ProductCategoryL2[]
   inventoryEntries: InventoryEntry[]
@@ -55,6 +59,14 @@ type WarehouseStore = {
   deleteLocation: (id: string) => Promise<{ error: string | null }>
   fetchZones: (locationId: string) => Promise<void>
   fetchProducts: () => Promise<void>
+  /** KI-040 — ProductsScreen: search server-side + giảm payload (max 200) */
+  fetchProductsPage: (params: {
+    page: number
+    pageSize?: number
+    search?: string
+    showArchived?: boolean
+    showNoImageOnly?: boolean
+  }) => Promise<void>
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
   /** Một query cho mọi zone của kho — set inventoryEntries một lần. */
   fetchInventoryByLocation: (locationId: string) => Promise<void>
@@ -119,7 +131,6 @@ type WarehouseStore = {
     updates: { id: string; cells: ZoneCell[] }[]
   ) => Promise<{ error: string | null }>
   deleteZone: (id: string) => Promise<boolean>
-  toggleDeferred: (productId: string) => Promise<void>
   togglePriceReduced: (entryId: string) => Promise<void>
   setProductDiscontinued: (productId: string, isDiscontinued: boolean, reason?: string) => Promise<void>
   toggleDiscontinued: (productId: string) => Promise<void>
@@ -160,6 +171,9 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   appMode: 'warehouse',
   zones: [],
   products: [],
+  productsPage: [],
+  productsTotalCount: 0,
+  productsPageLoading: false,
   productCategoriesL1: [],
   productCategoriesL2: [],
   inventoryEntries: [],
@@ -337,6 +351,95 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .eq('is_archived', false)
       .order('name')
     if (data) set({ products: data })
+  },
+
+  // KI-040 hybrid: search/archived/image trên DB (max 200); zone/stock/special filter local ở ProductsScreen
+  fetchProductsPage: async (params) => {
+    set({ productsPageLoading: true })
+    try {
+      const search = params.search?.trim() ?? ''
+      const looksLikeBarcode = /^\d{4,}$/.test(search)
+      const archived = params.showArchived === true
+
+      let query = supabase
+        .from('products')
+        .select('*', { count: 'exact' })
+        .eq('is_archived', archived)
+        .order('name')
+        .limit(200)
+
+      if (params.showNoImageOnly) {
+        query = query.is('image_url', null)
+      }
+
+      // Tên: server-side ilike; barcode-like → không lọc name ở đây (merge sau)
+      if (search && !looksLikeBarcode) {
+        query = query.ilike('name', `%${search}%`)
+      }
+
+      const { data, count, error } = await query
+      if (error) {
+        console.error('[warehouseStore] fetchProductsPage:', error)
+        set({ productsPage: [], productsTotalCount: 0, productsPageLoading: false })
+        return
+      }
+
+      const byId = new Map<string, Product>()
+      for (const p of (data as Product[]) ?? []) {
+        byId.set(p.id, p)
+      }
+
+      // Barcode search: product_barcodes + inventory_entries.barcode
+      if (search && looksLikeBarcode) {
+        const [{ data: barcodeRows }, { data: entryRows }] = await Promise.all([
+          supabase
+            .from('product_barcodes')
+            .select('product_id')
+            .ilike('barcode', `%${search}%`)
+            .limit(50),
+          supabase
+            .from('inventory_entries')
+            .select('product_id')
+            .ilike('barcode', `%${search}%`)
+            .limit(50),
+        ])
+        const ids = new Set<string>()
+        for (const r of barcodeRows ?? []) {
+          if (r.product_id) ids.add(r.product_id as string)
+        }
+        for (const r of entryRows ?? []) {
+          if (r.product_id) ids.add(r.product_id as string)
+        }
+        const missing = [...ids].filter((id) => !byId.has(id))
+        if (missing.length > 0) {
+          let bpQuery = supabase.from('products').select('*').in('id', missing).eq('is_archived', archived)
+          if (params.showNoImageOnly) bpQuery = bpQuery.is('image_url', null)
+          const { data: extra } = await bpQuery
+          for (const p of (extra as Product[]) ?? []) {
+            byId.set(p.id, p)
+          }
+        }
+        // Barcode-only query: chỉ giữ SP match barcode (không trả full 200)
+        const matched = [...ids].map((id) => byId.get(id)).filter(Boolean) as Product[]
+        matched.sort((a, b) => a.name.localeCompare(b.name))
+        set({
+          productsPage: matched,
+          productsTotalCount: matched.length,
+          productsPageLoading: false,
+        })
+        return
+      }
+
+      const list = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name))
+      set({
+        productsPage: list,
+        productsTotalCount: count ?? list.length,
+        productsPageLoading: false,
+      })
+    } catch (e) {
+      console.error('[warehouseStore] fetchProductsPage:', e)
+      set({ productsPage: [], productsTotalCount: 0, productsPageLoading: false })
+    }
   },
 
   fetchCategories: async () => {
@@ -960,6 +1063,9 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       products: s.products.map((p) =>
         p.id === productId ? { ...p, image_url: url } : p
       ),
+      productsPage: s.productsPage.map((p) =>
+        p.id === productId ? { ...p, image_url: url } : p
+      ),
       inventoryEntries: s.inventoryEntries.map((entry) =>
         entry.product_id === productId && entry.product
           ? { ...entry, product: { ...entry.product, image_url: url } }
@@ -981,6 +1087,9 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
     set((s) => ({
       products: s.products.map((p) =>
+        p.id === productId ? { ...p, image_url: undefined } : p
+      ),
+      productsPage: s.productsPage.map((p) =>
         p.id === productId ? { ...p, image_url: undefined } : p
       ),
       inventoryEntries: s.inventoryEntries.map((entry) =>
@@ -1038,34 +1147,6 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     await supabase.from('zones').delete().eq('id', id)
     set((s) => ({ zones: s.zones.filter((z) => z.id !== id) }))
     return true
-  },
-
-  toggleDeferred: async (productId) => {
-    const { products, inventoryEntries } = get()
-    const fromProduct = products.find((p) => p.id === productId)
-    const fromEntry = inventoryEntries.find((e) => e.product_id === productId)?.product
-    const current = fromProduct?.is_deferred ?? fromEntry?.is_deferred ?? false
-    const next = !current
-
-    const { data: updated } = await supabase
-      .from('products')
-      .update({ is_deferred: next })
-      .eq('id', productId)
-      .select('*')
-      .single()
-
-    if (!updated) return
-
-    set((s) => ({
-      products: s.products.some((p) => p.id === productId)
-        ? s.products.map((p) => (p.id === productId ? updated : p))
-        : [...s.products, updated].sort((a, b) => a.name.localeCompare(b.name)),
-      inventoryEntries: s.inventoryEntries.map((entry) => (
-        entry.product_id === productId
-          ? { ...entry, product: entry.product ? { ...entry.product, ...updated } : updated }
-          : entry
-      )),
-    }))
   },
 
   togglePriceReduced: async (entryId) => {

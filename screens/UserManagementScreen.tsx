@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -94,8 +94,15 @@ export default function UserManagementScreen() {
     }
   }, [fetchUsers])
 
+  // KI-039: TTL 30s
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const lastFetchRef = useRef(0)
+
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now()
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
       if (isAdmin) void loadUsers()
     }, [isAdmin, loadUsers])
   )

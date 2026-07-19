@@ -68,6 +68,10 @@ export default function LocationManagementScreen() {
   const createScrollRef = useRef<ScrollView>(null)
   const editScrollRef = useRef<ScrollView>(null)
 
+  // KI-039: TTL 30s
+  const FOCUS_FETCH_TTL_MS = 30_000
+  const lastFetchRef = useRef(0)
+
   function scrollModalToEnd(ref: React.RefObject<ScrollView | null>) {
     setTimeout(() => ref.current?.scrollToEnd({ animated: true }), 100)
   }
@@ -93,6 +97,10 @@ export default function LocationManagementScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const now = Date.now()
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
+
       void (async () => {
         // Vẫn gọi fetchLocations() cho store (các màn khác cần)
         await fetchLocations()

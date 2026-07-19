@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.21 | Tháng 7/2026
+**Phiên bản:** 1.3.22 | Tháng 7/2026
 
+> **v1.3.22** — Group A Done: KI-039 TTL 30s trên 8 màn; KI-040 Products search server-side + giảm payload; KI-050 xóa toggleDeferred dead path.
 > **v1.3.21** — F32 Done (Group D): products.ignore_expiry_warning / ignore_stock_warning; 2 switch ProductDetail; Notifications + Dashboard skip SP có flag.
 > **v1.3.20** — C4 Done: màn Kiểm hàng (Settings) — list market entries is_special, tick is_checked, Reset batch; StockCheckScreen + route.
 > **v1.3.19** — C3 fix: date range mode hiện mọi lô trong khoảng [Từ, Đến]; nút ➜ kích hoạt / ✕ tắt; checkbox expired/warning disable khi date range active.
@@ -371,6 +372,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Super app | Không đề cập | Ghi nhận trong §1 và F24 | Thông tin mới từ chủ cửa hàng |
 | Phase 3 scope v1.3.7 | — | PLAN_3: A1–A5, B1–B8, C1, D1–D3, E1–E2; F19 Dropped; F21/F25/F26 → Phase 4 | Chốt roadmap Phase 3 |
 | Phase 3 Group F v1.3.8 | — | PLAN_3 Group F: F1 navigation (KI-057), F2 block xóa lô (KI-058), F3 `is_archived`, F4 tap kho→Map, F5 filter ảnh, F31 Internal Notes; F07 sửa xóa lô; F32–F35 → Phase 4 | Ghi nhận backlog mới |
+| Group A KI-039/040/050 v1.3.22 | — | TTL 30s 8 màn; fetchProductsPage hybrid; xóa toggleDeferred | Group A Done |
 | F32 ignore warning flags v1.3.21 | — | ignore_expiry_warning / ignore_stock_warning; ProductDetail switches; Notifications + Dashboard skip | F32 Done |
 | C4 Kiểm hàng v1.3.20 | — | Settings StockCheck: market is_special list, tick is_checked, Reset batch | C4 Done |
 | C3 Date range Notifications v1.3.19 | — | Tab Sắp hết hạn: ➜ date range mode (mọi lô ∈ [from,to]); ✕ về mặc định; checkbox disable khi active | C3 Done |
