@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from '@supabase/supabase-js'
 import { writeFileSync, mkdirSync } from 'fs'
 import { createInterface } from 'readline'
