@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import ImageViewerModal from '../components/ImageViewerModal'
-import FilterModal, { countActiveFilters } from '../components/FilterModal'
+import FilterModal, { formatFilterSummary } from '../components/FilterModal'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
@@ -263,8 +263,13 @@ export default function ProductsScreen() {
     return new Set(zonesForFilterLoc.map((z) => z.id))
   }, [filterLocationId, zonesForFilterLoc])
 
-  const activeFilterCount = countActiveFilters(filterMode, filterLocationId, selectedZoneId, {
-    countMode: false,
+  const filterSummary = formatFilterSummary({
+    mode: filterMode,
+    locationId: filterLocationId,
+    zoneId: selectedZoneId,
+    locations: filterLocations,
+    zones: zonesForFilterLoc,
+    requireMode: true,
   })
 
   const productById = useMemo(() => {
@@ -779,8 +784,8 @@ export default function ProductsScreen() {
         onPress={() => setFilterModalOpen(true)}
         activeOpacity={0.75}
       >
-        <Text style={[styles.filterBtnText, { color: colors.text }]}>
-          {activeFilterCount > 0 ? `Lọc (${activeFilterCount})` : 'Lọc'}
+        <Text style={[styles.filterBtnText, { color: colors.text }]} numberOfLines={1}>
+          {filterSummary}
         </Text>
         <Text style={{ color: colors.sub }}>▾</Text>
       </TouchableOpacity>
@@ -1171,7 +1176,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  filterBtnText: { fontSize: 14, fontWeight: '600' },
+  filterBtnText: { fontSize: 14, fontWeight: '600', flex: 1, marginRight: 8 },
   searchWrap: { paddingHorizontal: 16, marginBottom: 8 },
   searchRow: { flexDirection: 'row', alignItems: 'center' },
   searchInputWrap: { flex: 1, position: 'relative' },

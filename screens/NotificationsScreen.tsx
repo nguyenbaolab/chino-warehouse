@@ -14,7 +14,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useCanWrite } from '../stores/authStore'
-import FilterModal, { countActiveFilters, type FilterMode } from '../components/FilterModal'
+import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
 import { formatExpiryDate, getExpiryStatus, InventoryEntry, Location, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
@@ -236,7 +236,13 @@ export default function NotificationsScreen() {
     return new Set(zonesForFilterLoc.map((z) => z.id))
   }, [filterLocationId, zonesForFilterLoc])
 
-  const activeFilterCount = countActiveFilters(filterMode, filterLocationId, filterZoneId)
+  const filterSummary = formatFilterSummary({
+    mode: filterMode,
+    locationId: filterLocationId,
+    zoneId: filterZoneId,
+    locations: filterLocations,
+    zones: zonesForFilterLoc,
+  })
 
   const inventoryEntriesForNotify = useMemo(() => {
     if (filterZoneId) {
@@ -665,8 +671,8 @@ export default function NotificationsScreen() {
         onPress={() => setFilterModalOpen(true)}
         activeOpacity={0.75}
       >
-        <Text style={[styles.filterBtnText, { color: colors.text }]}>
-          {activeFilterCount > 0 ? `Lọc (${activeFilterCount})` : 'Lọc'}
+        <Text style={[styles.filterBtnText, { color: colors.text }]} numberOfLines={1}>
+          {filterSummary}
         </Text>
         <Text style={{ color: colors.sub }}>▾</Text>
       </TouchableOpacity>
@@ -958,7 +964,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  filterBtnText: { fontSize: 14, fontWeight: '600' },
+  filterBtnText: { fontSize: 14, fontWeight: '600', flex: 1, marginRight: 8 },
   searchWrap: { paddingHorizontal: 16, marginBottom: 10 },
   searchRow: { flexDirection: 'row', alignItems: 'center' },
   searchInputWrap: { flex: 1, position: 'relative' },

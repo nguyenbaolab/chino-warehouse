@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — UX: nút Lọc hiện Mode · Kho · Zone
+
+- `formatFilterSummary` trong FilterModal — ví dụ «Kho · Kho lạnh · Palet 1».
+- Products (requireMode), Dashboard, Notifications dùng nhãn chi tiết thay `Lọc (N)`.
+
+---
+
 ## [tháng 7/2026] — fix: ProductsScreen list theo lô trong Mode (KI-066)
 
 - Nguyên nhân: `filteredProducts` giao `productsPage` (max 200) với inventory mode → thiếu SP siêu thị.

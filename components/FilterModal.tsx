@@ -52,6 +52,45 @@ export function countActiveFilters(
   return (countMode && mode !== 'all' ? 1 : 0) + (locationId ? 1 : 0) + (zoneId ? 1 : 0)
 }
 
+const MODE_LABEL: Record<FilterMode, string> = {
+  all: 'Tất cả',
+  warehouse: 'Kho',
+  market: 'Siêu thị',
+}
+
+/**
+ * Nhãn nút Lọc: «Kho · Kho lạnh · Palet 1» theo Mode / kho / zone đã chọn.
+ * Bỏ qua phần chưa chọn (trừ Mode khi requireMode — luôn hiện Kho/Siêu thị).
+ */
+export function formatFilterSummary(params: {
+  mode: FilterMode
+  locationId: string | null
+  zoneId: string | null
+  locations: Location[]
+  zones: Zone[]
+  /** true = luôn hiện nhãn mode (Products bắt buộc Kho/Siêu thị) */
+  requireMode?: boolean
+}): string {
+  const { mode, locationId, zoneId, locations, zones, requireMode } = params
+  const parts: string[] = []
+
+  if (requireMode || mode !== 'all') {
+    parts.push(MODE_LABEL[mode])
+  }
+
+  if (locationId) {
+    const locName = locations.find((l) => l.id === locationId)?.name
+    if (locName) parts.push(locName)
+  }
+
+  if (zoneId) {
+    const zoneName = zones.find((z) => z.id === zoneId)?.name
+    if (zoneName) parts.push(zoneName)
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : 'Lọc'
+}
+
 export default function FilterModal({
   visible,
   onClose,

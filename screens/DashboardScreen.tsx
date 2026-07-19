@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import SimplePieChart, { PieSlice } from '../components/SimplePieChart'
-import FilterModal, { countActiveFilters, type FilterMode } from '../components/FilterModal'
+import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { Location, Zone } from '../types'
@@ -109,7 +109,13 @@ export default function DashboardScreen() {
     return new Set(zonesForFilterLoc.map((z) => z.id))
   }, [filterLocationId, zonesForFilterLoc])
 
-  const activeFilterCount = countActiveFilters(filterMode, filterLocationId, selectedZoneId)
+  const filterSummary = formatFilterSummary({
+    mode: filterMode,
+    locationId: filterLocationId,
+    zoneId: selectedZoneId,
+    locations: filterLocations,
+    zones: zonesForFilterLoc,
+  })
 
   const effectiveZoneSet = locationZoneSet ?? modeZoneIds
 
@@ -314,8 +320,8 @@ export default function DashboardScreen() {
           onPress={() => setFilterModalOpen(true)}
           activeOpacity={0.75}
         >
-          <Text style={[styles.filterBtnText, { color: colors.text }]}>
-            {activeFilterCount > 0 ? `Lọc (${activeFilterCount})` : 'Lọc'}
+          <Text style={[styles.filterBtnText, { color: colors.text }]} numberOfLines={1}>
+            {filterSummary}
           </Text>
           <Text style={{ color: colors.sub }}>▾</Text>
         </TouchableOpacity>
@@ -434,7 +440,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  filterBtnText: { fontSize: 14, fontWeight: '600' },
+  filterBtnText: { fontSize: 14, fontWeight: '600', flex: 1, marginRight: 8 },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
