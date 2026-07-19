@@ -89,6 +89,35 @@ export type OrderItem = {
   updated_at: string
 }
 
+// === Picking List (F34) ===
+export type PickingListStatus = 'draft' | 'in_progress' | 'completed'
+
+export interface PickingList {
+  id: string
+  title: string
+  status: PickingListStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface PickingListItem {
+  id: string
+  picking_list_id: string
+  inventory_entry_id: string
+  product_id: string
+  zone_id: string
+  tier: number
+  quantity_boxes: number
+  is_picked: boolean
+  notes: string | null
+  created_at: string
+  updated_at: string
+  // Joined fields (populated by select query)
+  product?: Product
+  zone?: Zone
+  inventory_entry?: InventoryEntry
+}
+
 export type LocateIntent = {
   productName: string
   locationId: string

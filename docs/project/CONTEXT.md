@@ -114,7 +114,9 @@ supabase/migrations/
   20260717_alter_internal_notes_nullable_product.sql
   20260718_create_shelf_tables.sql          # C1 F36 shelf — ROLLED BACK by 20260719_rollback_shelf_add_market_columns.sql
   20260719_rollback_shelf_add_market_columns.sql  # C1 Market mode — DROP shelf_* + locations.type + is_special/is_checked
-  schema.sql                                # Canonical schema v4.2
+  20260719_f32_ignore_warning_flags.sql           # F32 ignore_expiry/stock_warning
+  20260720_create_picking_tables.sql              # F34 B1 — picking_lists + picking_list_items
+  schema.sql                                # Canonical schema v5.0
 supabase/db_dump_schema/   # Snapshot pg_dump (script dump_schema.bat — không thay schema.sql)
 dump_schema.bat            # Tiện ích dump schema public qua Session Pooler (xem §9)
 types/
@@ -190,7 +192,7 @@ README.md
 
 **Schema — `product_barcodes` (B1):** `id`, `product_id` → `products`, `barcode` **UNIQUE**, `first_scanned_at`, `last_scanned_at`; RLS authenticated; audit trigger SEC-11; backfill một lần từ `inventory_entries.barcode` (migration). **`audit_logs.action`:** thêm **`CONFLICT`** (B2) — RPC **`log_barcode_conflict`** ghi attempt gán barcode trùng SP khác.
 
-**Schema — Market mode (C1 Done) + F32 (schema v4.2):** `locations.type` (`warehouse`|`market`); `inventory_entries.is_special`, `is_checked`; `products.ignore_expiry_warning` / `ignore_stock_warning`. Shelf tables **đã DROP**. **C2 Done:** `appMode` + mode switcher UI + `getQtyUnit`.
+**Schema — Market mode + F32 + F34 picking (schema v5.0):** `locations.type` (`warehouse`|`market`); `inventory_entries.is_special`, `is_checked`; `products.ignore_expiry_warning` / `ignore_stock_warning`; **`picking_lists` / `picking_list_items`** (F34 B1). Shelf tables **đã DROP**. **C2 Done:** `appMode` + mode switcher UI + `getQtyUnit`.
 
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
 
@@ -218,7 +220,7 @@ README.md
 
 ## §5 Types & logic chính (`types/index.ts`)
 
-- **Types:** `Location` (gồm `grid_rows`, `grid_cols`, **`type: 'warehouse' | 'market'`**), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry` (**`is_special`**, **`is_checked`**), **`InternalNote`** (F31), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (không còn `'shelf_items'`), `OrderList`, `OrderItem`
+- **Types:** `Location` (gồm `grid_rows`, `grid_cols`, **`type: 'warehouse' | 'market'`**), `ZoneCell`, `Zone`, `Product`, **`ProductBarcode`** (B1), `ProductCategoryL1`, `ProductCategoryL2`, `InventoryEntry` (**`is_special`**, **`is_checked`**), **`InternalNote`** (F31), **`UserRole`**, **`UserProfile`** (F24), `ExpiryStatus`, `ExpiryColor`, `CombinedStatus`, **`LocateIntent`** (`productName`, `locationId`, `zoneId`), `AuditLog` (không còn `'shelf_items'`), `OrderList`, `OrderItem`, **`PickingListStatus`**, **`PickingList`**, **`PickingListItem`** (F34)
 - **Hàm:** `getExpiryStatus`, `getExpiryColor`, `getExpiryColorHex`, `getCombinedStatus`, `getCombinedStatusRank`, `formatExpiryDate`
 - **Hằng màu:** `EXPIRY_COLORS` (map `CombinedStatus` → hex), `ZONE_COLORS` (preset màu zone trên bản đồ)
 

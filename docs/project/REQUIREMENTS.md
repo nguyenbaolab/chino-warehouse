@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.24 | Tháng 7/2026
+**Phiên bản:** 1.3.25 | Tháng 7/2026
 
+> **v1.3.25** — B1 F34 schema picking_lists + picking_list_items; schema v5.0
 > **v1.3.24** — Closeout Phase 4: SUMMARY_4, HANDOFF_4, TESTCASES_4; F36 Done; B1 F27 carry → Phase 5; tạo PLAN_5.
 > **v1.3.23** — Group H Done (H1–H4): SEC-12 wrap __DEV__ ~55 chỗ; SEC-14 .gitignore .env.*; SEC-10 backup.ts thêm 3 bảng; SEC-13 npm audit fix.
 > **v1.3.22** — Group A Done: KI-039 TTL 30s trên 8 màn; KI-040 Products search server-side + giảm payload; KI-050 xóa toggleDeferred dead path.
@@ -136,7 +137,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F31 | Ghi chú nội bộ (Internal Notes) | Màn **Ghi chú** trong Settings (card entry). Bảng `internal_notes` (`product_id` nullable, `custom_product_name`, reason, created_by, created_at). UI card: ảnh SP 64×64 + tên + lý do (hoặc placeholder + tên tự do + dòng "Sản phẩm chưa có trong hệ thống"). FAB (+) → bottom sheet: autocomplete SP có sẵn **hoặc** gõ tên tự do + lý do. Tap card có `product_id` → ProductDetail; card tên tự do không navigate. Sửa/xóa ghi chú. **RBAC:** guest xem; staff+ sửa/xóa mọi ghi chú. **Tách biệt** F27 Đặt hàng. | P2 | Phase 3 | Done |
 | F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Done |
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
-| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | Deferred *(PLAN_5 Group B)* |
+| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | In progress (B1 schema done) |
 | F35 | Push notification (local) | `expo-notifications` — scheduled local notification mỗi ngày **11:00**. Check dữ liệu lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày"). | P3 | Phase 5 | Deferred *(PLAN_5 Group C)* |
 | F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | Done |
 
@@ -290,6 +291,36 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 ### 8.9–8.11 Shelf tables — **Đã xóa**
 
 > **Đã xóa** — migration `20260719_rollback_shelf_add_market_columns.sql` (DROP `shelf_zone_items` / `shelf_items` / `shelf_zones`). File tạo gốc `20260718_create_shelf_tables.sql` giữ trong lịch sử migrations. Thay bằng `locations.type` + `inventory_entries.is_special` / `is_checked` (schema **v4.1**). Xem `DECISIONS.md` Redesign F36.
+
+### 8.12 `picking_lists` (F34 — đơn lấy hàng)
+
+| Trường | Kiểu | Mô tả |
+|--------|------|-------|
+| id | UUID | Khoá chính |
+| title | String | Tên đơn lấy hàng |
+| status | TEXT | `'draft'` \| `'in_progress'` \| `'completed'` — DEFAULT `'draft'` |
+| created_at | Timestamp | Tự sinh |
+| updated_at | Timestamp | Tự cập nhật |
+
+> Migration: `20260720_create_picking_tables.sql`. Schema **v5.0**. Không audit trigger (giống order). Scope UI: warehouse only.
+
+### 8.13 `picking_list_items` (F34 — dòng trong đơn lấy hàng)
+
+| Trường | Kiểu | Mô tả |
+|--------|------|-------|
+| id | UUID | Khoá chính |
+| picking_list_id | UUID | FK → `picking_lists` ON DELETE CASCADE |
+| inventory_entry_id | UUID | FK → `inventory_entries` ON DELETE CASCADE — gắn đúng lô |
+| product_id | UUID | FK → `products` ON DELETE CASCADE |
+| zone_id | UUID | FK → `zones` ON DELETE CASCADE |
+| tier | Integer | Tầng kệ |
+| quantity_boxes | Integer | Số lượng lấy (> 0) |
+| is_picked | Boolean | Checklist đã lấy (default false) |
+| notes | String | Ghi chú tuỳ chọn |
+| created_at | Timestamp | Tự sinh |
+| updated_at | Timestamp | Tự cập nhật |
+
+> Confirm đơn → trừ `inventory_entries.quantity_boxes` theo batch (không trừ khi tick `is_picked`). Xem `DECISIONS.md` F34.
 
 ---
 

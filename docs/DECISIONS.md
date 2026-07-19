@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F34 Picking list — schema design
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** `picking_list_items.inventory_entry_id` NOT NULL — gắn đúng lô để confirm trừ tồn chính xác. Status 3 bước: draft → in_progress → completed. Không audit triggers (giống order; inventory update đã audit riêng). Scope: chỉ warehouse locations. Xóa list thay cancelled. Trừ tồn batch khi confirm (không trừ khi tick).
+- **Lý do:** FK entry chính xác hơn product+zone+tier (tránh trùng lô); audit inventory_entries đủ trace; picking là thao tác nhanh không cần audit riêng.
+
+---
+
 ### Tab Sản phẩm — luôn hiện tất cả SP, filter local
 
 - **Ngày:** tháng 7/2026

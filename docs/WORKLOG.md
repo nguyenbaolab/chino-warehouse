@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — B1: F34 Picking list schema + types
+
+- Migration `20260720_create_picking_tables.sql`: 2 bảng picking_lists + picking_list_items.
+- picking_list_items: inventory_entry_id NOT NULL (FK lô chính xác), is_picked checklist.
+- Status: draft → in_progress → completed. Không audit (giống order).
+- RLS: SELECT authenticated + mutate staff+.
+- Types: PickingListStatus, PickingList, PickingListItem.
+- schema.sql bump v4.2 → v5.0.
+- Docs: REQUIREMENTS v1.3.25 (§6 F34 + §8.12/8.13), CONTEXT, DECISIONS, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — docs: closeout Phase 4
 
 - SUMMARY_4.md, HANDOFF_4.md, TESTCASES_4.md đầy đủ (14 Done / 1 carry B1).

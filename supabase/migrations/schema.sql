@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 4.2 | Tháng 7/2026
+-- Phiên bản: 5.0 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v4.2:
+--   - v5.0: picking_lists + picking_list_items (F34 Phase 5)
 -- Thay đổi so với v4.1:
 --   - v4.2: F32 — products.ignore_expiry_warning, ignore_stock_warning (BOOLEAN DEFAULT false)
 -- Thay đổi so với v4.0:
@@ -194,6 +196,31 @@ CREATE TABLE order_items (
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 7b. Picking lists (F34 — đơn lấy hàng từ kho)
+CREATE TABLE picking_lists (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  title      TEXT        NOT NULL,
+  status     TEXT        NOT NULL DEFAULT 'draft'
+               CHECK (status IN ('draft', 'in_progress', 'completed')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- 7c. Picking list items (gắn đúng lô inventory_entry)
+CREATE TABLE picking_list_items (
+  id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  picking_list_id     UUID        NOT NULL REFERENCES picking_lists(id) ON DELETE CASCADE,
+  inventory_entry_id  UUID        NOT NULL REFERENCES inventory_entries(id) ON DELETE CASCADE,
+  product_id          UUID        NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  zone_id             UUID        NOT NULL REFERENCES zones(id) ON DELETE CASCADE,
+  tier                INTEGER     NOT NULL,
+  quantity_boxes      INTEGER     NOT NULL DEFAULT 1 CHECK (quantity_boxes > 0),
+  is_picked           BOOLEAN     NOT NULL DEFAULT false,
+  notes               TEXT,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 8. User profiles (F24 RBAC)
 CREATE TABLE user_profiles (
   id              UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -244,6 +271,8 @@ CREATE INDEX ON inventory_entries(barcode);
 CREATE INDEX idx_product_barcodes_product_id ON product_barcodes(product_id);
 CREATE INDEX ON order_items(order_list_id);
 CREATE INDEX ON order_items(product_id);
+CREATE INDEX idx_picking_list_items_picking_list_id ON picking_list_items(picking_list_id);
+CREATE INDEX idx_picking_list_items_inventory_entry_id ON picking_list_items(inventory_entry_id);
 CREATE INDEX idx_product_categories_l2_level1 ON product_categories_l2(level1_id);
 CREATE INDEX idx_user_profiles_role ON user_profiles(role);
 CREATE INDEX idx_user_profiles_is_disabled ON user_profiles(is_disabled);
@@ -270,6 +299,8 @@ ALTER TABLE inventory_entries     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE product_barcodes      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE picking_lists         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE picking_list_items    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE internal_notes        ENABLE ROW LEVEL SECURITY;
 
@@ -384,6 +415,20 @@ CREATE POLICY order_lists_mutate_staff_plus ON order_lists
 CREATE POLICY order_items_select_authenticated ON order_items
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY order_items_mutate_staff_plus ON order_items
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY picking_lists_select_authenticated ON picking_lists
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY picking_lists_mutate_staff_plus ON picking_lists
+  FOR ALL TO authenticated
+  USING (public.is_current_user_at_least_staff())
+  WITH CHECK (public.is_current_user_at_least_staff());
+
+CREATE POLICY picking_list_items_select_authenticated ON picking_list_items
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY picking_list_items_mutate_staff_plus ON picking_list_items
   FOR ALL TO authenticated
   USING (public.is_current_user_at_least_staff())
   WITH CHECK (public.is_current_user_at_least_staff());

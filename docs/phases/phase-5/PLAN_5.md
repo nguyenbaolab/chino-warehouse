@@ -32,8 +32,10 @@ Phase 5 hoàn thiện các feature deferred từ Phase 3–4: **F27 mở rộng*
 
 ## 3. Group B — Picking list (F34)
 
-### B1 — Schema picking
-- Schema `picking_lists`, `picking_list_items`, types, RLS.
+### B1 — Schema picking ✅ Done
+
+- Schema `picking_lists`, `picking_list_items`, types, RLS (migration `20260720_create_picking_tables.sql`, schema v5.0).
+- Không audit; `inventory_entry_id` NOT NULL; status draft → in_progress → completed.
 
 ### B2 — PickingListScreen
 - Tạo đơn; autocomplete + ảnh; nhóm kho/zone/tầng.
