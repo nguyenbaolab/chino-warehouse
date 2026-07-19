@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "chino-warehouse",
-    "slug": "chino-warehouse",
+    "name": "Chino's Store",
+    "slug": "chinos-store",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

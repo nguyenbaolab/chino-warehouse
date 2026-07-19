@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — Đổi tên app Expo: Chino's Store
+
+- `app.json`: `expo.name` `"chino-warehouse"` → `"Chino's Store"`; `expo.slug` → `"chinos-store"`.
+- Giữ nguyên path icon / splash / adaptiveIcon / favicon (file mới đã đúng tên).
+- Xóa 4 file ảnh cũ: `adaptive-icon1.png`, `favicon1.png`, `icon1.png`, `splash-icon1.png`.
+- CONTEXT: không có chuỗi `chino-warehouse` — không sửa.
+
+---
+
 ## [tháng 7/2026] — F37: Biometric login (vân tay / Face ID)
 
 - Install expo-local-authentication; tạo `lib/biometricAuth.ts` (SecureStore credentials, authenticate prompt).
