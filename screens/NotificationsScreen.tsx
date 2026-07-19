@@ -18,10 +18,10 @@ import FilterModal, { formatFilterSummary, type FilterMode } from '../components
 import { formatExpiryDate, getExpiryStatus, InventoryEntry, Location, Product, Zone } from '../types'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
+import { formatSplitQtyLabel, qtyUnitForLocationType } from '../utils/qtyUnitUtils'
 import { isoExpiryToDisplay, parseDisplayDateToIso } from '../utils/dateUtils'
 import {
   getDisplayColor,
-  getDisplayColorContextFromEntry,
   getExpiryCardHeaderColors,
   getExpiryLotSurfaceColors,
 } from '../utils/statusUtils'
@@ -39,18 +39,34 @@ function plus30ISO(): string {
   return d.toISOString().slice(0, 10)
 }
 
+/** Resolve loại location từ zone join + map locations (fallback warehouse). */
+function locationTypeOfEntry(
+  entry: InventoryEntry,
+  locationById: Map<string, Location>,
+): 'warehouse' | 'market' {
+  const locId = entry.zone?.location_id
+  if (locId) {
+    const t = locationById.get(locId)?.type
+    if (t === 'warehouse' || t === 'market') return t
+  }
+  return 'warehouse'
+}
+
 type ExpiryLotRow = {
   entryId: string
   quantityBoxes: number
   expiryDate?: string
   isPriceReduced: boolean
   status: 'expired' | 'warning' | 'ok'
+  locationType: 'warehouse' | 'market'
 }
 
 type ExpiryCard = {
   productId: string
   productName: string
   totalBoxes: number
+  warehouseBoxes: number
+  marketBoxes: number
   lots: ExpiryLotRow[]
   hasExpiredLot: boolean
 }
@@ -59,6 +75,8 @@ type LowStockCard = {
   productId: string
   productName: string
   totalBoxes: number
+  warehouseBoxes: number
+  marketBoxes: number
   lowWarningBoxes: number
 }
 
@@ -90,15 +108,15 @@ export default function NotificationsScreen() {
     fetchInventoryByZone,
     togglePriceReduced,
     toggleDiscontinued,
-    getQtyUnit,
   } = useWarehouseStore()
-  const qtyUnit = getQtyUnit()
 
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [filterZoneId, setFilterZoneId] = useState<string | null>(null)
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [filterLocations, setFilterLocations] = useState<Location[]>([])
+  /** Tất cả locations — resolve đơn vị thùng/sản phẩm theo type (cách A). */
+  const [allLocations, setAllLocations] = useState<Location[]>([])
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
   const [modeZoneIds, setModeZoneIds] = useState<Set<string> | null>(null)
 
@@ -140,6 +158,23 @@ export default function NotificationsScreen() {
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
+
+  // Load mọi location để map zone → warehouse|market (không phụ thuộc filterMode)
+  useEffect(() => {
+    let cancelled = false
+    void supabase
+      .from('locations')
+      .select('id, type, name')
+      .then(({ data }) => {
+        if (!cancelled) setAllLocations((data as Location[]) ?? [])
+      })
+    return () => { cancelled = true }
+  }, [])
+
+  const locationById = useMemo(
+    () => new Map(allLocations.map((l) => [l.id, l])),
+    [allLocations],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -277,6 +312,8 @@ export default function NotificationsScreen() {
       if (product.ignore_expiry_warning) continue
 
       let totalBoxes = 0
+      let warehouseBoxes = 0
+      let marketBoxes = 0
       let hasExpired = false
       const lots: ExpiryLotRow[] = []
 
@@ -286,7 +323,10 @@ export default function NotificationsScreen() {
           if (!entry.expiry_date) continue
           if (entry.expiry_date < dateFrom || entry.expiry_date > dateTo) continue
           const status = getExpiryStatus(entry.expiry_date, product.warning_days ?? 30)
+          const locType = locationTypeOfEntry(entry, locationById)
           totalBoxes += entry.quantity_boxes
+          if (locType === 'warehouse') warehouseBoxes += entry.quantity_boxes
+          else marketBoxes += entry.quantity_boxes
           if (status === 'expired') hasExpired = true
           lots.push({
             entryId: entry.id,
@@ -294,14 +334,18 @@ export default function NotificationsScreen() {
             expiryDate: entry.expiry_date,
             isPriceReduced: entry.is_price_reduced === true,
             status,
+            locationType: locType,
           })
         }
         if (lots.length === 0) continue
       } else {
-        // Mặc định: chỉ expired + warning
+        // Mặc định: chỉ expired + warning; header «Còn» = tổng mọi lô trong scope
         let hasWarning = false
         for (const entry of entries) {
+          const locType = locationTypeOfEntry(entry, locationById)
           totalBoxes += entry.quantity_boxes
+          if (locType === 'warehouse') warehouseBoxes += entry.quantity_boxes
+          else marketBoxes += entry.quantity_boxes
           const status = getExpiryStatus(entry.expiry_date, product.warning_days ?? 30)
           if (status === 'expired') {
             hasExpired = true
@@ -311,6 +355,7 @@ export default function NotificationsScreen() {
               expiryDate: entry.expiry_date,
               isPriceReduced: entry.is_price_reduced === true,
               status: 'expired',
+              locationType: locType,
             })
           }
           if (status === 'warning') {
@@ -321,6 +366,7 @@ export default function NotificationsScreen() {
               expiryDate: entry.expiry_date,
               isPriceReduced: entry.is_price_reduced === true,
               status: 'warning',
+              locationType: locType,
             })
           }
         }
@@ -331,6 +377,8 @@ export default function NotificationsScreen() {
         productId,
         productName: product.name,
         totalBoxes,
+        warehouseBoxes,
+        marketBoxes,
         lots,
         hasExpiredLot: hasExpired,
       })
@@ -339,7 +387,7 @@ export default function NotificationsScreen() {
       if (a.hasExpiredLot !== b.hasExpiredLot) return a.hasExpiredLot ? -1 : 1
       return a.productName.localeCompare(b.productName)
     })
-  }, [productIdToEntries, products, dateRangeActive, dateFrom, dateTo, expiryWarningEnabled])
+  }, [productIdToEntries, products, dateRangeActive, dateFrom, dateTo, expiryWarningEnabled, locationById])
 
   const lowStockCards = useMemo(() => {
     if (!lowStockWarningEnabled) return []
@@ -350,19 +398,28 @@ export default function NotificationsScreen() {
       if (!product || product.is_archived || product.is_discontinued === true) continue
       if (product.ignore_stock_warning) continue
 
-      const totalBoxes = entries.reduce((sum, e) => sum + e.quantity_boxes, 0)
+      let warehouseBoxes = 0
+      let marketBoxes = 0
+      for (const entry of entries) {
+        const locType = locationTypeOfEntry(entry, locationById)
+        if (locType === 'warehouse') warehouseBoxes += entry.quantity_boxes
+        else marketBoxes += entry.quantity_boxes
+      }
+      const totalBoxes = warehouseBoxes + marketBoxes
       const lowWarning = product.low_warning_boxes ?? 3
       if (totalBoxes <= lowWarning || totalBoxes === 0) {
         cards.push({
           productId,
           productName: product.name,
           totalBoxes,
+          warehouseBoxes,
+          marketBoxes,
           lowWarningBoxes: lowWarning,
         })
       }
     }
     return cards.sort((a, b) => a.productName.localeCompare(b.productName))
-  }, [productIdToEntries, products, lowStockWarningEnabled])
+  }, [productIdToEntries, products, lowStockWarningEnabled, locationById])
 
   const normalizedSearch = normalizeText(searchQuery.trim())
 
@@ -544,7 +601,9 @@ export default function NotificationsScreen() {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => toggleExpanded(item.productId)}>
-                  <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} {qtyUnit}</Text>
+                  <Text style={[styles.line1, { color: colors.text }]}>
+                    Còn {formatSplitQtyLabel(item.warehouseBoxes, item.marketBoxes)}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -576,7 +635,8 @@ export default function NotificationsScreen() {
                   >
                     <View style={styles.lotInfo}>
                       <Text style={[styles.lotText, { color: colors.text }]}>
-                        {lot.quantityBoxes} {qtyUnit} · Hạn: {formatExpiryDate(lot.expiryDate)}
+                        {lot.quantityBoxes} {qtyUnitForLocationType(lot.locationType)} · Hạn:{' '}
+                        {formatExpiryDate(lot.expiryDate)}
                       </Text>
                     </View>
                     {canWrite ? (
@@ -603,7 +663,7 @@ export default function NotificationsScreen() {
         </View>
       )
     },
-    [canWrite, colors, expandedProducts, expiryWarningEnabled, navigation, togglePriceReduced]
+    [canWrite, colors, expandedProducts, expiryWarningEnabled, navigation, togglePriceReduced, toggleExpanded]
   )
 
   const renderLowStockItem = useCallback(
@@ -637,7 +697,9 @@ export default function NotificationsScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        <Text style={[styles.line1, { color: colors.text }]}>Còn {item.totalBoxes} {qtyUnit}</Text>
+        <Text style={[styles.line1, { color: colors.text }]}>
+          Còn {formatSplitQtyLabel(item.warehouseBoxes, item.marketBoxes)}
+        </Text>
         {canWrite ? (
           <View style={styles.actionsRow}>
             <TouchableOpacity

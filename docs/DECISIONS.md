@@ -4,6 +4,15 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Notifications — đơn vị số lượng theo location type (cách A)
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Trên Notifications (tab hết hạn + hết hàng), đơn vị **không** lấy từ `getQtyUnit()` / `appMode` Map. Mỗi lô: warehouse → «thùng», market → «sản phẩm» (qua `locations.type`). Header card tách tổng: ví dụ `Còn 5 thùng · 3 sản phẩm` (bỏ phần = 0). Mode filter «Tất cả» vẫn giữ.
+- **Lý do:** Notifications xem lẫn kho + siêu thị; một đơn vị global theo Map làm nhầm (vd Map đang Kho → mọi dòng hiện «thùng»).
+- **Thay thế đã xem xét:** Cách B — một đơn vị theo FilterModal `filterMode` (khi «Tất cả» vẫn mơ hồ) — không chọn.
+
+---
+
 ### ProductsScreen — bỏ Mode «Tất cả»; đơn vị theo filterMode local
 
 - **Ngày:** tháng 7/2026

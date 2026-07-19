@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — Notifications: đơn vị theo location type (cách A)
+
+- Header card: `Còn 5 thùng · 3 sản phẩm` (`formatSplitQtyLabel`); mỗi lô dùng `qtyUnitForLocationType`.
+- Resolve type: `entry.zone.location_id` → `locations.type` (load all locations).
+- Bỏ `getQtyUnit()` trên Notifications (không phụ thuộc Map `appMode`).
+- Utils: `utils/qtyUnitUtils.ts`.
+
+---
+
 ## [tháng 7/2026] — UX: nút Lọc hiện Mode · Kho · Zone
 
 - `formatFilterSummary` trong FilterModal — ví dụ «Kho · Kho lạnh · Palet 1».
