@@ -2,6 +2,17 @@
 
 ---
 
+### [KI-065] Custom location mode + đơn vị — deferred
+
+- **Mức độ:** Low (enhancement)
+- **File liên quan:** `stores/warehouseStore.ts` (`getQtyUnit`, `appMode`), `locations.type`, FilterModal
+- **Mô tả:** Hiện hardcode 2 mode (`warehouse` → «thùng», `market` → «sản phẩm»). Chưa cho user thêm mode mới hoặc đặt đơn vị tùy ý.
+- **Hướng fix (phase sau):** Bảng `location_types` (slug, label, qty_unit) + UI quản lý; `getQtyUnit` / FilterModal đọc từ config.
+- **Trạng thái:** Deferred
+- **Tham chiếu:** DECISIONS ProductsScreen filter mode; TODO trong `getQtyUnit`
+
+---
+
 ### [KI-064] ProductsScreen filter Mode/Kho thiếu inventoryEntries (SP siêu thị biến mất)
 
 - **Mức độ:** Medium (UX filter sai)

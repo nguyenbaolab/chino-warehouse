@@ -25,10 +25,17 @@ type FilterModalProps = {
   selectedZoneId: string | null
   onChangeZone: (id: string | null) => void
   onReset: () => void
+  /** false = ẩn option «Tất cả» (Products bắt buộc Kho/Siêu thị) */
+  allowAllMode?: boolean
 }
 
-const MODE_OPTIONS: { value: FilterMode; label: string }[] = [
+const MODE_OPTIONS_ALL: { value: FilterMode; label: string }[] = [
   { value: 'all', label: 'Tất cả' },
+  { value: 'warehouse', label: 'Kho' },
+  { value: 'market', label: 'Siêu thị' },
+]
+
+const MODE_OPTIONS_REQUIRED: { value: FilterMode; label: string }[] = [
   { value: 'warehouse', label: 'Kho' },
   { value: 'market', label: 'Siêu thị' },
 ]
@@ -38,8 +45,11 @@ export function countActiveFilters(
   mode: FilterMode,
   locationId: string | null,
   zoneId: string | null,
+  options?: { countMode?: boolean },
 ): number {
-  return (mode !== 'all' ? 1 : 0) + (locationId ? 1 : 0) + (zoneId ? 1 : 0)
+  // Products (mode bắt buộc): không đếm mode vào badge — chỉ kho/zone
+  const countMode = options?.countMode !== false
+  return (countMode && mode !== 'all' ? 1 : 0) + (locationId ? 1 : 0) + (zoneId ? 1 : 0)
 }
 
 export default function FilterModal({
@@ -54,10 +64,12 @@ export default function FilterModal({
   selectedZoneId,
   onChangeZone,
   onReset,
+  allowAllMode = true,
 }: FilterModalProps) {
   const { colors } = useThemeStore()
   const [locationListOpen, setLocationListOpen] = useState(false)
   const [zoneListOpen, setZoneListOpen] = useState(false)
+  const modeOptions = allowAllMode ? MODE_OPTIONS_ALL : MODE_OPTIONS_REQUIRED
 
   const locationLabel = selectedLocationId
     ? locations.find((l) => l.id === selectedLocationId)?.name ?? '…'
@@ -107,7 +119,7 @@ export default function FilterModal({
 
           <Text style={[styles.sectionLabel, { color: colors.sub }]}>Mode</Text>
           <View style={styles.modeRow}>
-            {MODE_OPTIONS.map((opt) => {
+            {modeOptions.map((opt) => {
               const active = selectedMode === opt.value
               return (
                 <TouchableOpacity

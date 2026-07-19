@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — ProductsScreen: bắt buộc filter Mode Kho/Siêu thị
+
+- FilterModal `allowAllMode={false}` trên Products; default `filterMode` = `appMode`; Reset về `appMode`.
+- Qty unit local theo `filterMode` (không `getQtyUnit`); badge Lọc không đếm mode.
+- TODO trên `getQtyUnit` + KI-065 deferred custom mode/unit.
+- Docs: REQUIREMENTS v1.3.33, DECISIONS, CONTEXT, KNOWN_ISSUES, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — fix: ProductsScreen filter inventory đủ data (KI-064)
 
 - ProductsScreen: `useEffect([filterMode, filterLocationId])` — có kho → `fetchInventoryByLocation`; không → `fetchAllInventoryEntries`.

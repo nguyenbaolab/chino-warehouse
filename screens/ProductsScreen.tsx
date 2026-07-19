@@ -19,7 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import ImageViewerModal from '../components/ImageViewerModal'
-import FilterModal, { countActiveFilters, type FilterMode } from '../components/FilterModal'
+import FilterModal, { countActiveFilters } from '../components/FilterModal'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
@@ -59,9 +59,14 @@ export default function ProductsScreen() {
     upsertProductBarcode,
     logBarcodeConflict,
     lookupProductByBarcode,
-    getQtyUnit,
+    appMode,
   } = useWarehouseStore()
-  const qtyUnit = getQtyUnit()
+  // Đơn vị theo filterMode local (không dùng getQtyUnit / appMode global)
+  const [filterMode, setFilterMode] = useState<'warehouse' | 'market'>(() => {
+    const mode = useWarehouseStore.getState().appMode
+    return mode === 'market' ? 'market' : 'warehouse'
+  })
+  const qtyUnit = filterMode === 'warehouse' ? 'thùng' : 'sản phẩm'
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
   const canWrite = useCanWrite()
@@ -81,8 +86,7 @@ export default function ProductsScreen() {
   const [viewingImage, setViewingImage] = useState<{ uri: string; productId: string } | null>(null)
   const [uploadingProductId, setUploadingProductId] = useState<string | null>(null)
 
-  /** FilterModal — local, không đụng appMode store */
-  const [filterMode, setFilterMode] = useState<FilterMode>('all')
+  /** FilterModal — mode bắt buộc Kho/Siêu thị (local; initial = appMode Map) */
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [filterLocations, setFilterLocations] = useState<Location[]>([])
@@ -135,15 +139,15 @@ export default function ProductsScreen() {
     })
   }, [fetchProductsPage, debouncedSearch, showArchived, showNoImageOnly])
 
-  // FilterModal: danh sách kho theo filterMode (local — không đụng store.appMode)
+  // FilterModal: danh sách kho theo filterMode (luôn Kho hoặc Siêu thị)
   useEffect(() => {
     let cancelled = false
     async function loadFilterLocations() {
-      let query = supabase.from('locations').select('*').order('name')
-      if (filterMode !== 'all') {
-        query = query.eq('type', filterMode)
-      }
-      const { data } = await query
+      const { data } = await supabase
+        .from('locations')
+        .select('*')
+        .eq('type', filterMode)
+        .order('name')
       if (!cancelled) setFilterLocations((data as Location[]) ?? [])
     }
     void loadFilterLocations()
@@ -158,9 +162,9 @@ export default function ProductsScreen() {
     setSelectedZoneId(null)
   }, [filterMode])
 
-  // Khi filterMode !== 'all' và chưa chọn kho → lấy mọi zone thuộc các kho đó
+  // Chưa chọn kho → lấy mọi zone thuộc các kho của filterMode
   useEffect(() => {
-    if (filterMode === 'all' || filterLocationId) {
+    if (filterLocationId) {
       setModeZoneIds(null)
       return
     }
@@ -252,7 +256,9 @@ export default function ProductsScreen() {
     return new Set(zonesForFilterLoc.map((z) => z.id))
   }, [filterLocationId, zonesForFilterLoc])
 
-  const activeFilterCount = countActiveFilters(filterMode, filterLocationId, selectedZoneId)
+  const activeFilterCount = countActiveFilters(filterMode, filterLocationId, selectedZoneId, {
+    countMode: false,
+  })
 
   const totalBoxesByProduct = useMemo(() => {
     const map = new Map<string, number>()
@@ -805,15 +811,19 @@ export default function ProductsScreen() {
         visible={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
         selectedMode={filterMode}
-        onChangeMode={setFilterMode}
+        onChangeMode={(mode) => {
+          if (mode === 'warehouse' || mode === 'market') setFilterMode(mode)
+        }}
         locations={filterLocations}
         selectedLocationId={filterLocationId}
         onChangeLocation={setFilterLocationId}
         zones={zonesForFilterLoc}
         selectedZoneId={selectedZoneId}
         onChangeZone={setSelectedZoneId}
+        allowAllMode={false}
         onReset={() => {
-          setFilterMode('all')
+          const mode = appMode === 'market' ? 'market' : 'warehouse'
+          setFilterMode(mode)
           setFilterLocationId(null)
           setSelectedZoneId(null)
         }}

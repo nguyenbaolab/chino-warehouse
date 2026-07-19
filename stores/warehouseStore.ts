@@ -51,6 +51,8 @@ type WarehouseStore = {
   setSelectedLocation: (id: string) => void
   setAppMode: (mode: 'warehouse' | 'market') => void
   /** Label đơn vị số lượng theo mode: thùng | sản phẩm */
+  // TODO: Phase tiếp theo — cho user tự thêm mode + đơn vị custom (bảng location_types).
+  // Hiện tại hardcode 'warehouse' → 'thùng', 'market' → 'sản phẩm'.
   getQtyUnit: () => string
   setLocateIntent: (intent: LocateIntent) => void
   clearLocateIntent: () => void
@@ -238,6 +240,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     void get().fetchLocations()
   },
 
+  // TODO: Phase tiếp theo — cho user tự thêm mode + đơn vị custom (bảng location_types).
+  // Hiện tại hardcode 'warehouse' → 'thùng', 'market' → 'sản phẩm'.
   getQtyUnit: () => (get().appMode === 'warehouse' ? 'thùng' : 'sản phẩm'),
 
   setLocateIntent: (intent) => set({ locateIntent: intent }),
