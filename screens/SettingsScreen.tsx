@@ -36,6 +36,7 @@ export default function SettingsScreen() {
 
   const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
   const [stockCheckSubtitle, setStockCheckSubtitle] = useState('Chưa có hàng đặc biệt')
+  const [notifSubtitle, setNotifSubtitle] = useState('Đang tải…')
   const lastFetchedAt = useRef(0)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const FOCUS_FETCH_TTL_MS = 30_000
@@ -84,6 +85,25 @@ export default function SettingsScreen() {
     setStockCheckSubtitle(`${checked}/${total} đã kiểm`)
   }, [])
 
+  /** F35 — subtitle Thông báo hết hạn từ app_settings */
+  const refreshNotifSubtitle = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('notification_enabled, notification_time')
+      .limit(1)
+      .maybeSingle()
+    if (error || !data) {
+      if (__DEV__ && error) console.error('[Settings] fetch app_settings:', error)
+      setNotifSubtitle('Chưa cấu hình')
+      return
+    }
+    if (data.notification_enabled) {
+      setNotifSubtitle(`Bật · ${data.notification_time as string} hàng ngày`)
+    } else {
+      setNotifSubtitle('Đã tắt')
+    }
+  }, [])
+
   useEffect(() => {
     loadTheme()
     void fetchLocations()
@@ -95,8 +115,9 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // Subtitle Kiểm hàng luôn refresh khi vào Settings (sau tick/Reset)
+      // Subtitle Kiểm hàng + thông báo luôn refresh khi vào Settings
       void refreshStockCheckSubtitle()
+      void refreshNotifSubtitle()
 
       if (Date.now() - lastFetchedAt.current <= FOCUS_FETCH_TTL_MS) return
 
@@ -135,6 +156,7 @@ export default function SettingsScreen() {
       refreshDiscontinuedContext,
       fetchInternalNotes,
       refreshStockCheckSubtitle,
+      refreshNotifSubtitle,
       fetchCategories,
       fetchLatestAuditEntry,
       productCategoriesL1.length,
@@ -268,6 +290,21 @@ export default function SettingsScreen() {
         <View style={{ flex: 1 }}>
           <Text style={[styles.linkTitle, { color: colors.text }]}>📋 Kiểm hàng</Text>
           <Text style={[styles.linkSub, { color: colors.sub }]}>{stockCheckSubtitle}</Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
+
+      {/* F35 — Thông báo hết hạn (local push) */}
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('ExpiryAlert')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>⏰ Thông báo hết hạn</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>
+            {notifSubtitle}
+          </Text>
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>

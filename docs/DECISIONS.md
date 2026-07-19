@@ -4,6 +4,15 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F35 Push notification — local scheduled + shared config
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Local notification (`expo-notifications`) với 3 tần suất: daily (hôm nay + 3 ngày), weekly thứ Hai (7 ngày), monthly ngày 1 (cả tháng). Nội dung ghi số cụ thể «X lô (kho) · Y SP (siêu thị)». Settings lưu Supabase `app_settings` 1 row (admin toggle + time). Nội dung tĩnh — cập nhật mỗi khi có người mở app; reschedule sau login. Skip SP có `ignore_expiry_warning` hoặc `is_archived`.
+- **Lý do:** Local notification đơn giản, không cần server; app nội bộ mở hàng ngày nên nội dung đủ fresh; admin control đồng bộ qua Supabase.
+- **Limitation ghi nhận:** Nội dung notification có thể lệch nếu không ai mở app. Server push (FCM/APNs + Supabase Edge Function) sẽ fix — defer nâng cấp sau (KI-062).
+
+---
+
 ### F34 Picking — trừ tồn batch confirm (B3)
 
 - **Ngày:** tháng 7/2026

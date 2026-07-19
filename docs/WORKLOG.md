@@ -4,6 +4,20 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — C-part1: F35 Push notification setup + schedule
+
+- Install expo-notifications + app.json plugin + permissions.
+- Migration `20260720_create_app_settings.sql`: 1 row shared config (`notification_enabled`, `notification_time`); RLS admin update.
+- `lib/notifications.ts`: permission + schedule 3 loại (daily/weekly/monthly) + cancel.
+- `utils/expiryCountUtils.ts`: đếm lô hết hạn theo window (0/3/7/30 ngày), phân warehouse/market.
+- App.tsx: bootstrap schedule sau login; cancel khi logout.
+- ExpiryAlertScreen: note giải thích, admin toggle + time picker, fetch app_settings.
+- SettingsScreen: card ⏰ Thông báo hết hạn → ExpiryAlert.
+- schema.sql v5.1.
+- Docs: REQUIREMENTS v1.3.28, CONTEXT, DECISIONS, KI-062, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — B3: F34 confirm trừ tồn batch — F34 Done
 
 - completePicking: re-fetch qty → sequential trừ tồn picked items → status completed.

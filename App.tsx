@@ -35,6 +35,12 @@ import DashboardScreen from './screens/DashboardScreen'
 import UserManagementScreen from './screens/UserManagementScreen'
 import InternalNotesScreen from './screens/InternalNotesScreen'
 import StockCheckScreen from './screens/StockCheckScreen'
+import ExpiryAlertScreen from './screens/ExpiryAlertScreen'
+import {
+  bootstrapExpiryNotifications,
+  cancelAllNotifications,
+  setupNotificationHandler,
+} from './lib/notifications'
 
 const Tab = createBottomTabNavigator()
 const RootStack = createNativeStackNavigator()
@@ -98,6 +104,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="DiscontinuedProducts" component={DiscontinuedProductsScreen} />
       <SettingsStack.Screen name="InternalNotes" component={InternalNotesScreen} />
       <SettingsStack.Screen name="StockCheck" component={StockCheckScreen} />
+      <SettingsStack.Screen name="ExpiryAlert" component={ExpiryAlertScreen} />
       <SettingsStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <SettingsStack.Screen name="Dashboard" component={DashboardScreen} />
       <SettingsStack.Screen name="NotificationsFromDashboard" component={NotificationsScreen} />
@@ -308,6 +315,7 @@ export default function App() {
   useEffect(() => {
     if (!session) {
       clearCurrentUserProfile()
+      void cancelAllNotifications()
       return
     }
 
@@ -332,6 +340,10 @@ export default function App() {
       }
 
       void updateLastLogin()
+
+      // F35: schedule local notifications sau login (permission denied = im lặng)
+      setupNotificationHandler()
+      void bootstrapExpiryNotifications()
     }
 
     void loadProfile()

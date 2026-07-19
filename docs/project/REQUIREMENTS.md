@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.27 | Tháng 7/2026
+**Phiên bản:** 1.3.28 | Tháng 7/2026
 
+> **v1.3.28** — C-part1 F35: expo-notifications + app_settings + ExpiryAlertScreen (admin toggle/time); C-part2 danh sách chưa
 > **v1.3.27** — B3 F34 confirm trừ tồn batch; F34 Done
 > **v1.3.26** — B2 F34 PickingDetailScreen + store actions + tab switcher Orders
 > **v1.3.25** — B1 F34 schema picking_lists + picking_list_items; schema v5.0
@@ -140,7 +141,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Done |
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
 | F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. | P2 | Phase 5 | Done |
-| F35 | Push notification (local) | `expo-notifications` — scheduled local notification mỗi ngày **11:00**. Check dữ liệu lô sắp hết hạn → thông báo OS (vd. "3 lô sắp hết hạn trong 7 ngày"). | P3 | Phase 5 | Deferred *(PLAN_5 Group C)* |
+| F35 | Push notification (local) | `expo-notifications` — 3 loại local: **daily** (hôm nay + 3 ngày), **weekly** thứ Hai (7 ngày), **monthly** ngày 1 (cả tháng). Body: «X lô (kho) · Y SP (siêu thị)» (bỏ phần count=0). Settings admin: toggle + giờ → Supabase `app_settings`. Nội dung tĩnh, cập nhật khi mở app (KI-062). C-part2: màn danh sách hết hạn. | P3 | Phase 5 | In progress (C-part1 done) |
 | F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | Done |
 
 ---
@@ -324,6 +325,17 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 
 > Confirm đơn → trừ `inventory_entries.quantity_boxes` theo batch (không trừ khi tick `is_picked`). Xem `DECISIONS.md` F34.
 
+### 8.14 `app_settings` (F35 — shared notification config)
+
+| Trường | Kiểu | Mô tả |
+|--------|------|-------|
+| id | UUID | Khoá chính |
+| notification_enabled | Boolean | Bật/tắt local notification (default true) |
+| notification_time | TEXT | Giờ hàng ngày `HH:MM` (default `'11:00'`) |
+| updated_at | Timestamp | Tự cập nhật |
+
+> Migration: `20260720_create_app_settings.sql`. Schema **v5.1**. Seed 1 row. RLS: SELECT authenticated; UPDATE admin+ (`is_current_user_admin`). Không INSERT/DELETE từ client.
+
 ---
 
 ## 9. Tổng quan màn hình
@@ -339,7 +351,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Chi tiết đơn lấy hàng (Stack) | Thêm lô, nhóm, tick | Search SP + chọn lô · Nhóm Kho/Zone/Tầng · Checkbox is_picked |
 | Thêm hàng (Stack) | Thêm lô hàng | Zone · Tầng · Số lượng · Hạn · F30 category |
 | Thông báo (Tab) | Cảnh báo tồn & hạn | Nút **Lọc** → FilterModal Mode/Kho/Zone; tab Sắp hết hạn: checkbox + **date range** (➜ kích hoạt mọi lô ∈ [Từ,Đến]; ✕ về mặc định expired/warning); tab Sắp hết hàng: checkbox (không date range) |
-| Cài đặt (Tab) | Tuỳ chỉnh app | Theme · cảnh báo · Quản lý kho · … · **Kiểm hàng** (C4) · Audit · User |
+| Cài đặt (Tab) | Tuỳ chỉnh app | Theme · cảnh báo · Quản lý kho · … · **Kiểm hàng** (C4) · **Thông báo hết hạn** (F35) · Audit · User |
 | Kiểm hàng (Stack, F36 C4) | Checklist market | List `is_special` (market zones); tick `is_checked`; Reset batch; RBAC `canWrite` |
 | Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả |
 | Tổng quan kho (Stack, F23) | Dashboard | Nút **Lọc** → FilterModal; 8 stats + pie |

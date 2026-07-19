@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Warehouse — Full Database Schema
--- Phiên bản: 5.0 | Tháng 7/2026
+-- Phiên bản: 5.1 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v5.0:
+--   - v5.1: app_settings table (F35 notification config)
 -- Thay đổi so với v4.2:
 --   - v5.0: picking_lists + picking_list_items (F34 Phase 5)
 -- Thay đổi so với v4.1:
@@ -221,6 +223,17 @@ CREATE TABLE picking_list_items (
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 7d. App settings (F35 — shared notification config, 1 row)
+CREATE TABLE app_settings (
+  id                    UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  notification_enabled  BOOLEAN     NOT NULL DEFAULT true,
+  notification_time     TEXT        NOT NULL DEFAULT '11:00',
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO app_settings (notification_enabled, notification_time)
+VALUES (true, '11:00');
+
 -- 8. User profiles (F24 RBAC)
 CREATE TABLE user_profiles (
   id              UUID        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -301,6 +314,7 @@ ALTER TABLE order_lists           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE picking_lists         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE picking_list_items    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_settings          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE internal_notes        ENABLE ROW LEVEL SECURITY;
 
@@ -432,6 +446,14 @@ CREATE POLICY picking_list_items_mutate_staff_plus ON picking_list_items
   FOR ALL TO authenticated
   USING (public.is_current_user_at_least_staff())
   WITH CHECK (public.is_current_user_at_least_staff());
+
+-- F35: app_settings — SELECT all authenticated; UPDATE admin+ only (no INSERT/DELETE)
+CREATE POLICY app_settings_select_authenticated ON app_settings
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY app_settings_update_admin ON app_settings
+  FOR UPDATE TO authenticated
+  USING (public.is_current_user_admin())
+  WITH CHECK (public.is_current_user_admin());
 
 -- F24: user_profiles — SELECT own + admin/super_admin; UPDATE theo role; không INSERT/DELETE client
 CREATE POLICY user_profiles_select_own ON user_profiles
@@ -740,6 +762,19 @@ DROP TRIGGER IF EXISTS zones_updated_at_trigger ON zones;
 CREATE TRIGGER zones_updated_at_trigger
   BEFORE UPDATE ON zones
   FOR EACH ROW EXECUTE FUNCTION update_zones_updated_at();
+
+CREATE OR REPLACE FUNCTION update_app_settings_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS app_settings_updated_at_trigger ON app_settings;
+CREATE TRIGGER app_settings_updated_at_trigger
+  BEFORE UPDATE ON app_settings
+  FOR EACH ROW EXECUTE FUNCTION update_app_settings_updated_at();
 
 
 -- ============================================================

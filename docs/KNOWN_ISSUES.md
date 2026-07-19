@@ -2,6 +2,17 @@
 
 ---
 
+### [KI-062] F35 — Local notification nội dung tĩnh (cần mở app để cập nhật)
+
+- **Mức độ:** Low (accepted limitation)
+- **File liên quan:** `lib/notifications.ts`, `App.tsx`, `screens/ExpiryAlertScreen.tsx`
+- **Mô tả:** Local scheduled notification nội dung được tính khi mở app. Nếu không ai mở app, notification ngày tiếp theo vẫn hiện số liệu cũ. App nội bộ mở hàng ngày nên impact thấp.
+- **Hướng nâng cấp:** Server push qua FCM/APNs + Supabase Edge Function — tính realtime trên server, gửi push chính xác.
+- **Trạng thái:** Accepted — defer server push
+- **Tham chiếu:** F35, DECISIONS F35
+
+---
+
 ### [KI-061] Discontinued GO_BACK crash + Products archived ghi đè store.products
 
 - **Mức độ:** High (crash / data consistency)
