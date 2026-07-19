@@ -216,7 +216,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
     const { data: created, error } = await supabase
       .from('locations')
-      .insert({ name: trimmed, grid_rows: rows, grid_cols: cols })
+      .insert({ name: trimmed, grid_rows: rows, grid_cols: cols, type: get().appMode })
       .select('*')
       .single()
     if (error || !created) {

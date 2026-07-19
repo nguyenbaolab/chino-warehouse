@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: addLocation truyền type theo appMode
+
+- `addLocation` insert `type: get().appMode` — tạo kho đúng mode (warehouse/market).
+
+---
+
 ## [tháng 7/2026] — C4: Checklist kiểm hàng (Settings)
 
 - Tạo `screens/StockCheckScreen.tsx`: list market entries is_special = true, tick is_checked, nút Reset.
