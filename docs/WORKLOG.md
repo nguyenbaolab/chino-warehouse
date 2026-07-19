@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: F35 daily notification đếm ngược 4 mốc
+
+- Daily body: 4 mốc riêng (hôm nay / 1 ngày / 2 ngày / 3 ngày) thay gộp.
+- expiryCountUtils: thêm `countExpiringEntriesExactDay` (đếm đúng ngày).
+- 3 notification riêng biệt khi trùng ngày (daily/weekly/monthly không gộp).
+- ExpiryAlertScreen: 6 section (4 mốc + tuần + tháng) với count header.
+- Docs: REQUIREMENTS v1.3.29, CONTEXT, WORKLOG.
+
+---
+
 ## [tháng 7/2026] — C-part1: F35 Push notification setup + schedule
 
 - Install expo-notifications + app.json plugin + permissions.

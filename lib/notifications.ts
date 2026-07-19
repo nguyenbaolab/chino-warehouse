@@ -1,7 +1,13 @@
 import { Platform } from 'react-native'
 import * as Notifications from 'expo-notifications'
 import { supabase } from './supabase'
-import { buildExpiryCounts, type ExpiryCounts } from '../utils/expiryCountUtils'
+import {
+  buildScheduleExpiryCounts,
+  formatWhMarketLabel,
+  type DailyExpiryCounts,
+  type ExpiryModeCounts,
+  type ScheduleExpiryCounts,
+} from '../utils/expiryCountUtils'
 import type { InventoryEntry, Location, Product, Zone } from '../types'
 
 export type AppSettings = {
@@ -11,7 +17,16 @@ export type AppSettings = {
   updated_at?: string
 }
 
+export type { DailyExpiryCounts, ExpiryModeCounts, ScheduleExpiryCounts }
+
 const CHANNEL_ID = 'expiry-alerts'
+
+const DAY_LABELS: { key: keyof DailyExpiryCounts; prefix: string }[] = [
+  { key: 'day0', prefix: 'Hôm nay' },
+  { key: 'day1', prefix: '1 ngày tới' },
+  { key: 'day2', prefix: '2 ngày tới' },
+  { key: 'day3', prefix: '3 ngày tới' },
+]
 
 /** Handler khi nhận notification lúc app foreground */
 export function setupNotificationHandler(): void {
@@ -60,48 +75,35 @@ function parseNotificationTime(time: string): { hour: number; minute: number } {
   return { hour, minute }
 }
 
-/** Ghép "X lô (kho) · Y SP (siêu thị)" — bỏ phần count = 0 */
-function formatWhMarket(warehouse: number, market: number): string | null {
-  const parts: string[] = []
-  if (warehouse > 0) parts.push(`${warehouse} lô (kho)`)
-  if (market > 0) parts.push(`${market} SP (siêu thị)`)
-  return parts.length > 0 ? parts.join(' · ') : null
+/** Daily: 4 mốc exact-day, join "\n"; null nếu cả 4 = 0 */
+function buildDailyBody(daily: DailyExpiryCounts): string | null {
+  const lines: string[] = []
+  for (const { key, prefix } of DAY_LABELS) {
+    const part = formatWhMarketLabel(daily[key].warehouse, daily[key].market)
+    if (part) lines.push(`${prefix}: ${part}`)
+  }
+  return lines.length > 0 ? lines.join('\n') : null
 }
 
-function buildDailyBody(counts: ExpiryCounts): string | null {
-  const todayPart = formatWhMarket(
-    counts.todayExpiredWarehouse,
-    counts.todayExpiredMarket,
-  )
-  const threePart = formatWhMarket(
-    counts.threeDayExpiredWarehouse,
-    counts.threeDayExpiredMarket,
-  )
-  const sections: string[] = []
-  if (todayPart) sections.push(`Hôm nay: ${todayPart} hết hạn`)
-  if (threePart) sections.push(`3 ngày tới: ${threePart}`)
-  return sections.length > 0 ? sections.join(' · ') : null
-}
-
-function buildWeeklyBody(counts: ExpiryCounts): string | null {
-  const part = formatWhMarket(counts.weekExpiredWarehouse, counts.weekExpiredMarket)
+function buildWeeklyBody(weekly: ExpiryModeCounts): string | null {
+  const part = formatWhMarketLabel(weekly.warehouse, weekly.market)
   if (!part) return null
   return `Tuần này: ${part} hết hạn trong 7 ngày`
 }
 
-function buildMonthlyBody(counts: ExpiryCounts): string | null {
-  const part = formatWhMarket(counts.monthExpiredWarehouse, counts.monthExpiredMarket)
+function buildMonthlyBody(monthly: ExpiryModeCounts): string | null {
+  const part = formatWhMarketLabel(monthly.warehouse, monthly.market)
   if (!part) return null
   return `Tháng này: ${part} hết hạn`
 }
 
 /**
- * Xóa schedule cũ rồi đặt lại daily / weekly / monthly.
- * Monthly dùng trigger MONTHLY (ngày 1) — nội dung vẫn cần reschedule khi mở app (KI-062).
+ * Xóa schedule cũ rồi đặt lại daily / weekly / monthly — 3 identifier riêng,
+ * schedule độc lập (OS hiện 3 dòng khi trùng ngày, vd. Thứ Hai ngày 1).
  */
 export async function scheduleAllNotifications(
   settings: AppSettings,
-  counts: ExpiryCounts,
+  counts: ScheduleExpiryCounts,
 ): Promise<void> {
   await cancelAllNotifications()
 
@@ -109,12 +111,12 @@ export async function scheduleAllNotifications(
 
   const { hour, minute } = parseNotificationTime(settings.notification_time)
 
-  const dailyBody = buildDailyBody(counts)
+  const dailyBody = buildDailyBody(counts.daily)
   if (dailyBody) {
     await Notifications.scheduleNotificationAsync({
       identifier: 'daily-expiry',
       content: {
-        title: "Chino's Warehouse",
+        title: "Chino's Warehouse — Hết hạn",
         body: dailyBody,
         sound: true,
       },
@@ -127,12 +129,12 @@ export async function scheduleAllNotifications(
     })
   }
 
-  const weeklyBody = buildWeeklyBody(counts)
+  const weeklyBody = buildWeeklyBody(counts.weekly)
   if (weeklyBody) {
     await Notifications.scheduleNotificationAsync({
       identifier: 'weekly-expiry',
       content: {
-        title: "Chino's Warehouse",
+        title: "Chino's Warehouse — Hết hạn tuần",
         body: weeklyBody,
         sound: true,
       },
@@ -146,12 +148,12 @@ export async function scheduleAllNotifications(
     })
   }
 
-  const monthlyBody = buildMonthlyBody(counts)
+  const monthlyBody = buildMonthlyBody(counts.monthly)
   if (monthlyBody) {
     await Notifications.scheduleNotificationAsync({
       identifier: 'monthly-expiry',
       content: {
-        title: "Chino's Warehouse",
+        title: "Chino's Warehouse — Hết hạn tháng",
         body: monthlyBody,
         sound: true,
       },
@@ -166,7 +168,7 @@ export async function scheduleAllNotifications(
   }
 }
 
-/** Fetch settings + data → tính counts → schedule (gọi sau login / sau admin đổi setting) */
+/** Fetch settings + data → 4 exact-day + 2 range → schedule (sau login / admin đổi) */
 export async function bootstrapExpiryNotifications(): Promise<void> {
   try {
     setupNotificationHandler()
@@ -211,7 +213,7 @@ export async function bootstrapExpiryNotifications(): Promise<void> {
       console.error('[notifications] fetch zones:', zonesRes.error)
     }
 
-    const counts = buildExpiryCounts(
+    const counts = buildScheduleExpiryCounts(
       (entriesRes.data ?? []) as InventoryEntry[],
       (productsRes.data ?? []) as Product[],
       (locationsRes.data ?? []) as Location[],

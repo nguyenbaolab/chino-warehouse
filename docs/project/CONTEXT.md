@@ -109,7 +109,7 @@ lib/
   notifications.ts             # F35 — permission + schedule/cancel + bootstrap
   presence.ts
 utils/
-  expiryCountUtils.ts          # F35 — đếm lô/SP hết hạn theo window + warehouse/market
+  expiryCountUtils.ts          # F35 — countExpiringEntriesExactDay + range; warehouse=lô / market=SP
 stores/
   authStore.ts        # F24 — currentUserProfile, fetch/clear, updateLastLogin RPC
   themeStore.ts
@@ -234,11 +234,13 @@ README.md
 
 **Config shared:** bảng `app_settings` (1 row) — `notification_enabled`, `notification_time` (`HH:MM`). RLS: mọi authenticated đọc; admin+ update.
 
-**Code:** `lib/notifications.ts` (`setupNotificationHandler`, `requestNotificationPermission`, `scheduleAllNotifications`, `cancelAllNotifications`, `bootstrapExpiryNotifications`); `utils/expiryCountUtils.ts` (local date, windows 0/3/7/30, warehouse=lô / market=SP).
+**Code:** `lib/notifications.ts` (`setupNotificationHandler`, `requestNotificationPermission`, `scheduleAllNotifications`, `cancelAllNotifications`, `bootstrapExpiryNotifications`); `utils/expiryCountUtils.ts` — `countExpiringEntriesExactDay` (0–3), `countExpiringEntries` (7/30 range), `buildScheduleExpiryCounts`.
 
-**Bootstrap:** sau login (profile OK) → permission (denied = im lặng) → fetch settings + data → schedule 3 loại. Logout → cancel all.
+**Daily body:** 4 mốc exact-day (Hôm nay / 1 / 2 / 3 ngày tới), join `\n`, bỏ mốc count=0; title «… — Hết hạn». **Weekly / Monthly:** range; title «… — Hết hạn tuần/tháng». **3 identifier riêng** — schedule độc lập cùng giờ (không gộp khi trùng ngày).
 
-**UI:** `ExpiryAlertScreen` — note giải thích, admin Switch + HH:MM; non-admin disabled.
+**UI:** `ExpiryAlertScreen` — note + admin Switch + HH:MM; **6 section** count headers (4 mốc + tuần + tháng); C-part2 = FlatList entries.
+
+**Bootstrap:** sau login → permission (denied = im lặng) → `buildScheduleExpiryCounts` → schedule 3 loại. Logout → cancel all.
 
 **Limitation:** KI-062 — nội dung tĩnh đến lần mở app tiếp theo.
 

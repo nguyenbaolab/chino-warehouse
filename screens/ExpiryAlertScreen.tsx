@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -20,8 +20,47 @@ import {
   bootstrapExpiryNotifications,
   type AppSettings,
 } from '../lib/notifications'
+import {
+  buildScheduleExpiryCounts,
+  formatWhMarketLabel,
+  type ExpiryModeCounts,
+  type ScheduleExpiryCounts,
+} from '../utils/expiryCountUtils'
+import type { InventoryEntry, Location, Product, Zone } from '../types'
 
-/** F35 C-part1 — cài đặt thông báo hết hạn (admin toggle + giờ). C-part2: danh sách. */
+type SectionDef =
+  | { key: string; label: string; kind: 'exact'; daysFromToday: 0 | 1 | 2 | 3 }
+  | { key: string; label: string; kind: 'week' }
+  | { key: string; label: string; kind: 'month' }
+
+const SECTION_DEFS: SectionDef[] = [
+  { key: 'today', label: 'Hôm nay', kind: 'exact', daysFromToday: 0 },
+  { key: 'day1', label: '1 ngày tới', kind: 'exact', daysFromToday: 1 },
+  { key: 'day2', label: '2 ngày tới', kind: 'exact', daysFromToday: 2 },
+  { key: 'day3', label: '3 ngày tới', kind: 'exact', daysFromToday: 3 },
+  { key: 'week', label: 'Tuần này (7 ngày)', kind: 'week' },
+  { key: 'month', label: 'Tháng này', kind: 'month' },
+]
+
+function countsForSection(
+  def: SectionDef,
+  schedule: ScheduleExpiryCounts | null,
+): ExpiryModeCounts {
+  if (!schedule) return { warehouse: 0, market: 0 }
+  if (def.kind === 'exact') {
+    const map = [
+      schedule.daily.day0,
+      schedule.daily.day1,
+      schedule.daily.day2,
+      schedule.daily.day3,
+    ] as const
+    return map[def.daysFromToday]
+  }
+  if (def.kind === 'week') return schedule.weekly
+  return schedule.monthly
+}
+
+/** F35 — cài đặt thông báo + 6 section count (C-part2: danh sách). */
 export default function ExpiryAlertScreen() {
   const navigation = useNavigation<any>()
   const { colors } = useThemeStore()
@@ -32,33 +71,64 @@ export default function ExpiryAlertScreen() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [hourDraft, setHourDraft] = useState('11')
   const [minuteDraft, setMinuteDraft] = useState('00')
+  const [scheduleCounts, setScheduleCounts] = useState<ScheduleExpiryCounts | null>(
+    null,
+  )
 
   const lastFetchRef = useRef(0)
   const FOCUS_FETCH_TTL_MS = 30_000
 
-  const loadSettings = useCallback(async () => {
+  const loadAll = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('app_settings')
-      .select('id, notification_enabled, notification_time, updated_at')
-      .limit(1)
-      .maybeSingle()
+    try {
+      const [settingsRes, entriesRes, productsRes, locationsRes, zonesRes] =
+        await Promise.all([
+          supabase
+            .from('app_settings')
+            .select('id, notification_enabled, notification_time, updated_at')
+            .limit(1)
+            .maybeSingle(),
+          supabase.from('inventory_entries').select('*'),
+          supabase.from('products').select('*').eq('is_archived', false),
+          supabase.from('locations').select('*'),
+          supabase.from('zones').select('*'),
+        ])
 
-    if (error) {
-      if (__DEV__) console.error('[ExpiryAlert] fetch app_settings:', error)
-      Alert.alert('Lỗi', 'Không tải được cài đặt thông báo.')
+      if (settingsRes.error) {
+        if (__DEV__) console.error('[ExpiryAlert] fetch app_settings:', settingsRes.error)
+        Alert.alert('Lỗi', 'Không tải được cài đặt thông báo.')
+      } else if (settingsRes.data) {
+        const row = settingsRes.data as AppSettings
+        setSettings(row)
+        const [h, m] = (row.notification_time || '11:00').split(':')
+        setHourDraft(h?.padStart(2, '0') ?? '11')
+        setMinuteDraft(m?.padStart(2, '0') ?? '00')
+      }
+
+      if (entriesRes.error && __DEV__) {
+        console.error('[ExpiryAlert] fetch entries:', entriesRes.error)
+      }
+      if (productsRes.error && __DEV__) {
+        console.error('[ExpiryAlert] fetch products:', productsRes.error)
+      }
+      if (locationsRes.error && __DEV__) {
+        console.error('[ExpiryAlert] fetch locations:', locationsRes.error)
+      }
+      if (zonesRes.error && __DEV__) {
+        console.error('[ExpiryAlert] fetch zones:', zonesRes.error)
+      }
+
+      setScheduleCounts(
+        buildScheduleExpiryCounts(
+          (entriesRes.data ?? []) as InventoryEntry[],
+          (productsRes.data ?? []) as Product[],
+          (locationsRes.data ?? []) as Location[],
+          (zonesRes.data ?? []) as Zone[],
+        ),
+      )
+    } finally {
       setLoading(false)
-      return
     }
-
-    if (data) {
-      const row = data as AppSettings
-      setSettings(row)
-      const [h, m] = (row.notification_time || '11:00').split(':')
-      setHourDraft(h?.padStart(2, '0') ?? '11')
-      setMinuteDraft(m?.padStart(2, '0') ?? '00')
-    }
-    setLoading(false)
   }, [])
 
   useFocusEffect(
@@ -66,8 +136,22 @@ export default function ExpiryAlertScreen() {
       const now = Date.now()
       if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
       lastFetchRef.current = now
-      void loadSettings()
-    }, [loadSettings]),
+      void loadAll()
+    }, [loadAll]),
+  )
+
+  const sections = useMemo(
+    () =>
+      SECTION_DEFS.map((def) => {
+        const c = countsForSection(def, scheduleCounts)
+        const labelCounts = formatWhMarketLabel(c.warehouse, c.market)
+        return {
+          ...def,
+          subtitle: labelCounts ?? 'Không có',
+          counts: c,
+        }
+      }),
+    [scheduleCounts],
   )
 
   async function persistAndReschedule(patch: {
@@ -140,7 +224,7 @@ export default function ExpiryAlertScreen() {
         <View style={{ width: 72 }} />
       </View>
 
-      {loading && !settings ? (
+      {loading && !settings && !scheduleCounts ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={colors.accent} />
       ) : (
         <ScrollView
@@ -149,7 +233,7 @@ export default function ExpiryAlertScreen() {
         >
           <Text style={[styles.note, { color: colors.sub }]}>
             {`Thông báo tự động về hàng hết hạn:
-• Hàng ngày: hàng hết hạn hôm nay và 3 ngày tới
+• Hàng ngày: 4 mốc đếm ngược (hôm nay / 1 / 2 / 3 ngày tới)
 • Thứ Hai hàng tuần: hàng hết hạn trong 7 ngày
 • Ngày 1 hàng tháng: hàng hết hạn trong tháng
 
@@ -249,7 +333,37 @@ Số liệu trong thông báo được cập nhật mỗi khi có người mở 
             </View>
           </View>
 
-          {/* C-part2: 4 section Hôm nay / 3 ngày / Tuần / Tháng */}
+          <Text style={[styles.sectionTitle, { color: colors.sub }]}>
+            Hàng hết hạn
+          </Text>
+
+          {sections.map((sec) => (
+            <View
+              key={sec.key}
+              style={[
+                styles.sectionCard,
+                { backgroundColor: colors.card, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.sectionLabel, { color: colors.text }]}>
+                {sec.label}
+              </Text>
+              <Text
+                style={[
+                  styles.sectionCount,
+                  {
+                    color:
+                      sec.counts.warehouse === 0 && sec.counts.market === 0
+                        ? colors.sub
+                        : colors.text,
+                  },
+                ]}
+              >
+                {sec.subtitle}
+              </Text>
+              {/* C-part2: FlatList danh sách entries */}
+            </View>
+          ))}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -313,4 +427,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
   },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 8,
+    textTransform: 'uppercase',
+  },
+  sectionCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 10,
+  },
+  sectionLabel: { fontSize: 15, fontWeight: '700' },
+  sectionCount: { fontSize: 13, marginTop: 4 },
 })
