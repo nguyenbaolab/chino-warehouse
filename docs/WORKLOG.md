@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: ProductsScreen filter inventory đủ data (KI-064)
+
+- ProductsScreen: `useEffect([filterMode, filterLocationId])` — có kho → `fetchInventoryByLocation`; không → `fetchAllInventoryEntries`.
+- Store: `fetchInventoryByLocationSilent` lấy zone IDs từ DB theo `location_id` (không phụ thuộc Map `store.zones`) + MERGE; skip khi `fetchAll` in-flight.
+- Docs: KNOWN_ISSUES KI-064 Resolved.
+
+---
+
 ## [tháng 7/2026] — F34: revert picking in_progress → draft
 
 - Store: `revertPickingToDraft` — chỉ `updatePickingList({ status: 'draft' })`; giữ nguyên `is_picked`.

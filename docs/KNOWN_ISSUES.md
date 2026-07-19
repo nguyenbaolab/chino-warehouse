@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-064] ProductsScreen filter Mode/Kho thiếu inventoryEntries (SP siêu thị biến mất)
+
+- **Mức độ:** Medium (UX filter sai)
+- **File liên quan:** `screens/ProductsScreen.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** Filter Mode/Kho client-side dựa trên `store.inventoryEntries`. Map Realtime `fetchInventoryByLocation` chỉ merge theo `store.zones` của kho đang chọn → entries siêu thị thiếu → filter market/warehouse sai. Race `fetchAllInventoryEntries` vs location-merge cũng có thể đè data.
+- **Hướng fix:** Products refetch theo `filterMode`/`filterLocationId`; `fetchInventoryByLocationSilent` query zones theo `location_id` từ DB + MERGE; skip location-fetch khi `fetchAll` đang chạy.
+- **Trạng thái:** Resolved
+- **Đã fix:** useEffect filter fetch; zones-by-location từ DB; flag `allInventoryFetchInFlight`.
+- **Tham chiếu:** F36 FilterModal, KI-063
+
+---
+
 ### [KI-063] Realtime refetch → Map spinner / mất form đang nhập
 
 - **Mức độ:** High (UX multi-user)

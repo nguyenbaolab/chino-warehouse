@@ -50,7 +50,7 @@ export default function ProductsScreen() {
     productCategoriesL2,
     fetchProducts,
     fetchProductsPage,
-    fetchInventoryByZone,
+    fetchInventoryByLocation,
     fetchAllInventoryEntries,
     fetchCategories,
     addProduct,
@@ -184,10 +184,15 @@ export default function ProductsScreen() {
     }
   }, [filterMode, filterLocations, filterLocationId])
 
+  // KI-064: đảm bảo inventoryEntries đủ cho filter Mode/Kho (không phụ thuộc Map realtime)
   useEffect(() => {
-    if (filterLocationId) return
+    if (filterLocationId) {
+      void fetchInventoryByLocation(filterLocationId)
+      return
+    }
+    // all | warehouse | market chưa chọn kho → cần full entries để match modeZoneIds
     void fetchAllInventoryEntries()
-  }, [filterLocationId, fetchAllInventoryEntries])
+  }, [filterMode, filterLocationId, fetchInventoryByLocation, fetchAllInventoryEntries])
 
   useEffect(() => {
     if (!filterLocationId) {
@@ -207,11 +212,6 @@ export default function ProductsScreen() {
       cancelled = true
     }
   }, [filterLocationId])
-
-  useEffect(() => {
-    if (!filterLocationId || zonesForFilterLoc.length === 0) return
-    void Promise.all(zonesForFilterLoc.map((z) => fetchInventoryByZone(z.id)))
-  }, [filterLocationId, zonesForFilterLoc, fetchInventoryByZone])
 
   useEffect(() => {
     setSelectedZoneId(null)

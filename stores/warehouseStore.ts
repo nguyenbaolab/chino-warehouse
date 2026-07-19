@@ -22,6 +22,10 @@ import {
   InternalNote,
 } from '../types'
 
+/** KI-064 — chặn Realtime location-merge ghi đè khi đang fetch full inventory */
+let allInventoryFetchInFlight = false
+let allInventoryFetchSeq = 0
+
 type WarehouseStore = {
   locations: Location[]
   selectedLocationId: string | null
@@ -76,7 +80,7 @@ type WarehouseStore = {
   fetchInventoryByZone: (zoneId: string) => Promise<InventoryEntry[]>
   /** Một query cho mọi zone của kho — set inventoryEntries một lần. */
   fetchInventoryByLocation: (locationId: string) => Promise<void>
-  /** Realtime — cùng logic fetchInventoryByLocation (không đụng isLoading) */
+  /** Realtime / Products filter — MERGE theo location; zone IDs từ DB (KI-064) */
   fetchInventoryByLocationSilent: (locationId: string) => Promise<void>
   fetchAllInventoryEntries: () => Promise<{ error: string | null }>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
@@ -658,14 +662,21 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   fetchInventoryByLocationSilent: async (locationId) => {
-    const zoneList = get().zones.filter((z) => z.location_id === locationId)
-    const zoneIds = zoneList.map((z) => z.id)
+    // Đang fetch full → bỏ qua (tránh merge partial đè / race với set toàn bộ)
+    if (allInventoryFetchInFlight) return
+
+    // Zone IDs theo location từ DB — không phụ thuộc store.zones (Map có thể đang ở kho khác)
+    const { data: zoneRows } = await supabase
+      .from('zones')
+      .select('id')
+      .eq('location_id', locationId)
+
+    if (allInventoryFetchInFlight) return
+
+    const zoneIds = ((zoneRows as { id: string }[]) ?? []).map((z) => z.id)
     const zoneIdSet = new Set(zoneIds)
 
     if (zoneIds.length === 0) {
-      set((s) => ({
-        inventoryEntries: s.inventoryEntries.filter((entry) => !zoneIdSet.has(entry.zone_id)),
-      }))
       return
     }
 
@@ -674,7 +685,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .select('*, product:products(*), zone:zones(*)')
       .in('zone_id', zoneIds)
 
+    if (allInventoryFetchInFlight) return
+
     const entries = data || []
+    // MERGE: giữ entries kho/location khác, chỉ thay entries thuộc zone set này
     set((s) => ({
       inventoryEntries: [
         ...s.inventoryEntries.filter((entry) => !zoneIdSet.has(entry.zone_id)),
@@ -684,15 +698,26 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   fetchAllInventoryEntries: async () => {
-    const { data, error } = await supabase
-      .from('inventory_entries')
-      .select('*, product:products(*), zone:zones(*)')
-    if (error) {
-      if (__DEV__) console.error('[warehouseStore] fetchAllInventoryEntries:', error)
-      return { error: getErrorMessage(error, 'fetch') }
+    const seq = ++allInventoryFetchSeq
+    allInventoryFetchInFlight = true
+    try {
+      const { data, error } = await supabase
+        .from('inventory_entries')
+        .select('*, product:products(*), zone:zones(*)')
+      if (error) {
+        if (__DEV__) console.error('[warehouseStore] fetchAllInventoryEntries:', error)
+        return { error: getErrorMessage(error, 'fetch') }
+      }
+      // Chỉ apply nếu vẫn là lần fetchAll mới nhất
+      if (seq === allInventoryFetchSeq) {
+        set({ inventoryEntries: data ?? [] })
+      }
+      return { error: null }
+    } finally {
+      if (seq === allInventoryFetchSeq) {
+        allInventoryFetchInFlight = false
+      }
     }
-    set({ inventoryEntries: data ?? [] })
-    return { error: null }
   },
 
   /** Tìm theo tên SP trên mọi kho — filter `store.products` local (normalizeText), rồi query lô theo product IDs. */
