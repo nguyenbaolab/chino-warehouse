@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: Closeout Phase 5 + Planning Phase 6
+
+- `SUMMARY_5.md`: tổng kết Phase 5 (B+C done, UX fixes, KI-069/070).
+- `HANDOFF_5.md`: bàn giao Phase 5, carry F27 → Phase 6.
+- `PLAN_6.md`: 15 tasks (A–F): F27 carry, Picking UX, Products picking, Hàng giảm giá, SearchableDropdown, Settings redesign.
+- REQUIREMENTS v1.3.35, PLAN_5 → Closed.
+
+---
+
 ## [tháng 7/2026] — fix: crash presence channel sau re-login (KI-070)
 
 - `lib/presence.ts`: topic `presence:warehouse-online-${Date.now()}` — unique per session, tránh đụng channel cũ còn `SUBSCRIBED`.

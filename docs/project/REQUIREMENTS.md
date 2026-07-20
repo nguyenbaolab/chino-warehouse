@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.34 | Tháng 7/2026
+**Phiên bản:** 1.3.35 | Tháng 7/2026
 
+> **v1.3.35** — Phase 5 Closed; Phase 6 Planning: F27 carry, Picking UX (B1–B5), Products picking (C1–C2), Hàng giảm giá (D1–D4), SearchableDropdown (E1–E2), Settings redesign (F1). Xem `PLAN_6.md`.
 > **v1.3.34** — Products: Mode Tất cả (catalog đủ) default; qty theo location type (cách A); ProductDetail tên kho không phụ thuộc appMode
 > **v1.3.33** — ProductsScreen FilterModal: bỏ Mode «Tất cả»; bắt buộc Kho/Siêu thị; qty unit theo filterMode local *(superseded bởi v1.3.34)*
 > **v1.3.32** — F34: revert `in_progress` → `draft` (Quay lại chỉnh sửa); giữ `is_picked`
@@ -394,7 +395,8 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | **Phase 2** | Đã giao: **F20**, **F29**, **F30**, fix Thông báo. Kế hoạch / design: **F27** mở rộng (2 tab, active list, PDF tổng hợp, grouping); còn F08 ảnh, F19 chuyển hàng, F21 offline, F26 kiểm kho, … | Mở rộng vận hành đa kho, đặt hàng, phân loại |
 | **Phase 3** | **Bug fixes (A1–A5):** DD/MM/YYYY hạn (KI-044), ProductsScreen barcode/X/search (KI-045), zone overlap (KI-046), Map barcode text search (KI-047), conflict detection `updated_at` (KI-048). **UX (B1–B8):** badge giảm giá, chuyển lô cùng zone, `normalizeText`, MM/YYYY→ngày 1, hint AddInventory, sửa tên ZoneDetail, Map scan→sheet scroll, toggle cảnh báo global. **Realtime (C1):** zones Realtime trên Map. **Hoàn thiện:** F27 (2 tab + PDF), F28 (`discontinued_reason`), F08 (ảnh SP). **Mới:** F23 Dashboard, F24 RBAC (`user_profiles`), **F31 Internal Notes**. **Bổ sung (Group F):** F1 navigation scanner (KI-057), F2 block xóa lô (KI-058), F3 sync `is_archived`, F4 tap kho→Map, F5 filter chưa ảnh, **F7** barcode autofill AddInventory, **F8** dời lô bằng map. **Security:** SEC-05, SEC-06. **Dropped:** F19. | Ổn định multi-user, UX vận hành, đặt hàng/PDF, RBAC, ghi chú nội bộ |
 | **Phase 4** | **Closed.** **F36 Market mode** Done (C1–C4); **F32** Done; KI-039/040/050 Done; SEC-10/12/13/14 Done (H1–H4). **F27 mở rộng** carry → Phase 5. **F34/F35 / F21/F25/F26 / KI-026** → Phase 5. **F19/F33 Dropped.** Xem `SUMMARY_4.md`, `PLAN_4.md`. | Market first-class + vận hành |
-| **Phase 5** | **F27 mở rộng** (A1); **F34** Picking list; **F35** Push notification; optional **F21/F25/F26**; Expo major upgrade; KI-026 optional. Xem `PLAN_5.md`. | Hoàn thiện đặt hàng / picking / push |
+| **Phase 5** | **Closed.** **F34** Picking Done; **F35** Push Done; UX/bugfixes (KI-063/064/066/068/069/070). **F27 mở rộng** carry → Phase 6. Optional F21/F25/F26 / Expo / KI-026 deferred. Xem `SUMMARY_5.md`, `HANDOFF_5.md`. | Picking + push + ổn định |
+| **Phase 6** | **F27 mở rộng** (A1); Picking UX (B1–B5); Products picking (C1–C2); Hàng giảm giá (D1–D4); SearchableDropdown (E1–E2); Settings redesign (F1). Xem `PLAN_6.md`. | Hoàn thiện picking + giảm giá + UX |
 
 ---
 

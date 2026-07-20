@@ -1,6 +1,6 @@
 # Phase 5 — Kế hoạch
 
-**Trạng thái:** Not started | Dự kiến tháng 7–8/2026
+**Trạng thái:** Closed | Tháng 7/2026
 
 ---
 
@@ -17,6 +17,8 @@ Phase 5 hoàn thiện các feature deferred từ Phase 3–4: **F27 mở rộng*
 ## 2. Group A — Feature carry (từ Phase 3→4→5)
 
 ### A1 — F27 mở rộng: 2 tab + PDF tổng hợp
+
+> Carry → Phase 6 — xem `PLAN_6.md` Group A.
 
 - **Files:** `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, `stores/warehouseStore.ts`
 - **Tham chiếu:** `REQUIREMENTS.md` §6 F27, `DECISIONS.md` list đặt hàng 2 tab
