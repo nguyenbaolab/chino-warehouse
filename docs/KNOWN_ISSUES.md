@@ -2,6 +2,17 @@
 
 ---
 
+### [KI-069] is_special — trước đây thiếu UI toggle (đã fix)
+
+- **Mức độ:** Medium (UX gap)
+- **File liên quan:** `components/ZoneDetailSheet.tsx`, `screens/ProductDetailScreen.tsx`
+- **Mô tả:** REQUIREMENTS F36 C2 ghi toggle Hàng đặc biệt nhưng code chỉ có filter đọc, không có UI set `is_special = true`. StockCheckScreen (Kiểm hàng) list lô `is_special` nhưng user không có cách đánh dấu từ app.
+- **Trạng thái:** Resolved
+- **Đã fix:** Switch «Hàng đặc biệt» trong inline edit lô trên ZoneDetailSheet (`appMode === 'market'`) và ProductDetailScreen (`locType === 'market'`); badge ⭐ read-only trên card lô.
+- **Tham chiếu:** F36 C2, StockCheckScreen
+
+---
+
 ### [KI-066] ProductsScreen Mode filter giao `productsPage` (max 200) → thiếu SP siêu thị
 
 - **Mức độ:** High (UX — list Mode Siêu thị / Kho thiếu SP)

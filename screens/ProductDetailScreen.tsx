@@ -112,6 +112,7 @@ export default function ProductDetailScreen() {
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editLotBarcode, setEditLotBarcode] = useState('')
+  const [editIsSpecial, setEditIsSpecial] = useState(false)
   const [editWarningDays, setEditWarningDays] = useState('30')
   const [editLowWarningBoxes, setEditLowWarningBoxes] = useState('3')
   const [isEditingThresholds, setIsEditingThresholds] = useState(false)
@@ -521,6 +522,7 @@ export default function ProductDetailScreen() {
     setEditExpiryDate(isoExpiryToDisplay(lot.expiry_date))
     setEditNotes(lot.notes ?? '')
     setEditLotBarcode(lot.barcode ?? '')
+    setEditIsSpecial(lot.is_special ?? false)
   }
 
   async function handleSaveLot(lot: InventoryEntry) {
@@ -534,11 +536,15 @@ export default function ProductDetailScreen() {
       return
     }
 
+    const zoneResolved = (lot.zone as Zone | undefined) ?? zones.find((z) => z.id === lot.zone_id)
+    const locType = locationTypeOfEntry({ zone: zoneResolved ?? lot.zone }, locationById)
+
     const payload = {
       quantity_boxes: quantity,
       expiry_date: parseDisplayDateToIso(editExpiryDate),
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
+      ...(locType === 'market' ? { is_special: editIsSpecial } : {}),
     }
 
     async function doSaveLot(lotId: string, payloadToSend: Partial<InventoryEntry>) {
@@ -570,6 +576,7 @@ export default function ProductDetailScreen() {
                 expiry_date: payload.expiry_date,
                 notes: payload.notes,
                 barcode: payload.barcode,
+                ...(locType === 'market' ? { is_special: editIsSpecial } : {}),
                 updated_at: nextUpdatedAt,
               }
             : item,
@@ -1449,6 +1456,11 @@ export default function ProductDetailScreen() {
                     disabled={isReadOnly}
                   >
                     <Text style={[styles.lotTitle, { color: colors.text }]}>{lotPlaceTitle}</Text>
+                    {locType === 'market' && lot.is_special && (
+                      <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '600', marginTop: 2 }}>
+                        ⭐ Hàng đặc biệt
+                      </Text>
+                    )}
                     <Text style={[styles.lotSub, { color: colors.sub }]}>
                       {lot.quantity_boxes} {lotUnit} · Hạn: {formatExpiryDate(lot.expiry_date)}
                     </Text>
@@ -1543,6 +1555,17 @@ export default function ProductDetailScreen() {
                         <Text style={[styles.scanBarcodeText, { color: colors.card }]}>📷</Text>
                       </TouchableOpacity>
                     </View>
+
+                    {locType === 'market' && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <Text style={{ color: colors.text, fontSize: 14 }}>Hàng đặc biệt</Text>
+                        <Switch
+                          value={editIsSpecial}
+                          onValueChange={setEditIsSpecial}
+                          trackColor={{ false: colors.border, true: '#22C55E' }}
+                        />
+                      </View>
+                    )}
 
                     <View style={styles.editActions}>
                       <TouchableOpacity

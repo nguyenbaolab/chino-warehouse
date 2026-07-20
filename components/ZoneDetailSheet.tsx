@@ -8,6 +8,7 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -67,6 +68,7 @@ export default function ZoneDetailSheet({
   const insets = useSafeAreaInsets()
   const isFocused = useIsFocused()
   const {
+    appMode,
     selectedLocationId,
     fetchInventoryByZone,
     updateInventoryEntry,
@@ -88,6 +90,7 @@ export default function ZoneDetailSheet({
   const [editExpiryDate, setEditExpiryDate] = useState('')
   const [editNotes, setEditNotes] = useState('')
   const [editLotBarcode, setEditLotBarcode] = useState('')
+  const [editIsSpecial, setEditIsSpecial] = useState(false)
   const [lotSnapshotUpdatedAt, setLotSnapshotUpdatedAt] = useState<string>('')
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [productNameInput, setProductNameInput] = useState('')
@@ -221,6 +224,7 @@ export default function ZoneDetailSheet({
     setEditExpiryDate(isoExpiryToDisplay(entry.expiry_date))
     setEditNotes(entry.notes ?? '')
     setEditLotBarcode(entry.barcode ?? '')
+    setEditIsSpecial(entry.is_special ?? false)
   }
 
   async function handleSaveLot(entry: InventoryEntry) {
@@ -240,6 +244,7 @@ export default function ZoneDetailSheet({
       expiry_date: parseDisplayDateToIso(editExpiryDate),
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
+      ...(appMode === 'market' ? { is_special: editIsSpecial } : {}),
     }
 
     async function doSaveLot(entryId: string, payloadToSend: Partial<InventoryEntry>) {
@@ -741,6 +746,17 @@ export default function ZoneDetailSheet({
                                       <Text style={[styles.barcodeScanBtnText, { color: colors.card }]}>📷</Text>
                                     </TouchableOpacity>
                                   </View>
+
+                                  {appMode === 'market' && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                      <Text style={{ color: colors.text, fontSize: 14 }}>Hàng đặc biệt</Text>
+                                      <Switch
+                                        value={editIsSpecial}
+                                        onValueChange={setEditIsSpecial}
+                                        trackColor={{ false: colors.border, true: '#22C55E' }}
+                                      />
+                                    </View>
+                                  )}
 
                                   <View style={styles.editActions}>
                                     <TouchableOpacity

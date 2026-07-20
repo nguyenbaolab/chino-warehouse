@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: toggle Hàng đặc biệt (is_special) trên lô market
+
+- **ZoneDetailSheet:** Switch «Hàng đặc biệt» trong inline edit khi `appMode === 'market'`; gửi `is_special` cùng payload save.
+- **ProductDetailScreen:** badge ⭐ read-only trên card lô market + Switch trong inline edit khi `locType === 'market'`.
+- Chỉ hiện/gửi cho lô thuộc market location.
+
+---
+
 ## [tháng 7/2026] — fix: ProductsScreen tăng limit catalog 200 → 1000
 
 - `fetchProductsPage` trong `warehouseStore.ts`: `.limit(200)` → `.limit(1000)`.
