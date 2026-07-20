@@ -828,15 +828,21 @@ export default function ProductsScreen() {
           </TouchableOpacity>
         </View>
         {canWrite ? (
-          <View style={styles.cartRow}>
-            <TouchableOpacity
-              style={[styles.cartBtn, { backgroundColor: colors.accent + '26' }]}
-              onPress={() => void handleCartPress(product)}
-              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-            >
-              <Text style={{ fontSize: 16 }}>🛒</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[
+              styles.cartBtn,
+              {
+                backgroundColor: colors.accent + '26',
+                position: 'absolute',
+                bottom: 8,
+                right: 8,
+              },
+            ]}
+            onPress={() => void handleCartPress(product)}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Text style={{ fontSize: 15 }}>🛒</Text>
+          </TouchableOpacity>
         ) : null}
       </View>
     )
@@ -1394,17 +1400,12 @@ const styles = StyleSheet.create({
   pageBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   pageBtnText: { fontSize: 20, fontWeight: '700' },
   pageLabel: { fontSize: 13 },
-  item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
+  item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10, position: 'relative' },
   itemRow: { flexDirection: 'row', alignItems: 'center' },
   itemContent: { flex: 1, paddingLeft: 10 },
-  cartRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 8,
-  },
   cartBtn: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',

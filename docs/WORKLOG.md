@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(C1): nút 🛒 absolute góc dưới phải card, không tăng chiều cao
+
+- `ProductsScreen`: 🛒 `position: 'absolute'` bottom/right 8; bỏ `cartRow` (không đẩy cao card).
+
+---
+
 ## [tháng 7/2026] — feat(C1): nút 🛒 trên card SP → chọn draft → LotPickerModal
 
 - `ProductsScreen`: 🛒 (canWrite) → draft picking (0/1/2+) → `LotPickerModal` → `addPickingItem`.
