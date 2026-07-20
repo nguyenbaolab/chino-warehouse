@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(C2): cảnh báo lô trong picking khi save qty = 0
+
+- `ProductDetailScreen`: save qty = 0 → nếu lô trong picking draft/in_progress → Alert Giữ nguyên / Xóa khỏi đơn; rồi tiếp tục save.
+
+---
+
 ## [tháng 7/2026] — fix(C1): nút 🛒 absolute góc dưới phải card, không tăng chiều cao
 
 - `ProductsScreen`: 🛒 `position: 'absolute'` bottom/right 8; bỏ `cartRow` (không đẩy cao card).

@@ -95,6 +95,10 @@ export default function ProductDetailScreen() {
     setLocateIntent,
     updateProductImage,
     removeProductImage,
+    pickingLists,
+    pickingListItems,
+    fetchPickingLists,
+    deletePickingItem,
   } = useWarehouseStore()
 
   const [product, setProduct] = useState<Product | null>(null)
@@ -184,6 +188,10 @@ export default function ProductDetailScreen() {
       void fetchCategories()
     }
   }, [fetchCategories])
+
+  useEffect(() => {
+    void fetchPickingLists()
+  }, [fetchPickingLists])
 
   useEffect(() => {
     let cancelled = false
@@ -534,6 +542,51 @@ export default function ProductDetailScreen() {
     if (!isValidDisplayDate(editExpiryDate)) {
       Alert.alert('Hạn không hợp lệ', 'Hạn sử dụng phải theo định dạng DD/MM/YYYY hoặc MM/YYYY.')
       return
+    }
+
+    // C2: qty = 0 → hỏi nếu lô đang trong picking draft/in_progress
+    if (quantity === 0) {
+      const activePickingItems = pickingListItems.filter((item) => {
+        if (item.inventory_entry_id !== lot.id) return false
+        const list = pickingLists.find((l) => l.id === item.picking_list_id)
+        return list?.status === 'draft' || list?.status === 'in_progress'
+      })
+
+      if (activePickingItems.length > 0) {
+        const listNames = activePickingItems
+          .map((item) => {
+            const list = pickingLists.find((l) => l.id === item.picking_list_id)
+            return list?.title ?? 'Đơn lấy hàng'
+          })
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(', ')
+
+        await new Promise<void>((resolve) => {
+          Alert.alert(
+            'Lô đang trong đơn lấy hàng',
+            `Lô này đang có trong: ${listNames}. Bạn muốn làm gì?`,
+            [
+              {
+                text: 'Giữ nguyên trong đơn',
+                style: 'cancel',
+                onPress: () => resolve(),
+              },
+              {
+                text: 'Xóa khỏi đơn lấy hàng',
+                style: 'destructive',
+                onPress: () => {
+                  void (async () => {
+                    for (const item of activePickingItems) {
+                      await deletePickingItem(item.id)
+                    }
+                    resolve()
+                  })()
+                },
+              },
+            ],
+          )
+        })
+      }
     }
 
     const zoneResolved = (lot.zone as Zone | undefined) ?? zones.find((z) => z.id === lot.zone_id)
