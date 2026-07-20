@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(notifications): card tap toggle expand + thumbnail ảnh SP
+
+- Tab hết hạn: bỏ «Chi tiết»; tap card = expand; tap tên → ProductDetail; thumb 64×64 + zoom.
+
+---
+
 ## [tháng 7/2026] — feat(D2): NotificationsScreen redesign card + badge discount_percent
 
 - Tab hết hạn: card 3 hàng (tên / qty+badge / Chi tiết); badge «Giảm X%»; lô expand hiện % giảm.
