@@ -178,7 +178,7 @@ export default function PickingDetailScreen() {
           productIdsWithStock.has(p.id) &&
           normalizeText(p.name).includes(q),
       )
-      .slice(0, 5)
+      .slice(0, 20)
   }, [products, searchQuery, productIdsWithStock, selectedProduct])
 
   const lotsForSelected = useMemo(() => {
