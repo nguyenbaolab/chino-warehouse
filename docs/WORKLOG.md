@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(D2): NotificationsScreen redesign card + badge discount_percent
+
+- Tab hết hạn: card 3 hàng (tên / qty+badge / Chi tiết); badge «Giảm X%»; lô expand hiện % giảm.
+
+---
+
 ## [tháng 7/2026] — feat(D1): thêm cột discount_percent vào inventory_entries (schema v5.2)
 
 - Migration `20260721014051_add_discount_percent_to_inventory_entries.sql`; `schema.sql` v5.2; `InventoryEntry.discount_percent`.

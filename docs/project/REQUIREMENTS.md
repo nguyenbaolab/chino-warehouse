@@ -4,6 +4,7 @@
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
 **Phiên bản:** 1.3.35 | Tháng 7/2026
 
+> **v1.3.38** — D2: Notifications tab hết hạn — card 3 hàng + badge `discount_percent` («Giảm X%» / «Giảm giá»).
 > **v1.3.37** — D1: `inventory_entries.discount_percent` NUMERIC(5,2) 0–100 NULL; schema v5.2 (UI D2–D4 sau).
 > **v1.3.36** — F34 C2: ProductDetail save qty = 0 → Alert nếu lô trong picking draft/in_progress (Giữ nguyên / Xóa khỏi đơn).
 > **v1.3.35** — Phase 5 Closed; Phase 6 Planning: F27 carry, Picking UX (B1–B5), Products picking (C1–C2), Hàng giảm giá (D1–D4), SearchableDropdown (E1–E2), Settings redesign (F1). Xem `PLAN_6.md`.
@@ -133,7 +134,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F15 | Thêm lô hàng vào kho | Gán sản phẩm vào zone + tầng + kho: số thùng, hạn, ghi chú, **barcode lô (optional)**. Ô tìm SP: **📷** — `searchByBarcode` (lô còn) hoặc fallback **`lookupProductByBarcode`** (`product_barcodes`, kể SP hết lô) → điền tên vào ô tìm (user tự chọn từ gợi ý, không auto-select) + hint tránh trùng tên · **+ Tạo mới '[tên]'** cuối gợi ý · không kết quả → **Tạo sản phẩm mới**. **F7 (Phase 3):** sau quét barcode, khi user **bấm chọn** SP từ dropdown → ô barcode lô **tự điền** mã vừa quét; gõ tên thủ công → barcode giữ trống. **B2:** trước save barcode → `checkBarcodeConflict` (block + Alert + audit `CONFLICT` qua RPC); sau save OK → `upsertProductBarcode`. Cùng pattern trên **ProductDetail** / **ZoneDetailSheet** inline edit lô. | P1 | MVP | Done *(barcode autofill: F7 Phase 3)* |
 | F16 | Sửa / Xóa / Chuyển lô hàng | Cập nhật số thùng, hạn, ghi chú. Xóa khi hết hàng. Truy cập từ màn hình chi tiết (F07). **Chuyển lô** tại `ZoneDetailSheet`: **F8 (Phase 3)** — chọn zone đích bằng **map toàn màn hình** (tap zone → chọn tầng → confirm), thay list dropdown. | P1 | MVP | Done *(dời lô map: F8 Phase 3)* |
 | F17 | Đồng bộ thời gian thực | Mọi thay đổi đẩy lên cloud ngay. Tất cả thiết bị thấy cập nhật trong vài giây (Supabase Realtime). | P1 | MVP | Done |
-| F18 | Thông báo trong app | Tab Thông báo tách thành 2 tab con **Sắp hết hạn / Sắp hết hàng**. Tab Sắp hết hạn: toggle **Đã giảm giá**; **date range** Từ (mặc định hôm nay) — Đến (mặc định +30 ngày); dropdown **Tất cả / Kho / Siêu thị** (`location.type`). Tab Sắp hết hàng: checkbox hết/sắp hết + nút **Thêm vào danh sách nhập** / **Không nhập nữa**; chỉ dropdown type (không date range). | P2 | MVP+ | Done *(Phase 4 C3: date range + type filter)* |
+| F18 | Thông báo trong app | Tab Thông báo tách thành 2 tab con **Sắp hết hạn / Sắp hết hàng**. Tab Sắp hết hạn: card **3 hàng** (tên full / qty+badge / Chi tiết); toggle **Đã giảm giá**; badge **`discount_percent`** («Giảm X%» hoặc «Giảm giá» nếu nhiều mức); **date range** Từ (mặc định hôm nay) — Đến (mặc định +30 ngày); dropdown **Tất cả / Kho / Siêu thị** (`location.type`). Tab Sắp hết hàng: checkbox hết/sắp hết + nút **Thêm vào danh sách nhập** / **Không nhập nữa**; chỉ dropdown type (không date range). | P2 | MVP+ | Done *(Phase 4 C3: date range + type filter; Phase 6 D2: card + %)* |
 | F19 | Chuyển hàng giữa khu vực | Chuyển hàng từ kho lên siêu thị hoặc giữa các kho: trừ thùng ở nguồn, cộng thùng ở đích. **(Dropped — không phù hợp nghiệp vụ thực tế, không implement)** | P2 | — | Dropped |
 | F20 | Bản đồ nhiều khu vực | Dropdown selector thay thế pill "Kho" trên MapScreen để chuyển đổi giữa các kho (bottom sheet: tên + grid size, ✓ kho đang chọn, nút Thêm kho mới → Cài đặt). Tạo kho mới: nhập tên + grid size (rows × cols, không giới hạn max). Sau khi tạo vẫn cho đổi grid size — tăng thoải mái, giảm chỉ được nếu không có zone nào bị cắt ra ngoài. Xóa kho: block nếu còn **bất kỳ** bản ghi `inventory_entries` nào trong zones của kho đó (kể cả lô 0 thùng chưa xóa thủ công). Tab Sản phẩm / Thông báo: dropdown lọc theo kho (không chọn = logic riêng từng màn — xem CONTEXT §3). Tab Đặt hàng không có dropdown kho. Quản lý kho (đổi tên, xóa) trong Settings → Quản lý kho. Fix KI-004 (đổi kho → clear search). | P2 | Phase 2 | Done |
 | F21 | Chế độ offline | Lưu dữ liệu cục bộ, queue thay đổi khi mất mạng, tự đồng bộ khi có mạng trở lại. | P3 | Phase 5 | Not started *(PLAN_5 Group D — optional)* |
@@ -276,7 +277,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | is_price_reduced | Boolean | Đã giảm giá (Notifications) |
 | is_special | Boolean | **Phase 4 C1 Done:** hàng đặc biệt trên market (default false) |
 | is_checked | Boolean | **Phase 4 C1 Done:** checklist Kiểm hàng (default false); chủ yếu market + `is_special` |
-| discount_percent | Numeric(5,2) | **D1 Done (schema v5.2):** % giảm giá 0–100; NULL = không giảm giá (UI D2–D4) |
+| discount_percent | Numeric(5,2) | **D1 Done (schema v5.2):** % giảm giá 0–100; NULL = không giảm giá. **D2 Done:** badge + dòng lô trên Notifications (tab hết hạn) |
 | notes | String | Ghi chú lô hàng |
 | updated_at | Timestamp | Tự cập nhật |
 
@@ -399,7 +400,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | **Phase 3** | **Bug fixes (A1–A5):** DD/MM/YYYY hạn (KI-044), ProductsScreen barcode/X/search (KI-045), zone overlap (KI-046), Map barcode text search (KI-047), conflict detection `updated_at` (KI-048). **UX (B1–B8):** badge giảm giá, chuyển lô cùng zone, `normalizeText`, MM/YYYY→ngày 1, hint AddInventory, sửa tên ZoneDetail, Map scan→sheet scroll, toggle cảnh báo global. **Realtime (C1):** zones Realtime trên Map. **Hoàn thiện:** F27 (2 tab + PDF), F28 (`discontinued_reason`), F08 (ảnh SP). **Mới:** F23 Dashboard, F24 RBAC (`user_profiles`), **F31 Internal Notes**. **Bổ sung (Group F):** F1 navigation scanner (KI-057), F2 block xóa lô (KI-058), F3 sync `is_archived`, F4 tap kho→Map, F5 filter chưa ảnh, **F7** barcode autofill AddInventory, **F8** dời lô bằng map. **Security:** SEC-05, SEC-06. **Dropped:** F19. | Ổn định multi-user, UX vận hành, đặt hàng/PDF, RBAC, ghi chú nội bộ |
 | **Phase 4** | **Closed.** **F36 Market mode** Done (C1–C4); **F32** Done; KI-039/040/050 Done; SEC-10/12/13/14 Done (H1–H4). **F27 mở rộng** carry → Phase 5. **F34/F35 / F21/F25/F26 / KI-026** → Phase 5. **F19/F33 Dropped.** Xem `SUMMARY_4.md`, `PLAN_4.md`. | Market first-class + vận hành |
 | **Phase 5** | **Closed.** **F34** Picking Done; **F35** Push Done; UX/bugfixes (KI-063/064/066/068/069/070). **F27 mở rộng** carry → Phase 6. Optional F21/F25/F26 / Expo / KI-026 deferred. Xem `SUMMARY_5.md`, `HANDOFF_5.md`. | Picking + push + ổn định |
-| **Phase 6** | **F27 mở rộng** (A1); Picking UX (B1–B5); Products picking (C1–C2); Hàng giảm giá (**D1 schema Done** → D2–D4); SearchableDropdown (E1–E2); Settings redesign (F1). Xem `PLAN_6.md`. | Hoàn thiện picking + giảm giá + UX |
+| **Phase 6** | **F27 mở rộng** (A1); Picking UX (B1–B5); Products picking (C1–C2); Hàng giảm giá (**D1–D2 Done** → D3–D4); SearchableDropdown (E1–E2); Settings redesign (F1). Xem `PLAN_6.md`. | Hoàn thiện picking + giảm giá + UX |
 
 ---
 

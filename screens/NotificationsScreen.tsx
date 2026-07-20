@@ -44,6 +44,8 @@ type ExpiryLotRow = {
   quantityBoxes: number
   expiryDate?: string
   isPriceReduced: boolean
+  /** D2 — % giảm giá từ inventory_entries.discount_percent */
+  discount_percent?: number | null
   status: 'expired' | 'warning' | 'ok'
   locationType: 'warehouse' | 'market'
 }
@@ -320,6 +322,8 @@ export default function NotificationsScreen() {
             quantityBoxes: entry.quantity_boxes,
             expiryDate: entry.expiry_date,
             isPriceReduced: entry.is_price_reduced === true,
+            discount_percent:
+              entry.discount_percent == null ? null : Number(entry.discount_percent),
             status,
             locationType: locType,
           })
@@ -341,6 +345,8 @@ export default function NotificationsScreen() {
               quantityBoxes: entry.quantity_boxes,
               expiryDate: entry.expiry_date,
               isPriceReduced: entry.is_price_reduced === true,
+              discount_percent:
+                entry.discount_percent == null ? null : Number(entry.discount_percent),
               status: 'expired',
               locationType: locType,
             })
@@ -352,6 +358,8 @@ export default function NotificationsScreen() {
               quantityBoxes: entry.quantity_boxes,
               expiryDate: entry.expiry_date,
               isPriceReduced: entry.is_price_reduced === true,
+              discount_percent:
+                entry.discount_percent == null ? null : Number(entry.discount_percent),
               status: 'warning',
               locationType: locType,
             })
@@ -564,47 +572,60 @@ export default function NotificationsScreen() {
     ({ item }: { item: ExpiryCard }) => {
       const isExpanded = expandedProducts[item.productId] === true
       const hasAnyPriceReduced = item.lots.some((lot) => lot.isPriceReduced)
+      const discountValues = item.lots
+        .map((l) => l.discount_percent)
+        .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0)
+      const uniqueDiscounts = [...new Set(discountValues)]
+      const discountBadgeLabel =
+        uniqueDiscounts.length === 1
+          ? `Giảm ${uniqueDiscounts[0]}%`
+          : uniqueDiscounts.length > 1
+            ? 'Giảm giá'
+            : null
       const headerColors = getExpiryCardHeaderColors(item.hasExpiredLot, colors, expiryWarningEnabled)
       const bgColor = headerColors.backgroundColor
       const borderColor = headerColors.borderColor
       const titleDotColor = headerColors.dotColor
       return (
         <View style={[styles.item, { backgroundColor: bgColor, borderColor }]}>
-          <View style={styles.headerRow}>
-            <View style={[styles.leftWrap, { flex: 1 }]}>
-              <View
-                style={[
-                  styles.titleDot,
-                  { backgroundColor: titleDotColor },
-                ]}
-              />
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
-                  style={{ flex: 1 }}
-                >
-                  <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-                    {item.productName}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => toggleExpanded(item.productId)}>
-                  <Text style={[styles.line1, { color: colors.text }]}>
-                    Còn {formatSplitQtyLabel(item.warehouseBoxes, item.marketBoxes)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            {hasAnyPriceReduced && (
-              <View style={styles.priceReducedBadge}>
-                <Text style={styles.priceReducedBadgeText}>Đã giảm giá</Text>
-              </View>
-            )}
-            <TouchableOpacity onPress={() => toggleExpanded(item.productId)}>
-              <Text style={[styles.expandHint, { color: colors.sub }]}>
-                {isExpanded ? 'Thu gọn ▴' : 'Chi tiết ▾'}
+          <View style={styles.cardRow1}>
+            <View style={[styles.titleDot, { backgroundColor: titleDotColor }]} />
+            <TouchableOpacity
+              onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })}
+              style={{ flex: 1 }}
+            >
+              <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={2}>
+                {item.productName}
               </Text>
             </TouchableOpacity>
           </View>
+
+          <View style={styles.cardRow2}>
+            <Text style={[styles.cardQty, { color: colors.sub }]}>
+              Còn {formatSplitQtyLabel(item.warehouseBoxes, item.marketBoxes)}
+            </Text>
+            <View style={styles.badgeWrap}>
+              {hasAnyPriceReduced && (
+                <View style={styles.priceReducedBadge}>
+                  <Text style={styles.priceReducedBadgeText}>Đã giảm giá</Text>
+                </View>
+              )}
+              {discountBadgeLabel ? (
+                <View style={styles.discountBadge}>
+                  <Text style={styles.discountBadgeText}>{discountBadgeLabel}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => toggleExpanded(item.productId)}
+            style={styles.cardRow3}
+          >
+            <Text style={[styles.expandHint, { color: colors.sub }]}>
+              {isExpanded ? 'Thu gọn ▴' : 'Chi tiết ▾'}
+            </Text>
+          </TouchableOpacity>
 
           {isExpanded && (
             <View style={styles.lotList}>
@@ -625,6 +646,11 @@ export default function NotificationsScreen() {
                         {lot.quantityBoxes} {qtyUnitForLocationType(lot.locationType)} · Hạn:{' '}
                         {formatExpiryDate(lot.expiryDate)}
                       </Text>
+                      {lot.discount_percent != null && lot.discount_percent > 0 ? (
+                        <Text style={[styles.lotDiscount, { color: colors.accent }]}>
+                          Giảm {lot.discount_percent}%
+                        </Text>
+                      ) : null}
                     </View>
                     {canWrite ? (
                       <TouchableOpacity
@@ -1128,6 +1154,23 @@ const styles = StyleSheet.create({
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   leftWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 },
+  cardRow1: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },
+  cardRow2: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  cardRow3: { alignItems: 'flex-end' },
+  cardName: { fontSize: 14, fontWeight: '600', flex: 1, minWidth: 0 },
+  cardQty: { fontSize: 13 },
+  badgeWrap: {
+    flexDirection: 'row',
+    gap: 6,
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    flexShrink: 1,
+  },
   line1: { fontSize: 14, fontWeight: '600', marginTop: 10 },
   expandHint: { fontSize: 12, fontWeight: '600' },
   titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'flex-start', marginTop: 2 },
@@ -1139,6 +1182,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   priceReducedBadgeText: { color: 'white', fontSize: 11, fontWeight: '600' },
+  discountBadge: {
+    backgroundColor: '#F97316' + '26',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  discountBadgeText: { color: '#F97316', fontSize: 11, fontWeight: '600' },
   lotList: { marginTop: 10, gap: 8 },
   lotRow: {
     borderWidth: 1,
@@ -1151,6 +1201,7 @@ const styles = StyleSheet.create({
   },
   lotInfo: { flex: 1 },
   lotText: { fontSize: 13, fontWeight: '600' },
+  lotDiscount: { fontSize: 12, fontWeight: '600', marginTop: 2 },
   lotToggleBtn: {
     borderWidth: 1,
     borderRadius: 8,
