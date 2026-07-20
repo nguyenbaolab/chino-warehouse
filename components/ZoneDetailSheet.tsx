@@ -608,7 +608,7 @@ export default function ZoneDetailSheet({
                               }
                             >
                               <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                                {group.productName}
+                                {group.lots.some((lot) => lot.is_special) ? `⭐ ${group.productName}` : group.productName}
                               </Text>
                             </TouchableOpacity>
                           )}
