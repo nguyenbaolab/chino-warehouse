@@ -193,6 +193,12 @@ export default function PickingDetailScreen() {
       })
   }, [selectedProduct, warehouseEntries])
 
+  // B4: default qty = 1 khi chọn SP (dropdown / barcode)
+  useEffect(() => {
+    if (!selectedProduct || lotsForSelected.length === 0) return
+    setLotQtyInputs(Object.fromEntries(lotsForSelected.map((e) => [e.id, '1'])))
+  }, [lotsForSelected, selectedProduct])
+
   const addedEntryIds = useMemo(() => {
     const set = new Set<string>()
     for (const item of items) set.add(item.inventory_entry_id)

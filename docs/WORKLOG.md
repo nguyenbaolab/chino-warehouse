@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(B4): default qty = 1 khi thêm lô picking
+
+- `PickingDetailScreen`: khi chọn SP, `lotQtyInputs` khởi tạo `'1'` cho mọi lô của SP (`lotsForSelected`).
+
+---
+
 ## [tháng 7/2026] — fix(B3): tăng dropdown suggestions lên tối đa 20
 
 - `PickingDetailScreen`: suggestions `.slice(0, 5)` → `.slice(0, 20)` (giữ ScrollView `maxHeight: 220`).
