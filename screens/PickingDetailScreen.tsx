@@ -3,7 +3,6 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -20,8 +19,8 @@ import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { supabase } from '../lib/supabase'
 import { normalizeText } from '../utils/textUtils'
 import ImageViewerModal from '../components/ImageViewerModal'
+import LotPickerModal from '../components/LotPickerModal'
 import {
-  formatExpiryDate,
   InventoryEntry,
   Location,
   PickingListItem,
@@ -82,9 +81,7 @@ export default function PickingDetailScreen() {
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [lotQtyInputs, setLotQtyInputs] = useState<Record<string, string>>({})
   const [showLotModal, setShowLotModal] = useState(false)
-  const [tickedLotIds, setTickedLotIds] = useState<Set<string>>(new Set())
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
   const [isCompleting, setIsCompleting] = useState(false)
@@ -194,16 +191,9 @@ export default function PickingDetailScreen() {
       })
   }, [selectedProduct, warehouseEntries])
 
-  // B4: default qty = 1 khi chọn SP (dropdown / barcode)
-  useEffect(() => {
-    if (!selectedProduct || lotsForSelected.length === 0) return
-    setLotQtyInputs(Object.fromEntries(lotsForSelected.map((e) => [e.id, '1'])))
-  }, [lotsForSelected, selectedProduct])
-
-  // B5: mở modal chọn nhiều lô khi có selectedProduct
+  // Mở modal chọn nhiều lô khi có selectedProduct
   useEffect(() => {
     if (selectedProduct) {
-      setTickedLotIds(new Set())
       setShowLotModal(true)
     } else {
       setShowLotModal(false)
@@ -287,8 +277,6 @@ export default function PickingDetailScreen() {
 
   function clearProductPanel() {
     setSelectedProduct(null)
-    setLotQtyInputs({})
-    setTickedLotIds(new Set())
   }
 
   const handleBarcodeScan = useCallback(() => {
@@ -306,41 +294,18 @@ export default function PickingDetailScreen() {
         }
         setSelectedProduct(result.product)
         setSearchQuery('')
-        setLotQtyInputs({})
       },
     })
   }, [navigation, lookupProductByBarcode, productIdsWithStock])
 
-  async function handleAddTicked() {
+  async function handleAddTicked(selected: { entry: InventoryEntry; qty: number }[]) {
     if (!pickingList || !selectedProduct || !canEditItems) return
-    const toAdd = lotsForSelected.filter(
-      (e) => tickedLotIds.has(e.id) && !addedEntryIds.has(e.id),
-    )
-    if (toAdd.length === 0) return
-
-    for (const entry of toAdd) {
-      const raw = lotQtyInputs[entry.id]?.trim() ?? '1'
-      const qty = Number(raw)
-      if (!Number.isFinite(qty) || qty <= 0 || qty !== Math.floor(qty)) {
-        Alert.alert('Số thùng không hợp lệ', 'Số thùng phải là số nguyên lớn hơn 0.')
-        return
-      }
-      if (qty > entry.quantity_boxes) {
-        Alert.alert(
-          'Vượt tồn kho',
-          `${entry.zone?.name ?? 'Lô'} · Tầng ${entry.tier}: chỉ còn ${entry.quantity_boxes} thùng.`,
-        )
-        return
-      }
-    }
-
-    for (const entry of toAdd) {
-      const qty = Number(lotQtyInputs[entry.id]?.trim() ?? '1')
+    for (const { entry, qty } of selected) {
       await addPickingItem(pickingList.id, {
         inventory_entry_id: entry.id,
         product_id: entry.product_id,
         zone_id: entry.zone_id,
-        tier: entry.tier,
+        tier: entry.tier ?? 1,
         quantity_boxes: qty,
         notes: null,
       })
@@ -590,7 +555,6 @@ export default function PickingDetailScreen() {
                           onPress={() => {
                             setSelectedProduct(p)
                             setSearchQuery('')
-                            setLotQtyInputs({})
                           }}
                         >
                           {renderThumb(p.image_url)}
@@ -780,137 +744,17 @@ export default function PickingDetailScreen() {
           </View>
         ) : null}
       </SafeAreaView>
-      <Modal
+      <LotPickerModal
         visible={showLotModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => {
+        product={selectedProduct}
+        lots={lotsForSelected}
+        alreadyAddedIds={addedEntryIds}
+        onClose={() => {
           setShowLotModal(false)
           clearProductPanel()
         }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalSheet, { backgroundColor: colors.card }]}>
-            <View style={styles.modalHeader}>
-              {selectedProduct?.image_url ? (
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  onPress={() => setZoomImageUrl(selectedProduct.image_url!)}
-                >
-                  <Image source={{ uri: selectedProduct.image_url }} style={styles.modalThumb} />
-                </TouchableOpacity>
-              ) : (
-                <View style={[styles.modalThumb, { backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={{ fontSize: 18 }}>📦</Text>
-                </View>
-              )}
-              <Text style={[styles.modalTitle, { color: colors.text }]} numberOfLines={2}>
-                {selectedProduct?.name}
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowLotModal(false)
-                  clearProductPanel()
-                }}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={{ fontSize: 20, color: colors.sub }}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 400 }}>
-              {lotsForSelected.length === 0 ? (
-                <Text style={{ color: colors.sub, padding: 16 }}>Không có lô nào trong kho.</Text>
-              ) : (
-                lotsForSelected.map((entry) => {
-                  const alreadyAdded = addedEntryIds.has(entry.id)
-                  const ticked = tickedLotIds.has(entry.id)
-                  return (
-                    <View
-                      key={entry.id}
-                      style={[styles.modalLotRow, { borderBottomColor: colors.border }]}
-                    >
-                      <TouchableOpacity
-                        disabled={alreadyAdded}
-                        onPress={() => {
-                          setTickedLotIds((prev) => {
-                            const next = new Set(prev)
-                            if (ticked) next.delete(entry.id)
-                            else next.add(entry.id)
-                            return next
-                          })
-                        }}
-                        style={styles.modalCheckbox}
-                      >
-                        <Text style={{ fontSize: 18 }}>
-                          {alreadyAdded ? '☑️' : ticked ? '✅' : '⬜'}
-                        </Text>
-                      </TouchableOpacity>
-
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text
-                          style={{
-                            color: alreadyAdded ? colors.sub : colors.text,
-                            fontWeight: '600',
-                            fontSize: 13,
-                          }}
-                        >
-                          {entry.zone?.name ?? 'Zone'} · Tầng {entry.tier}
-                        </Text>
-                        <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
-                          Tồn: {entry.quantity_boxes} thùng
-                          {entry.expiry_date
-                            ? ` · Hạn: ${formatExpiryDate(entry.expiry_date)}`
-                            : ''}
-                        </Text>
-                        {alreadyAdded ? (
-                          <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>Đã thêm</Text>
-                        ) : null}
-                      </View>
-
-                      {!alreadyAdded && ticked ? (
-                        <TextInput
-                          style={[
-                            styles.qtyInput,
-                            {
-                              color: colors.text,
-                              borderColor: colors.border,
-                              backgroundColor: colors.bg,
-                            },
-                          ]}
-                          keyboardType="numeric"
-                          value={lotQtyInputs[entry.id] ?? '1'}
-                          onChangeText={(v) =>
-                            setLotQtyInputs((prev) => ({ ...prev, [entry.id]: v }))
-                          }
-                          maxLength={4}
-                        />
-                      ) : null}
-                    </View>
-                  )
-                })
-              )}
-            </ScrollView>
-
-            <TouchableOpacity
-              style={[
-                styles.addTickedBtn,
-                {
-                  backgroundColor: tickedLotIds.size > 0 ? colors.accent : colors.border,
-                },
-              ]}
-              disabled={tickedLotIds.size === 0}
-              onPress={() => void handleAddTicked()}
-            >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
-                {tickedLotIds.size > 0
-                  ? `Thêm ${tickedLotIds.size} lô`
-                  : 'Chưa chọn lô nào'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        onConfirm={handleAddTicked}
+      />
       <ImageViewerModal uri={zoomImageUrl} onClose={() => setZoomImageUrl(null)} />
     </KeyboardAvoidingView>
   )
@@ -975,51 +819,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   suggestionName: { flex: 1, fontSize: 13, fontWeight: '600' },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  modalSheet: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 16,
-    paddingBottom: 32,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  modalThumb: { width: 40, height: 40, borderRadius: 6 },
-  modalTitle: { flex: 1, fontSize: 15, fontWeight: '600' },
-  modalLotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    gap: 8,
-  },
-  modalCheckbox: { width: 32, alignItems: 'center' },
-  qtyInput: {
-    width: 56,
-    height: 36,
-    borderWidth: 1,
-    borderRadius: 6,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    paddingVertical: 0,
-    paddingHorizontal: 4,
-    fontSize: 14,
-    includeFontPadding: false,
-  },
-  addTickedBtn: {
-    marginTop: 16,
-    padding: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
   list: { paddingHorizontal: 16, paddingBottom: 12 },
   locHeader: { fontSize: 15, fontWeight: '800', marginTop: 10, marginBottom: 4 },
   zoneHeader: { fontSize: 12, fontWeight: '600', marginBottom: 6, marginTop: 2 },

@@ -19,11 +19,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import ImageViewerModal from '../components/ImageViewerModal'
+import LotPickerModal from '../components/LotPickerModal'
 import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
-import { CombinedStatus, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, Location, Product, Zone } from '../types'
+import {
+  CombinedStatus,
+  formatExpiryDate,
+  getCombinedStatus,
+  getCombinedStatusRank,
+  InventoryEntry,
+  Location,
+  Product,
+  Zone,
+} from '../types'
 import {
   getDisplayColor,
   getDisplayColorContextFromEntry,
@@ -53,11 +63,16 @@ export default function ProductsScreen() {
     inventoryEntries,
     productCategoriesL1,
     productCategoriesL2,
+    pickingLists,
+    pickingListItems,
     fetchProducts,
     fetchProductsPage,
     fetchInventoryByLocation,
     fetchAllInventoryEntries,
     fetchCategories,
+    fetchPickingLists,
+    createPickingList,
+    addPickingItem,
     addProduct,
     updateProductImage,
     checkBarcodeConflict,
@@ -112,6 +127,10 @@ export default function ProductsScreen() {
   const [isUploadingCreateImage, setIsUploadingCreateImage] = useState(false)
   const [existingProductWarning, setExistingProductWarning] = useState<string | null>(null)
   const [createBarcodeWarning, setCreateBarcodeWarning] = useState<string | null>(null)
+  const [cartProduct, setCartProduct] = useState<Product | null>(null)
+  const [cartLots, setCartLots] = useState<InventoryEntry[]>([])
+  const [cartPickingListId, setCartPickingListId] = useState<string | null>(null)
+  const [showCartModal, setShowCartModal] = useState(false)
   const flatListRef = useRef<FlatList<Product>>(null)
 
   useEffect(() => {
@@ -119,6 +138,10 @@ export default function ProductsScreen() {
       void fetchCategories()
     }
   }, [fetchCategories])
+
+  useEffect(() => {
+    void fetchPickingLists()
+  }, [fetchPickingLists])
 
   useEffect(() => {
     if (!showCreateProductModal) return
@@ -636,6 +659,67 @@ export default function ProductsScreen() {
     }
   }
 
+  async function handleCartPress(product: Product) {
+    const lots = inventoryEntries.filter(
+      (e) => e.product_id === product.id && (e.quantity_boxes ?? 0) > 0,
+    )
+    if (lots.length === 0) {
+      Alert.alert('Không có lô', 'Sản phẩm này hiện không có lô nào trong kho.')
+      return
+    }
+
+    const drafts = pickingLists.filter((l) => l.status === 'draft')
+
+    if (drafts.length === 0) {
+      const today = new Date().toLocaleDateString('vi-VN')
+      const newList = await createPickingList(`Đơn lấy hàng ${today}`)
+      if (!newList) {
+        Alert.alert('Lỗi', 'Không thể tạo đơn lấy hàng.')
+        return
+      }
+      setCartPickingListId(newList.id)
+      setCartProduct(product)
+      setCartLots(lots)
+      setShowCartModal(true)
+    } else if (drafts.length === 1) {
+      setCartPickingListId(drafts[0].id)
+      setCartProduct(product)
+      setCartLots(lots)
+      setShowCartModal(true)
+    } else {
+      Alert.alert('Chọn đơn lấy hàng', 'Thêm vào đơn nào?', [
+        ...drafts.map((d) => ({
+          text: d.title,
+          onPress: () => {
+            setCartPickingListId(d.id)
+            setCartProduct(product)
+            setCartLots(lots)
+            setShowCartModal(true)
+          },
+        })),
+        { text: 'Huỷ', style: 'cancel' as const },
+      ])
+    }
+  }
+
+  async function handleCartConfirm(selected: { entry: InventoryEntry; qty: number }[]) {
+    if (!cartPickingListId || !cartProduct) return
+    for (const { entry, qty } of selected) {
+      await addPickingItem(cartPickingListId, {
+        inventory_entry_id: entry.id,
+        product_id: cartProduct.id,
+        zone_id: entry.zone_id,
+        tier: entry.tier ?? 1,
+        quantity_boxes: qty,
+        notes: null,
+      })
+    }
+    setShowCartModal(false)
+    setCartProduct(null)
+    setCartLots([])
+    setCartPickingListId(null)
+  }
+
   function renderProductItem({ item: product }: { item: Product }) {
     const groupedLots = getFilteredLotsByExpiry(product.id)
     const categoryLine = getProductCategoryLine(product)
@@ -743,6 +827,17 @@ export default function ProductsScreen() {
             )}
           </TouchableOpacity>
         </View>
+        {canWrite ? (
+          <View style={styles.cartRow}>
+            <TouchableOpacity
+              style={[styles.cartBtn, { backgroundColor: colors.accent + '26' }]}
+              onPress={() => void handleCartPress(product)}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
+              <Text style={{ fontSize: 16 }}>🛒</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
     )
   }
@@ -945,6 +1040,26 @@ export default function ProductsScreen() {
               }
             : undefined
         }
+      />
+
+      <LotPickerModal
+        visible={showCartModal}
+        product={cartProduct}
+        lots={cartLots}
+        alreadyAddedIds={
+          new Set(
+            pickingListItems
+              .filter((i) => i.picking_list_id === cartPickingListId)
+              .map((i) => i.inventory_entry_id),
+          )
+        }
+        onClose={() => {
+          setShowCartModal(false)
+          setCartProduct(null)
+          setCartLots([])
+          setCartPickingListId(null)
+        }}
+        onConfirm={handleCartConfirm}
       />
 
       {canWrite ? (
@@ -1282,6 +1397,18 @@ const styles = StyleSheet.create({
   item: { borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 10 },
   itemRow: { flexDirection: 'row', alignItems: 'center' },
   itemContent: { flex: 1, paddingLeft: 10 },
+  cartRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 8,
+  },
+  cartBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   thumbnailContainer: { width: 64, height: 64 },
   thumbnail: { width: 64, height: 64, borderRadius: 8 },
   thumbnailPlaceholder: {

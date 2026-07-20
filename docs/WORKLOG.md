@@ -4,6 +4,20 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(C1): nút 🛒 trên card SP → chọn draft → LotPickerModal
+
+- `ProductsScreen`: 🛒 (canWrite) → draft picking (0/1/2+) → `LotPickerModal` → `addPickingItem`.
+- Mount gọi `fetchPickingLists`.
+
+---
+
+## [tháng 7/2026] — refactor(C1): extract LotPickerModal thành component riêng
+
+- Tạo `components/LotPickerModal.tsx` (props: product, lots, alreadyAddedIds, onConfirm).
+- `PickingDetailScreen` dùng lại component; qty default 1 + validate nằm trong modal.
+
+---
+
 ## [tháng 7/2026] — feat(B5): modal chọn nhiều lô picking
 
 - `PickingDetailScreen`: chọn SP → Modal tick nhiều lô + qty → «Thêm X lô» (gọi `addPickingItem` tuần tự); bỏ panel inline.
