@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: crash presence channel sau re-login (KI-070)
+
+- `lib/presence.ts`: topic `presence:warehouse-online-${Date.now()}` — unique per session, tránh đụng channel cũ còn `SUBSCRIBED`.
+- `App.tsx`: `cleanupChannels` async; presence leave trước `signOut` trên inactivity path.
+- Tham chiếu: KI-053 pattern unique channel name.
+
+---
+
 ## [tháng 7/2026] — docs: KI-065 defer với blast radius analysis
 
 - Recon toàn bộ hardcode `'warehouse'`/`'market'` — 10+ file, 30+ dòng chạm.

@@ -2,7 +2,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { useAuthStore } from '../stores/authStore'
 
-const PRESENCE_CHANNEL = 'presence:warehouse-online'
+const PRESENCE_CHANNEL_PREFIX = 'presence:warehouse-online'
 
 function syncOnlineUserIds(channel: RealtimeChannel) {
   const state = channel.presenceState()
@@ -11,7 +11,7 @@ function syncOnlineUserIds(channel: RealtimeChannel) {
 }
 
 export function joinPresenceChannel(userId: string, email: string): RealtimeChannel {
-  const channel = supabase.channel(PRESENCE_CHANNEL, {
+  const channel = supabase.channel(`${PRESENCE_CHANNEL_PREFIX}-${Date.now()}`, {
     config: {
       private: true,
       presence: { key: userId },

@@ -227,7 +227,14 @@ export default function App() {
     if (!isSupabaseConfigured) return
     if (Date.now() - lastActivityRef.current > INACTIVITY_LIMIT_MS) {
       isAutoLogoutRef.current = true
-      void supabase.auth.signOut().catch((err) => {
+      const doLogout = async () => {
+        if (presenceChannelRef.current) {
+          await leavePresenceChannel(presenceChannelRef.current)
+          presenceChannelRef.current = null
+        }
+        await supabase.auth.signOut()
+      }
+      void doLogout().catch((err) => {
         if (__DEV__) console.error('[App] signOut failed', err)
       })
     }
@@ -360,19 +367,19 @@ export default function App() {
     const userId = session?.user?.id
     const email = session?.user?.email ?? ''
 
-    const cleanupChannels = () => {
+    const cleanupChannels = async () => {
       if (profileRealtimeChannelRef.current) {
-        void supabase.removeChannel(profileRealtimeChannelRef.current)
+        await supabase.removeChannel(profileRealtimeChannelRef.current)
         profileRealtimeChannelRef.current = null
       }
       if (presenceChannelRef.current) {
-        void leavePresenceChannel(presenceChannelRef.current)
+        await leavePresenceChannel(presenceChannelRef.current)
         presenceChannelRef.current = null
       }
     }
 
     if (!userId || !currentUserProfile || currentUserProfile.is_disabled) {
-      cleanupChannels()
+      void cleanupChannels()
       return
     }
 
@@ -404,7 +411,9 @@ export default function App() {
     profileRealtimeChannelRef.current = profileChannel
     presenceChannelRef.current = joinPresenceChannel(userId, email)
 
-    return cleanupChannels
+    return () => {
+      void cleanupChannels()
+    }
   }, [
     session?.user?.id,
     session?.user?.email,

@@ -2,6 +2,17 @@
 
 ---
 
+### [KI-070] Presence channel crash sau re-login (session 20 phút)
+
+- **Mức độ:** High (crash)
+- **File liên quan:** `lib/presence.ts`, `App.tsx`
+- **Mô tả:** Topic presence cố định `'presence:warehouse-online'` + `leavePresenceChannel` fire-and-forget → channel cũ còn `SUBSCRIBED` khi join lại sau logout inactivity → crash "cannot add presence callbacks after subscribe()".
+- **Trạng thái:** Resolved
+- **Đã fix:** Topic unique per session (`presence:warehouse-online-${Date.now()}`); `cleanupChannels` async; presence leave trước `signOut` trên inactivity path.
+- **Tham chiếu:** KI-053 (MapScreen Realtime pattern)
+
+---
+
 ### [KI-069] is_special — trước đây thiếu UI toggle (đã fix)
 
 - **Mức độ:** Medium (UX gap)
