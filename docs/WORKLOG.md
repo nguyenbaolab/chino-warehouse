@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(products): nút + tạo SP lên header row, bỏ FAB absolute
+
+- `ProductsScreen`: bỏ FAB absolute; `titleRow` + `addBtn` (canWrite) mở modal tạo SP.
+
+---
+
 ## [tháng 7/2026] — fix(C2): thêm nút Huỷ Alert picking guard — abort save
 
 - `ProductDetailScreen`: Alert C2 thêm «Huỷ» → `shouldContinue === false` → return, giữ inline edit.

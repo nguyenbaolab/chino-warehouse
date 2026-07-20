@@ -457,8 +457,6 @@ export default function ProductsScreen() {
   )
   const canGoPrev = currentPage > 0
   const canGoNext = currentPage < totalPages - 1
-  const hasPaginationFooter = filteredProducts.length > PAGE_SIZE
-  const fabBottom = hasPaginationFooter ? 80 : 28
 
   const createCategoryL2Options = useMemo(() => {
     if (!createCategoryL1Id) return []
@@ -899,7 +897,17 @@ export default function ProductsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
-      <Text style={[styles.title, { color: colors.text }]}>📦 Sản phẩm</Text>
+      <View style={styles.titleRow}>
+        <Text style={[styles.title, { color: colors.text }]}>📦 Sản phẩm</Text>
+        {canWrite && (
+          <TouchableOpacity
+            style={[styles.addBtn, { backgroundColor: colors.accent }]}
+            onPress={() => setShowCreateProductModal(true)}
+          >
+            <Text style={{ color: '#fff', fontSize: 22, lineHeight: 28 }}>+</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <View style={styles.toggleRow}>
         <TouchableOpacity
           style={[styles.archivedToggle, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -1067,16 +1075,6 @@ export default function ProductsScreen() {
         }}
         onConfirm={handleCartConfirm}
       />
-
-      {canWrite ? (
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.accent, bottom: fabBottom }]}
-          activeOpacity={0.85}
-          onPress={() => setShowCreateProductModal(true)}
-        >
-          <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
-        </TouchableOpacity>
-      ) : null}
 
       <Modal
         visible={showCreateProductModal}
@@ -1327,7 +1325,22 @@ export default function ProductsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingTop: 16 },
-  title: { fontSize: 18, fontWeight: '700', paddingHorizontal: 16, marginBottom: 12 },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  title: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
+  addBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   toggleRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1428,21 +1441,6 @@ const styles = StyleSheet.create({
   lotText: { fontSize: 12, marginLeft: 6, flex: 1 },
   titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, marginTop: 2 },
   lotDot: { width: 8, height: 8, borderRadius: 4 },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  fabText: { fontSize: 28, fontWeight: '300', marginTop: -2 },
   createModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
