@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(B3): dropdown suggestions giới hạn 5 + ScrollView
+
+- `PickingDetailScreen`: suggestions `.slice(0, 5)`; bọc list trong `ScrollView` (`maxHeight: 220`, `nestedScrollEnabled`).
+
+---
+
 ## [tháng 7/2026] — feat(B2): nút 📷 quét barcode trên PickingDetailScreen
 
 - Nút 📷 cạnh ô tìm SP (draft): `BarcodeScanner` → `lookupProductByBarcode` → `setSelectedProduct`.

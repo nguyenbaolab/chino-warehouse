@@ -178,7 +178,7 @@ export default function PickingDetailScreen() {
           productIdsWithStock.has(p.id) &&
           normalizeText(p.name).includes(q),
       )
-      .slice(0, 8)
+      .slice(0, 5)
   }, [products, searchQuery, productIdsWithStock, selectedProduct])
 
   const lotsForSelected = useMemo(() => {
@@ -547,22 +547,28 @@ export default function PickingDetailScreen() {
                       { borderColor: colors.border, backgroundColor: colors.bg },
                     ]}
                   >
-                    {suggestions.map((p) => (
-                      <TouchableOpacity
-                        key={p.id}
-                        style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
-                        onPress={() => {
-                          setSelectedProduct(p)
-                          setSearchQuery('')
-                          setLotQtyInputs({})
-                        }}
-                      >
-                        {renderThumb(p.image_url)}
-                        <Text style={[styles.suggestionName, { color: colors.text }]} numberOfLines={2}>
-                          {p.name}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                    <ScrollView
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled={true}
+                      style={{ maxHeight: 220 }}
+                    >
+                      {suggestions.map((p) => (
+                        <TouchableOpacity
+                          key={p.id}
+                          style={[styles.suggestionItem, { borderBottomColor: colors.border }]}
+                          onPress={() => {
+                            setSelectedProduct(p)
+                            setSearchQuery('')
+                            setLotQtyInputs({})
+                          }}
+                        >
+                          {renderThumb(p.image_url)}
+                          <Text style={[styles.suggestionName, { color: colors.text }]} numberOfLines={2}>
+                            {p.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
                   </View>
                 ) : null}
               </>
