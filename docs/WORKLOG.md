@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(B5): modal chọn nhiều lô picking
+
+- `PickingDetailScreen`: chọn SP → Modal tick nhiều lô + qty → «Thêm X lô» (gọi `addPickingItem` tuần tự); bỏ panel inline.
+
+---
+
 ## [tháng 7/2026] — feat(B4): default qty = 1 khi thêm lô picking
 
 - `PickingDetailScreen`: khi chọn SP, `lotQtyInputs` khởi tạo `'1'` cho mọi lô của SP (`lotsForSelected`).
