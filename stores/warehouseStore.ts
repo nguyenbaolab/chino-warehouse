@@ -418,7 +418,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         .select('*', { count: 'exact' })
         .eq('is_archived', archived)
         .order('name')
-        .limit(200)
+        .limit(1000)
 
       if (params.showNoImageOnly) {
         query = query.is('image_url', null)

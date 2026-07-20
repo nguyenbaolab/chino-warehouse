@@ -619,7 +619,7 @@
 - **Mô tả:** Hiện tại `fetchProducts()` không có limit, load toàn bộ `products` về store. Với quy mô vài trăm SP thì ổn. Nếu lên vài nghìn SP: load chậm lúc đầu; tốn RAM; `useMemo` filter lag khi gõ search.
 - **Hướng fix (Phase 4):** Cursor-based pagination từ DB giống `AuditLogScreen`, kết hợp server-side filter theo search/kho/zone. Cần refactor `fetchProducts` + `filteredProducts` useMemo + pagination bar.
 - **Trạng thái:** Mitigated (hybrid)
-- **Đã fix:** `fetchProductsPage` — search `.ilike` server-side + debounce 300ms + max 200; barcode digits → `product_barcodes`; zone/stock/special vẫn filter local; UI page ←→ giữ. `fetchProducts` full vẫn dùng cho Notifications/Dashboard/Notes. **(KI-066)** List Mode/Kho không còn giao `productsPage` trước — list theo SP có lô trong scope inventory.
+- **Đã fix:** `fetchProductsPage` — search `.ilike` server-side + debounce 300ms + max 200; barcode digits → `product_barcodes`; zone/stock/special vẫn filter local; UI page ←→ giữ. `fetchProducts` full vẫn dùng cho Notifications/Dashboard/Notes. **(KI-066)** List Mode/Kho không còn giao `productsPage` trước — list theo SP có lô trong scope inventory. Tăng limit 200 → 1000 (tháng 7/2026).
 
 ---
 

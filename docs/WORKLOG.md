@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: ProductsScreen tăng limit catalog 200 → 1000
+
+- `fetchProductsPage` trong `warehouseStore.ts`: `.limit(200)` → `.limit(1000)`.
+- Mode Tất cả catalog tối đa 100 trang (1000 SP ÷ 10/trang) thay vì 20.
+
+---
+
 ## [tháng 7/2026] — fix: EAS slug mismatch → hoàn nguyên `chino-warehouse`
 
 - Build fail: `projectId` (chino-warehouse) ≠ `slug` (chinos-store).
