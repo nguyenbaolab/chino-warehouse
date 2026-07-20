@@ -147,7 +147,7 @@ Màu trạng thái dựa trên **combined status** — kết hợp cả tồn kh
 | F31 | Ghi chú nội bộ (Internal Notes) | Màn **Ghi chú** trong Settings (card entry). Bảng `internal_notes` (`product_id` nullable, `custom_product_name`, reason, created_by, created_at). UI card: ảnh SP 64×64 + tên + lý do (hoặc placeholder + tên tự do + dòng "Sản phẩm chưa có trong hệ thống"). FAB (+) → bottom sheet: autocomplete SP có sẵn **hoặc** gõ tên tự do + lý do. Tap card có `product_id` → ProductDetail; card tên tự do không navigate. Sửa/xóa ghi chú. **RBAC:** guest xem; staff+ sửa/xóa mọi ghi chú. **Tách biệt** F27 Đặt hàng. | P2 | Phase 3 | Done |
 | F32 | Cảnh báo per sản phẩm | Cột `products.ignore_expiry_warning` / `ignore_stock_warning` (BOOLEAN default false). 2 switch trên ProductDetail section Chi tiết. Khi bật → SP không hiện trong Notifications / Dashboard cảnh báo tương ứng. | P3 | Phase 4 | Done |
 | F33 | Lô "Đã lên kệ" (`is_on_shelf`) | **Dropped.** Không thêm cột `inventory_entries.is_on_shelf`. Siêu thị dùng **Market mode** (F36 redesign) — cùng schema inventory, không cờ link từ lô kho. | P2 | Phase 4 | Dropped |
-| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. **Revert:** khi `in_progress`, staff+ có thể «Quay lại chỉnh sửa» → `draft` (giữ nguyên `is_picked`; không revert từ `completed`). | P2 | Phase 5 | Done |
+| F34 | Giỏ hàng / Picking list | Tạo đơn lấy hàng từ kho: thêm SP vào giỏ (autocomplete + ảnh), chỉnh số lượng, nhóm theo kho/zone/tầng, checklist tick khi lấy xong, OK → trừ `quantity_boxes`. Schema `picking_lists`, `picking_list_items`. Màn hình mới. Tab Orders: label bottom **Lấy hàng**; tab con default **Lấy hàng** trước, **Đặt hàng** sau. **Revert:** khi `in_progress`, staff+ có thể «Quay lại chỉnh sửa» → `draft` (giữ nguyên `is_picked`; không revert từ `completed`). | P2 | Phase 5 | Done |
 | F35 | Push notification (local) | `expo-notifications` — **3 notification riêng** (daily/weekly/monthly). **Daily:** 4 mốc exact-day. **Weekly/Monthly:** range. Settings admin → `app_settings`. **Màn Cảnh báo hết hạn:** 6 section (4 mốc đếm ngược + tuần + tháng), danh sách entries (không trùng section), collapsible, tap → ProductDetail. KI-062 nội dung tĩnh. | P3 | Phase 5 | Done |
 | F36 | Market mode (ex Shelf Management) | **Redesign:** không còn 3 bảng `shelf_*`. Cột `locations.type` (`warehouse` \| `market`); reuse `zones` + `inventory_entries`. Mode switcher header Warehouse ↔ Market. Qty cùng cột — UI **«thùng»** / **«sản phẩm»**. Market: toggle **Hàng đặc biệt** (`is_special`); Settings **Kiểm hàng** checklist (`is_checked`) + Reset. RBAC giống kho. | P2 | Phase 4 | Done |
 | F37 | Đăng nhập sinh trắc học | Vân tay / Face ID tự bật sau login password đầu. Credentials lưu SecureStore. Toggle tắt trong Settings. Giữ `persistSession: false` + timer 20 phút. Password sai → xoá credentials + fallback form. | P2 | Phase 5 | Done |
@@ -354,8 +354,8 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Zone Detail (Sheet) | Mở khi tap vào zone | Tên zone · Tabs tầng · Danh sách SP · **Chuyển lô** |
 | Chi tiết sản phẩm | Tap vào sản phẩm | Tên · Ảnh · Lô · qty label động · ✏️/📍/🗑️ · Chi tiết · Lịch sử |
 | Danh sách sản phẩm (Tab) | Catalog + lọc | **Luôn mọi SP** (catalog, kể cả chưa có lô); 4 toggles (ẩn / hết lô / đặc biệt / chưa ảnh); nút **Lọc** → FilterModal Mode (**Tất cả** default / Kho / Siêu thị) + Kho/Zone; qty unit theo `locations.type` từng lô («thùng» / «sản phẩm»; header tách tổng) |
-| Đặt hàng (Tab mới) | Quản lý list đặt hàng | Danh sách list · 2 tab · PDF (Phase 4) |
-| Lấy hàng (Tab Orders, tab con) | Danh sách đơn lấy hàng | Tab switcher Đặt hàng/Lấy hàng · Cards · Tạo đơn |
+| Đặt hàng (Tab con Orders) | Quản lý list đặt hàng | Danh sách list · 2 tab · PDF (Phase 4) |
+| Lấy hàng (Tab Orders, tab con đầu + label bottom) | Danh sách đơn lấy hàng | Tab switcher Lấy hàng/Đặt hàng (default Lấy hàng) · Cards · Tạo đơn |
 | Chi tiết đơn lấy hàng (Stack) | Thêm lô, nhóm, tick | Search SP + chọn lô · Nhóm Kho/Zone/Tầng · Checkbox is_picked |
 | Thêm hàng (Stack) | Thêm lô hàng | Zone · Tầng · Số lượng · Hạn · F30 category |
 | Thông báo (Tab) | Cảnh báo tồn & hạn | Nút **Lọc** → FilterModal Mode/Kho/Zone; tab Sắp hết hạn: checkbox + **date range** (➜ kích hoạt mọi lô ∈ [Từ,Đến]; ✕ về mặc định expired/warning); tab Sắp hết hàng: checkbox (không date range) |
@@ -381,7 +381,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Lưu trữ ảnh | Supabase Storage | Tích hợp sẵn (Phase 2) |
 | Auth | Không (Phase 1) | Mở app dùng luôn |
 | Barcode | expo-camera (CameraView) | Camera native, hỗ trợ hầu hết định dạng |
-| Navigation | React Navigation (Bottom Tabs + Stack) | 5 tab (Kho, Sản phẩm, Đặt hàng, Thông báo, Cài đặt) + stack screens + modal BarcodeScanner |
+| Navigation | React Navigation (Bottom Tabs + Stack) | 5 tab (Kho, Sản phẩm, Lấy hàng, Thông báo, Cài đặt) + stack screens + modal BarcodeScanner |
 | Offline | Zustand persist (Phase 4) | Cache cục bộ, sync khi có mạng |
 
 ---

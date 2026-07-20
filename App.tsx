@@ -178,7 +178,7 @@ function TabNavigator() {
         name="Orders"
         component={OrdersStackNavigator}
         listeners={stackTabPressListener}
-        options={{ tabBarLabel: 'Đặt hàng', tabBarIcon: () => <Text>📋</Text> }}
+        options={{ tabBarLabel: 'Lấy hàng', tabBarIcon: () => <Text>📋</Text> }}
       />
       <Tab.Screen
         name="Notifications"

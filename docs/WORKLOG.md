@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(B1): tab Lấy hàng lên trước + đổi label tab bottom
+
+- `OrderListScreen`: tab con **Lấy hàng** trước **Đặt hàng**; default `activeTab = 'picking'`.
+- `App.tsx`: bottom tab Orders `tabBarLabel` → **Lấy hàng**.
+
+---
+
 ## [tháng 7/2026] — docs: Closeout Phase 5 + Planning Phase 6
 
 - `SUMMARY_5.md`: tổng kết Phase 5 (B+C done, UX fixes, KI-069/070).

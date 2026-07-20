@@ -37,7 +37,7 @@ export default function OrderListScreen() {
     createPickingList,
   } = useWarehouseStore()
 
-  const [activeTab, setActiveTab] = useState<ListTab>('orders')
+  const [activeTab, setActiveTab] = useState<ListTab>('picking')
 
   // KI-039: TTL 30s — riêng từng tab
   const FOCUS_FETCH_TTL_MS = 30_000
@@ -103,25 +103,6 @@ export default function OrderListScreen() {
         <TouchableOpacity
           style={[
             styles.tabBtn,
-            activeTab === 'orders' && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
-          ]}
-          onPress={() => switchTab('orders')}
-        >
-          <Text
-            style={[
-              styles.tabLabel,
-              {
-                color: activeTab === 'orders' ? colors.accent : colors.sub,
-                fontWeight: activeTab === 'orders' ? '700' : '500',
-              },
-            ]}
-          >
-            Đặt hàng
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tabBtn,
             activeTab === 'picking' && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
           ]}
           onPress={() => switchTab('picking')}
@@ -136,6 +117,25 @@ export default function OrderListScreen() {
             ]}
           >
             Lấy hàng
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabBtn,
+            activeTab === 'orders' && { borderBottomColor: colors.accent, borderBottomWidth: 2 },
+          ]}
+          onPress={() => switchTab('orders')}
+        >
+          <Text
+            style={[
+              styles.tabLabel,
+              {
+                color: activeTab === 'orders' ? colors.accent : colors.sub,
+                fontWeight: activeTab === 'orders' ? '700' : '500',
+              },
+            ]}
+          >
+            Đặt hàng
           </Text>
         </TouchableOpacity>
       </View>
