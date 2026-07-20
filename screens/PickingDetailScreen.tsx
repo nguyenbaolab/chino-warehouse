@@ -78,6 +78,7 @@ export default function PickingDetailScreen() {
     startPicking,
     revertPickingToDraft,
     completePicking,
+    lookupProductByBarcode,
   } = useWarehouseStore()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -271,6 +272,26 @@ export default function PickingDetailScreen() {
     setSelectedProduct(null)
     setLotQtyInputs({})
   }
+
+  const handleBarcodeScan = useCallback(() => {
+    navigation.navigate('BarcodeScanner', {
+      mode: 'search',
+      onScanFillBarcode: async (barcode: string) => {
+        const result = await lookupProductByBarcode(barcode)
+        if (!result) {
+          Alert.alert('Không tìm thấy', 'Không có sản phẩm nào khớp mã barcode này.')
+          return
+        }
+        if (!productIdsWithStock.has(result.product.id)) {
+          Alert.alert('Không có lô', 'Sản phẩm này hiện không có lô nào trong kho.')
+          return
+        }
+        setSelectedProduct(result.product)
+        setSearchQuery('')
+        setLotQtyInputs({})
+      },
+    })
+  }, [navigation, lookupProductByBarcode, productIdsWithStock])
 
   async function handleAddLot(entry: InventoryEntry) {
     if (!pickingList || !selectedProduct || !canEditItems) return
@@ -499,17 +520,26 @@ export default function PickingDetailScreen() {
             {!selectedProduct ? (
               <>
                 <Text style={[styles.label, { color: colors.sub }]}>Thêm lô từ kho</Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border },
-                  ]}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder="Tìm tên sản phẩm..."
-                  placeholderTextColor={colors.sub}
-                  maxLength={100}
-                />
+                <View style={styles.searchRow}>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      styles.searchInput,
+                      { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border },
+                    ]}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Tìm tên sản phẩm..."
+                    placeholderTextColor={colors.sub}
+                    maxLength={100}
+                  />
+                  <TouchableOpacity
+                    style={[styles.scanBtn, { backgroundColor: colors.accent }]}
+                    onPress={handleBarcodeScan}
+                  >
+                    <Text style={[styles.scanBtnText, { color: colors.card }]}>📷</Text>
+                  </TouchableOpacity>
+                </View>
                 {suggestions.length > 0 ? (
                   <View
                     style={[
@@ -832,6 +862,27 @@ const styles = StyleSheet.create({
   status: { paddingHorizontal: 16, marginTop: 8, marginBottom: 8, fontSize: 12 },
   addBox: { marginHorizontal: 16, borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 10 },
   label: { fontSize: 12, marginBottom: 6 },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  searchInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  scanBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  scanBtnText: {
+    fontSize: 18,
+  },
   input: {
     borderWidth: 1,
     borderRadius: 8,
