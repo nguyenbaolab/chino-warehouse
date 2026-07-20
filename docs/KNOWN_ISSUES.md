@@ -47,14 +47,27 @@
 
 ---
 
-### [KI-065] Custom location mode + đơn vị — deferred
+### [KI-065] Custom location types — deferred Phase 6+
 
 - **Mức độ:** Low (enhancement)
-- **File liên quan:** `stores/warehouseStore.ts` (`getQtyUnit`, `appMode`), `locations.type`, FilterModal
-- **Mô tả:** Hiện hardcode 2 mode (`warehouse` → «thùng», `market` → «sản phẩm»). Chưa cho user thêm mode mới hoặc đặt đơn vị tùy ý.
-- **Hướng fix (phase sau):** Bảng `location_types` (slug, label, qty_unit) + UI quản lý; `getQtyUnit` / FilterModal đọc từ config.
-- **Trạng thái:** Deferred
-- **Tham chiếu:** DECISIONS ProductsScreen filter mode; TODO trong `getQtyUnit`
+- **File liên quan:** `stores/warehouseStore.ts` (`getQtyUnit`, `appMode`), `utils/qtyUnitUtils.ts`, `utils/expiryCountUtils.ts`, `components/FilterModal.tsx`, `screens/MapScreen.tsx`, `types/index.ts`, và nhiều màn hình khác
+- **Mô tả:** Hardcode 2 mode (`warehouse` → «thùng», `market` → «sản phẩm»). Chưa cho user thêm mode mới hoặc đặt đơn vị tùy ý.
+- **Hướng fix (phase sau):** Bảng `location_types` (slug, name, unit_label, supports_special, supports_picking) + UI CRUD trong Settings; `locations.type` TEXT tự do (DB đã sẵn sàng — không có CHECK constraint); `getQtyUnit` / `qtyUnitForLocationType` / FilterModal đọc từ config; `appMode` đổi từ union cố định sang string slug.
+- **Blast radius đã recon (tháng 7/2026):**
+  - `types/index.ts` — `Location.type`, `FilterMode`, union `'warehouse' | 'market'` lặp ở 10+ nơi
+  - `utils/qtyUnitUtils.ts` — `qtyUnitForLocationType`, `locationTypeOfEntry`, `formatSplitQtyLabel` (nhận 2 số cố định — vỡ khi có type thứ 3)
+  - `stores/warehouseStore.ts` — `appMode` union, `getQtyUnit`, `fetchLocations`, `addLocation`
+  - `components/FilterModal.tsx` — `MODE_OPTIONS_ALL`/`REQUIRED`, `MODE_LABEL` hardcode
+  - `screens/MapScreen.tsx` — mode sheet hardcode 2 option
+  - `screens/StockCheckScreen.tsx`, `SettingsScreen.tsx` — `.eq('type', 'market')` hardcode
+  - `screens/PickingDetailScreen.tsx` — `.eq('type', 'warehouse')` hardcode
+  - `screens/ExpiryAlertScreen.tsx`, `NotificationsScreen.tsx`, `ProductDetailScreen.tsx` — đơn vị qty hardcode ngoài utils
+- **Câu hỏi cần confirm trước khi implement:**
+  - `is_special` / StockCheck: chỉ market hay type mới cũng có? → đề xuất flag `supports_special` trên `location_types`
+  - Picking: chỉ warehouse hay type mới cũng picking được? → đề xuất flag `supports_picking`
+  - `formatSplitQtyLabel`: đổi thành array `{ qty, unit }[]` thay 2 số cố định
+- **Trạng thái:** Deferred Phase 6+
+- **Tham chiếu:** DECISIONS ProductsScreen filter mode; TODO trong `getQtyUnit` (`warehouseStore.ts:53–55`, `243–244`)
 
 ---
 

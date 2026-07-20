@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: KI-065 defer với blast radius analysis
+
+- Recon toàn bộ hardcode `'warehouse'`/`'market'` — 10+ file, 30+ dòng chạm.
+- Xác định 3 câu hỏi design cần confirm trước khi implement.
+- KNOWN_ISSUES KI-065 cập nhật blast radius + open questions.
+- PLAN_5 ghi nhận KI-065 → Phase 6+.
+
+---
+
 ## [tháng 7/2026] — feat: toggle Hàng đặc biệt (is_special) trên lô market
 
 - **ZoneDetailSheet:** Switch «Hàng đặc biệt» trong inline edit khi `appMode === 'market'`; gửi `is_special` cùng payload save.

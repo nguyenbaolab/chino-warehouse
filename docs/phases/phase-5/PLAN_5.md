@@ -120,3 +120,14 @@ Phase 5 hoàn thiện các feature deferred từ Phase 3–4: **F27 mở rộng*
 | **Tổng** | **~12** | A+B+C bắt buộc; D+E optional |
 
 **Ưu tiên đề xuất:** **A1 (F27) → B (F34) → C (F35)** → D/E tùy thực tế.
+
+---
+
+## 10. Deferred → Phase 6+
+
+### KI-065 — Custom location types
+
+- **Scope ước lượng:** 6–8 prompt (schema migration + store refactor + utils + FilterModal + MapScreen + Settings UI + màn hardcode)
+- **Blocker:** 3 câu hỏi design chưa confirm (xem KNOWN_ISSUES KI-065)
+- **Không chặn Phase 5** — hardcode 2 mode vẫn hoạt động đúng
+- **Tham chiếu:** KNOWN_ISSUES KI-065
