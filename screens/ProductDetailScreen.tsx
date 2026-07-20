@@ -561,15 +561,19 @@ export default function ProductDetailScreen() {
           .filter((v, i, a) => a.indexOf(v) === i)
           .join(', ')
 
-        await new Promise<void>((resolve) => {
+        const shouldContinue = await new Promise<boolean>((resolve) => {
           Alert.alert(
             'Lô đang trong đơn lấy hàng',
             `Lô này đang có trong: ${listNames}. Bạn muốn làm gì?`,
             [
               {
-                text: 'Giữ nguyên trong đơn',
+                text: 'Huỷ',
                 style: 'cancel',
-                onPress: () => resolve(),
+                onPress: () => resolve(false),
+              },
+              {
+                text: 'Giữ nguyên trong đơn',
+                onPress: () => resolve(true),
               },
               {
                 text: 'Xóa khỏi đơn lấy hàng',
@@ -579,13 +583,15 @@ export default function ProductDetailScreen() {
                     for (const item of activePickingItems) {
                       await deletePickingItem(item.id)
                     }
-                    resolve()
+                    resolve(true)
                   })()
                 },
               },
             ],
           )
         })
+
+        if (!shouldContinue) return
       }
     }
 

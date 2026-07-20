@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(C2): thêm nút Huỷ Alert picking guard — abort save
+
+- `ProductDetailScreen`: Alert C2 thêm «Huỷ» → `shouldContinue === false` → return, giữ inline edit.
+
+---
+
 ## [tháng 7/2026] — feat(C2): cảnh báo lô trong picking khi save qty = 0
 
 - `ProductDetailScreen`: save qty = 0 → nếu lô trong picking draft/in_progress → Alert Giữ nguyên / Xóa khỏi đơn; rồi tiếp tục save.
