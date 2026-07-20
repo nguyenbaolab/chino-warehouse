@@ -162,6 +162,8 @@ export type InventoryEntry = {
   is_special: boolean
   /** F36 Market — checklist Kiểm hàng */
   is_checked: boolean
+  /** D1 — % giảm giá (0–100); NULL = không giảm giá */
+  discount_percent?: number | null
   updated_at: string
   product?: Product
   zone?: Zone

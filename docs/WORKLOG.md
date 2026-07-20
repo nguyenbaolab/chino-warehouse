@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(D1): thêm cột discount_percent vào inventory_entries (schema v5.2)
+
+- Migration `20260721014051_add_discount_percent_to_inventory_entries.sql`; `schema.sql` v5.2; `InventoryEntry.discount_percent`.
+
+---
+
 ## [tháng 7/2026] — fix(products): nút + tạo SP lên header row, bỏ FAB absolute
 
 - `ProductsScreen`: bỏ FAB absolute; `titleRow` + `addBtn` (canWrite) mở modal tạo SP.

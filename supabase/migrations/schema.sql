@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Store — Full Database Schema
--- Phiên bản: 5.1 | Tháng 7/2026
+-- Phiên bản: 5.2 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v5.1:
+--   - v5.2: inventory_entries.discount_percent NUMERIC(5,2) 0–100 NULL (D1 hàng giảm giá)
 -- Thay đổi so với v5.0:
 --   - v5.1: app_settings table (F35 notification config)
 -- Thay đổi so với v4.2:
@@ -162,6 +164,7 @@ CREATE TABLE inventory_entries (
   notes            TEXT,
   is_special       BOOLEAN     NOT NULL DEFAULT false,
   is_checked       BOOLEAN     NOT NULL DEFAULT false,
+  discount_percent NUMERIC(5,2) CHECK (discount_percent >= 0 AND discount_percent <= 100),
   updated_at       TIMESTAMPTZ DEFAULT now()
 );
 
