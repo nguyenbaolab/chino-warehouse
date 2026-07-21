@@ -22,6 +22,7 @@ import { useCanWrite } from '../stores/authStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
+import { isoExpiryToDisplay } from '../utils/dateUtils'
 import type { InventoryEntry, Location, Product, Zone } from '../types'
 
 const NUM_COLUMNS = 3
@@ -247,7 +248,7 @@ export default function DiscountScreen() {
               ? `<span class="badge">Giảm ${entry.discount_percent}%</span>`
               : `<span class="badge-plain">Đã giảm giá</span>`
 
-          const expiryText = entry.expiry_date ? entry.expiry_date : '—'
+          const expiryText = entry.expiry_date ? isoExpiryToDisplay(entry.expiry_date) : '—'
 
           return `
             <tr>

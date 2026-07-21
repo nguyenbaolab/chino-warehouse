@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(discount): PDF cột hạn dùng DD/MM/YYYY via isoExpiryToDisplay
+
+- **Fix:** `handleExportPDF` — `entry.expiry_date` (ISO) → `isoExpiryToDisplay` thay vì raw YYYY-MM-DD.
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — fix(discount): PDF thumb cache path dùng entry.id thay Date.now()
 
 - **Bug:** `fetchImageAsBase64` dùng `Date.now()` làm suffix cache — `Promise.all` song song có thể trùng ms → ghi đè file → ảnh sai SP / xám.
