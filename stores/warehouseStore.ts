@@ -1651,7 +1651,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
 
     if (failed.length === 0 && deducted > 0) {
-      await get().updatePickingList(id, { status: 'completed' })
+      await get().updatePickingList(id, {
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+      })
       return { success: true, deducted, failed: [] }
     }
 

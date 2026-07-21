@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(picking): ghi completed_at khi hoàn thành + hiện ngày trên header
+
+- `completePicking` → `completed_at` ISO; `PickingDetailScreen` hiện ngày hoàn thành.
+
+---
+
 ## [tháng 7/2026] — feat: edit qty lô trong đơn lấy hàng draft mode
 
 - `PickingDetailScreen`: nút ✏️ → inline TextInput qty → `updatePickingItem`.

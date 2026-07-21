@@ -506,38 +506,52 @@ export default function PickingDetailScreen() {
           >
             <Text style={{ color: colors.text }}>←</Text>
           </TouchableOpacity>
-          {isDraft && editingTitle ? (
-            <TextInput
-              style={[
-                styles.titleInput,
-                { backgroundColor: colors.card, color: colors.text, borderColor: colors.border },
-              ]}
-              value={titleDraft}
-              onChangeText={setTitleDraft}
-              onBlur={() => void commitTitle()}
-              onSubmitEditing={() => void commitTitle()}
-              returnKeyType="done"
-              blurOnSubmit
-              autoFocus
-              selectTextOnFocus
-              maxLength={100}
-            />
-          ) : (
-            <TouchableOpacity
-              style={styles.titleTouchable}
-              onPress={() => {
-                if (!isDraft || !canWrite) return
-                setTitleDraft(pickingList.title)
-                setEditingTitle(true)
-              }}
-              disabled={!isDraft || !canWrite}
-              activeOpacity={isDraft && canWrite ? 0.7 : 1}
-            >
-              <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
-                {pickingList.title}
+          <View style={styles.titleBlock}>
+            {isDraft && editingTitle ? (
+              <TextInput
+                style={[
+                  styles.titleInput,
+                  { backgroundColor: colors.card, color: colors.text, borderColor: colors.border },
+                ]}
+                value={titleDraft}
+                onChangeText={setTitleDraft}
+                onBlur={() => void commitTitle()}
+                onSubmitEditing={() => void commitTitle()}
+                returnKeyType="done"
+                blurOnSubmit
+                autoFocus
+                selectTextOnFocus
+                maxLength={100}
+              />
+            ) : (
+              <TouchableOpacity
+                style={styles.titleTouchable}
+                onPress={() => {
+                  if (!isDraft || !canWrite) return
+                  setTitleDraft(pickingList.title)
+                  setEditingTitle(true)
+                }}
+                disabled={!isDraft || !canWrite}
+                activeOpacity={isDraft && canWrite ? 0.7 : 1}
+              >
+                <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+                  {pickingList.title}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {pickingList.status === 'completed' && pickingList.completed_at ? (
+              <Text style={[styles.completedAt, { color: colors.sub }]}>
+                ✅ Hoàn thành:{' '}
+                {new Date(pickingList.completed_at).toLocaleDateString('vi-VN', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </Text>
-            </TouchableOpacity>
-          )}
+            ) : null}
+          </View>
         </View>
         <Text style={[styles.status, { color: colors.sub }]}>
           Trạng thái: {statusLabel(pickingList.status)}
@@ -857,8 +871,10 @@ const styles = StyleSheet.create({
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16 },
   backBtn: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  titleTouchable: { flex: 1, minWidth: 0 },
+  titleBlock: { flex: 1, minWidth: 0 },
+  titleTouchable: { minWidth: 0 },
   title: { fontSize: 18, fontWeight: '700' },
+  completedAt: { fontSize: 12, marginTop: 2, marginLeft: 4 },
   titleInput: {
     flex: 1,
     borderWidth: 1,
