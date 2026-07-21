@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
 import { useThemeStore } from '../stores/themeStore'
+import { normalizeText } from '../utils/textUtils'
 import type { Location, Zone } from '../types'
 
 export type FilterMode = 'all' | 'warehouse' | 'market'
@@ -108,7 +110,24 @@ export default function FilterModal({
   const { colors } = useThemeStore()
   const [locationListOpen, setLocationListOpen] = useState(false)
   const [zoneListOpen, setZoneListOpen] = useState(false)
+  const [locationSearch, setLocationSearch] = useState('')
+  const [zoneSearch, setZoneSearch] = useState('')
   const modeOptions = allowAllMode ? MODE_OPTIONS_ALL : MODE_OPTIONS_REQUIRED
+
+  useEffect(() => {
+    if (!locationListOpen) setLocationSearch('')
+  }, [locationListOpen])
+
+  useEffect(() => {
+    if (!zoneListOpen) setZoneSearch('')
+  }, [zoneListOpen])
+
+  const locationSearchNorm = normalizeText(locationSearch)
+  const zoneSearchNorm = normalizeText(zoneSearch)
+  const filteredLocations = locations.filter((l) =>
+    normalizeText(l.name).includes(locationSearchNorm),
+  )
+  const filteredZones = zones.filter((z) => normalizeText(z.name).includes(zoneSearchNorm))
 
   const locationLabel = selectedLocationId
     ? locations.find((l) => l.id === selectedLocationId)?.name ?? '…'
@@ -201,47 +220,64 @@ export default function FilterModal({
             <Text style={{ color: colors.sub }}>▾</Text>
           </TouchableOpacity>
           {locationListOpen ? (
-            <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-              <TouchableOpacity
+            <View style={[styles.dropdownList, { borderColor: colors.border }]}>
+              <TextInput
                 style={[
-                  styles.optionRow,
+                  styles.dropdownSearch,
                   {
+                    color: colors.text,
                     borderColor: colors.border,
-                    backgroundColor: selectedLocationId ? colors.card : colors.accent + '22',
+                    backgroundColor: colors.bg,
                   },
                 ]}
-                onPress={() => handleLocation(null)}
-              >
-                <Text style={[styles.optionText, { color: colors.text, fontWeight: selectedLocationId ? '500' : '700' }]}>
-                  Tất cả kho
-                </Text>
-                {!selectedLocationId ? <Text style={{ color: colors.accent }}>✓</Text> : null}
-              </TouchableOpacity>
-              {locations.map((loc) => {
-                const sel = selectedLocationId === loc.id
-                return (
-                  <TouchableOpacity
-                    key={loc.id}
-                    style={[
-                      styles.optionRow,
-                      {
-                        borderColor: colors.border,
-                        backgroundColor: sel ? colors.accent + '22' : colors.card,
-                      },
-                    ]}
-                    onPress={() => handleLocation(loc.id)}
-                  >
-                    <Text
-                      style={[styles.optionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]}
-                      numberOfLines={2}
+                value={locationSearch}
+                onChangeText={setLocationSearch}
+                placeholder="Tìm kho..."
+                placeholderTextColor={colors.sub}
+                autoFocus
+              />
+              <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                <TouchableOpacity
+                  style={[
+                    styles.optionRow,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: selectedLocationId ? colors.card : colors.accent + '22',
+                    },
+                  ]}
+                  onPress={() => handleLocation(null)}
+                >
+                  <Text style={[styles.optionText, { color: colors.text, fontWeight: selectedLocationId ? '500' : '700' }]}>
+                    Tất cả kho
+                  </Text>
+                  {!selectedLocationId ? <Text style={{ color: colors.accent }}>✓</Text> : null}
+                </TouchableOpacity>
+                {filteredLocations.map((loc) => {
+                  const sel = selectedLocationId === loc.id
+                  return (
+                    <TouchableOpacity
+                      key={loc.id}
+                      style={[
+                        styles.optionRow,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: sel ? colors.accent + '22' : colors.card,
+                        },
+                      ]}
+                      onPress={() => handleLocation(loc.id)}
                     >
-                      {loc.name}
-                    </Text>
-                    {sel ? <Text style={{ color: colors.accent }}>✓</Text> : null}
-                  </TouchableOpacity>
-                )
-              })}
-            </ScrollView>
+                      <Text
+                        style={[styles.optionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]}
+                        numberOfLines={2}
+                      >
+                        {loc.name}
+                      </Text>
+                      {sel ? <Text style={{ color: colors.accent }}>✓</Text> : null}
+                    </TouchableOpacity>
+                  )
+                })}
+              </ScrollView>
+            </View>
           ) : null}
 
           <Text style={[styles.sectionLabel, { color: colors.sub }]}>Zone</Text>
@@ -274,47 +310,64 @@ export default function FilterModal({
             <Text style={{ color: colors.sub }}>▾</Text>
           </TouchableOpacity>
           {zoneListOpen && !zoneDisabled ? (
-            <ScrollView style={styles.dropdownList} keyboardShouldPersistTaps="handled" nestedScrollEnabled>
-              <TouchableOpacity
+            <View style={[styles.dropdownList, { borderColor: colors.border }]}>
+              <TextInput
                 style={[
-                  styles.optionRow,
+                  styles.dropdownSearch,
                   {
+                    color: colors.text,
                     borderColor: colors.border,
-                    backgroundColor: selectedZoneId ? colors.card : colors.accent + '22',
+                    backgroundColor: colors.bg,
                   },
                 ]}
-                onPress={() => handleZone(null)}
-              >
-                <Text style={[styles.optionText, { color: colors.text, fontWeight: selectedZoneId ? '500' : '700' }]}>
-                  Tất cả zone
-                </Text>
-                {!selectedZoneId ? <Text style={{ color: colors.accent }}>✓</Text> : null}
-              </TouchableOpacity>
-              {zones.map((zone) => {
-                const sel = selectedZoneId === zone.id
-                return (
-                  <TouchableOpacity
-                    key={zone.id}
-                    style={[
-                      styles.optionRow,
-                      {
-                        borderColor: colors.border,
-                        backgroundColor: sel ? colors.accent + '22' : colors.card,
-                      },
-                    ]}
-                    onPress={() => handleZone(zone.id)}
-                  >
-                    <Text
-                      style={[styles.optionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]}
-                      numberOfLines={2}
+                value={zoneSearch}
+                onChangeText={setZoneSearch}
+                placeholder="Tìm zone..."
+                placeholderTextColor={colors.sub}
+                autoFocus
+              />
+              <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+                <TouchableOpacity
+                  style={[
+                    styles.optionRow,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: selectedZoneId ? colors.card : colors.accent + '22',
+                    },
+                  ]}
+                  onPress={() => handleZone(null)}
+                >
+                  <Text style={[styles.optionText, { color: colors.text, fontWeight: selectedZoneId ? '500' : '700' }]}>
+                    Tất cả zone
+                  </Text>
+                  {!selectedZoneId ? <Text style={{ color: colors.accent }}>✓</Text> : null}
+                </TouchableOpacity>
+                {filteredZones.map((zone) => {
+                  const sel = selectedZoneId === zone.id
+                  return (
+                    <TouchableOpacity
+                      key={zone.id}
+                      style={[
+                        styles.optionRow,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: sel ? colors.accent + '22' : colors.card,
+                        },
+                      ]}
+                      onPress={() => handleZone(zone.id)}
                     >
-                      {zone.name}
-                    </Text>
-                    {sel ? <Text style={{ color: colors.accent }}>✓</Text> : null}
-                  </TouchableOpacity>
-                )
-              })}
-            </ScrollView>
+                      <Text
+                        style={[styles.optionText, { color: colors.text, fontWeight: sel ? '700' : '500' }]}
+                        numberOfLines={2}
+                      >
+                        {zone.name}
+                      </Text>
+                      {sel ? <Text style={{ color: colors.accent }}>✓</Text> : null}
+                    </TouchableOpacity>
+                  )
+                })}
+              </ScrollView>
+            </View>
           ) : null}
 
           <TouchableOpacity
@@ -368,6 +421,14 @@ const styles = StyleSheet.create({
   },
   dropdownValue: { flex: 1, fontSize: 14, fontWeight: '600', marginRight: 8 },
   dropdownList: { maxHeight: 180, marginTop: 8 },
+  dropdownSearch: {
+    height: 36,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    fontSize: 13,
+    marginBottom: 6,
+  },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',

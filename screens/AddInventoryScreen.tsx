@@ -120,6 +120,7 @@ export default function AddInventoryScreen() {
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(initialZoneId ?? null)
   const [selectedTier, setSelectedTier] = useState<number | null>(initialTierId ?? tier ?? null)
   const [showZoneOptions, setShowZoneOptions] = useState(false)
+  const [zoneSearch, setZoneSearch] = useState('')
   const [showTierOptions, setShowTierOptions] = useState(false)
 
   const [newCategoryL1Id, setNewCategoryL1Id] = useState<string | null>(null)
@@ -225,6 +226,10 @@ export default function AddInventoryScreen() {
       void fetchCategories()
     }
   }, [fetchCategories])
+
+  useEffect(() => {
+    if (!showZoneOptions) setZoneSearch('')
+  }, [showZoneOptions])
 
   useEffect(() => {
     fetchLocations()
@@ -512,18 +517,44 @@ export default function AddInventoryScreen() {
             </Pressable>
             {showZoneOptions && (
               <View style={[styles.optionsWrap, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {zones.map((zone) => (
-                  <TouchableOpacity
-                    key={zone.id}
-                    style={[styles.optionRow, { borderBottomColor: colors.border }]}
-                    onPress={() => {
-                      setSelectedZoneId(zone.id)
-                      setShowZoneOptions(false)
-                    }}
-                  >
-                    <Text style={{ color: colors.text }}>{zone.name}</Text>
-                  </TouchableOpacity>
-                ))}
+                <TextInput
+                  style={[
+                    styles.zoneSearch,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.bg,
+                    },
+                  ]}
+                  value={zoneSearch}
+                  onChangeText={setZoneSearch}
+                  placeholder="Tìm zone..."
+                  placeholderTextColor={colors.sub}
+                  autoFocus
+                />
+                <ScrollView
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled
+                  style={{ maxHeight: 200 }}
+                >
+                  {zones
+                    .filter((z) =>
+                      normalizeText(z.name).includes(normalizeText(zoneSearch.trim())),
+                    )
+                    .map((zone) => (
+                      <TouchableOpacity
+                        key={zone.id}
+                        style={[styles.optionRow, { borderBottomColor: colors.border }]}
+                        onPress={() => {
+                          setSelectedZoneId(zone.id)
+                          setShowZoneOptions(false)
+                          setZoneSearch('')
+                        }}
+                      >
+                        <Text style={{ color: colors.text }}>{zone.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                </ScrollView>
               </View>
             )}
           </View>
@@ -1015,6 +1046,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 6,
     overflow: 'hidden',
+  },
+  zoneSearch: {
+    height: 36,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    fontSize: 13,
+    margin: 6,
+    marginBottom: 4,
   },
   optionRow: {
     borderBottomWidth: 1,

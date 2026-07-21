@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(E): search dropdown FilterModal Kho/Zone + InternalNotes scroll 20 + AddInventory Zone search
+
+- `FilterModal`: TextInput search + filter `normalizeText` cho Kho/Zone.
+- `InternalNotesScreen`: gợi ý SP limit 20 + ScrollView độc lập maxHeight 220.
+- `AddInventoryScreen`: dropdown Zone có search + ScrollView maxHeight ~5 item.
+
+---
+
 ## [tháng 7/2026] — feat(D4): xuất PDF danh sách giảm giá (expo-print + expo-sharing)
 
 - `DiscountScreen`: nút 📄 → HTML + ảnh base64 → `printToFileAsync` → Share sheet.

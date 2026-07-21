@@ -89,7 +89,7 @@ export default function InternalNotesScreen() {
     if (!q) return []
     return products
       .filter((p) => !p.is_archived && normalizeText(p.name).includes(q))
-      .slice(0, 8)
+      .slice(0, 20)
   }, [products, productQuery, selectedProduct])
 
   const canSaveCreate =
@@ -359,18 +359,24 @@ export default function InternalNotesScreen() {
                     />
                     {productSuggestions.length > 0 ? (
                       <View style={[styles.suggestList, { borderColor: colors.border, backgroundColor: colors.bg }]}>
-                        {productSuggestions.map((p) => (
-                          <TouchableOpacity
-                            key={p.id}
-                            style={[styles.suggestRow, { borderBottomColor: colors.border }]}
-                            onPress={() => {
-                              setSelectedProduct(p)
-                              setProductQuery(p.name)
-                            }}
-                          >
-                            <Text style={{ color: colors.text, fontSize: 14 }}>{p.name}</Text>
-                          </TouchableOpacity>
-                        ))}
+                        <ScrollView
+                          keyboardShouldPersistTaps="handled"
+                          nestedScrollEnabled
+                          style={{ maxHeight: 220 }}
+                        >
+                          {productSuggestions.map((p) => (
+                            <TouchableOpacity
+                              key={p.id}
+                              style={[styles.suggestRow, { borderBottomColor: colors.border }]}
+                              onPress={() => {
+                                setSelectedProduct(p)
+                                setProductQuery(p.name)
+                              }}
+                            >
+                              <Text style={{ color: colors.text, fontSize: 14 }}>{p.name}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
                       </View>
                     ) : null}
                     {productQuery.trim().length > 0 && productSuggestions.length === 0 ? (
@@ -574,8 +580,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     marginTop: 6,
-    maxHeight: 180,
-    overflow: 'hidden',
   },
   suggestRow: {
     paddingHorizontal: 12,
