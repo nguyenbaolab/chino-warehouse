@@ -71,6 +71,7 @@ export default function PickingDetailScreen() {
     addPickingItem,
     deletePickingItem,
     togglePickedItem,
+    updatePickingItem,
     updatePickingList,
     deletePickingList,
     startPicking,
@@ -85,6 +86,8 @@ export default function PickingDetailScreen() {
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleDraft, setTitleDraft] = useState('')
   const [isCompleting, setIsCompleting] = useState(false)
+  const [editingQtyId, setEditingQtyId] = useState<string | null>(null)
+  const [qtyInput, setQtyInput] = useState('')
   const [warehouseLocations, setWarehouseLocations] = useState<Location[]>([])
   const [warehouseZoneIds, setWarehouseZoneIds] = useState<Set<string>>(new Set())
   /** Tap-to-zoom ảnh SP */
@@ -273,6 +276,36 @@ export default function PickingDetailScreen() {
       await updatePickingList(pickingList.id, { title: next })
     }
     setEditingTitle(false)
+  }
+
+  async function handleSaveItemQty(itemId: string, originalQty: number) {
+    const val = parseInt(qtyInput, 10)
+    if (Number.isNaN(val) || val <= 0) {
+      Alert.alert('Không hợp lệ', 'Số lượng phải là số nguyên lớn hơn 0.')
+      return
+    }
+    if (val === originalQty) {
+      setEditingQtyId(null)
+      setQtyInput('')
+      return
+    }
+    await updatePickingItem(itemId, { quantity_boxes: val })
+    setEditingQtyId(null)
+    setQtyInput('')
+  }
+
+  function cancelQtyEdit() {
+    setEditingQtyId(null)
+    setQtyInput('')
+  }
+
+  function handleQtyEditBlur(itemId: string, originalQty: number) {
+    const val = parseInt(qtyInput, 10)
+    if (qtyInput.trim() === '' || Number.isNaN(val) || val === originalQty) {
+      cancelQtyEdit()
+      return
+    }
+    void handleSaveItemQty(itemId, originalQty)
   }
 
   function clearProductPanel() {
@@ -593,6 +626,12 @@ export default function PickingDetailScreen() {
                   {section.items.map((item) => {
                     const product =
                       item.product ?? products.find((p) => p.id === item.product_id) ?? null
+                    const isEditingQty = canEditItems && editingQtyId === item.id
+                    const qtyChanged =
+                      isEditingQty &&
+                      qtyInput.trim() !== '' &&
+                      !Number.isNaN(parseInt(qtyInput, 10)) &&
+                      parseInt(qtyInput, 10) !== item.quantity_boxes
                     return (
                       <View
                         key={item.id}
@@ -647,21 +686,73 @@ export default function PickingDetailScreen() {
                                 {product?.name ?? 'Sản phẩm'}
                               </Text>
                             </TouchableOpacity>
-                            <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
-                              {item.quantity_boxes} thùng
-                            </Text>
+                            {isEditingQty ? (
+                              <View style={styles.qtyEditRow}>
+                                <TextInput
+                                  style={[
+                                    styles.qtyEditInput,
+                                    {
+                                      color: colors.text,
+                                      borderColor: colors.border,
+                                      backgroundColor: colors.bg,
+                                    },
+                                  ]}
+                                  value={qtyInput}
+                                  onChangeText={setQtyInput}
+                                  keyboardType="numeric"
+                                  maxLength={4}
+                                  autoFocus
+                                  textAlignVertical="center"
+                                  onBlur={() => handleQtyEditBlur(item.id, item.quantity_boxes)}
+                                  onSubmitEditing={() => void handleSaveItemQty(item.id, item.quantity_boxes)}
+                                />
+                                <Text style={{ color: colors.sub, fontSize: 13 }}>thùng</Text>
+                                <TouchableOpacity
+                                  onPress={() => {
+                                    if (qtyChanged) {
+                                      void handleSaveItemQty(item.id, item.quantity_boxes)
+                                    } else {
+                                      cancelQtyEdit()
+                                    }
+                                  }}
+                                  hitSlop={8}
+                                >
+                                  {qtyChanged ? (
+                                    <Text style={{ color: '#22C55E', fontSize: 16, fontWeight: '700' }}>
+                                      ✓
+                                    </Text>
+                                  ) : (
+                                    <Text style={{ color: colors.sub, fontSize: 13 }}>Huỷ</Text>
+                                  )}
+                                </TouchableOpacity>
+                              </View>
+                            ) : canEditItems ? (
+                              <View style={styles.qtyReadRow}>
+                                <Text style={[styles.itemQty, { color: colors.text }]}>
+                                  {item.quantity_boxes} thùng
+                                </Text>
+                                <TouchableOpacity
+                                  onPress={() => {
+                                    setEditingQtyId(item.id)
+                                    setQtyInput(String(item.quantity_boxes))
+                                  }}
+                                  style={styles.editQtyBtn}
+                                >
+                                  <Text style={{ fontSize: 14 }}>✏️</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  onPress={() => void deletePickingItem(item.id)}
+                                  style={styles.editQtyBtn}
+                                >
+                                  <Text style={{ fontSize: 14 }}>🗑️</Text>
+                                </TouchableOpacity>
+                              </View>
+                            ) : (
+                              <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
+                                {item.quantity_boxes} thùng
+                              </Text>
+                            )}
                           </View>
-                          {canEditItems ? (
-                            <TouchableOpacity
-                              style={[
-                                styles.deleteItemBtn,
-                                { borderColor: colors.border, backgroundColor: colors.bg },
-                              ]}
-                              onPress={() => void deletePickingItem(item.id)}
-                            >
-                              <Text style={{ color: colors.text, fontSize: 12 }}>🗑️</Text>
-                            </TouchableOpacity>
-                          ) : null}
                         </View>
                       </View>
                     )
@@ -834,6 +925,21 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   itemName: { fontSize: 14, fontWeight: '700' },
+  itemQty: { fontSize: 12, marginTop: 2 },
+  qtyEditRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  qtyEditInput: {
+    width: 60,
+    height: 36,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: Platform.OS === 'android' ? 0 : 6,
+    fontSize: 14,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  qtyReadRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  editQtyBtn: { padding: 4 },
   deleteItemBtn: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6 },
   footerActions: {
     flexDirection: 'row',
