@@ -21,6 +21,7 @@ import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useCanWrite } from '../stores/authStore'
 import { normalizeText } from '../utils/textUtils'
+import { deleteNoteImage, pickImage, uploadNoteImage } from '../utils/imageUtils'
 import type { InternalNote, Product } from '../types'
 import ImageViewerModal from '../components/ImageViewerModal'
 
@@ -53,9 +54,12 @@ export default function InternalNotesScreen() {
   const [productQuery, setProductQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [createReason, setCreateReason] = useState('')
+  const [createImageUri, setCreateImageUri] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   const [editNote, setEditNote] = useState<InternalNote | null>(null)
   const [editReason, setEditReason] = useState('')
+  const [editImageUri, setEditImageUri] = useState<string | null>(null)
   /** Tap-to-zoom ảnh SP */
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
 
@@ -95,7 +99,65 @@ export default function InternalNotesScreen() {
   const canSaveCreate =
     (!!selectedProduct || productQuery.trim().length > 0) &&
     createReason.trim().length > 0 &&
-    !saving
+    !saving &&
+    !uploadingImage
+
+  function isLocalImageUri(uri: string): boolean {
+    return uri.startsWith('file://') || uri.startsWith('content://')
+  }
+
+  function handlePickNoteImage(onDone: (uri: string) => void) {
+    Alert.alert('Thêm ảnh', 'Chọn nguồn ảnh', [
+      {
+        text: 'Chụp ảnh',
+        onPress: () => {
+          void (async () => {
+            const uri = await pickImage('camera')
+            if (uri) onDone(uri)
+          })()
+        },
+      },
+      {
+        text: 'Thư viện',
+        onPress: () => {
+          void (async () => {
+            const uri = await pickImage('library')
+            if (uri) onDone(uri)
+          })()
+        },
+      },
+      { text: 'Huỷ', style: 'cancel' },
+    ])
+  }
+
+  function renderNoteImagePicker(
+    imageUri: string | null,
+    onSet: (uri: string | null) => void,
+  ) {
+    return (
+      <>
+        <Text style={[styles.label, { color: colors.sub }]}>Ảnh đính kèm</Text>
+        {imageUri ? (
+          <View style={styles.noteImageWrap}>
+            <TouchableOpacity onPress={() => setZoomImageUrl(imageUri)}>
+              <Image source={{ uri: imageUri }} style={styles.noteImagePreview} resizeMode="cover" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.removeImageBtn} onPress={() => onSet(null)}>
+              <Text style={{ color: colors.sub, fontSize: 12 }}>✕ Xoá ảnh</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={[styles.addImageBtn, { borderColor: colors.border }]}
+            onPress={() => handlePickNoteImage((uri) => onSet(uri))}
+          >
+            <Text style={{ fontSize: 22 }}>📷</Text>
+            <Text style={[styles.addImageText, { color: colors.sub }]}>Thêm ảnh</Text>
+          </TouchableOpacity>
+        )}
+      </>
+    )
+  }
 
   function noteDisplayName(note: InternalNote): string {
     if (note.product_id && note.product?.name) return note.product.name
@@ -107,6 +169,7 @@ export default function InternalNotesScreen() {
     setProductQuery('')
     setSelectedProduct(null)
     setCreateReason('')
+    setCreateImageUri(null)
   }
 
   function closeCreateModal() {
@@ -117,38 +180,77 @@ export default function InternalNotesScreen() {
   function openEdit(note: InternalNote) {
     setEditNote(note)
     setEditReason(note.reason)
+    setEditImageUri(note.image_url ?? null)
   }
 
   function closeEditModal() {
     setEditNote(null)
     setEditReason('')
+    setEditImageUri(null)
   }
 
   async function handleCreateSave() {
     if (!createReason.trim()) return
     if (!selectedProduct && !productQuery.trim()) return
     setSaving(true)
+    setUploadingImage(true)
     try {
-      const { error } = await addInternalNote({
+      const result = await addInternalNote({
         productId: selectedProduct?.id,
-        customName: productQuery.trim(),
-        reason: createReason,
+        customName: !selectedProduct ? productQuery.trim() : undefined,
+        reason: createReason.trim(),
+        imageUrl: null,
       })
-      if (error) {
-        Alert.alert('Lỗi', error)
+      if (result.error || !result.note) {
+        Alert.alert('Lỗi', result.error ?? 'Không thể tạo ghi chú.')
         return
+      }
+      if (createImageUri && result.note.id) {
+        try {
+          const url = await uploadNoteImage(result.note.id, createImageUri)
+          await updateInternalNote(result.note.id, createReason.trim(), url)
+        } catch {
+          /* Ảnh upload thất bại — note vẫn tạo được */
+        }
       }
       closeCreateModal()
     } finally {
       setSaving(false)
+      setUploadingImage(false)
     }
   }
 
   async function handleEditSave() {
     if (!editNote || !editReason.trim()) return
     setSaving(true)
+    setUploadingImage(true)
     try {
-      const { error } = await updateInternalNote(editNote.id, editReason)
+      let imageUrlParam: string | null | undefined = undefined
+      const imageChanged = editImageUri !== (editNote.image_url ?? null)
+
+      if (imageChanged) {
+        if (!editImageUri) {
+          if (editNote.image_url) {
+            try {
+              await deleteNoteImage(editNote.id)
+            } catch {
+              /* bỏ qua */
+            }
+          }
+          imageUrlParam = null
+        } else if (isLocalImageUri(editImageUri)) {
+          try {
+            imageUrlParam = await uploadNoteImage(editNote.id, editImageUri)
+          } catch {
+            Alert.alert('Lỗi', 'Không thể upload ảnh ghi chú.')
+            return
+          }
+        } else {
+          imageUrlParam = editImageUri
+        }
+      }
+
+      const { error } = await updateInternalNote(editNote.id, editReason, imageUrlParam)
       if (error) {
         Alert.alert('Lỗi', error)
         return
@@ -156,6 +258,7 @@ export default function InternalNotesScreen() {
       closeEditModal()
     } finally {
       setSaving(false)
+      setUploadingImage(false)
     }
   }
 
@@ -182,14 +285,14 @@ export default function InternalNotesScreen() {
 
   function renderNoteCard({ item }: { item: InternalNote }) {
     const hasLinkedProduct = !!item.product_id
-    const imageUrl = item.product?.image_url
+    const imageUrl = item.image_url ?? item.product?.image_url ?? null
     const displayName = noteDisplayName(item)
     const isCustomOnly = !hasLinkedProduct && !!item.custom_product_name?.trim()
 
     const mainContent = (
       <View style={styles.cardRowMain}>
         <View style={styles.thumbnailContainer}>
-          {hasLinkedProduct && imageUrl ? (
+          {imageUrl ? (
             <TouchableOpacity activeOpacity={0.85} onPress={() => setZoomImageUrl(imageUrl)}>
               <Image source={{ uri: imageUrl }} style={styles.thumbnail} resizeMode="cover" />
             </TouchableOpacity>
@@ -391,6 +494,8 @@ export default function InternalNotesScreen() {
                   </>
                 )}
 
+                {renderNoteImagePicker(createImageUri, setCreateImageUri)}
+
                 <Text style={[styles.label, { color: colors.sub }]}>Lý do / ghi chú *</Text>
                 <TextInput
                   style={[
@@ -423,7 +528,7 @@ export default function InternalNotesScreen() {
                     disabled={!canSaveCreate}
                   >
                     <Text style={{ color: colors.card, fontWeight: '600' }}>
-                      {saving ? 'Đang lưu...' : 'Lưu'}
+                      {saving || uploadingImage ? 'Đang lưu...' : 'Lưu'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -448,6 +553,7 @@ export default function InternalNotesScreen() {
                     {noteDisplayName(editNote)}
                   </Text>
                 ) : null}
+                {renderNoteImagePicker(editImageUri, setEditImageUri)}
                 <Text style={[styles.label, { color: colors.sub }]}>Lý do / ghi chú *</Text>
                 <TextInput
                   style={[
@@ -476,14 +582,14 @@ export default function InternalNotesScreen() {
                       styles.btnPrimary,
                       {
                         backgroundColor: colors.accent,
-                        opacity: editReason.trim().length > 0 && !saving ? 1 : 0.45,
+                        opacity: editReason.trim().length > 0 && !saving && !uploadingImage ? 1 : 0.45,
                       },
                     ]}
                     onPress={() => void handleEditSave()}
-                    disabled={editReason.trim().length === 0 || saving}
+                    disabled={editReason.trim().length === 0 || saving || uploadingImage}
                   >
                     <Text style={{ color: colors.card, fontWeight: '600' }}>
-                      {saving ? 'Đang lưu...' : 'Lưu'}
+                      {saving || uploadingImage ? 'Đang lưu...' : 'Lưu'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -615,4 +721,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
   },
+  noteImageWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
+  },
+  noteImagePreview: { width: 80, height: 80, borderRadius: 8 },
+  removeImageBtn: { padding: 4 },
+  addImageBtn: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginBottom: 8,
+  },
+  addImageText: { fontSize: 11 },
 })

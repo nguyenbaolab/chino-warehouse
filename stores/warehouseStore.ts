@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import { deleteProductImage } from '../utils/imageUtils'
+import { deleteProductImage, deleteNoteImage } from '../utils/imageUtils'
 import { getErrorMessage } from '../utils/errorMessages'
 import { normalizeText } from '../utils/textUtils'
 import {
@@ -200,8 +200,13 @@ type WarehouseStore = {
     productId?: string
     customName?: string
     reason: string
+    imageUrl?: string | null
   }) => Promise<{ error: string | null; note?: InternalNote }>
-  updateInternalNote: (id: string, reason: string) => Promise<{ error: string | null }>
+  updateInternalNote: (
+    id: string,
+    reason: string,
+    imageUrl?: string | null,
+  ) => Promise<{ error: string | null }>
   deleteInternalNote: (id: string) => Promise<{ error: string | null }>
 }
 
@@ -1750,6 +1755,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         custom_product_name: customName,
         reason: trimmedReason,
         created_by: userData.user?.id ?? null,
+        ...(params.imageUrl ? { image_url: params.imageUrl } : {}),
       })
       .select('*, product:products(id, name, image_url)')
       .single()
@@ -1762,14 +1768,16 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return { error: null, note }
   },
 
-  updateInternalNote: async (id, reason) => {
+  updateInternalNote: async (id, reason, imageUrl) => {
     const trimmed = reason.trim()
     if (!trimmed) {
       return { error: 'Nội dung ghi chú không được để trống.' }
     }
+    const payload: Record<string, unknown> = { reason: trimmed }
+    if (imageUrl !== undefined) payload.image_url = imageUrl
     const { data, error } = await supabase
       .from('internal_notes')
-      .update({ reason: trimmed })
+      .update(payload)
       .eq('id', id)
       .select('*, product:products(id, name, image_url)')
       .single()
@@ -1785,6 +1793,15 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   deleteInternalNote: async (id) => {
+    const note = get().internalNotes.find((n) => n.id === id)
+    if (note?.image_url) {
+      try {
+        await deleteNoteImage(id)
+      } catch {
+        /* bỏ qua — không chặn xóa note */
+      }
+    }
+
     const { error } = await supabase.from('internal_notes').delete().eq('id', id)
     if (error) {
       if (__DEV__) console.error('[warehouseStore] deleteInternalNote:', error)

@@ -85,7 +85,7 @@ utils/
   textUtils.ts          # normalizeText() — tìm kiếm / filter text toàn app
   dateUtils.ts          # isoExpiryToDisplay / parseDisplayDateToIso / isValidDisplayDate (nhập hạn lô)
   conflictUtils.ts     # A5 checkConflict optimistic locking (updated_at + audit_logs)
-  imageUtils.ts        # uploadProductImage, deleteProductImage, compressImage (F08)
+  imageUtils.ts        # uploadProductImage, uploadNoteImage, deleteProductImage, deleteNoteImage (F08 / F31)
   errorMessages.ts     # SEC-06 getErrorMessage — generic Supabase errors (RLS, network, operation map)
 screens/
   AddInventoryScreen.tsx
@@ -94,7 +94,7 @@ screens/
   CategoryManagementScreen.tsx
   DashboardScreen.tsx          # F23 — tổng quan kho (Phase 3)
   DiscontinuedProductsScreen.tsx
-  InternalNotesScreen.tsx      # F31 — ghi chú nội bộ (Settings)
+  InternalNotesScreen.tsx      # F31 — ghi chú nội bộ; ảnh đính kèm `image_url` (upload notes/)
   StockCheckScreen.tsx         # C4 — Checklist kiểm hàng (Settings, market is_special)
   DiscountScreen.tsx           # D3 — Grid hàng giảm giá (Settings, is_price_reduced)
   LocationManagementScreen.tsx
@@ -222,7 +222,7 @@ README.md
 
 **State / actions — picking (F34):** `pickingLists`, `pickingListItems`; `fetchPickingLists`, `createPickingList`, `updatePickingList`, `deletePickingList`, `addPickingItem`, `updatePickingItem`, `deletePickingItem`, `togglePickedItem`, `startPicking`, **`revertPickingToDraft`** (`in_progress` → `draft`, giữ `is_picked`), `completePicking` (re-fetch qty → sequential trừ tồn picked items → status `completed` nếu all OK; partial fail giữ `in_progress`). **PickingDetailScreen:** draft = tìm tên + **📷 barcode** → **`LotPickerModal`** (tick + qty mặc định 1 → «Thêm X lô»); in_progress = tick + «✏️ Quay lại chỉnh sửa» (outline) + «Hoàn thành»; completed = không revert.
 
-**Actions — ghi chú nội bộ (F31):** `fetchInternalNotes`, `addInternalNote({ productId?, customName?, reason })`, `updateInternalNote`, `deleteInternalNote` (join `product:products(id, name, image_url)`; `product_id` nullable + `custom_product_name`).
+**Actions — ghi chú nội bộ (F31):** `fetchInternalNotes`, `addInternalNote({ productId?, customName?, reason, imageUrl? })`, `updateInternalNote(id, reason, imageUrl?)`, `deleteInternalNote` (xóa Storage `notes/{id}.jpg` nếu có `image_url`; join `product:products(id, name, image_url)`).
 
 **Actions — audit log:** `fetchAuditLogs` (cursor-based, filter kho + loại + người + sản phẩm), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`.
 

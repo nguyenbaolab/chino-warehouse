@@ -25,6 +25,23 @@ function storagePath(productId: string): string {
   return `${productId}.jpg`
 }
 
+/** Path ảnh note — subfolder riêng, không đụng ảnh SP */
+function noteImagePath(noteId: string): string {
+  return `notes/${noteId}.jpg`
+}
+
+async function readUriAsUploadBuffer(uri: string): Promise<ArrayBuffer> {
+  const base64 = await FileSystem.readAsStringAsync(uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  })
+  const binaryString = atob(base64)
+  const bytes = new Uint8Array(binaryString.length)
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
 /**
  * Xin quyền và mở camera hoặc thư viện ảnh; trả về URI local hoặc null nếu từ chối/hủy.
  */
@@ -83,21 +100,13 @@ async function compressImage(uri: string): Promise<string> {
  */
 export async function uploadProductImage(productId: string, uri: string): Promise<string> {
   if (__DEV__) console.log('[F08] compress start:', uri)
-  const compressed = { uri: await compressImage(uri) }
-  if (__DEV__) console.log('[F08] compress done:', compressed.uri)
-  const base64 = await FileSystem.readAsStringAsync(compressed.uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  })
-  const binaryString = atob(base64)
-  const bytes = new Uint8Array(binaryString.length)
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i)
-  }
-  if (__DEV__) console.log('[F08] blob size:', bytes.length)
+  const compressedUri = await compressImage(uri)
+  const bytes = await readUriAsUploadBuffer(compressedUri)
+  if (__DEV__) console.log('[F08] blob size:', bytes.byteLength)
   const path = storagePath(productId)
   if (__DEV__) console.log('[F08] upload start to path:', productId + '.jpg')
 
-  const { data: uploadData, error: uploadError } = await supabase.storage.from(BUCKET).upload(path, bytes.buffer, {
+  const { data: uploadData, error: uploadError } = await supabase.storage.from(BUCKET).upload(path, bytes, {
     contentType: 'image/jpeg',
     upsert: true,
   })
@@ -112,6 +121,24 @@ export async function uploadProductImage(productId: string, uri: string): Promis
 }
 
 /**
+ * Nén và upload ảnh ghi chú nội bộ lên Storage `notes/{noteId}.jpg`.
+ */
+export async function uploadNoteImage(noteId: string, uri: string): Promise<string> {
+  const compressedUri = await compressImage(uri)
+  const bytes = await readUriAsUploadBuffer(compressedUri)
+  const path = noteImagePath(noteId)
+
+  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, bytes, {
+    contentType: 'image/jpeg',
+    upsert: true,
+  })
+  if (uploadError) throw new Error('Upload ảnh ghi chú thất bại')
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  return `${data.publicUrl}?v=${Date.now()}`
+}
+
+/**
  * Xóa ảnh sản phẩm trên Storage; bỏ qua nếu file không tồn tại.
  */
 export async function deleteProductImage(productId: string): Promise<void> {
@@ -123,4 +150,16 @@ export async function deleteProductImage(productId: string): Promise<void> {
   if (message.includes('not found') || message.includes('object not found')) return
 
   throw new Error('Xoa anh that bai')
+}
+
+/** Xóa ảnh ghi chú trên Storage; bỏ qua nếu file không tồn tại. */
+export async function deleteNoteImage(noteId: string): Promise<void> {
+  const { error } = await supabase.storage.from(BUCKET).remove([noteImagePath(noteId)])
+
+  if (!error) return
+
+  const message = (error.message ?? '').toLowerCase()
+  if (message.includes('not found') || message.includes('object not found')) return
+
+  throw new Error('Xóa ảnh ghi chú thất bại')
 }
