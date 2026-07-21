@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(D3): DiscountScreen — grid 3 cột hàng giảm giá, filter zone
+
+- `DiscountScreen`: lô `is_price_reduced`; FilterModal mode/kho/zone; grid 3 cột; tap → ProductDetail; Settings route `Discount`.
+
+---
+
 ## [tháng 7/2026] — fix(notifications): card tap toggle expand + thumbnail ảnh SP
 
 - Tab hết hạn: bỏ «Chi tiết»; tap card = expand; tap tên → ProductDetail; thumb 64×64 + zoom.

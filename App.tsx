@@ -35,6 +35,7 @@ import DashboardScreen from './screens/DashboardScreen'
 import UserManagementScreen from './screens/UserManagementScreen'
 import InternalNotesScreen from './screens/InternalNotesScreen'
 import StockCheckScreen from './screens/StockCheckScreen'
+import DiscountScreen from './screens/DiscountScreen'
 import ExpiryAlertScreen from './screens/ExpiryAlertScreen'
 import {
   bootstrapExpiryNotifications,
@@ -105,6 +106,7 @@ function SettingsStackNavigator() {
       <SettingsStack.Screen name="DiscontinuedProducts" component={DiscontinuedProductsScreen} />
       <SettingsStack.Screen name="InternalNotes" component={InternalNotesScreen} />
       <SettingsStack.Screen name="StockCheck" component={StockCheckScreen} />
+      <SettingsStack.Screen name="Discount" component={DiscountScreen} />
       <SettingsStack.Screen name="ExpiryAlert" component={ExpiryAlertScreen} />
       <SettingsStack.Screen name="ProductDetail" component={ProductDetailScreen} />
       <SettingsStack.Screen name="Dashboard" component={DashboardScreen} />

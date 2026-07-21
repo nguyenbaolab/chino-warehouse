@@ -315,6 +315,18 @@ export default function SettingsScreen() {
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('Discount')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>🏷️ Hàng giảm giá</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>Lô đã đánh dấu giảm giá</Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
+
       {/* F35 — Thông báo hết hạn (local push) */}
       <TouchableOpacity
         style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}

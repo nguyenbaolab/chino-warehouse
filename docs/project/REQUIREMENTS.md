@@ -4,6 +4,7 @@
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
 **Phiên bản:** 1.3.35 | Tháng 7/2026
 
+> **v1.3.39** — D3: `DiscountScreen` — grid 3 cột lô `is_price_reduced`, FilterModal mode/kho/zone, badge `discount_percent`.
 > **v1.3.38** — D2: Notifications tab hết hạn — card 3 hàng + badge `discount_percent` («Giảm X%» / «Giảm giá»).
 > **v1.3.37** — D1: `inventory_entries.discount_percent` NUMERIC(5,2) 0–100 NULL; schema v5.2 (UI D2–D4 sau).
 > **v1.3.36** — F34 C2: ProductDetail save qty = 0 → Alert nếu lô trong picking draft/in_progress (Giữ nguyên / Xóa khỏi đơn).
@@ -277,7 +278,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | is_price_reduced | Boolean | Đã giảm giá (Notifications) |
 | is_special | Boolean | **Phase 4 C1 Done:** hàng đặc biệt trên market (default false) |
 | is_checked | Boolean | **Phase 4 C1 Done:** checklist Kiểm hàng (default false); chủ yếu market + `is_special` |
-| discount_percent | Numeric(5,2) | **D1 Done (schema v5.2):** % giảm giá 0–100; NULL = không giảm giá. **D2 Done:** badge + dòng lô trên Notifications (tab hết hạn) |
+| discount_percent | Numeric(5,2) | **D1 Done (schema v5.2):** % giảm giá 0–100; NULL = không giảm giá. **D2 Done:** badge Notifications. **D3 Done:** `DiscountScreen` grid Settings |
 | notes | String | Ghi chú lô hàng |
 | updated_at | Timestamp | Tự cập nhật |
 
@@ -400,7 +401,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | **Phase 3** | **Bug fixes (A1–A5):** DD/MM/YYYY hạn (KI-044), ProductsScreen barcode/X/search (KI-045), zone overlap (KI-046), Map barcode text search (KI-047), conflict detection `updated_at` (KI-048). **UX (B1–B8):** badge giảm giá, chuyển lô cùng zone, `normalizeText`, MM/YYYY→ngày 1, hint AddInventory, sửa tên ZoneDetail, Map scan→sheet scroll, toggle cảnh báo global. **Realtime (C1):** zones Realtime trên Map. **Hoàn thiện:** F27 (2 tab + PDF), F28 (`discontinued_reason`), F08 (ảnh SP). **Mới:** F23 Dashboard, F24 RBAC (`user_profiles`), **F31 Internal Notes**. **Bổ sung (Group F):** F1 navigation scanner (KI-057), F2 block xóa lô (KI-058), F3 sync `is_archived`, F4 tap kho→Map, F5 filter chưa ảnh, **F7** barcode autofill AddInventory, **F8** dời lô bằng map. **Security:** SEC-05, SEC-06. **Dropped:** F19. | Ổn định multi-user, UX vận hành, đặt hàng/PDF, RBAC, ghi chú nội bộ |
 | **Phase 4** | **Closed.** **F36 Market mode** Done (C1–C4); **F32** Done; KI-039/040/050 Done; SEC-10/12/13/14 Done (H1–H4). **F27 mở rộng** carry → Phase 5. **F34/F35 / F21/F25/F26 / KI-026** → Phase 5. **F19/F33 Dropped.** Xem `SUMMARY_4.md`, `PLAN_4.md`. | Market first-class + vận hành |
 | **Phase 5** | **Closed.** **F34** Picking Done; **F35** Push Done; UX/bugfixes (KI-063/064/066/068/069/070). **F27 mở rộng** carry → Phase 6. Optional F21/F25/F26 / Expo / KI-026 deferred. Xem `SUMMARY_5.md`, `HANDOFF_5.md`. | Picking + push + ổn định |
-| **Phase 6** | **F27 mở rộng** (A1); Picking UX (B1–B5); Products picking (C1–C2); Hàng giảm giá (**D1–D2 Done** → D3–D4); SearchableDropdown (E1–E2); Settings redesign (F1). Xem `PLAN_6.md`. | Hoàn thiện picking + giảm giá + UX |
+| **Phase 6** | **F27 mở rộng** (A1); Picking UX (B1–B5); Products picking (C1–C2); Hàng giảm giá (**D1–D3 Done** → D4); SearchableDropdown (E1–E2); Settings redesign (F1). Xem `PLAN_6.md`. | Hoàn thiện picking + giảm giá + UX |
 
 ---
 
