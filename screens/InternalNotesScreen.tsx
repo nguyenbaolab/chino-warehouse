@@ -60,6 +60,8 @@ export default function InternalNotesScreen() {
   const [editNote, setEditNote] = useState<InternalNote | null>(null)
   const [editReason, setEditReason] = useState('')
   const [editImageUri, setEditImageUri] = useState<string | null>(null)
+  const [editProductQuery, setEditProductQuery] = useState('')
+  const [editSelectedProduct, setEditSelectedProduct] = useState<Product | null>(null)
   /** Tap-to-zoom ảnh SP */
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
 
@@ -95,6 +97,15 @@ export default function InternalNotesScreen() {
       .filter((p) => !p.is_archived && normalizeText(p.name).includes(q))
       .slice(0, 20)
   }, [products, productQuery, selectedProduct])
+
+  const editProductSuggestions = useMemo(() => {
+    if (editSelectedProduct) return []
+    const q = normalizeText(editProductQuery.trim())
+    if (!q) return []
+    return products
+      .filter((p) => !p.is_archived && normalizeText(p.name).includes(q))
+      .slice(0, 20)
+  }, [products, editProductQuery, editSelectedProduct])
 
   const canSaveCreate =
     (!!selectedProduct || productQuery.trim().length > 0) &&
@@ -181,12 +192,16 @@ export default function InternalNotesScreen() {
     setEditNote(note)
     setEditReason(note.reason)
     setEditImageUri(note.image_url ?? null)
+    setEditProductQuery(noteDisplayName(note))
+    setEditSelectedProduct(note.product ?? null)
   }
 
   function closeEditModal() {
     setEditNote(null)
     setEditReason('')
     setEditImageUri(null)
+    setEditProductQuery('')
+    setEditSelectedProduct(null)
   }
 
   async function handleCreateSave() {
@@ -250,7 +265,16 @@ export default function InternalNotesScreen() {
         }
       }
 
-      const { error } = await updateInternalNote(editNote.id, editReason, imageUrlParam)
+      const newProductId = editSelectedProduct?.id ?? null
+      const newCustomName = !editSelectedProduct ? editProductQuery.trim() || null : null
+
+      const { error } = await updateInternalNote(
+        editNote.id,
+        editReason,
+        imageUrlParam,
+        newProductId,
+        newCustomName,
+      )
       if (error) {
         Alert.alert('Lỗi', error)
         return
@@ -592,10 +616,49 @@ export default function InternalNotesScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bounces={false}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>Sửa ghi chú</Text>
-                {editNote ? (
-                  <Text style={[styles.editProductName, { color: colors.sub }]} numberOfLines={2}>
-                    {noteDisplayName(editNote)}
-                  </Text>
+                <Text style={[styles.label, { color: colors.sub }]}>Sản phẩm</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.bg,
+                      color: colors.text,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                  value={editProductQuery}
+                  onChangeText={(t) => {
+                    setEditProductQuery(t)
+                    if (editSelectedProduct && t !== editSelectedProduct.name) {
+                      setEditSelectedProduct(null)
+                    }
+                  }}
+                  placeholder="Tên sản phẩm hoặc tìm từ danh sách..."
+                  placeholderTextColor={colors.sub}
+                />
+                {editProductSuggestions.length > 0 ? (
+                  <View
+                    style={[styles.suggestList, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                  >
+                    <ScrollView
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled
+                      style={{ maxHeight: 220 }}
+                    >
+                      {editProductSuggestions.map((p) => (
+                        <TouchableOpacity
+                          key={p.id}
+                          style={[styles.suggestRow, { borderBottomColor: colors.border }]}
+                          onPress={() => {
+                            setEditSelectedProduct(p)
+                            setEditProductQuery(p.name)
+                          }}
+                        >
+                          <Text style={{ color: colors.text, fontSize: 14 }}>{p.name}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  </View>
                 ) : null}
                 {renderNoteImagePicker(editImageUri, setEditImageUri)}
                 <Text style={[styles.label, { color: colors.sub }]}>Lý do / ghi chú *</Text>
@@ -626,11 +689,22 @@ export default function InternalNotesScreen() {
                       styles.btnPrimary,
                       {
                         backgroundColor: colors.accent,
-                        opacity: editReason.trim().length > 0 && !saving && !uploadingImage ? 1 : 0.45,
+                        opacity:
+                          editReason.trim().length > 0 &&
+                          editProductQuery.trim().length > 0 &&
+                          !saving &&
+                          !uploadingImage
+                            ? 1
+                            : 0.45,
                       },
                     ]}
                     onPress={() => void handleEditSave()}
-                    disabled={editReason.trim().length === 0 || saving || uploadingImage}
+                    disabled={
+                      editReason.trim().length === 0 ||
+                      editProductQuery.trim().length === 0 ||
+                      saving ||
+                      uploadingImage
+                    }
                   >
                     <Text style={{ color: colors.card, fontWeight: '600' }}>
                       {saving || uploadingImage ? 'Đang lưu...' : 'Lưu'}

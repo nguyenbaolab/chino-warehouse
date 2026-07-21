@@ -206,6 +206,8 @@ type WarehouseStore = {
     id: string,
     reason: string,
     imageUrl?: string | null,
+    productId?: string | null,
+    customName?: string | null,
   ) => Promise<{ error: string | null }>
   deleteInternalNote: (id: string) => Promise<{ error: string | null }>
 }
@@ -1768,13 +1770,15 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return { error: null, note }
   },
 
-  updateInternalNote: async (id, reason, imageUrl) => {
+  updateInternalNote: async (id, reason, imageUrl, productId, customName) => {
     const trimmed = reason.trim()
     if (!trimmed) {
       return { error: 'Nội dung ghi chú không được để trống.' }
     }
     const payload: Record<string, unknown> = { reason: trimmed }
     if (imageUrl !== undefined) payload.image_url = imageUrl
+    if (productId !== undefined) payload.product_id = productId
+    if (customName !== undefined) payload.custom_product_name = customName
     const { data, error } = await supabase
       .from('internal_notes')
       .update(payload)

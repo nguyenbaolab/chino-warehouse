@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(notes): sửa được tên SP / tên tự do trong modal sửa ghi chú
+
+- `updateInternalNote` + modal sửa: autocomplete SP / tên tự do.
+
+---
+
 ## [tháng 7/2026] — fix(notes): placeholder 📷 card note tap được → chọn ảnh / chụp ảnh
 
 - `InternalNotesScreen` card: tap 📷 (canWrite) → pick/upload ảnh ghi chú.
