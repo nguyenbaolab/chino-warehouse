@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(notes): placeholder 📷 card note tap được → chọn ảnh / chụp ảnh
+
+- `InternalNotesScreen` card: tap 📷 (canWrite) → pick/upload ảnh ghi chú.
+
+---
+
 ## [tháng 7/2026] — feat: ảnh đính kèm Internal Notes (upload/xóa Storage notes/)
 
 - `uploadNoteImage` / `deleteNoteImage`; modal tạo/sửa + card ưu tiên `image_url`.

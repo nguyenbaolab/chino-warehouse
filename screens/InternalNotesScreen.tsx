@@ -283,6 +283,42 @@ export default function InternalNotesScreen() {
     navigation.navigate('ProductDetail', { productId })
   }
 
+  async function handlePickCardNoteImage(note: InternalNote) {
+    Alert.alert('Thêm ảnh', 'Chọn nguồn ảnh', [
+      {
+        text: 'Chụp ảnh',
+        onPress: () => {
+          void (async () => {
+            const uri = await pickImage('camera')
+            if (!uri) return
+            try {
+              const url = await uploadNoteImage(note.id, uri)
+              await updateInternalNote(note.id, note.reason, url)
+            } catch {
+              Alert.alert('Lỗi', 'Không thể upload ảnh.')
+            }
+          })()
+        },
+      },
+      {
+        text: 'Thư viện',
+        onPress: () => {
+          void (async () => {
+            const uri = await pickImage('library')
+            if (!uri) return
+            try {
+              const url = await uploadNoteImage(note.id, uri)
+              await updateInternalNote(note.id, note.reason, url)
+            } catch {
+              Alert.alert('Lỗi', 'Không thể upload ảnh.')
+            }
+          })()
+        },
+      },
+      { text: 'Huỷ', style: 'cancel' },
+    ])
+  }
+
   function renderNoteCard({ item }: { item: InternalNote }) {
     const hasLinkedProduct = !!item.product_id
     const imageUrl = item.image_url ?? item.product?.image_url ?? null
@@ -295,6 +331,14 @@ export default function InternalNotesScreen() {
           {imageUrl ? (
             <TouchableOpacity activeOpacity={0.85} onPress={() => setZoomImageUrl(imageUrl)}>
               <Image source={{ uri: imageUrl }} style={styles.thumbnail} resizeMode="cover" />
+            </TouchableOpacity>
+          ) : canWrite ? (
+            <TouchableOpacity
+              onPress={() => void handlePickCardNoteImage(item)}
+              style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}
+              activeOpacity={0.7}
+            >
+              <Text style={{ fontSize: 24 }}>📷</Text>
             </TouchableOpacity>
           ) : (
             <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
