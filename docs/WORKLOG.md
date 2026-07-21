@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — refactor(settings): F1 — 4 section headers, bỏ info box zone
+
+- **SettingsScreen:** nhóm card/toggle thành 4 section — Kho & Hàng hóa · Vận hành · Thông báo & Cảnh báo · Hệ thống; thứ tự mới (Tổng quan → 2 card ngang → Discontinued; …); header capitalize; xóa info box zone + `fetchZones`/`zones`/`selectedLocationId` chỉ phục vụ box đó.
+- **Docs:** CONTEXT §3, REQUIREMENTS §9 v1.3.44, DECISIONS F1 Phase 6.
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — feat(notes): sửa được tên SP / tên tự do trong modal sửa ghi chú
 
 - `updateInternalNote` + modal sửa: autocomplete SP / tên tự do.

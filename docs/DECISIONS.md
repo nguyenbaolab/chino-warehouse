@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### F1 Phase 6 — Settings redesign 4 sections
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** `SettingsScreen` nhóm card/toggle thành 4 section có header (capitalize, không uppercase): **Kho & Hàng hóa** · **Vận hành** · **Thông báo & Cảnh báo** · **Hệ thống**. Thứ tự: Tổng quan trước 2 card ngang Quản lý kho/Phân loại; cảnh báo switch gộp cùng section Thông báo hết hạn; theme + subsection Bảo mật (vân tay) trong Hệ thống. **Xóa** info box hướng dẫn zone («Bấm + Zone…») — quản lý zone chỉ trên tab Kho. Đăng xuất giữ ngoài section.
+- **Lý do:** Phase 6 F1 — scan nhanh theo nhóm nghiệp vụ; giảm clutter; zone info trùng với MapScreen.
+
+---
+
 ### ProductsScreen — Mode Tất cả (catalog) + đơn vị theo location type
 
 - **Ngày:** tháng 7/2026

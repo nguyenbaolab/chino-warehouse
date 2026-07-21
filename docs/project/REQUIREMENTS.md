@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.35 | Tháng 7/2026
+**Phiên bản:** 1.3.44 | Tháng 7/2026
 
+> **v1.3.44** — F1 Phase 6: SettingsScreen 4 section (Kho & Hàng hóa · Vận hành · Thông báo & Cảnh báo · Hệ thống); bỏ info box zone.
 > **v1.3.43** — F31: `internal_notes.image_url` — upload/chụp ảnh đính kèm ghi chú (`notes/` Storage); card ưu tiên ảnh note.
 > **v1.3.42** — E1/E2 (scope thu gọn): FilterModal search Kho/Zone; InternalNotes gợi ý 20 + scroll; AddInventory Zone search + scroll.
 > **v1.3.41** — D4: DiscountScreen xuất PDF danh sách giảm giá (`expo-print` + `expo-sharing`).
@@ -368,7 +369,7 @@ Bảng `products` — thêm FK optional tới phân loại (F30):
 | Chi tiết đơn lấy hàng (Stack) | Thêm lô, nhóm, tick | Search SP + chọn lô · Nhóm Kho/Zone/Tầng · Checkbox is_picked |
 | Thêm hàng (Stack) | Thêm lô hàng | Zone · Tầng · Số lượng · Hạn · F30 category |
 | Thông báo (Tab) | Cảnh báo tồn & hạn | Nút **Lọc** → FilterModal Mode/Kho/Zone; tab Sắp hết hạn: checkbox + **date range** (➜ kích hoạt mọi lô ∈ [Từ,Đến]; ✕ về mặc định expired/warning); tab Sắp hết hàng: checkbox (không date range) |
-| Cài đặt (Tab) | Tuỳ chỉnh app | Theme · cảnh báo · Quản lý kho · … · **Kiểm hàng** (C4) · **Thông báo hết hạn** (F35) · Audit · User |
+| Cài đặt (Tab) | Tuỳ chỉnh app | **4 section:** Kho & Hàng hóa (Tổng quan · Quản lý kho/Phân loại · Không nhập nữa) · Vận hành (Ghi chú · **Kiểm hàng** C4 · Hàng giảm giá) · Thông báo & Cảnh báo (**Thông báo hết hạn** F35 · switch hết hạn/hết hàng) · Hệ thống (Audit · User admin · theme · Bảo mật vân tay) · Đăng xuất |
 | Kiểm hàng (Stack, F36 C4) | Checklist market | List `is_special` (market zones); tick `is_checked`; Reset batch; RBAC `canWrite` |
 | Quét mã vạch (Fullscreen) | Camera overlay | Khung ngắm · Kết quả |
 | Tổng quan kho (Stack, F23) | Dashboard | Nút **Lọc** → FilterModal; 8 stats + pie |

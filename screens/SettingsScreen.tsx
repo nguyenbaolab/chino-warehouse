@@ -18,9 +18,6 @@ import {
 export default function SettingsScreen() {
   const navigation = useNavigation<any>()
   const {
-    zones,
-    selectedLocationId,
-    fetchZones,
     fetchLocations,
     fetchCategories,
     locations,
@@ -127,10 +124,6 @@ export default function SettingsScreen() {
     void fetchLocations()
   }, [loadTheme, fetchLocations])
 
-  useEffect(() => {
-    if (selectedLocationId) fetchZones(selectedLocationId)
-  }, [selectedLocationId, fetchZones])
-
   useFocusEffect(
     useCallback(() => {
       // Subtitle Kiểm hàng + thông báo + biometric luôn refresh khi vào Settings
@@ -230,6 +223,22 @@ export default function SettingsScreen() {
         <Text style={[styles.title, { color: colors.text }]}>⚙️ Cài đặt</Text>
       </View>
 
+      <Text style={[styles.sectionTitle, styles.sectionTitleFirst, { color: colors.sub }]}>
+        Kho & Hàng hóa
+      </Text>
+
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('Dashboard')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>Tổng quan kho</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>{dashboardSubtitle}</Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
+
       <View style={styles.rowTwoCards}>
         <TouchableOpacity
           style={[styles.linkCard, styles.linkCardHalf, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -264,18 +273,6 @@ export default function SettingsScreen() {
       <TouchableOpacity
         style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
         activeOpacity={0.75}
-        onPress={() => navigation.navigate('Dashboard')}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.linkTitle, { color: colors.text }]}>Tổng quan kho</Text>
-          <Text style={[styles.linkSub, { color: colors.sub }]}>{dashboardSubtitle}</Text>
-        </View>
-        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-        activeOpacity={0.75}
         onPress={() => navigation.navigate('DiscontinuedProducts')}
       >
         <View style={{ flex: 1 }}>
@@ -286,6 +283,8 @@ export default function SettingsScreen() {
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
+
+      <Text style={[styles.sectionTitle, { color: colors.sub }]}>Vận hành</Text>
 
       {/* F31 — Ghi chú nội bộ */}
       <TouchableOpacity
@@ -327,6 +326,8 @@ export default function SettingsScreen() {
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
 
+      <Text style={[styles.sectionTitle, { color: colors.sub }]}>Thông báo & Cảnh báo</Text>
+
       {/* F35 — Thông báo hết hạn (local push) */}
       <TouchableOpacity
         style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -341,36 +342,6 @@ export default function SettingsScreen() {
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-        activeOpacity={0.75}
-        onPress={() => navigation.navigate('AuditLog')}
-      >
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.linkTitle, { color: colors.text }]}>Lịch sử thay đổi</Text>
-          <Text style={[styles.linkSub, { color: colors.sub }]} numberOfLines={1}>
-            {auditSubtitle}
-          </Text>
-        </View>
-        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
-      </TouchableOpacity>
-
-      {isAdmin ? (
-        <TouchableOpacity
-          style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-          activeOpacity={0.75}
-          onPress={() => navigation.navigate('UserManagement')}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.linkTitle, { color: colors.text }]}>Quản lý người dùng</Text>
-            <Text style={[styles.linkSub, { color: colors.sub }]}>Phân quyền và vô hiệu hóa</Text>
-          </View>
-          <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
-        </TouchableOpacity>
-      ) : null}
-
-      <Text style={[styles.sectionTitle, { color: colors.sub }]}>Cảnh báo</Text>
 
       <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.settingRowLabel}>
@@ -401,6 +372,36 @@ export default function SettingsScreen() {
           thumbColor="#fff"
         />
       </View>
+
+      <Text style={[styles.sectionTitle, { color: colors.sub }]}>Hệ thống</Text>
+
+      <TouchableOpacity
+        style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => navigation.navigate('AuditLog')}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.linkTitle, { color: colors.text }]}>Lịch sử thay đổi</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]} numberOfLines={1}>
+            {auditSubtitle}
+          </Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+      </TouchableOpacity>
+
+      {isAdmin ? (
+        <TouchableOpacity
+          style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          activeOpacity={0.75}
+          onPress={() => navigation.navigate('UserManagement')}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.linkTitle, { color: colors.text }]}>Quản lý người dùng</Text>
+            <Text style={[styles.linkSub, { color: colors.sub }]}>Phân quyền và vô hiệu hóa</Text>
+          </View>
+          <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+        </TouchableOpacity>
+      ) : null}
 
       {/* Theme toggle */}
       <View style={[styles.settingRow, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -460,20 +461,6 @@ export default function SettingsScreen() {
         />
       </View>
 
-      {/* Zone info */}
-      <View style={[styles.infoBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.infoText, { color: colors.text }]}>
-          Quản lý zone trực tiếp trên màn hình{' '}
-          <Text style={{ color: colors.accent, fontWeight: 'bold' }}>Kho 🗺️</Text>
-        </Text>
-        <Text style={[styles.infoSub, { color: colors.sub }]}>
-          Bấm "+ Zone" để thêm · Bấm vào zone để sửa hoặc xóa
-        </Text>
-        <Text style={[styles.zoneCount, { color: colors.accent }]}>
-          Hiện có {zones.length} zone
-        </Text>
-      </View>
-
       {/* Nút đăng xuất — tách biệt rõ với các card cài đặt phía trên */}
       <TouchableOpacity
         style={[styles.logoutBtn, { borderColor: '#EF444440' }]}
@@ -518,9 +505,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginHorizontal: 16,
     marginBottom: 8,
-    marginTop: 4,
+    marginTop: 20,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  sectionTitleFirst: {
+    marginTop: 4,
   },
   settingRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
@@ -530,10 +520,6 @@ const styles = StyleSheet.create({
   settingRowLabel: { flex: 1, marginRight: 12 },
   settingLabel: { fontSize: 15, fontWeight: '600' },
   settingDesc: { fontSize: 12, marginTop: 2 },
-  infoBox: { marginHorizontal: 16, borderRadius: 12, padding: 16, borderWidth: 1 },
-  infoText: { fontSize: 14, marginBottom: 6 },
-  infoSub: { fontSize: 13, lineHeight: 20 },
-  zoneCount: { fontSize: 13, marginTop: 10, fontWeight: 'bold' },
   logoutBtn: {
     marginHorizontal: 16,
     marginTop: 24,
