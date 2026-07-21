@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -100,6 +101,7 @@ export default function NotificationsScreen() {
     fetchInventoryByZone,
     togglePriceReduced,
     toggleDiscontinued,
+    updateInventoryEntry,
   } = useWarehouseStore()
 
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
@@ -130,6 +132,19 @@ export default function NotificationsScreen() {
   const [dateToDraft, setDateToDraft] = useState(() => isoExpiryToDisplay(plus30ISO()) || '')
   /** C3 fix: true = hiện mọi lô trong [from,to]; false = chỉ expired/warning + checkbox */
   const [dateRangeActive, setDateRangeActive] = useState(false)
+  const [editingDiscountId, setEditingDiscountId] = useState<string | null>(null)
+  const [discountInput, setDiscountInput] = useState('')
+
+  async function handleSaveDiscount(entryId: string) {
+    const val = parseFloat(discountInput)
+    if (Number.isNaN(val) || val < 0 || val > 100) {
+      Alert.alert('Không hợp lệ', 'Phần trăm giảm giá phải từ 0 đến 100.')
+      return
+    }
+    await updateInventoryEntry(entryId, { discount_percent: val })
+    setEditingDiscountId(null)
+    setDiscountInput('')
+  }
 
   useEffect(() => {
     if (routeParams.initialTab) setActiveTab(routeParams.initialTab)
@@ -687,7 +702,62 @@ export default function NotificationsScreen() {
                           {lot.quantityBoxes} {qtyUnitForLocationType(lot.locationType)} · Hạn:{' '}
                           {formatExpiryDate(lot.expiryDate)}
                         </Text>
-                        {lot.discount_percent != null && lot.discount_percent > 0 ? (
+                        {lot.isPriceReduced && canWrite ? (
+                          editingDiscountId === lot.entryId ? (
+                            <View style={styles.discountEditRow}>
+                              <TextInput
+                                style={[
+                                  styles.discountInput,
+                                  {
+                                    color: colors.text,
+                                    borderColor: colors.border,
+                                    backgroundColor: colors.bg,
+                                  },
+                                ]}
+                                value={discountInput}
+                                onChangeText={setDiscountInput}
+                                keyboardType="numeric"
+                                placeholder="0–100"
+                                placeholderTextColor={colors.sub}
+                                maxLength={5}
+                                autoFocus
+                                textAlignVertical="center"
+                              />
+                              <Text style={{ color: colors.sub, fontSize: 13 }}>%</Text>
+                              <TouchableOpacity
+                                onPress={() => void handleSaveDiscount(lot.entryId)}
+                                style={[styles.discountSaveBtn, { backgroundColor: colors.accent }]}
+                              >
+                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>
+                                  Lưu
+                                </Text>
+                              </TouchableOpacity>
+                              <TouchableOpacity onPress={() => setEditingDiscountId(null)}>
+                                <Text style={{ color: colors.sub, fontSize: 13 }}>Huỷ</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ) : (
+                            <TouchableOpacity
+                              onPress={() => {
+                                setEditingDiscountId(lot.entryId)
+                                setDiscountInput(
+                                  lot.discount_percent != null && lot.discount_percent > 0
+                                    ? String(lot.discount_percent)
+                                    : '',
+                                )
+                              }}
+                            >
+                              <Text style={[styles.lotDiscount, { color: colors.accent }]}>
+                                {lot.discount_percent != null && lot.discount_percent > 0
+                                  ? `Giảm ${lot.discount_percent}%`
+                                  : '+ Nhập % giảm giá'}
+                              </Text>
+                            </TouchableOpacity>
+                          )
+                        ) : null}
+                        {!lot.isPriceReduced &&
+                        lot.discount_percent != null &&
+                        lot.discount_percent > 0 ? (
                           <Text style={[styles.lotDiscount, { color: colors.accent }]}>
                             Giảm {lot.discount_percent}%
                           </Text>
@@ -723,7 +793,18 @@ export default function NotificationsScreen() {
         </TouchableOpacity>
       )
     },
-    [canWrite, colors, expandedProducts, expiryWarningEnabled, navigation, togglePriceReduced, toggleExpanded]
+    [
+      canWrite,
+      colors,
+      discountInput,
+      editingDiscountId,
+      expandedProducts,
+      expiryWarningEnabled,
+      navigation,
+      togglePriceReduced,
+      toggleExpanded,
+      updateInventoryEntry,
+    ]
   )
 
   const renderLowStockItem = useCallback(
@@ -1253,6 +1334,28 @@ const styles = StyleSheet.create({
   lotInfo: { flex: 1 },
   lotText: { fontSize: 13, fontWeight: '600' },
   lotDiscount: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+  discountEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  discountInput: {
+    width: 60,
+    height: 36,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: Platform.OS === 'android' ? 0 : 6,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  discountSaveBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
   lotToggleBtn: {
     borderWidth: 1,
     borderRadius: 8,

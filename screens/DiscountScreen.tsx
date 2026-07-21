@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
+  Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
@@ -12,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
 import ImageViewerModal from '../components/ImageViewerModal'
+import { useCanWrite } from '../stores/authStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
@@ -28,12 +32,14 @@ type DiscountCardItem = {
 export default function DiscountScreen() {
   const navigation = useNavigation<any>()
   const { colors } = useThemeStore()
+  const canWrite = useCanWrite()
   const {
     inventoryEntries,
     products,
     fetchProducts,
     fetchAllInventoryEntries,
     fetchInventoryByZone,
+    updateInventoryEntry,
   } = useWarehouseStore()
 
   const [loading, setLoading] = useState(true)
@@ -45,9 +51,23 @@ export default function DiscountScreen() {
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
   const [modeZoneIds, setModeZoneIds] = useState<Set<string> | null>(null)
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
+  const [editingEntry, setEditingEntry] = useState<InventoryEntry | null>(null)
+  const [discountInput, setDiscountInput] = useState('')
 
   const lastFetchRef = useRef(0)
   const filterModeMountedRef = useRef(false)
+
+  async function handleSaveDiscount() {
+    if (!editingEntry) return
+    const val = parseFloat(discountInput)
+    if (Number.isNaN(val) || val < 0 || val > 100) {
+      Alert.alert('Không hợp lệ', 'Phần trăm giảm giá phải từ 0 đến 100.')
+      return
+    }
+    await updateInventoryEntry(editingEntry.id, { discount_percent: val })
+    setEditingEntry(null)
+    setDiscountInput('')
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -200,28 +220,45 @@ export default function DiscountScreen() {
           activeOpacity={0.8}
           onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
         >
-          {product.image_url ? (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setZoomImageUrl(product.image_url ?? null)}
-            >
-              <Image
-                source={{ uri: product.image_url }}
-                style={styles.cardImage}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          ) : (
-            <View
-              style={[
-                styles.cardImage,
-                styles.cardImagePlaceholder,
-                { backgroundColor: colors.border },
-              ]}
-            >
-              <Text style={{ fontSize: 24 }}>📷</Text>
-            </View>
-          )}
+          <View style={styles.cardImageWrap}>
+            {product.image_url ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => setZoomImageUrl(product.image_url ?? null)}
+              >
+                <Image
+                  source={{ uri: product.image_url }}
+                  style={styles.cardImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
+            ) : (
+              <View
+                style={[
+                  styles.cardImage,
+                  styles.cardImagePlaceholder,
+                  { backgroundColor: colors.border },
+                ]}
+              >
+                <Text style={{ fontSize: 24 }}>📷</Text>
+              </View>
+            )}
+            {canWrite ? (
+              <TouchableOpacity
+                style={styles.editBtn}
+                onPress={() => {
+                  setEditingEntry(item.entry)
+                  setDiscountInput(
+                    item.entry.discount_percent != null && item.entry.discount_percent > 0
+                      ? String(item.entry.discount_percent)
+                      : '',
+                  )
+                }}
+              >
+                <Text style={{ fontSize: 14 }}>✏️</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <View style={styles.cardInfo}>
             <Text style={[styles.cardName, { color: colors.text }]} numberOfLines={2}>
               {product.name}
@@ -233,7 +270,7 @@ export default function DiscountScreen() {
         </TouchableOpacity>
       )
     },
-    [colors, navigation],
+    [canWrite, colors, navigation],
   )
 
   return (
@@ -311,6 +348,66 @@ export default function DiscountScreen() {
         }}
       />
 
+      <Modal
+        visible={editingEntry !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditingEntry(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setEditingEntry(null)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={[styles.modalSheet, { backgroundColor: colors.card }]}
+            onPress={() => {}}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Nhập % giảm giá</Text>
+            <Text style={[styles.modalSub, { color: colors.sub }]} numberOfLines={2}>
+              {editingEntry
+                ? discountedItems.find((i) => i.entry.id === editingEntry.id)?.product?.name ?? ''
+                : ''}
+            </Text>
+            <View style={styles.modalInputRow}>
+              <TextInput
+                style={[
+                  styles.modalInput,
+                  {
+                    color: colors.text,
+                    borderColor: colors.border,
+                    backgroundColor: colors.bg,
+                  },
+                ]}
+                value={discountInput}
+                onChangeText={setDiscountInput}
+                keyboardType="numeric"
+                placeholder="0–100"
+                placeholderTextColor={colors.sub}
+                maxLength={5}
+                autoFocus
+              />
+              <Text style={{ color: colors.sub, fontSize: 16 }}>%</Text>
+            </View>
+            <View style={styles.modalBtns}>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.border }]}
+                onPress={() => setEditingEntry(null)}
+              >
+                <Text style={{ color: colors.text, fontWeight: '600' }}>Huỷ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, { backgroundColor: colors.accent }]}
+                onPress={() => void handleSaveDiscount()}
+              >
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Lưu</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
       <ImageViewerModal uri={zoomImageUrl} onClose={() => setZoomImageUrl(null)} />
     </SafeAreaView>
   )
@@ -347,8 +444,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
+  cardImageWrap: { position: 'relative' },
   cardImage: { width: '100%', aspectRatio: 1 },
   cardImagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  editBtn: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    borderRadius: 6,
+    padding: 4,
+  },
   cardInfo: { padding: 6, gap: 4 },
   cardName: { fontSize: 12, fontWeight: '600' },
   discountBadge: {
@@ -360,4 +466,36 @@ const styles = StyleSheet.create({
   discountBadgeText: { fontSize: 11, fontWeight: '700', color: '#F97316' },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emptyText: { fontSize: 15 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalSheet: {
+    width: 280,
+    borderRadius: 14,
+    padding: 20,
+    gap: 12,
+  },
+  modalTitle: { fontSize: 16, fontWeight: '700' },
+  modalSub: { fontSize: 13 },
+  modalInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  modalInput: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  modalBtns: { flexDirection: 'row', gap: 10 },
+  modalBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 })

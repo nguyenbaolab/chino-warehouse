@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: nhập sửa discount_percent inline (Notifications) + modal (DiscountScreen)
+
+- Notifications expand lô: inline nhập % khi `is_price_reduced`; DiscountScreen: ✏️ modal Lưu/Huỷ.
+
+---
+
 ## [tháng 7/2026] — feat(D3): DiscountScreen — grid 3 cột hàng giảm giá, filter zone
 
 - `DiscountScreen`: lô `is_price_reduced`; FilterModal mode/kho/zone; grid 3 cột; tap → ProductDetail; Settings route `Discount`.
