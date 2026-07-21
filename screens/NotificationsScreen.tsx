@@ -61,6 +61,7 @@ type ExpiryCard = {
   marketBoxes: number
   lots: ExpiryLotRow[]
   hasExpiredLot: boolean
+  earliestExpiry: string | null
   image_url: string | null
 }
 
@@ -388,6 +389,18 @@ export default function NotificationsScreen() {
         if (!hasExpired && !hasWarning) continue
       }
 
+      lots.sort((a, b) => {
+        const da = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity
+        const db = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity
+        return da - db
+      })
+
+      const earliestExpiry = lots.reduce<string | null>((min, lot) => {
+        if (!lot.expiryDate) return min
+        if (!min) return lot.expiryDate
+        return lot.expiryDate < min ? lot.expiryDate : min
+      }, null)
+
       cards.push({
         productId,
         productName: product.name,
@@ -396,11 +409,14 @@ export default function NotificationsScreen() {
         marketBoxes,
         lots,
         hasExpiredLot: hasExpired,
+        earliestExpiry,
         image_url: product.image_url ?? null,
       })
     }
     return cards.sort((a, b) => {
-      if (a.hasExpiredLot !== b.hasExpiredLot) return a.hasExpiredLot ? -1 : 1
+      const da = a.earliestExpiry ? new Date(a.earliestExpiry).getTime() : Infinity
+      const db = b.earliestExpiry ? new Date(b.earliestExpiry).getTime() : Infinity
+      if (da !== db) return da - db
       return a.productName.localeCompare(b.productName)
     })
   }, [productIdToEntries, products, dateRangeActive, dateFrom, dateTo, expiryWarningEnabled, locationById])

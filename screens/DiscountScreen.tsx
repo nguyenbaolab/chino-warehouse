@@ -223,7 +223,12 @@ export default function DiscountScreen() {
       if (!product || product.is_archived) continue
       items.push({ entry, product })
     }
-    return items.sort((a, b) => a.product.name.localeCompare(b.product.name))
+    return items.sort((a, b) => {
+      const da = a.entry.expiry_date ? new Date(a.entry.expiry_date).getTime() : Infinity
+      const db = b.entry.expiry_date ? new Date(b.entry.expiry_date).getTime() : Infinity
+      if (da !== db) return da - db
+      return a.product.name.localeCompare(b.product.name)
+    })
   }, [scopedEntries, products])
 
   const handleExportPDF = useCallback(async () => {

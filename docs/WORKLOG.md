@@ -4,6 +4,21 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(notify): sort card hết hạn theo earliestExpiry ASC
+
+- **NotificationsScreen:** thêm `earliestExpiry` trên `ExpiryCard`; tính từ `lots`; sort card theo hạn sớm nhất rồi tên (bỏ ưu tiên `hasExpiredLot`).
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
+## [tháng 7/2026] — fix(sort): Notifications lô theo hạn ASC; Discount theo expiry rồi tên
+
+- **NotificationsScreen:** trong `expiryCards`, sau khi build `lots` → sort theo `expiryDate` tăng dần (null → cuối).
+- **DiscountScreen:** `discountedItems` sort theo `entry.expiry_date` ASC, tie-break `product.name`; PDF inherit.
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — fix(discount): PDF cột hạn dùng DD/MM/YYYY via isoExpiryToDisplay
 
 - **Fix:** `handleExportPDF` — `entry.expiry_date` (ISO) → `isoExpiryToDisplay` thay vì raw YYYY-MM-DD.
