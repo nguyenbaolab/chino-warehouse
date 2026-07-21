@@ -671,9 +671,16 @@ export default function NotificationsScreen() {
                 </View>
 
                 <View style={styles.cardRow2}>
-                  <Text style={[styles.cardQty, { color: colors.sub }]}>
-                    Còn {formatSplitQtyLabel(item.warehouseBoxes, item.marketBoxes)}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.cardQty, { color: colors.sub }]}>
+                      Còn {formatSplitQtyLabel(item.warehouseBoxes, item.marketBoxes)}
+                    </Text>
+                    {item.earliestExpiry ? (
+                      <Text style={[styles.cardQty, { color: colors.sub }]}>
+                        Hạn: {isoExpiryToDisplay(item.earliestExpiry)}
+                      </Text>
+                    ) : null}
+                  </View>
                   <View style={styles.badgeWrap}>
                     {hasAnyPriceReduced && (
                       <View style={styles.priceReducedBadge}>
@@ -687,10 +694,6 @@ export default function NotificationsScreen() {
                     ) : null}
                   </View>
                 </View>
-
-                <Text style={[styles.expandHint, { color: colors.sub, textAlign: 'right' }]}>
-                  {isExpanded ? '▴' : '▾'}
-                </Text>
               </View>
             </View>
 
@@ -1320,7 +1323,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   line1: { fontSize: 14, fontWeight: '600', marginTop: 10 },
-  expandHint: { fontSize: 12, fontWeight: '600' },
   titleDot: { width: 14, height: 14, borderRadius: 7, marginRight: 8, alignSelf: 'flex-start', marginTop: 2 },
   name: { fontSize: 15, fontWeight: '700', flex: 1, minWidth: 0 },
   priceReducedBadge: {
