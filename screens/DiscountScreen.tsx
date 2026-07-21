@@ -33,11 +33,11 @@ type DiscountCardItem = {
 }
 
 /** Tải ảnh SP public URL → base64 để embed HTML/PDF */
-async function fetchImageAsBase64(url: string): Promise<string | null> {
+async function fetchImageAsBase64(url: string, uniqueKey: string): Promise<string | null> {
   try {
     const result = await FileSystem.downloadAsync(
       url,
-      FileSystem.cacheDirectory + 'discount_thumb_' + Date.now() + '.jpg',
+      FileSystem.cacheDirectory + 'discount_thumb_' + uniqueKey + '.jpg',
     )
     const base64 = await FileSystem.readAsStringAsync(result.uri, {
       encoding: FileSystem.EncodingType.Base64,
@@ -236,7 +236,7 @@ export default function DiscountScreen() {
         discountedItems.map(async ({ entry, product }) => {
           let imgHtml = '<div class="no-img">📷</div>'
           if (product.image_url) {
-            const b64 = await fetchImageAsBase64(product.image_url)
+            const b64 = await fetchImageAsBase64(product.image_url, entry.id)
             if (b64) {
               imgHtml = `<img src="${b64}" class="thumb" />`
             }

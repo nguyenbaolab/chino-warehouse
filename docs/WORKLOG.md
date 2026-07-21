@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(discount): PDF thumb cache path dùng entry.id thay Date.now()
+
+- **Bug:** `fetchImageAsBase64` dùng `Date.now()` làm suffix cache — `Promise.all` song song có thể trùng ms → ghi đè file → ảnh sai SP / xám.
+- **Fix:** thêm param `uniqueKey`; path `discount_thumb_{uniqueKey}.jpg`; caller truyền `entry.id`.
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — refactor(settings): F1 — 4 section headers, bỏ info box zone
 
 - **SettingsScreen:** nhóm card/toggle thành 4 section — Kho & Hàng hóa · Vận hành · Thông báo & Cảnh báo · Hệ thống; thứ tự mới (Tổng quan → 2 card ngang → Discontinued; …); header capitalize; xóa info box zone + `fetchZones`/`zones`/`selectedLocationId` chỉ phục vụ box đó.
