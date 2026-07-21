@@ -593,7 +593,7 @@ export default function PickingDetailScreen() {
                     <ScrollView
                       keyboardShouldPersistTaps="handled"
                       nestedScrollEnabled={true}
-                      style={{ maxHeight: 220 }}
+                      style={{ maxHeight: 200 }}
                     >
                       {suggestions.map((p) => (
                         <TouchableOpacity

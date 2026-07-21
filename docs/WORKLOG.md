@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(picking): suggestions tìm SP tăng 20, dropdown maxHeight 5 item + scroll
+
+- `PickingDetailScreen`: suggestions `.slice(0, 20)` (đã có); dropdown `maxHeight: 200`.
+
+---
+
 ## [tháng 7/2026] — feat(picking): ghi completed_at khi hoàn thành + hiện ngày trên header
 
 - `completePicking` → `completed_at` ISO; `PickingDetailScreen` hiện ngày hoàn thành.
