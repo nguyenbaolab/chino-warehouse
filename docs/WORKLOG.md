@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(D4): xuất PDF danh sách giảm giá (expo-print + expo-sharing)
+
+- `DiscountScreen`: nút 📄 → HTML + ảnh base64 → `printToFileAsync` → Share sheet.
+
+---
+
 ## [tháng 7/2026] — feat: nhập sửa discount_percent inline (Notifications) + modal (DiscountScreen)
 
 - Notifications expand lô: inline nhập % khi `is_price_reduced`; DiscountScreen: ✏️ modal Lưu/Huỷ.

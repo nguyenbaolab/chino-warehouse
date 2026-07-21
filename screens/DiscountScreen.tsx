@@ -13,6 +13,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import * as FileSystem from 'expo-file-system/legacy'
+import * as Print from 'expo-print'
+import * as Sharing from 'expo-sharing'
 import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
 import ImageViewerModal from '../components/ImageViewerModal'
 import { useCanWrite } from '../stores/authStore'
@@ -27,6 +30,22 @@ const FOCUS_FETCH_TTL_MS = 30_000
 type DiscountCardItem = {
   entry: InventoryEntry
   product: Product
+}
+
+/** Tải ảnh SP public URL → base64 để embed HTML/PDF */
+async function fetchImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const result = await FileSystem.downloadAsync(
+      url,
+      FileSystem.cacheDirectory + 'discount_thumb_' + Date.now() + '.jpg',
+    )
+    const base64 = await FileSystem.readAsStringAsync(result.uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    })
+    return `data:image/jpeg;base64,${base64}`
+  } catch {
+    return null
+  }
 }
 
 export default function DiscountScreen() {
@@ -53,6 +72,7 @@ export default function DiscountScreen() {
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
   const [editingEntry, setEditingEntry] = useState<InventoryEntry | null>(null)
   const [discountInput, setDiscountInput] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
 
   const lastFetchRef = useRef(0)
   const filterModeMountedRef = useRef(false)
@@ -178,6 +198,7 @@ export default function DiscountScreen() {
   })
 
   const hasActiveFilter = filterMode !== 'all' || filterLocationId !== null || filterZoneId !== null
+  const filterLabel = hasActiveFilter ? filterSummary : null
 
   const scopedEntries = useMemo(() => {
     if (filterZoneId) {
@@ -203,6 +224,112 @@ export default function DiscountScreen() {
     }
     return items.sort((a, b) => a.product.name.localeCompare(b.product.name))
   }, [scopedEntries, products])
+
+  const handleExportPDF = useCallback(async () => {
+    if (isExporting) return
+    setIsExporting(true)
+    try {
+      const today = new Date().toLocaleDateString('vi-VN')
+      const filterText = filterLabel ? `Bộ lọc: ${filterLabel}` : 'Tất cả hàng giảm giá'
+
+      const rows = await Promise.all(
+        discountedItems.map(async ({ entry, product }) => {
+          let imgHtml = '<div class="no-img">📷</div>'
+          if (product.image_url) {
+            const b64 = await fetchImageAsBase64(product.image_url)
+            if (b64) {
+              imgHtml = `<img src="${b64}" class="thumb" />`
+            }
+          }
+
+          const discountText =
+            entry.discount_percent != null && entry.discount_percent > 0
+              ? `<span class="badge">Giảm ${entry.discount_percent}%</span>`
+              : `<span class="badge-plain">Đã giảm giá</span>`
+
+          const expiryText = entry.expiry_date ? entry.expiry_date : '—'
+
+          return `
+            <tr>
+              <td class="img-cell">${imgHtml}</td>
+              <td class="name-cell">${product.name}</td>
+              <td class="center">${discountText}</td>
+              <td class="center">${expiryText}</td>
+            </tr>
+          `
+        }),
+      )
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8" />
+          <style>
+            body { font-family: sans-serif; padding: 24px; color: #111; }
+            h1 { font-size: 20px; margin-bottom: 4px; }
+            .meta { font-size: 13px; color: #666; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th {
+              background: #f3f4f6; text-align: left;
+              padding: 8px 10px; font-size: 13px;
+              border-bottom: 2px solid #e5e7eb;
+            }
+            td { padding: 8px 10px; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+            .img-cell { width: 60px; }
+            .thumb { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; }
+            .no-img {
+              width: 52px; height: 52px; display: flex;
+              align-items: center; justify-content: center;
+              background: #f3f4f6; border-radius: 6px;
+              font-size: 22px;
+            }
+            .name-cell { font-size: 14px; font-weight: 600; }
+            .center { text-align: center; }
+            .badge {
+              background: #fff7ed; color: #f97316;
+              padding: 3px 8px; border-radius: 4px;
+              font-size: 12px; font-weight: 700;
+            }
+            .badge-plain {
+              background: #f3f4f6; color: #6b7280;
+              padding: 3px 8px; border-radius: 4px;
+              font-size: 12px;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>🏷️ Danh sách hàng giảm giá</h1>
+          <div class="meta">Chino's Store · ${today} · ${filterText}</div>
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Sản phẩm</th>
+                <th class="center">Giảm giá</th>
+                <th class="center">Hạn sử dụng</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.join('')}
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `
+
+      const { uri } = await Print.printToFileAsync({ html, base64: false })
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: 'Xuất danh sách giảm giá',
+        UTI: 'com.adobe.pdf',
+      })
+    } catch {
+      Alert.alert('Lỗi', 'Không thể xuất PDF. Vui lòng thử lại.')
+    } finally {
+      setIsExporting(false)
+    }
+  }, [discountedItems, filterLabel, isExporting])
 
   const renderCard = useCallback(
     ({ item }: { item: DiscountCardItem }) => {
@@ -285,6 +412,17 @@ export default function DiscountScreen() {
         <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
           🏷️ Hàng giảm giá
         </Text>
+        <TouchableOpacity
+          onPress={() => void handleExportPDF()}
+          disabled={isExporting || discountedItems.length === 0}
+          style={styles.exportBtn}
+        >
+          {isExporting ? (
+            <ActivityIndicator size="small" color={colors.accent} />
+          ) : (
+            <Text style={{ fontSize: 16 }}>📄</Text>
+          )}
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.headerBtn, { backgroundColor: colors.card }]}
           onPress={() => setFilterModalOpen(true)}
@@ -425,6 +563,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  exportBtn: { padding: 4, marginRight: 4 },
   title: { flex: 1, fontSize: 17, fontWeight: '700', textAlign: 'center' },
   filterBar: {
     flexDirection: 'row',

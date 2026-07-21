@@ -12,6 +12,9 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - **React Navigation** — Bottom Tabs + Native Stack
 - **expo-camera** — `CameraView`, quét barcode
 - **expo-notifications** — F35 local scheduled (daily/weekly/monthly expiry alerts)
+- **expo-print** — D4 xuất PDF (`printToFileAsync`) trên DiscountScreen
+- **expo-sharing** — D4 Share sheet sau xuất PDF (`shareAsync`)
+- **expo-file-system** — upload ảnh SP (`legacy`); D4 tải ảnh → base64 embed PDF
 - **expo-local-authentication** — F37 vân tay / Face ID
 - **expo-secure-store** — F37 lưu biometric credentials (email/password); **không** dùng cho session JWT
 - **Supabase Auth** — email/password sign-in, `persistSession: false` (session trong RAM của Supabase client, không custom storage — kill app = logout), inactivity timer 20 phút trong App.tsx; F37 re-login nhanh qua biometric
