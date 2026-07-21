@@ -134,7 +134,7 @@ supabase/migrations/
   20260719_f32_ignore_warning_flags.sql           # F32 ignore_expiry/stock_warning
   20260720_create_picking_tables.sql              # F34 B1 — picking_lists + picking_list_items
   20260720_create_app_settings.sql                # F35 — app_settings (notification config)
-  schema.sql                                # Canonical schema v5.2
+  schema.sql                                # Canonical schema v5.3
   20260721014051_add_discount_percent_to_inventory_entries.sql  # D1 — discount_percent
 supabase/db_dump_schema/   # Snapshot pg_dump (script dump_schema.bat — không thay schema.sql)
 dump_schema.bat            # Tiện ích dump schema public qua Session Pooler (xem §9)
@@ -212,7 +212,7 @@ README.md
 
 **Schema — `product_barcodes` (B1):** `id`, `product_id` → `products`, `barcode` **UNIQUE**, `first_scanned_at`, `last_scanned_at`; RLS authenticated; audit trigger SEC-11; backfill một lần từ `inventory_entries.barcode` (migration). **`audit_logs.action`:** thêm **`CONFLICT`** (B2) — RPC **`log_barcode_conflict`** ghi attempt gán barcode trùng SP khác.
 
-**Schema — Market mode + F32 + F34 picking + D1 (schema v5.2):** `locations.type` (`warehouse`|`market`); `inventory_entries.is_special`, `is_checked`, **`discount_percent`** (NUMERIC 0–100 NULL); `products.ignore_expiry_warning` / `ignore_stock_warning`; **`picking_lists` / `picking_list_items`** (F34 B1); **`app_settings`** (F35, v5.1). Shelf tables **đã DROP**. **C2 Done:** `appMode` + mode switcher UI + `getQtyUnit`.
+**Schema — Market mode + F32 + F34 picking + D1 (schema v5.3):** `locations.type` (`warehouse`|`market`); `inventory_entries.is_special`, `is_checked`, **`discount_percent`** (NUMERIC 0–100 NULL); `products.ignore_expiry_warning` / `ignore_stock_warning`; **`picking_lists` / `picking_list_items`** (F34 B1, `picking_lists.completed_at`); **`internal_notes.image_url`**; **`app_settings`** (F35, v5.1). Shelf tables **đã DROP**. **C2 Done:** `appMode` + mode switcher UI + `getQtyUnit`.
 
 **Actions — phân loại (F30, `warehouseStore`):** `fetchCategories`, `addCategoryL1`, `updateCategoryL1`, `deleteCategoryL1`, `addCategoryL2`, `updateCategoryL2`, `deleteCategoryL2`, `updateProductCategory` (cập nhật `category_level1_id` / `category_level2_id` trên `products` + đồng bộ store).
 

@@ -4,6 +4,12 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: migration completed_at (picking_lists) + image_url (internal_notes) — schema v5.3
+
+- Migration `20260721161200_add_completed_at_and_notes_image.sql`; cập nhật `schema.sql` + types.
+
+---
+
 ## [tháng 7/2026] — feat(E): search dropdown FilterModal Kho/Zone + InternalNotes scroll 20 + AddInventory Zone search
 
 - `FilterModal`: TextInput search + filter `normalizeText` cho Kho/Zone.

@@ -96,6 +96,7 @@ export interface PickingList {
   id: string
   title: string
   status: PickingListStatus
+  completed_at?: string | null
   created_at: string
   updated_at: string
 }
@@ -175,6 +176,7 @@ export type InternalNote = {
   product_id: string | null
   custom_product_name: string | null
   reason: string
+  image_url?: string | null
   created_by: string | null
   created_at: string
   product?: Product

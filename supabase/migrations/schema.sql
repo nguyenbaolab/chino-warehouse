@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Store — Full Database Schema
--- Phiên bản: 5.2 | Tháng 7/2026
+-- Phiên bản: 5.3 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v5.2:
+--   - v5.3: picking_lists.completed_at TIMESTAMPTZ; internal_notes.image_url TEXT
 -- Thay đổi so với v5.1:
 --   - v5.2: inventory_entries.discount_percent NUMERIC(5,2) 0–100 NULL (D1 hàng giảm giá)
 -- Thay đổi so với v5.0:
@@ -203,12 +205,13 @@ CREATE TABLE order_items (
 
 -- 7b. Picking lists (F34 — đơn lấy hàng từ kho)
 CREATE TABLE picking_lists (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  title      TEXT        NOT NULL,
-  status     TEXT        NOT NULL DEFAULT 'draft'
-               CHECK (status IN ('draft', 'in_progress', 'completed')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  title         TEXT        NOT NULL,
+  status        TEXT        NOT NULL DEFAULT 'draft'
+                  CHECK (status IN ('draft', 'in_progress', 'completed')),
+  completed_at  TIMESTAMPTZ,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 7c. Picking list items (gắn đúng lô inventory_entry)
@@ -253,6 +256,7 @@ CREATE TABLE internal_notes (
   product_id           UUID        REFERENCES products(id) ON DELETE CASCADE,
   custom_product_name  TEXT,
   reason               TEXT        NOT NULL,
+  image_url            TEXT,
   created_by           UUID        REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT internal_notes_product_or_name CHECK (
