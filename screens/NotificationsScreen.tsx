@@ -1316,7 +1316,8 @@ const styles = StyleSheet.create({
   cardName: { fontSize: 14, fontWeight: '600', flex: 1, minWidth: 0 },
   cardQty: { fontSize: 13 },
   badgeWrap: {
-    flexDirection: 'row',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
     gap: 6,
     flexWrap: 'wrap',
     justifyContent: 'flex-end',

@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — ui(notify): badge giảm giá xếp dọc (column)
+
+- **NotificationsScreen:** `badgeWrap` `flexDirection: 'column'` + `alignItems: 'flex-end'`.
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — ui(notify): hiện Hạn gần nhất trên card; bỏ icon ▴▾
 
 - **NotificationsScreen `renderExpiryItem`:** dưới «Còn …» hiện `Hạn: {isoExpiryToDisplay(earliestExpiry)}` (cột riêng, không cạnh badges); xóa icon expand + style `expandHint`.
