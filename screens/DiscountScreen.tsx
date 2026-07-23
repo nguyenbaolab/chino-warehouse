@@ -350,7 +350,13 @@ export default function DiscountScreen() {
     }
     return Array.from(map.entries())
       .sort(([, a], [, b]) => a.sortKey.localeCompare(b.sortKey))
-      .map(([title, { items }]) => ({ title, data: chunkArray(items, NUM_COLUMNS) }))
+      .map(([title, { items }]) => ({
+        title,
+        data: chunkArray(items, NUM_COLUMNS).map((row, rowIndex) => ({
+          rowKey: `${title}-${rowIndex}-${row[0]?.entry.id}`,
+          items: row,
+        })),
+      }))
   }, [discountedItems])
 
   const addProductSuggestions = useMemo(() => {
@@ -711,8 +717,8 @@ export default function DiscountScreen() {
       ) : (
         <SectionList
           sections={groupedSections}
-          keyExtractor={(rowItems, index) => `row-${index}-${rowItems[0]?.entry.id}`}
-          renderItem={renderRow}
+          keyExtractor={(rowItem) => rowItem.rowKey}
+          renderItem={({ item }) => renderRow({ item: item.items })}
           renderSectionHeader={({ section: { title } }) => (
             <View style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.bg }}>
               <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700' }}>

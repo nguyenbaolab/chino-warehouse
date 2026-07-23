@@ -42,6 +42,8 @@ type WarehouseStore = {
   productCategoriesL2: ProductCategoryL2[]
   inventoryEntries: InventoryEntry[]
   discountedEntries: InventoryEntry[]
+  expiryEntries: InventoryEntry[]
+  lowStockEntries: InventoryEntry[]
   orderLists: OrderList[]
   orderItems: OrderItem[]
   pickingLists: PickingList[]
@@ -89,6 +91,8 @@ type WarehouseStore = {
   fetchInventoryByLocationSilent: (locationId: string) => Promise<void>
   fetchAllInventoryEntries: () => Promise<{ error: string | null }>
   fetchDiscountedEntries: () => Promise<{ error: string | null }>
+  fetchExpiryEntries: () => Promise<{ error: string | null }>
+  fetchLowStockEntries: () => Promise<{ error: string | null }>
   fetchProductLots: (productId: string) => Promise<InventoryEntry[]>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
   /** Mọi lô có barcode khớp (toàn kho) — chỉ return, không ghi store. */
@@ -236,6 +240,8 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   productCategoriesL2: [],
   inventoryEntries: [],
   discountedEntries: [],
+  expiryEntries: [],
+  lowStockEntries: [],
   orderLists: [],
   orderItems: [],
   pickingLists: [],
@@ -828,6 +834,59 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     }
   },
 
+  fetchExpiryEntries: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_entries')
+        .select(`
+        id, product_id, zone_id, quantity_boxes,
+        expiry_date, is_price_reduced, discount_percent,
+        updated_at, notes,
+        product:products(
+          id, name, image_url, is_archived, is_discontinued,
+          ignore_expiry_warning, warning_days,
+          low_warning_boxes, low_critical_boxes, updated_at
+        ),
+        zone:zones(id, location_id)
+      `)
+        .not('expiry_date', 'is', null)
+      if (error) {
+        if (__DEV__) console.error('[warehouseStore] fetchExpiryEntries:', error)
+        return { error: getErrorMessage(error, 'fetch') }
+      }
+      set({ expiryEntries: (data as unknown as InventoryEntry[]) ?? [] })
+      return { error: null }
+    } catch (e) {
+      if (__DEV__) console.error('[warehouseStore] fetchExpiryEntries:', e)
+      return { error: getErrorMessage(e, 'fetch') }
+    }
+  },
+
+  fetchLowStockEntries: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_entries')
+        .select(`
+        id, product_id, zone_id, quantity_boxes, updated_at,
+        product:products(
+          id, name, is_archived, is_discontinued,
+          ignore_stock_warning,
+          low_warning_boxes, low_critical_boxes
+        ),
+        zone:zones(id, location_id)
+      `)
+      if (error) {
+        if (__DEV__) console.error('[warehouseStore] fetchLowStockEntries:', error)
+        return { error: getErrorMessage(error, 'fetch') }
+      }
+      set({ lowStockEntries: (data as unknown as InventoryEntry[]) ?? [] })
+      return { error: null }
+    } catch (e) {
+      if (__DEV__) console.error('[warehouseStore] fetchLowStockEntries:', e)
+      return { error: getErrorMessage(e, 'fetch') }
+    }
+  },
+
   fetchProductLots: async (productId) => {
     try {
       const { data, error } = await supabase
@@ -1175,6 +1234,9 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       inventoryEntries: s.inventoryEntries.map((entry) => (
         entry.id === id ? { ...entry, ...data } : entry
       )),
+      expiryEntries: s.expiryEntries.map((entry) => (
+        entry.id === id ? { ...entry, ...data } : entry
+      )),
     }))
   },
 
@@ -1386,8 +1448,10 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   },
 
   togglePriceReduced: async (entryId) => {
-    const { inventoryEntries } = get()
-    const entry = inventoryEntries.find((e) => e.id === entryId)
+    const { inventoryEntries, expiryEntries } = get()
+    const entry =
+      inventoryEntries.find((e) => e.id === entryId) ??
+      expiryEntries.find((e) => e.id === entryId)
     if (!entry) return
     const current = entry.is_price_reduced ?? false
     const next = !current
@@ -1396,17 +1460,30 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .from('inventory_entries')
       .update({ is_price_reduced: next })
       .eq('id', entryId)
-      .select('*, product:products(*), zone:zones(*)')
+      .select(`
+      id, product_id, zone_id, quantity_boxes,
+      expiry_date, is_price_reduced, discount_percent,
+      updated_at, notes,
+      product:products(
+        id, name, image_url, is_archived, is_discontinued,
+        ignore_expiry_warning, warning_days,
+        low_warning_boxes, low_critical_boxes, updated_at
+      ),
+      zone:zones(id, location_id)
+    `)
       .single()
 
     if (!updated) return
 
+    const patched = updated as unknown as InventoryEntry
+
     set((s) => ({
-      inventoryEntries: s.inventoryEntries.map((entry) => (
-        entry.id === entryId
-          ? { ...entry, ...updated }
-          : entry
-      )),
+      inventoryEntries: s.inventoryEntries.map((e) =>
+        e.id === entryId ? { ...e, ...patched } : e
+      ),
+      expiryEntries: s.expiryEntries.map((e) =>
+        e.id === entryId ? { ...e, ...patched } : e
+      ),
     }))
   },
 

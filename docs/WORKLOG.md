@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(notifications): B1 fetchExpiryEntries + fetchLowStockEntries — tách state riêng
+
+- Store: expiryEntries + lowStockEntries state; fetchExpiryEntries (filter expiry_date NOT NULL) + fetchLowStockEntries (projection tối thiểu); togglePriceReduced update cả expiryEntries
+- NotificationsScreen: useFocusEffect TTL 30s; bỏ fetchAllInventoryEntries; inventoryEntriesForNotify → expiryEntries; lowStockCards → productIdToLowStockEntries từ lowStockEntries
+- KI-075 Partial → thêm Notifications done
+- KI-076 Partial → thêm Notifications TTL done
+
+---
+
 ## [tháng 7/2026] — perf(discount): B1 fetchDiscountedEntries — tách state riêng, không còn fetchAllInventoryEntries
 
 - Thêm `discountedEntries` state + `fetchDiscountedEntries` (filter is_price_reduced=true) + `fetchProductLots` vào store

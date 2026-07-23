@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNavigation, useRoute } from '@react-navigation/native'
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -30,6 +30,7 @@ import {
 } from '../utils/statusUtils'
 
 const PAGE_SIZE = 10
+const FOCUS_FETCH_TTL_MS = 30_000
 
 function todayISO(): string {
   const d = new Date()
@@ -96,9 +97,11 @@ export default function NotificationsScreen() {
   } = useWarningStore()
   const {
     products,
-    inventoryEntries,
+    expiryEntries,
+    lowStockEntries,
     fetchProducts,
-    fetchAllInventoryEntries,
+    fetchExpiryEntries,
+    fetchLowStockEntries,
     fetchInventoryByZone,
     togglePriceReduced,
     toggleDiscontinued,
@@ -135,6 +138,7 @@ export default function NotificationsScreen() {
   const [dateRangeActive, setDateRangeActive] = useState(false)
   const [editingDiscountId, setEditingDiscountId] = useState<string | null>(null)
   const [discountInput, setDiscountInput] = useState('')
+  const lastFetchRef = useRef(0)
 
   async function handleSaveDiscount(entryId: string) {
     const val = parseFloat(discountInput)
@@ -231,8 +235,8 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     if (filterLocationId) return
-    void fetchAllInventoryEntries()
-  }, [filterLocationId, fetchAllInventoryEntries])
+    void Promise.all([fetchExpiryEntries(), fetchLowStockEntries()])
+  }, [filterLocationId, fetchExpiryEntries, fetchLowStockEntries])
 
   useEffect(() => {
     if (!filterLocationId) {
@@ -291,16 +295,29 @@ export default function NotificationsScreen() {
 
   const inventoryEntriesForNotify = useMemo(() => {
     if (filterZoneId) {
-      return inventoryEntries.filter((e) => e.zone_id === filterZoneId)
+      return expiryEntries.filter((e) => e.zone_id === filterZoneId)
     }
     if (locationZoneSet) {
-      return inventoryEntries.filter((e) => locationZoneSet.has(e.zone_id))
+      return expiryEntries.filter((e) => locationZoneSet.has(e.zone_id))
     }
     if (modeZoneIds) {
-      return inventoryEntries.filter((e) => modeZoneIds.has(e.zone_id))
+      return expiryEntries.filter((e) => modeZoneIds.has(e.zone_id))
     }
-    return inventoryEntries
-  }, [inventoryEntries, locationZoneSet, filterZoneId, modeZoneIds])
+    return expiryEntries
+  }, [expiryEntries, locationZoneSet, filterZoneId, modeZoneIds])
+
+  const lowStockEntriesForNotify = useMemo(() => {
+    if (filterZoneId) {
+      return lowStockEntries.filter((e) => e.zone_id === filterZoneId)
+    }
+    if (locationZoneSet) {
+      return lowStockEntries.filter((e) => locationZoneSet.has(e.zone_id))
+    }
+    if (modeZoneIds) {
+      return lowStockEntries.filter((e) => modeZoneIds.has(e.zone_id))
+    }
+    return lowStockEntries
+  }, [lowStockEntries, locationZoneSet, filterZoneId, modeZoneIds])
 
   const productIdToEntries = useMemo(() => {
     const map = new Map<string, InventoryEntry[]>()
@@ -311,6 +328,16 @@ export default function NotificationsScreen() {
     }
     return map
   }, [inventoryEntriesForNotify])
+
+  const productIdToLowStockEntries = useMemo(() => {
+    const map = new Map<string, InventoryEntry[]>()
+    for (const entry of lowStockEntriesForNotify) {
+      const list = map.get(entry.product_id)
+      if (list) list.push(entry)
+      else map.set(entry.product_id, [entry])
+    }
+    return map
+  }, [lowStockEntriesForNotify])
 
   const expiryCards = useMemo(() => {
     if (!expiryWarningEnabled) return []
@@ -424,9 +451,10 @@ export default function NotificationsScreen() {
   const lowStockCards = useMemo(() => {
     if (!lowStockWarningEnabled) return []
     const cards: LowStockCard[] = []
-    for (const [productId, entries] of productIdToEntries.entries()) {
+    for (const [productId, entries] of productIdToLowStockEntries.entries()) {
       if (entries.length === 0) continue
-      const product: Product | undefined = products.find((p) => p.id === productId) ?? entries[0]?.product
+      const product: Product | undefined =
+        products.find((p) => p.id === productId) ?? entries[0]?.product
       if (!product || product.is_archived || product.is_discontinued === true) continue
       if (product.ignore_stock_warning) continue
 
@@ -451,7 +479,7 @@ export default function NotificationsScreen() {
       }
     }
     return cards.sort((a, b) => a.productName.localeCompare(b.productName))
-  }, [productIdToEntries, products, lowStockWarningEnabled, locationById])
+  }, [productIdToLowStockEntries, products, lowStockWarningEnabled, locationById])
 
   const normalizedSearch = normalizeText(searchQuery.trim())
 
@@ -882,6 +910,25 @@ export default function NotificationsScreen() {
       )
     },
     [canWrite, colors, expiryWarningEnabled, lowStockWarningEnabled, navigation, toggleDiscontinued]
+  )
+
+  useFocusEffect(
+    useCallback(() => {
+      const now = Date.now()
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastFetchRef.current = now
+      let cancelled = false
+      void (async () => {
+        await Promise.all([
+          fetchProducts(),
+          fetchExpiryEntries(),
+          fetchLowStockEntries(),
+        ])
+      })()
+      return () => {
+        cancelled = true
+      }
+    }, [fetchProducts, fetchExpiryEntries, fetchLowStockEntries]),
   )
 
   return (
