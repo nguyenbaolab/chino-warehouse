@@ -20,6 +20,7 @@ import {
   LocateIntent,
   ProductBarcode,
   InternalNote,
+  InternalNoteFolder,
 } from '../types'
 
 /** KI-064 — chặn Realtime location-merge ghi đè khi đang fetch full inventory */
@@ -45,6 +46,7 @@ type WarehouseStore = {
   pickingLists: PickingList[]
   pickingListItems: PickingListItem[]
   internalNotes: InternalNote[]
+  internalNoteFolders: InternalNoteFolder[]
   isLoading: boolean
   locateIntent: LocateIntent | null
 
@@ -196,11 +198,16 @@ type WarehouseStore = {
   }) => Promise<AuditLog[]>
   fetchAuditLogsForProduct: (productId: string, limit?: number) => Promise<AuditLog[]>
   fetchInternalNotes: () => Promise<{ error: string | null }>
+  fetchInternalNoteFolders: () => Promise<{ error: string | null }>
+  addInternalNoteFolder: (name: string) => Promise<{ error: string | null }>
+  updateInternalNoteFolder: (id: string, name: string) => Promise<{ error: string | null }>
+  deleteInternalNoteFolder: (id: string) => Promise<{ error: string | null }>
   addInternalNote: (params: {
     productId?: string
     customName?: string
     reason: string
     imageUrl?: string | null
+    folderId?: string | null
   }) => Promise<{ error: string | null; note?: InternalNote }>
   updateInternalNote: (
     id: string,
@@ -208,6 +215,7 @@ type WarehouseStore = {
     imageUrl?: string | null,
     productId?: string | null,
     customName?: string | null,
+    folderId?: string | null,
   ) => Promise<{ error: string | null }>
   deleteInternalNote: (id: string) => Promise<{ error: string | null }>
 }
@@ -229,6 +237,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   pickingLists: [],
   pickingListItems: [],
   internalNotes: [],
+  internalNoteFolders: [],
   isLoading: false,
   locateIntent: null,
 
@@ -1738,6 +1747,68 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return { error: null }
   },
 
+  fetchInternalNoteFolders: async () => {
+    const { data, error } = await supabase
+      .from('internal_note_folders')
+      .select('*')
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: true })
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] fetchInternalNoteFolders:', error)
+      return { error: getErrorMessage(error, 'fetch') }
+    }
+    set({ internalNoteFolders: (data as InternalNoteFolder[]) ?? [] })
+    return { error: null }
+  },
+
+  addInternalNoteFolder: async (name) => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      return { error: 'Tên folder không được để trống.' }
+    }
+    const { error } = await supabase.from('internal_note_folders').insert({ name: trimmed })
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] addInternalNoteFolder:', error)
+      return { error: getErrorMessage(error, 'create') }
+    }
+    await get().fetchInternalNoteFolders()
+    return { error: null }
+  },
+
+  updateInternalNoteFolder: async (id, name) => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      return { error: 'Tên folder không được để trống.' }
+    }
+    const { error } = await supabase
+      .from('internal_note_folders')
+      .update({ name: trimmed })
+      .eq('id', id)
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] updateInternalNoteFolder:', error)
+      return { error: getErrorMessage(error, 'update') }
+    }
+    await get().fetchInternalNoteFolders()
+    return { error: null }
+  },
+
+  deleteInternalNoteFolder: async (id) => {
+    const folder = get().internalNoteFolders.find((f) => f.id === id)
+    if (!folder) {
+      return { error: 'Không tìm thấy folder.' }
+    }
+    if (folder.is_default) {
+      return { error: 'Không thể xóa folder mặc định.' }
+    }
+    const { error } = await supabase.from('internal_note_folders').delete().eq('id', id)
+    if (error) {
+      if (__DEV__) console.error('[warehouseStore] deleteInternalNoteFolder:', error)
+      return { error: getErrorMessage(error, 'delete') }
+    }
+    await get().fetchInternalNoteFolders()
+    return { error: null }
+  },
+
   addInternalNote: async (params) => {
     const trimmedReason = params.reason.trim()
     if (!trimmedReason) {
@@ -1758,6 +1829,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         reason: trimmedReason,
         created_by: userData.user?.id ?? null,
         ...(params.imageUrl ? { image_url: params.imageUrl } : {}),
+        ...(params.folderId !== undefined ? { folder_id: params.folderId } : {}),
       })
       .select('*, product:products(id, name, image_url)')
       .single()
@@ -1770,7 +1842,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     return { error: null, note }
   },
 
-  updateInternalNote: async (id, reason, imageUrl, productId, customName) => {
+  updateInternalNote: async (id, reason, imageUrl, productId, customName, folderId) => {
     const trimmed = reason.trim()
     if (!trimmed) {
       return { error: 'Nội dung ghi chú không được để trống.' }
@@ -1779,6 +1851,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     if (imageUrl !== undefined) payload.image_url = imageUrl
     if (productId !== undefined) payload.product_id = productId
     if (customName !== undefined) payload.custom_product_name = customName
+    if (folderId !== undefined) payload.folder_id = folderId
     const { data, error } = await supabase
       .from('internal_notes')
       .update(payload)

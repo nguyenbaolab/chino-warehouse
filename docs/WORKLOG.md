@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(notes): schema/store folder ghi chú (v5.4, chưa UI)
+
+- **Migration:** `20260723125009_add_internal_note_folders.sql` — bảng `internal_note_folders` (seed Chung), `internal_notes.folder_id`, RLS.
+- **schema.sql** bump **v5.4**; types `InternalNoteFolder` + `InternalNote.folder_id`.
+- **Store:** `internalNoteFolders` + CRUD folders; `addInternalNote` / `updateInternalNote` nhận `folderId`.
+- **Verify:** `npx tsc --noEmit` pass. (Chạy migration trên Supabase Dashboard nếu chưa.)
+
+---
+
 ## [tháng 7/2026] — feat(discount): quét barcode chọn SP trong modal thêm giảm giá
 
 - **DiscountScreen bước 1:** row search + 📷 → `BarcodeScanner` (`mode: 'search'`); resolve SP qua `lookupProductByBarcode` rồi `inventoryEntries.barcode`; set `addSelectedProduct` → bước 2; không thấy → Alert.

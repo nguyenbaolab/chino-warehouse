@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Store — Full Database Schema
--- Phiên bản: 5.3 | Tháng 7/2026
+-- Phiên bản: 5.4 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v5.3:
+--   - v5.4: internal_note_folders + internal_notes.folder_id (ON DELETE SET NULL); seed «Chung»
 -- Thay đổi so với v5.2:
 --   - v5.3: picking_lists.completed_at TIMESTAMPTZ; internal_notes.image_url TEXT
 -- Thay đổi so với v5.1:
@@ -250,6 +252,17 @@ CREATE TABLE user_profiles (
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 8a. Internal note folders (F31 — phân folder ghi chú)
+CREATE TABLE internal_note_folders (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  name       TEXT        NOT NULL,
+  is_default BOOLEAN     NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO internal_note_folders (name, is_default)
+VALUES ('Chung', true);
+
 -- 8b. Internal notes (F31 — ghi chú nội bộ theo SP hoặc tên tự do)
 CREATE TABLE internal_notes (
   id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -257,6 +270,7 @@ CREATE TABLE internal_notes (
   custom_product_name  TEXT,
   reason               TEXT        NOT NULL,
   image_url            TEXT,
+  folder_id            UUID        REFERENCES internal_note_folders(id) ON DELETE SET NULL,
   created_by           UUID        REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT internal_notes_product_or_name CHECK (
@@ -298,6 +312,7 @@ CREATE INDEX idx_user_profiles_role ON user_profiles(role);
 CREATE INDEX idx_user_profiles_is_disabled ON user_profiles(is_disabled);
 CREATE INDEX idx_internal_notes_product_id ON internal_notes(product_id);
 CREATE INDEX idx_internal_notes_created_at ON internal_notes(created_at DESC);
+CREATE INDEX idx_internal_notes_folder_id ON internal_notes(folder_id);
 
 -- Indexes cho audit_logs (SEC-11)
 CREATE INDEX ON audit_logs(changed_at DESC);
@@ -324,6 +339,7 @@ ALTER TABLE picking_list_items    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app_settings          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_profiles         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE internal_notes        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE internal_note_folders ENABLE ROW LEVEL SECURITY;
 
 -- F24 / KI-055: helpers bypass RLS khi check role (tránh infinite recursion trong policy)
 CREATE OR REPLACE FUNCTION public.is_current_user_admin()
@@ -494,6 +510,13 @@ CREATE POLICY internal_notes_mutate_staff_plus ON internal_notes
   FOR ALL TO authenticated
   USING (public.is_current_user_at_least_staff())
   WITH CHECK (public.is_current_user_at_least_staff());
+
+-- F31 folders: authenticated read; authenticated write (client vẫn gate canWrite)
+CREATE POLICY "authenticated read folders" ON internal_note_folders
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "staff write folders" ON internal_note_folders
+  FOR ALL TO authenticated
+  USING (true) WITH CHECK (true);
 
 -- RLS audit_logs (SEC-11): chỉ authenticated SELECT, không INSERT/UPDATE/DELETE từ client
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;

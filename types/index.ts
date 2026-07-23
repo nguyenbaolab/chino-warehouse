@@ -170,6 +170,14 @@ export type InventoryEntry = {
   zone?: Zone
 }
 
+/** F31 — folder ghi chú nội bộ */
+export interface InternalNoteFolder {
+  id: string
+  name: string
+  is_default: boolean
+  created_at: string
+}
+
 /** F31 — ghi chú nội bộ theo sản phẩm (hoặc tên tự do) */
 export type InternalNote = {
   id: string
@@ -177,6 +185,7 @@ export type InternalNote = {
   custom_product_name: string | null
   reason: string
   image_url?: string | null
+  folder_id?: string | null
   created_by: string | null
   created_at: string
   product?: Product
