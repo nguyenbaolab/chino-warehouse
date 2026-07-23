@@ -2,6 +2,127 @@
 
 ---
 
+### [KI-085] App không bootstrap data sau login — tab đầu luôn spinner
+
+- **Mức độ:** Medium (perf / UX)
+- **File liên quan:** `App.tsx`, `stores/warehouseStore.ts`
+- **Mô tả:** App.tsx sau login thành công chỉ fetch profile + schedule notifications. Không prefetch locations/products. Tab đầu tiên user bấm vào (thường MapScreen) phải fetch từ đầu → spinner chờ mỗi lần mở app.
+- **Hướng fix:** Sau login OK, prefetch song song `fetchLocations` + `fetchProducts` (critical path MapScreen). Lazy fetch phần còn lại khi user vào các tab khác.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B11
+
+---
+
+### [KI-084] ProductsScreen mount cascade 7+ network call
+
+- **Mức độ:** Medium (perf)
+- **File liên quan:** `screens/ProductsScreen.tsx`
+- **Mô tả:** Mount ProductsScreen trigger đồng thời: fetchCategories, fetchPickingLists, fetchProducts, fetchProductsPage (select * limit 1000), locations ×2, fetchAllInventoryEntries, zones. Không có TTL/useFocusEffect → một số useEffect trigger lại khi deps thay đổi khi quay về tab.
+- **Hướng fix:** Gom locations/zones vào 1 call; thêm useFocusEffect + TTL cho data cần refresh; giải quyết khi làm B1 (bỏ fetchAllInventoryEntries) + B5 (projection).
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B10
+
+---
+
+### [KI-083] FlatList hiện tại thiếu getItemLayout + không có React.memo
+
+- **Mức độ:** Medium (perf)
+- **File liên quan:** `screens/NotificationsScreen.tsx`, `screens/DiscountScreen.tsx`, `screens/InternalNotesScreen.tsx`, `screens/ProductsScreen.tsx`
+- **Mô tả:** Tất cả FlatList/SectionList trong app đều không khai báo `getItemLayout`. Không có `React.memo` nào trong toàn bộ codebase. Scroll list lớn (Products 500+ SP) không tận dụng được optimization của FlatList.
+- **Hướng fix:** Thêm `getItemLayout` cho list item chiều cao cố định. Wrap render item bằng `React.memo`.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B9
+
+---
+
+### [KI-082] List lớn dùng ScrollView + .map — không virtualize
+
+- **Mức độ:** Medium (perf)
+- **File liên quan:** `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, `screens/MapScreen.tsx`, `components/ZoneDetailSheet.tsx`, `components/LotPickerModal.tsx`, `components/FilterModal.tsx`
+- **Mô tả:** Các list trên dùng ScrollView + .map thay FlatList — render toàn bộ DOM cùng lúc. Khi list lớn (nhiều orders, nhiều lots, search results MapScreen) → JS thread block → app đơ.
+- **Hướng fix:** Chuyển sang FlatList hoặc SectionList. Ưu tiên ZoneDetailSheet và MapScreen search results vì có thể nhiều items nhất.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B8
+
+---
+
+### [KI-081] Zustand destructure không selector — re-render cascade toàn app
+
+- **Mức độ:** Medium (perf)
+- **File liên quan:** `screens/ProductsScreen.tsx` (23 fields), `screens/MapScreen.tsx` (17 fields), `screens/InternalNotesScreen.tsx` (13 fields), `screens/OrderDetailScreen.tsx` (13 fields), và các màn khác
+- **Mô tả:** Tất cả màn destructure useWarehouseStore() không dùng selector → bất kỳ field nào trong store thay đổi (kể cả field không liên quan, ví dụ MapScreen Realtime update zones) → toàn bộ component re-render kể cả khi đang ở tab khác.
+- **Hướng fix:** Chuyển sang selector cụ thể `useWarehouseStore(s => s.field)` hoặc `useShallow` cho nhóm fields liên quan. Thêm `React.memo` cho render item components.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B7
+
+---
+
+### [KI-080] Image RN không có cache — re-download mỗi lần mount
+
+- **Mức độ:** High (perf / UX)
+- **File liên quan:** `screens/ProductsScreen.tsx`, `screens/DiscountScreen.tsx`, `screens/NotificationsScreen.tsx`, `screens/InternalNotesScreen.tsx`, `components/LotPickerModal.tsx`, `components/ImageViewerModal.tsx`
+- **Mô tả:** Toàn app dùng `Image` từ `react-native`, không có cache policy. Mỗi lần component mount lại (chuyển tab rồi quay về, scroll) → re-download ảnh từ Supabase Storage từ đầu. ProductsScreen 500+ SP có ảnh → hàng chục request đồng thời khi scroll.
+- **Hướng fix:** Install `expo-image`; thay `Image` RN → `Image` từ `expo-image` với `cachePolicy="disk"`. Cần rebuild APK.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B6
+
+---
+
+### [KI-079] `fetchProductsPage` select * limit 1000 — payload thừa
+
+- **Mức độ:** Medium (perf)
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchProductsPage`), `screens/ProductsScreen.tsx`
+- **Mô tả:** `fetchProductsPage` dùng `.select('*', { count: 'exact' }).limit(1000)` — kéo mọi cột products cho tối đa 1000 rows. ProductsScreen card UI chỉ cần một số cột nhất định, không cần toàn bộ.
+- **Hướng fix:** Projection cụ thể chỉ select columns cần cho card UI.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B5
+
+---
+
+### [KI-078] Race condition 3 function ghi đồng thời vào inventoryEntries
+
+- **Mức độ:** High (data consistency)
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchAllInventoryEntries`, `fetchInventoryByZone`, `fetchInventoryByLocationSilent`)
+- **Mô tả:** Ba function cùng ghi vào `store.inventoryEntries` với strategy khác nhau: fetchAll set toàn bộ, fetchByZone merge theo zone_id, fetchByLocation merge theo zoneIdSet. Khi chạy đồng thời (ví dụ MapScreen Realtime + Notifications mount) → merge partial đè mất data → list hiển thị thiếu hoặc stale.
+- **Hướng fix:** Giải quyết tự nhiên khi làm B1 (mỗi màn fetch scope riêng). Nếu vẫn giữ shared state, cần sequence lock nhất quán.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B4
+
+---
+
+### [KI-077] `fetchInventoryByZone` + `fetchInventoryByLocationSilent` còn select * nested
+
+- **Mức độ:** Medium (perf)
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchInventoryByZone`, `fetchInventoryByLocationSilent`)
+- **Mô tả:** Cả hai function dùng `.select('*, product:products(*), zone:zones(*)')` — kéo toàn bộ cột 3 bảng. Trong khi `fetchAllInventoryEntries` đã có projection cụ thể. Hai function này được gọi từ MapScreen Realtime, Notifications khi chọn kho, ProductsScreen khi có filterLocationId.
+- **Hướng fix:** Áp dụng cùng projection của `fetchAllInventoryEntries` cho 2 function này. Drop-in fix, không đổi logic.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B3
+
+---
+
+### [KI-076] Double-fetch fetchAllInventoryEntries — Notifications không TTL, Discount 2 lần mỗi focus
+
+- **Mức độ:** High (perf)
+- **File liên quan:** `screens/NotificationsScreen.tsx`, `screens/DiscountScreen.tsx`
+- **Mô tả:** Discount: `useFocusEffect` (TTL 30s) + `useEffect [filterLocationId]` (không TTL) cùng gọi `fetchAllInventoryEntries` → 2 call full data mỗi lần focus khi TTL chưa hết ở useFocusEffect. Notifications: chỉ có `useEffect [filterLocationId]` không TTL → fetch full mỗi lần focus vào tab.
+- **Hướng fix:** Loại bỏ duplicate call; thêm TTL cho Notifications. Giải quyết tự nhiên khi làm B1.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B2
+
+---
+
+### [KI-075] `fetchAllInventoryEntries` fetch full không filter — bottleneck toàn app
+
+- **Mức độ:** High (perf)
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchAllInventoryEntries`), `screens/NotificationsScreen.tsx`, `screens/DiscountScreen.tsx`, `screens/ProductsScreen.tsx`
+- **Mức độ chi tiết:** Kéo toàn bộ 550+ lô không có `.eq()` / `.filter()` / `.limit()` / pagination. Mỗi lô kèm nested product (12 cột) + zone (8 cột). Được gọi từ ít nhất 3 màn chính, mỗi màn filter local sau khi fetch. Là nguyên nhân chính gây lag và đơ app.
+- **Hướng fix:** Tạo function fetch chuyên biệt theo scope (expiry range cho Notifications, is_price_reduced cho Discount, location_id cho Products). Mỗi màn chỉ fetch đúng data cần hiển thị.
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_7 B1
+
+---
+
 ### [KI-074] Thiếu index `inventory_entries.expiry_date` và `products.is_archived`
 
 - **Mức độ:** Medium (perf)

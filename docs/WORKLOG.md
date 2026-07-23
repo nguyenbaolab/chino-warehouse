@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf: recon hiệu năng toàn app + planning Group B
+
+- Recon toàn bộ codebase (warehouseStore, 7 screens chính, App.tsx, components) phục vụ tối ưu hiệu năng.
+- Xác định 11 vấn đề cụ thể từ code thật: KI-075 đến KI-085.
+- Gốc rễ chính: `fetchAllInventoryEntries` fetch full không filter (KI-075); double-fetch Notifications+Discount (KI-076); select * nested (KI-077); race condition 3 function ghi inventoryEntries (KI-078); Image RN không cache (KI-080); ProductsScreen 7+ call cascading (KI-084).
+- Chốt hướng giải quyết: server-side filter (B1–B4), expo-image (B6), Zustand selector (B7), virtualize list (B8), getItemLayout (B9), consolidate ProductsScreen (B10), bootstrap data (B11).
+- Update docs: PLAN_7 Group B viết lại 11 task B1–B11 theo tier; KNOWN_ISSUES thêm KI-075–085; DECISIONS thêm 2 quyết định kỹ thuật.
+- Thứ tự implement: B3 → B1+B2+B4 → B5 → B6 → B7+B9 → B8 → B10+B11, xen kẽ với A1 F27.
+
+---
+
 ## [tháng 7/2026] — docs: Closeout Phase 6 + Planning Phase 7
 
 - Tạo `TESTCASES_6.md`, `SUMMARY_6.md`, `HANDOFF_6.md` trong `docs/phases/phase-6/`.

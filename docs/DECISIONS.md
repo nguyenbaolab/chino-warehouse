@@ -4,6 +4,26 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### expo-image thay Image RN — disk cache cho ảnh Supabase Storage
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Install `expo-image` (có sẵn SDK 54, hỗ trợ bare workflow Android). Thay toàn bộ `Image` từ `react-native` → `Image` từ `expo-image` với `cachePolicy="disk"` tại: ProductsScreen, DiscountScreen, NotificationsScreen, InternalNotesScreen, LotPickerModal, ImageViewerModal.
+- **Lý do:** `Image` RN không có disk cache → re-download ảnh mỗi lần component mount lại; 500+ SP có ảnh trên ProductsScreen → hàng chục request đồng thời khi scroll. `expo-image` drop-in replacement, disk cache persist qua session. Cần rebuild APK.
+- **Thay thế đã xem xét:** FastImage (third-party) — từ chối, thêm dependency ngoài Expo ecosystem; implement cache thủ công FileSystem — từ chối, phức tạp không cần thiết.
+- **Tham chiếu:** KI-080, PLAN_7 B6
+
+---
+
+### Performance optimization Phase 7 — server-side filter thay fetch-all-then-filter-local
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Các màn Notifications, Discount, ProductsScreen không còn gọi `fetchAllInventoryEntries` (fetch toàn bộ 550+ lô rồi filter local). Thay bằng function chuyên biệt có server-side filter theo scope từng màn. `fetchAllInventoryEntries` chỉ còn dùng cho Dashboard và các màn thực sự cần toàn bộ data.
+- **Lý do:** Recon tháng 7/2026 xác nhận đây là bottleneck chính: 550+ lô × nested product+zone × 3 màn gọi đồng thời → JS thread block → lag và đơ app. Server filter giảm payload 80–90% tùy màn.
+- **Thay thế đã xem xét:** Pagination client-side — từ chối, vẫn fetch all chỉ hiện dần; virtual scroll thay fetch — từ chối, vẫn kéo data thừa về RAM.
+- **Tham chiếu:** KI-075, KI-076, PLAN_7 B1–B4
+
+---
+
 ### Internal Notes phân folder — Phase 6
 
 - **Ngày:** tháng 7/2026
