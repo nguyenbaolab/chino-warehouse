@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: toggle Giảm giá (is_price_reduced) trên lô market
+
+- ZoneDetailSheet: Switch «Giảm giá» ngay sau «Hàng đặc biệt» (`appMode === 'market'`).
+- ProductDetailScreen: Switch «Giảm giá» ngay sau «Hàng đặc biệt» (`locType === 'market'`).
+- Set `editIsPriceReduced` khi mở form; save cùng payload `is_special`.
+
+---
+
 ## [tháng 7/2026] — ui: đổi emoji 📦 → icon app trên LoginScreen
 
 - `screens/LoginScreen.tsx`: thay Text emoji → Image `assets/adaptive-icon.png` (140×140, contain).

@@ -117,6 +117,7 @@ export default function ProductDetailScreen() {
   const [editNotes, setEditNotes] = useState('')
   const [editLotBarcode, setEditLotBarcode] = useState('')
   const [editIsSpecial, setEditIsSpecial] = useState(false)
+  const [editIsPriceReduced, setEditIsPriceReduced] = useState(false)
   const [editWarningDays, setEditWarningDays] = useState('30')
   const [editLowWarningBoxes, setEditLowWarningBoxes] = useState('3')
   const [isEditingThresholds, setIsEditingThresholds] = useState(false)
@@ -531,6 +532,7 @@ export default function ProductDetailScreen() {
     setEditNotes(lot.notes ?? '')
     setEditLotBarcode(lot.barcode ?? '')
     setEditIsSpecial(lot.is_special ?? false)
+    setEditIsPriceReduced(lot.is_price_reduced ?? false)
   }
 
   async function handleSaveLot(lot: InventoryEntry) {
@@ -603,7 +605,7 @@ export default function ProductDetailScreen() {
       expiry_date: parseDisplayDateToIso(editExpiryDate),
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
-      ...(locType === 'market' ? { is_special: editIsSpecial } : {}),
+      ...(locType === 'market' ? { is_special: editIsSpecial, is_price_reduced: editIsPriceReduced } : {}),
     }
 
     async function doSaveLot(lotId: string, payloadToSend: Partial<InventoryEntry>) {
@@ -635,7 +637,7 @@ export default function ProductDetailScreen() {
                 expiry_date: payload.expiry_date,
                 notes: payload.notes,
                 barcode: payload.barcode,
-                ...(locType === 'market' ? { is_special: editIsSpecial } : {}),
+                ...(locType === 'market' ? { is_special: editIsSpecial, is_price_reduced: editIsPriceReduced } : {}),
                 updated_at: nextUpdatedAt,
               }
             : item,
@@ -1616,14 +1618,24 @@ export default function ProductDetailScreen() {
                     </View>
 
                     {locType === 'market' && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <Text style={{ color: colors.text, fontSize: 14 }}>Hàng đặc biệt</Text>
-                        <Switch
-                          value={editIsSpecial}
-                          onValueChange={setEditIsSpecial}
-                          trackColor={{ false: colors.border, true: '#22C55E' }}
-                        />
-                      </View>
+                      <>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <Text style={{ color: colors.text, fontSize: 14 }}>Hàng đặc biệt</Text>
+                          <Switch
+                            value={editIsSpecial}
+                            onValueChange={setEditIsSpecial}
+                            trackColor={{ false: colors.border, true: '#22C55E' }}
+                          />
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <Text style={{ color: colors.text, fontSize: 14 }}>Giảm giá</Text>
+                          <Switch
+                            value={editIsPriceReduced}
+                            onValueChange={setEditIsPriceReduced}
+                            trackColor={{ false: colors.border, true: '#F59E0B' }}
+                          />
+                        </View>
+                      </>
                     )}
 
                     <View style={styles.editActions}>
