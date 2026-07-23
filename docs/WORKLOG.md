@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(discount): B1 fetchDiscountedEntries — tách state riêng, không còn fetchAllInventoryEntries
+
+- Thêm `discountedEntries` state + `fetchDiscountedEntries` (filter is_price_reduced=true) + `fetchProductLots` vào store
+- DiscountScreen: useFocusEffect + useEffect + scopedEntries dùng discountedEntries
+- addProductLots useMemo → addLots local state + useEffect fetchProductLots khi chọn SP
+- handleApplyAddDiscount: fetchAllInventoryEntries → fetchDiscountedEntries
+- KI-075 Partial (Discount done; Notifications + Products còn lại)
+- KI-076 Partial (double-fetch Discount fixed; Notifications còn lại)
+
+---
+
 ## [tháng 7/2026] — perf(store): B3 projection fetchInventoryByZone + fetchInventoryByLocationSilent
 
 - Thay `select('*, product:products(*), zone:zones(*)')` → projection cụ thể (giống fetchAllInventoryEntries) trên 2 function

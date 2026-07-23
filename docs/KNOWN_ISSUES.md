@@ -109,6 +109,7 @@
 - **Mô tả:** Discount: `useFocusEffect` (TTL 30s) + `useEffect [filterLocationId]` (không TTL) cùng gọi `fetchAllInventoryEntries` → 2 call full data mỗi lần focus khi TTL chưa hết ở useFocusEffect. Notifications: chỉ có `useEffect [filterLocationId]` không TTL → fetch full mỗi lần focus vào tab.
 - **Hướng fix:** Loại bỏ duplicate call; thêm TTL cho Notifications. Giải quyết tự nhiên khi làm B1.
 - **Trạng thái:** Open
+- **Partial — Discount double-fetch fixed; Notifications: còn lại**
 - **Tham chiếu:** PLAN_7 B2
 
 ---
@@ -120,6 +121,7 @@
 - **Mức độ chi tiết:** Kéo toàn bộ 550+ lô không có `.eq()` / `.filter()` / `.limit()` / pagination. Mỗi lô kèm nested product (12 cột) + zone (8 cột). Được gọi từ ít nhất 3 màn chính, mỗi màn filter local sau khi fetch. Là nguyên nhân chính gây lag và đơ app.
 - **Hướng fix:** Tạo function fetch chuyên biệt theo scope (expiry range cho Notifications, is_price_reduced cho Discount, location_id cho Products). Mỗi màn chỉ fetch đúng data cần hiển thị.
 - **Trạng thái:** Open
+- **Partial — Discount: done (fetchDiscountedEntries); Notifications + Products: còn lại**
 - **Tham chiếu:** PLAN_7 B1
 
 ---

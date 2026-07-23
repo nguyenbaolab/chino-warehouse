@@ -80,9 +80,11 @@ export default function DiscountScreen() {
   const canWrite = useCanWrite()
   const {
     inventoryEntries,
+    discountedEntries,
     products,
     fetchProducts,
-    fetchAllInventoryEntries,
+    fetchDiscountedEntries,
+    fetchProductLots,
     fetchInventoryByZone,
     updateInventoryEntry,
     lookupProductByBarcode,
@@ -109,6 +111,8 @@ export default function DiscountScreen() {
   const [addSelectedLotIds, setAddSelectedLotIds] = useState<Set<string>>(new Set())
   const [addDiscountPercent, setAddDiscountPercent] = useState('')
   const [isApplyingAdd, setIsApplyingAdd] = useState(false)
+  const [addLots, setAddLots] = useState<InventoryEntry[]>([])
+  const [addLotsLoading, setAddLotsLoading] = useState(false)
 
   const lastFetchRef = useRef(0)
   const filterModeMountedRef = useRef(false)
@@ -201,14 +205,14 @@ export default function DiscountScreen() {
       void (async () => {
         setLoading(true)
         await fetchProducts()
-        await fetchAllInventoryEntries()
+        await fetchDiscountedEntries()
         if (!cancelled) setLoading(false)
       })()
 
       return () => {
         cancelled = true
       }
-    }, [fetchAllInventoryEntries, fetchProducts]),
+    }, [fetchDiscountedEntries, fetchProducts]),
   )
 
   useEffect(() => {
@@ -259,8 +263,8 @@ export default function DiscountScreen() {
 
   useEffect(() => {
     if (filterLocationId) return
-    void fetchAllInventoryEntries()
-  }, [filterLocationId, fetchAllInventoryEntries])
+    void fetchDiscountedEntries()
+  }, [filterLocationId, fetchDiscountedEntries])
 
   useEffect(() => {
     if (!filterLocationId) {
@@ -304,16 +308,16 @@ export default function DiscountScreen() {
 
   const scopedEntries = useMemo(() => {
     if (filterZoneId) {
-      return inventoryEntries.filter((e) => e.zone_id === filterZoneId)
+      return discountedEntries.filter((e) => e.zone_id === filterZoneId)
     }
     if (locationZoneSet) {
-      return inventoryEntries.filter((e) => locationZoneSet.has(e.zone_id))
+      return discountedEntries.filter((e) => locationZoneSet.has(e.zone_id))
     }
     if (modeZoneIds) {
-      return inventoryEntries.filter((e) => modeZoneIds.has(e.zone_id))
+      return discountedEntries.filter((e) => modeZoneIds.has(e.zone_id))
     }
-    return inventoryEntries
-  }, [inventoryEntries, locationZoneSet, filterZoneId, modeZoneIds])
+    return discountedEntries
+  }, [discountedEntries, locationZoneSet, filterZoneId, modeZoneIds])
 
   const discountedItems = useMemo(() => {
     const q = normalizeText(searchQuery.trim())
@@ -356,10 +360,25 @@ export default function DiscountScreen() {
       .slice(0, 20)
   }, [products, addSearchText])
 
-  const addProductLots = useMemo(() => {
-    if (!addSelectedProduct) return []
-    return inventoryEntries.filter((e) => e.product_id === addSelectedProduct.id)
-  }, [inventoryEntries, addSelectedProduct])
+  useEffect(() => {
+    if (!addSelectedProduct) {
+      setAddLots([])
+      setAddLotsLoading(false)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      setAddLotsLoading(true)
+      const lots = await fetchProductLots(addSelectedProduct.id)
+      if (!cancelled) {
+        setAddLots(lots)
+        setAddLotsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [addSelectedProduct, fetchProductLots])
 
   async function handleApplyAddDiscount() {
     if (!addSelectedProduct || addSelectedLotIds.size === 0 || isApplyingAdd) return
@@ -384,7 +403,7 @@ export default function DiscountScreen() {
         })
       }
       resetAddModal()
-      await fetchAllInventoryEntries()
+      await fetchDiscountedEntries()
     } catch {
       Alert.alert('Lỗi', 'Không thể áp dụng giảm giá. Vui lòng thử lại.')
     } finally {
@@ -900,8 +919,11 @@ export default function DiscountScreen() {
                     <Text style={{ fontSize: 20, color: colors.sub }}>✕</Text>
                   </TouchableOpacity>
                 </View>
+                {addLotsLoading ? (
+                  <ActivityIndicator size="large" color={colors.accent} style={{ marginVertical: 24 }} />
+                ) : (
                 <FlatList
-                  data={addProductLots}
+                  data={addLots}
                   keyExtractor={(item) => item.id}
                   keyboardShouldPersistTaps="handled"
                   style={{ maxHeight: 320 }}
@@ -957,6 +979,7 @@ export default function DiscountScreen() {
                     )
                   }}
                 />
+                )}
                 <TextInput
                   style={[
                     styles.addSearchInput,

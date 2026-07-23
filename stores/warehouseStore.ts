@@ -41,6 +41,7 @@ type WarehouseStore = {
   productCategoriesL1: ProductCategoryL1[]
   productCategoriesL2: ProductCategoryL2[]
   inventoryEntries: InventoryEntry[]
+  discountedEntries: InventoryEntry[]
   orderLists: OrderList[]
   orderItems: OrderItem[]
   pickingLists: PickingList[]
@@ -87,6 +88,8 @@ type WarehouseStore = {
   /** Realtime / Products filter — MERGE theo location; zone IDs từ DB (KI-064) */
   fetchInventoryByLocationSilent: (locationId: string) => Promise<void>
   fetchAllInventoryEntries: () => Promise<{ error: string | null }>
+  fetchDiscountedEntries: () => Promise<{ error: string | null }>
+  fetchProductLots: (productId: string) => Promise<InventoryEntry[]>
   searchProducts: (query: string) => Promise<InventoryEntry[]>
   /** Mọi lô có barcode khớp (toàn kho) — chỉ return, không ghi store. */
   searchInventoryByBarcode: (barcode: string) => Promise<InventoryEntry[]>
@@ -232,6 +235,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   productCategoriesL1: [],
   productCategoriesL2: [],
   inventoryEntries: [],
+  discountedEntries: [],
   orderLists: [],
   orderItems: [],
   pickingLists: [],
@@ -789,6 +793,63 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       if (seq === allInventoryFetchSeq) {
         allInventoryFetchInFlight = false
       }
+    }
+  },
+
+  fetchDiscountedEntries: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_entries')
+        .select(`
+        id, product_id, zone_id, tier, quantity_boxes,
+        barcode, expiry_date, is_price_reduced, discount_percent,
+        is_special, is_checked, updated_at, notes,
+        product:products(
+          id, name, image_url, is_archived, is_discontinued,
+          ignore_expiry_warning, ignore_stock_warning,
+          low_warning_boxes, low_critical_boxes, warning_days,
+          category_level1_id, category_level2_id, updated_at
+        ),
+        zone:zones(
+          id, name, cells, location_id,
+          has_tiers, tier_count, color, updated_at
+        )
+      `)
+        .eq('is_price_reduced', true)
+      if (error) {
+        if (__DEV__) console.error('[warehouseStore] fetchDiscountedEntries:', error)
+        return { error: getErrorMessage(error, 'fetch') }
+      }
+      set({ discountedEntries: (data as unknown as InventoryEntry[]) ?? [] })
+      return { error: null }
+    } catch (e) {
+      if (__DEV__) console.error('[warehouseStore] fetchDiscountedEntries:', e)
+      return { error: getErrorMessage(e, 'fetch') }
+    }
+  },
+
+  fetchProductLots: async (productId) => {
+    try {
+      const { data, error } = await supabase
+        .from('inventory_entries')
+        .select(`
+        id, product_id, zone_id, tier, quantity_boxes,
+        barcode, expiry_date, is_price_reduced, discount_percent,
+        is_special, is_checked, updated_at, notes,
+        zone:zones(
+          id, name, cells, location_id,
+          has_tiers, tier_count, color, updated_at
+        )
+      `)
+        .eq('product_id', productId)
+      if (error) {
+        if (__DEV__) console.error('[warehouseStore] fetchProductLots:', error)
+        return []
+      }
+      return (data as unknown as InventoryEntry[]) ?? []
+    } catch (e) {
+      if (__DEV__) console.error('[warehouseStore] fetchProductLots:', e)
+      return []
     }
   },
 
