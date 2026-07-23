@@ -61,6 +61,7 @@ export default function DiscountScreen() {
     fetchAllInventoryEntries,
     fetchInventoryByZone,
     updateInventoryEntry,
+    lookupProductByBarcode,
   } = useWarehouseStore()
 
   const [loading, setLoading] = useState(true)
@@ -94,6 +95,53 @@ export default function DiscountScreen() {
     setAddSelectedLotIds(new Set())
     setAddDiscountPercent('')
     setIsApplyingAdd(false)
+  }
+
+  /** Quét barcode → chọn SP và nhảy thẳng bước 2 */
+  async function handleAddBarcodeScan(barcode: string) {
+    const normalized = barcode.trim().toLowerCase()
+    if (!normalized) return
+
+    let productId: string | null = null
+
+    // 1) product_barcodes (qua store action — không giữ list barcodes trong store)
+    const lookedUp = await lookupProductByBarcode(normalized)
+    if (lookedUp?.product?.id) {
+      productId = lookedUp.product.id
+    }
+
+    // 2) inventory_entries.barcode trong store
+    if (!productId) {
+      const entry = inventoryEntries.find(
+        (e) => e.barcode?.trim().toLowerCase() === normalized,
+      )
+      if (entry) productId = entry.product_id
+    }
+
+    const product = productId
+      ? products.find((p) => p.id === productId) ??
+        lookedUp?.product ??
+        inventoryEntries.find((e) => e.product_id === productId)?.product ??
+        null
+      : null
+
+    if (!product || product.is_archived) {
+      Alert.alert('Không tìm thấy', 'Không tìm thấy sản phẩm với mã này')
+      return
+    }
+
+    setAddSelectedProduct(product)
+    setAddSelectedLotIds(new Set())
+    setAddDiscountPercent('')
+  }
+
+  function openAddBarcodeScanner() {
+    navigation.navigate('BarcodeScanner', {
+      mode: 'search',
+      onScanFillBarcode: (bc: string) => {
+        void handleAddBarcodeScan(bc)
+      },
+    })
   }
 
   async function handleSaveDiscount() {
@@ -640,21 +688,30 @@ export default function DiscountScreen() {
                     <Text style={{ fontSize: 20, color: colors.sub }}>✕</Text>
                   </TouchableOpacity>
                 </View>
-                <TextInput
-                  style={[
-                    styles.addSearchInput,
-                    {
-                      color: colors.text,
-                      borderColor: colors.border,
-                      backgroundColor: colors.bg,
-                    },
-                  ]}
-                  value={addSearchText}
-                  onChangeText={setAddSearchText}
-                  placeholder="Tìm tên sản phẩm…"
-                  placeholderTextColor={colors.sub}
-                  autoFocus
-                />
+                <View style={styles.addSearchRow}>
+                  <TextInput
+                    style={[
+                      styles.addSearchInput,
+                      {
+                        flex: 1,
+                        color: colors.text,
+                        borderColor: colors.border,
+                        backgroundColor: colors.bg,
+                      },
+                    ]}
+                    value={addSearchText}
+                    onChangeText={setAddSearchText}
+                    placeholder="Tìm tên sản phẩm…"
+                    placeholderTextColor={colors.sub}
+                    autoFocus
+                  />
+                  <TouchableOpacity
+                    style={[styles.addScanBtn, { backgroundColor: colors.accent }]}
+                    onPress={openAddBarcodeScanner}
+                  >
+                    <Text style={styles.addScanBtnText}>📷</Text>
+                  </TouchableOpacity>
+                </View>
                 <FlatList
                   data={addProductSuggestions}
                   keyExtractor={(item) => item.id}
@@ -933,14 +990,27 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 4,
   },
+  addSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
   addSearchInput: {
     height: 44,
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 15,
-    marginBottom: 8,
   },
+  addScanBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addScanBtnText: { fontSize: 18 },
   addProductRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(discount): quét barcode chọn SP trong modal thêm giảm giá
+
+- **DiscountScreen bước 1:** row search + 📷 → `BarcodeScanner` (`mode: 'search'`); resolve SP qua `lookupProductByBarcode` rồi `inventoryEntries.barcode`; set `addSelectedProduct` → bước 2; không thấy → Alert.
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — feat(discount): header ＋ thêm SP vào giảm giá (2 bước)
 
 - **DiscountScreen:** nút ＋ (canWrite) giữa 📄 và ⚙️; modal bước 1 tìm SP (`normalizeText`, max 20); bước 2 chọn lô multi + `%` tuỳ chọn → `updateInventoryEntry({ is_price_reduced: true, discount_percent })` → refresh `fetchAllInventoryEntries`.
