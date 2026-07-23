@@ -17,10 +17,11 @@
 ### [KI-073] `fetchProducts` (full) select `*` — payload thừa
 
 - **Mức độ:** Medium (perf / RAM)
-- **File liên quan:** `stores/warehouseStore.ts` (`fetchProducts` ≈ 415–422)
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchProducts`)
 - **Mô tả:** `.select('*')` load mọi cột `products` (kể cả DEPRECATED / meta ít dùng) về client mỗi lần fetch full.
 - **Hướng fix:** Projection cột dùng thực tế (đối chiếu type `Product`); không đụng `fetchProductsPage`. (PLAN_6 Group G / P3)
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** `fetchProducts` explicit select theo type `Product`; bỏ `is_deferred` (đã drop KI-050)
 - **Tham chiếu:** PLAN_6 P3
 
 ---
@@ -28,10 +29,11 @@
 ### [KI-072] `fetchAllInventoryEntries` select `*` + nested `*` — payload thừa
 
 - **Mức độ:** Medium (perf / RAM)
-- **File liên quan:** `stores/warehouseStore.ts` (`fetchAllInventoryEntries` ≈ 720–740)
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchAllInventoryEntries`)
 - **Mô tả:** `.select('*, product:products(*), zone:zones(*)')` kéo toàn bộ cột 3 bảng về client (Dashboard, Notifications, Discount, StockCheck, Picking, …).
 - **Hướng fix:** Projection chỉ cột đang dùng; recon callers trước khi bỏ cột; giữ tên hàm / return type. (PLAN_6 Group G / P2)
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** projection nested `products`/`zones` theo recon 7 callers (bỏ `*` / cột nested không dùng)
 - **Tham chiếu:** PLAN_6 P2
 
 ---

@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(P2+P3): projection fetchAllInventoryEntries + fetchProducts (KI-072, KI-073)
+
+- `fetchAllInventoryEntries`: bỏ `*` nested products/zones → chỉ select cột đang dùng (recon 7 callers).
+- `fetchProducts`: bỏ `*` → explicit select theo type `Product`; bỏ `is_deferred` (đã drop KI-050).
+- Giảm payload mỗi lần fetch toàn bộ inventory / products.
+
+---
+
 ## [tháng 7/2026] — perf(P1): completePicking sequential → Promise.all (KI-071)
 
 - `stores/warehouseStore.ts` `completePicking`: loop for...await → Promise.all.

@@ -415,10 +415,17 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   fetchProducts: async () => {
     const { data } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        id, name, image_url, is_archived, is_discontinued,
+        discontinued_reason, ignore_expiry_warning, ignore_stock_warning,
+        low_warning_boxes, low_critical_boxes, warning_days,
+        category_level1_id, category_level2_id,
+        created_at, updated_at, notes
+      `)
       .eq('is_archived', false)
       .order('name')
-    if (data) set({ products: data })
+    // TODO: refactor — cast tạm vì Supabase infer hẹp hơn type Product sau projection
+    if (data) set({ products: data as unknown as Product[] })
   },
 
   // KI-040 hybrid: search/archived/image trên DB (max 200); zone/stock/special filter local ở ProductsScreen
@@ -723,14 +730,29 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('inventory_entries')
-        .select('*, product:products(*), zone:zones(*)')
+        .select(`
+          id, product_id, zone_id, tier, quantity_boxes,
+          barcode, expiry_date, is_price_reduced, discount_percent,
+          is_special, is_checked, updated_at, notes,
+          product:products(
+            id, name, image_url, is_archived, is_discontinued,
+            ignore_expiry_warning, ignore_stock_warning,
+            low_warning_boxes, low_critical_boxes, warning_days,
+            category_level1_id, category_level2_id, updated_at
+          ),
+          zone:zones(
+            id, name, cells, location_id,
+            has_tiers, tier_count, color, updated_at
+          )
+        `)
       if (error) {
         if (__DEV__) console.error('[warehouseStore] fetchAllInventoryEntries:', error)
         return { error: getErrorMessage(error, 'fetch') }
       }
       // Chỉ apply nếu vẫn là lần fetchAll mới nhất
+      // TODO: refactor — cast tạm vì Supabase infer hẹp hơn type InventoryEntry sau projection
       if (seq === allInventoryFetchSeq) {
-        set({ inventoryEntries: data ?? [] })
+        set({ inventoryEntries: (data as unknown as InventoryEntry[]) ?? [] })
       }
       return { error: null }
     } finally {
