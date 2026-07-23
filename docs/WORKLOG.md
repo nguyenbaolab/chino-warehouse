@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf: TTL guard fetchAllInventoryEntries trên ProductsScreen
+
+- ProductsScreen effect #11: thêm `inventoryFetchedAtRef` TTL 30s.
+- Không gọi `fetchAllInventoryEntries` nếu store đã có data và < 30s.
+- Giữ nguyên: `fetchInventoryByLocation` khi có `filterLocationId`.
+
+---
+
 ## [tháng 7/2026] — perf: lazy mount Bottom Tabs
 
 - `App.tsx` `Tab.Navigator` `screenOptions`: thêm `lazy: true` (RN7: `lazy` là screen option, không còn prop navigator).
