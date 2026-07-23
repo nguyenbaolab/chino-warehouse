@@ -4,6 +4,24 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — revert(discount): SectionList → FlatList tạm, xoá month group
+
+- DiscountScreen: xoá SectionList, chunkArray, getMonthKey, getMonthSortKey,
+  groupedSections, renderRow.
+- Thay bằng FlatList numColumns={3} render trực tiếp discountedItems.
+- Nguyên nhân: SectionList + chunkArray gây ảnh trắng từ section thứ 2 trở đi
+  (render bug, không phải data/network issue).
+- Tính năng group theo tháng hết hạn tạm mất — sẽ implement lại đúng cách sau.
+- npx tsc --noEmit pass.
+
+---
+
+## [tháng 7/2026] — fix(discount): ảnh stale — ưu tiên entry.product hơn products.find
+
+- discountedItems: `entry.product ?? products.find(...)` — nested join từ fetchDiscountedEntries fresh hơn store.products (có thể stale image_url)
+
+---
+
 ## [tháng 7/2026] — perf(notifications): B1 fetchExpiryEntries + fetchLowStockEntries — tách state riêng
 
 - Store: expiryEntries + lowStockEntries state; fetchExpiryEntries (filter expiry_date NOT NULL) + fetchLowStockEntries (projection tối thiểu); togglePriceReduced update cả expiryEntries

@@ -6,7 +6,6 @@ import {
   FlatList,
   Image,
   Modal,
-  SectionList,
   StyleSheet,
   Text,
   TextInput,
@@ -37,25 +36,6 @@ const FOCUS_FETCH_TTL_MS = 30_000
 type DiscountCardItem = {
   entry: InventoryEntry
   product: Product
-}
-
-function getMonthKey(isoDate?: string): string {
-  if (!isoDate) return 'Chưa có hạn'
-  const [year, month] = isoDate.split('-')
-  return `Tháng ${parseInt(month)}/${year}`
-}
-
-function getMonthSortKey(isoDate?: string): string {
-  if (!isoDate) return '9999-99' // xếp cuối
-  return isoDate.substring(0, 7) // 'YYYY-MM'
-}
-
-function chunkArray<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = []
-  for (let i = 0; i < arr.length; i += size) {
-    result.push(arr.slice(i, i + size))
-  }
-  return result
 }
 
 /** Tải ảnh SP public URL → base64 để embed HTML/PDF */
@@ -325,7 +305,7 @@ export default function DiscountScreen() {
     for (const entry of scopedEntries) {
       if (entry.is_price_reduced !== true) continue
       const product =
-        products.find((p) => p.id === entry.product_id) ?? entry.product ?? null
+        entry.product ?? products.find((p) => p.id === entry.product_id) ?? null
       if (!product || product.is_archived) continue
       items.push({ entry, product })
     }
@@ -339,25 +319,6 @@ export default function DiscountScreen() {
       return a.product.name.localeCompare(b.product.name)
     })
   }, [scopedEntries, products, searchQuery])
-
-  const groupedSections = useMemo(() => {
-    const map = new Map<string, { sortKey: string; items: DiscountCardItem[] }>()
-    for (const item of discountedItems) {
-      const key = getMonthKey(item.entry.expiry_date)
-      const sortKey = getMonthSortKey(item.entry.expiry_date)
-      if (!map.has(key)) map.set(key, { sortKey, items: [] })
-      map.get(key)!.items.push(item)
-    }
-    return Array.from(map.entries())
-      .sort(([, a], [, b]) => a.sortKey.localeCompare(b.sortKey))
-      .map(([title, { items }]) => ({
-        title,
-        data: chunkArray(items, NUM_COLUMNS).map((row, rowIndex) => ({
-          rowKey: `${title}-${rowIndex}-${row[0]?.entry.id}`,
-          items: row,
-        })),
-      }))
-  }, [discountedItems])
 
   const addProductSuggestions = useMemo(() => {
     const q = normalizeText(addSearchText.trim())
@@ -592,25 +553,6 @@ export default function DiscountScreen() {
     [canWrite, colors, navigation],
   )
 
-  const renderRow = useCallback(
-    ({ item: rowItems }: { item: DiscountCardItem[] }) => {
-      return (
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-start', paddingHorizontal: CARD_MARGIN }}>
-          {rowItems.map((cardItem) => (
-            <View key={cardItem.entry.id}>
-              {renderCard({ item: cardItem })}
-            </View>
-          ))}
-          {rowItems.length < NUM_COLUMNS &&
-            Array.from({ length: NUM_COLUMNS - rowItems.length }).map((_, i) => (
-              <View key={`empty-${i}`} style={{ width: CARD_WIDTH, margin: CARD_MARGIN }} />
-            ))}
-        </View>
-      )
-    },
-    [renderCard],
-  )
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
@@ -715,19 +657,13 @@ export default function DiscountScreen() {
           <Text style={[styles.emptyText, { color: colors.sub }]}>Không có hàng giảm giá nào.</Text>
         </View>
       ) : (
-        <SectionList
-          sections={groupedSections}
-          keyExtractor={(rowItem) => rowItem.rowKey}
-          renderItem={({ item }) => renderRow({ item: item.items })}
-          renderSectionHeader={({ section: { title } }) => (
-            <View style={{ paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.bg }}>
-              <Text style={{ color: colors.text, fontSize: 15, fontWeight: '700' }}>
-                {title}
-              </Text>
-            </View>
-          )}
+        <FlatList
+          data={discountedItems}
+          renderItem={renderCard}
+          keyExtractor={(item) => item.entry.id}
+          numColumns={NUM_COLUMNS}
           contentContainerStyle={styles.grid}
-          stickySectionHeadersEnabled={false}
+          columnWrapperStyle={styles.row}
         />
       )}
 
