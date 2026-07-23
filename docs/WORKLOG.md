@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: DiscountScreen grid cố định 3 cột
+
+- Card width cố định theo `SCREEN_WIDTH` thay `flex: 1`.
+- `columnWrapperStyle` `justifyContent: flex-start` — hàng ít card không phình to.
+
+---
+
 ## [tháng 7/2026] — feat: nhập % giảm giá inline trên lô market
 
 - ZoneDetailSheet + ProductDetailScreen: bật toggle Giảm giá → TextInput % inline.

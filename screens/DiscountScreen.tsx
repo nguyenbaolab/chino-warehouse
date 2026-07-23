@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   FlatList,
   Image,
   Modal,
@@ -27,6 +28,9 @@ import { normalizeText } from '../utils/textUtils'
 import type { InventoryEntry, Location, Product, Zone } from '../types'
 
 const NUM_COLUMNS = 3
+const CARD_MARGIN = 6
+const SCREEN_WIDTH = Dimensions.get('window').width
+const CARD_WIDTH = (SCREEN_WIDTH - CARD_MARGIN * (NUM_COLUMNS + 1) * 2) / NUM_COLUMNS
 const FOCUS_FETCH_TTL_MS = 30_000
 
 type DiscountCardItem = {
@@ -886,7 +890,6 @@ export default function DiscountScreen() {
   )
 }
 
-const CARD_MARGIN = 6
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
@@ -910,9 +913,12 @@ const styles = StyleSheet.create({
   },
   filterLabel: { fontSize: 13, flex: 1 },
   grid: { padding: CARD_MARGIN },
-  row: { gap: CARD_MARGIN },
+  row: {
+    gap: 6,
+    justifyContent: 'flex-start',
+  },
   card: {
-    flex: 1,
+    width: CARD_WIDTH,
     margin: CARD_MARGIN,
     borderRadius: 10,
     borderWidth: 1,
