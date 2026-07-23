@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — ui: đổi emoji 📦 → icon app trên LoginScreen
+
+- `screens/LoginScreen.tsx`: thay Text emoji → Image `assets/adaptive-icon.png` (140×140, contain).
+- Xóa style `logoEmoji`; thêm `logoIcon`.
+- Giữ nguyên appName, appSub, logoSection, toàn bộ logic login.
+
+---
+
 ## [tháng 7/2026] — perf(S2): debounce MapScreen search + projection searchProducts/searchInventoryByBarcode
 
 - MapScreen `handleSearch`: debounce 300ms (`searchDebounceRef`); clear < 2 ký tự vẫn instant.

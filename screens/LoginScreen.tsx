@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useThemeStore } from '../stores/themeStore'
@@ -151,7 +152,11 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.logoSection}>
-            <Text style={styles.logoEmoji}>📦</Text>
+            <Image
+              source={require('../assets/adaptive-icon.png')}
+              style={styles.logoIcon}
+              resizeMode="contain"
+            />
             <Text style={[styles.appName, { color: colors.text }]}>
               Chino's Store
             </Text>
@@ -289,8 +294,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 48,
   },
-  logoEmoji: { fontSize: 56 },
-  appName: { fontSize: 24, fontWeight: 'bold', marginTop: 12 },
+  logoIcon: {
+    width: 140,
+    height: 140,
+    marginBottom: -18,
+    zIndex: 1,
+  },
+  appName: { fontSize: 24, fontWeight: 'bold', marginTop: 0 },
   appSub: { fontSize: 14, marginTop: 4 },
   bioBusy: {
     alignItems: 'center',
