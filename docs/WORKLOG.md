@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: icon 💥 Giảm giá cạnh ⭐ Hàng đặc biệt
+
+- ZoneDetailSheet: prefix tên SP hiện ⭐ / 💥 / cả hai tùy `is_special` + `is_price_reduced`.
+- ProductDetailScreen: badge read-only hiện cả 2 icon khi market.
+
+---
+
 ## [tháng 7/2026] — feat: subtitle động card Hàng giảm giá trên SettingsScreen
 
 - SettingsScreen: thêm `refreshDiscountSubtitle()` — đếm lô `is_price_reduced`.

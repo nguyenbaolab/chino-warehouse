@@ -610,7 +610,12 @@ export default function ZoneDetailSheet({
                               }
                             >
                               <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>
-                                {group.lots.some((lot) => lot.is_special) ? `⭐ ${group.productName}` : group.productName}
+                                {(() => {
+                                  const hasSpecial = group.lots.some((lot) => lot.is_special)
+                                  const hasDiscount = group.lots.some((lot) => lot.is_price_reduced)
+                                  const prefix = [hasSpecial ? '⭐' : '', hasDiscount ? '💥' : ''].filter(Boolean).join(' ')
+                                  return prefix ? `${prefix} ${group.productName}` : group.productName
+                                })()}
                               </Text>
                             </TouchableOpacity>
                           )}

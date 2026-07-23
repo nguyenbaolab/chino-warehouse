@@ -1517,10 +1517,19 @@ export default function ProductDetailScreen() {
                     disabled={isReadOnly}
                   >
                     <Text style={[styles.lotTitle, { color: colors.text }]}>{lotPlaceTitle}</Text>
-                    {locType === 'market' && lot.is_special && (
-                      <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '600', marginTop: 2 }}>
-                        ⭐ Hàng đặc biệt
-                      </Text>
+                    {locType === 'market' && (lot.is_special || lot.is_price_reduced) && (
+                      <View style={{ flexDirection: 'row', gap: 6, marginTop: 2 }}>
+                        {lot.is_special && (
+                          <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '600' }}>
+                            ⭐ Hàng đặc biệt
+                          </Text>
+                        )}
+                        {lot.is_price_reduced && (
+                          <Text style={{ color: '#EF4444', fontSize: 12, fontWeight: '600' }}>
+                            💥 Giảm giá
+                          </Text>
+                        )}
+                      </View>
                     )}
                     <Text style={[styles.lotSub, { color: colors.sub }]}>
                       {lot.quantity_boxes} {lotUnit} · Hạn: {formatExpiryDate(lot.expiry_date)}
