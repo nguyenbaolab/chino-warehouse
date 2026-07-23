@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(S2): debounce MapScreen search + projection searchProducts/searchInventoryByBarcode
+
+- MapScreen `handleSearch`: debounce 300ms (`searchDebounceRef`); clear < 2 ký tự vẫn instant.
+- `searchProducts` + `searchInventoryByBarcode`: bỏ `*` nested → explicit projection (đồng bộ P2).
+- Giữ nguyên: `searchRequestRef` chống race, merge dedupe, sort, highlight.
+
+---
+
 ## [tháng 7/2026] — perf(S1): dashboardStats products.find → Map lookup
 
 - `utils/dashboardStats.ts`: build `productMap` trước vòng lặp.

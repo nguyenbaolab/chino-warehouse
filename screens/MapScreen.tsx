@@ -149,6 +149,7 @@ export default function MapScreen() {
   const [highlightedZones, setHighlightedZones] = useState<Map<string, string>>(new Map())
   const [isSearchPanelExpanded, setIsSearchPanelExpanded] = useState(false)
   const searchRequestRef = useRef(0)
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastLocateAtRef = useRef<number | undefined>(undefined)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const ownMutationRef = useRef(false)
@@ -323,33 +324,38 @@ export default function MapScreen() {
   }, [selectedLocationId])
 
   async function handleSearch(text: string) {
-    const requestId = ++searchRequestRef.current
     setSearchQuery(text)
     const trimmed = text.trim()
     if (trimmed.length < 2) {
+      // clear ngay lập tức — không cần debounce
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+      searchRequestRef.current += 1
       setSearchResults([])
       setHighlightedZones(new Map())
       return
     }
-
-    const [nameResults, barcodeResults] = await Promise.all([
-      searchProducts(trimmed),
-      searchInventoryByBarcode(trimmed),
-    ])
-    if (requestId !== searchRequestRef.current) return
-
-    const seen = new Set<string>()
-    const merged = [...(nameResults ?? []), ...(barcodeResults ?? [])].filter((e) => {
-      if (seen.has(e.id)) return false
-      seen.add(e.id)
-      return true
-    })
-    const results = sortSearchResultsByStatusRank(merged)
-    setSearchResults(results)
-    setIsSearchPanelExpanded(false)
-    setHighlightedZones(
-      buildHighlightMapFromEntries(results, colors, expiryWarningEnabled, lowStockWarningEnabled),
-    )
+    // debounce 300ms trước khi query
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(async () => {
+      const requestId = ++searchRequestRef.current
+      const [nameResults, barcodeResults] = await Promise.all([
+        searchProducts(trimmed),
+        searchInventoryByBarcode(trimmed),
+      ])
+      if (requestId !== searchRequestRef.current) return
+      const seen = new Set<string>()
+      const merged = [...(nameResults ?? []), ...(barcodeResults ?? [])].filter((e) => {
+        if (seen.has(e.id)) return false
+        seen.add(e.id)
+        return true
+      })
+      const results = sortSearchResultsByStatusRank(merged)
+      setSearchResults(results)
+      setIsSearchPanelExpanded(false)
+      setHighlightedZones(
+        buildHighlightMapFromEntries(results, colors, expiryWarningEnabled, lowStockWarningEnabled),
+      )
+    }, 300)
   }
 
   useFocusEffect(
@@ -368,6 +374,7 @@ export default function MapScreen() {
   )
 
   function clearSearch() {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     searchRequestRef.current += 1
     setSearchQuery('')
     setSearchResults([])

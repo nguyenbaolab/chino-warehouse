@@ -776,10 +776,25 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     const productIds = matchedProducts.map((p) => p.id)
     const { data } = await supabase
       .from('inventory_entries')
-      .select('*, product:products(*), zone:zones(*)')
+      .select(`
+        id, product_id, zone_id, tier, quantity_boxes,
+        barcode, expiry_date, is_price_reduced, discount_percent,
+        is_special, is_checked, updated_at, notes,
+        product:products(
+          id, name, image_url, is_archived, is_discontinued,
+          ignore_expiry_warning, ignore_stock_warning,
+          low_warning_boxes, low_critical_boxes, warning_days,
+          category_level1_id, category_level2_id, updated_at
+        ),
+        zone:zones(
+          id, name, cells, location_id,
+          has_tiers, tier_count, color, updated_at
+        )
+      `)
       .in('product_id', productIds)
 
-    return (data || []) as InventoryEntry[]
+    // TODO: refactor — cast tạm vì Supabase infer hẹp hơn type InventoryEntry sau projection
+    return (data || []) as unknown as InventoryEntry[]
   },
 
   searchInventoryByBarcode: async (barcode) => {
@@ -788,10 +803,25 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
 
     const { data } = await supabase
       .from('inventory_entries')
-      .select('*, product:products(*), zone:zones(*)')
+      .select(`
+        id, product_id, zone_id, tier, quantity_boxes,
+        barcode, expiry_date, is_price_reduced, discount_percent,
+        is_special, is_checked, updated_at, notes,
+        product:products(
+          id, name, image_url, is_archived, is_discontinued,
+          ignore_expiry_warning, ignore_stock_warning,
+          low_warning_boxes, low_critical_boxes, warning_days,
+          category_level1_id, category_level2_id, updated_at
+        ),
+        zone:zones(
+          id, name, cells, location_id,
+          has_tiers, tier_count, color, updated_at
+        )
+      `)
       .ilike('barcode', `%${normalized}%`)
 
-    return (data || []) as InventoryEntry[]
+    // TODO: refactor — cast tạm vì Supabase infer hẹp hơn type InventoryEntry sau projection
+    return (data || []) as unknown as InventoryEntry[]
   },
 
   searchByBarcode: async (barcode) => {
