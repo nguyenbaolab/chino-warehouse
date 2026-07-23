@@ -254,6 +254,7 @@ export default function ProductsScreen() {
       void fetchInventoryByLocation(filterLocationId)
       return
     }
+    // all | warehouse | market chưa chọn kho → cần full entries để match modeZoneIds
     void fetchAllInventoryEntries()
   }, [filterMode, filterLocationId, fetchInventoryByLocation, fetchAllInventoryEntries])
 

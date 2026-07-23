@@ -155,7 +155,6 @@ function TabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
-        lazy: true,
         headerShown: false,
         tabBarStyle: { backgroundColor: '#1a1a1a' },
         tabBarActiveTintColor: '#22C55E',

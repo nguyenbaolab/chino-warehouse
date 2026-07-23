@@ -4,38 +4,6 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
-## [tháng 7/2026] — revert: ProductsScreen perf TTL (gây vòng lặp + đơ)
-
-- Revert `inventoryFetchedAtRef`, `inventoryCountRef`, effect sync, TTL guard effect #11.
-- Trả effect #11 về logic gốc (`fetchInventoryByLocation` / `fetchAllInventoryEntries`).
-- Lý do: TTL guard + `inventoryEntries.length` deps gây re-render loop tích lũy.
-
----
-
-## [tháng 7/2026] — fix: ProductsScreen effect #11 vòng lặp vô tận
-
-- Bỏ `inventoryEntries.length` khỏi deps effect #11 → dùng `inventoryCountRef` thay thế.
-- Thêm effect sync `inventoryCountRef` khi entries thay đổi.
-- Tránh effect chạy lại do store update từ màn hình khác (Map Realtime, Dashboard...).
-
----
-
-## [tháng 7/2026] — perf: TTL guard fetchAllInventoryEntries trên ProductsScreen
-
-- ProductsScreen effect #11: thêm `inventoryFetchedAtRef` TTL 30s.
-- Không gọi `fetchAllInventoryEntries` nếu store đã có data và < 30s.
-- Giữ nguyên: `fetchInventoryByLocation` khi có `filterLocationId`.
-
----
-
-## [tháng 7/2026] — perf: lazy mount Bottom Tabs
-
-- `App.tsx` `Tab.Navigator` `screenOptions`: thêm `lazy: true` (RN7: `lazy` là screen option, không còn prop navigator).
-- Các tab chỉ mount khi user lần đầu bấm vào thay vì mount hết khi login.
-- Giảm số fetch đồng thời ngay sau login.
-
----
-
 ## [tháng 7/2026] — ui: đổi emoji 📦 → icon app trên LoginScreen
 
 - `screens/LoginScreen.tsx`: thay Text emoji → Image `assets/adaptive-icon.png` (140×140, contain).
