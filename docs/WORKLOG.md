@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: subtitle động card Hàng giảm giá trên SettingsScreen
+
+- SettingsScreen: thêm `refreshDiscountSubtitle()` — đếm lô `is_price_reduced`.
+- Subtitle hiện «X lô đang giảm giá» / «Chưa có lô giảm giá» mỗi lần focus.
+
+---
+
 ## [tháng 7/2026] — feat: toggle Giảm giá (is_price_reduced) trên lô market
 
 - ZoneDetailSheet: Switch «Giảm giá» ngay sau «Hàng đặc biệt» (`appMode === 'market'`).

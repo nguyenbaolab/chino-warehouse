@@ -41,6 +41,7 @@ export default function SettingsScreen() {
 
   const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
   const [stockCheckSubtitle, setStockCheckSubtitle] = useState('Chưa có hàng đặc biệt')
+  const [discountSubtitle, setDiscountSubtitle] = useState('Lô đã đánh dấu giảm giá')
   const [notifSubtitle, setNotifSubtitle] = useState('Đang tải…')
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
@@ -92,6 +93,20 @@ export default function SettingsScreen() {
     setStockCheckSubtitle(`${checked}/${total} đã kiểm`)
   }, [])
 
+  /** Subtitle Hàng giảm giá: đếm lô is_price_reduced */
+  const refreshDiscountSubtitle = useCallback(async () => {
+    const { data } = await supabase
+      .from('inventory_entries')
+      .select('id')
+      .eq('is_price_reduced', true)
+    if (data) {
+      const count = data.length
+      setDiscountSubtitle(
+        count > 0 ? `${count} lô đang giảm giá` : 'Chưa có lô giảm giá'
+      )
+    }
+  }, [])
+
   /** F35 — subtitle Thông báo hết hạn từ app_settings */
   const refreshNotifSubtitle = useCallback(async () => {
     const { data, error } = await supabase
@@ -126,8 +141,9 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // Subtitle Kiểm hàng + thông báo + biometric luôn refresh khi vào Settings
+      // Subtitle Kiểm hàng + giảm giá + thông báo + biometric luôn refresh khi vào Settings
       void refreshStockCheckSubtitle()
+      void refreshDiscountSubtitle()
       void refreshNotifSubtitle()
       void refreshBiometric()
 
@@ -168,6 +184,7 @@ export default function SettingsScreen() {
       refreshDiscontinuedContext,
       fetchInternalNotes,
       refreshStockCheckSubtitle,
+      refreshDiscountSubtitle,
       refreshNotifSubtitle,
       refreshBiometric,
       fetchCategories,
@@ -321,7 +338,7 @@ export default function SettingsScreen() {
       >
         <View style={{ flex: 1 }}>
           <Text style={[styles.linkTitle, { color: colors.text }]}>🏷️ Hàng giảm giá</Text>
-          <Text style={[styles.linkSub, { color: colors.sub }]}>Lô đã đánh dấu giảm giá</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>{discountSubtitle}</Text>
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
