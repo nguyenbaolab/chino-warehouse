@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: DiscountScreen group lô theo tháng hết hạn
+
+- Đổi FlatList → SectionList; group `discountedItems` theo tháng/năm hết hạn.
+- Lô không có hạn → section «Chưa có hạn» xếp cuối.
+- `chunkArray` chia hàng 3 card; hàng cuối section thêm View trống giữ layout.
+- Section header: «Tháng M/YYYY», không sticky.
+
+---
+
 ## [tháng 7/2026] — fix: DiscountScreen grid cố định 3 cột
 
 - Card width cố định theo `SCREEN_WIDTH` thay `flex: 1`.
