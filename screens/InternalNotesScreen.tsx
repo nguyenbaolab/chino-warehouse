@@ -264,8 +264,12 @@ export default function InternalNotesScreen() {
     resetCreateForm()
   }
 
-  function openCreateNote() {
-    setCreateFolderId(selectedFolder?.id ?? defaultFolder?.id ?? null)
+  function openCreateNote(folderIdOverride?: string | null) {
+    const resolved =
+      folderIdOverride !== undefined
+        ? folderIdOverride
+        : selectedFolder?.id ?? defaultFolder?.id ?? null
+    setCreateFolderId(resolved)
     setCreateOpen(true)
   }
 
@@ -501,44 +505,44 @@ export default function InternalNotesScreen() {
     ])
   }
 
+  function handleFolderLongPress(folder: InternalNoteFolder) {
+    if (!canWrite || folder.is_default) return
+    Alert.alert(folder.name, undefined, [
+      {
+        text: 'Sửa tên',
+        onPress: () => openEditFolderModal(folder),
+      },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: () => confirmDeleteFolder(folder),
+      },
+      { text: 'Huỷ', style: 'cancel' },
+    ])
+  }
+
   function renderFolderCard({ item }: { item: InternalNoteFolder }) {
     const count = countNotesInFolder(item)
     return (
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => setSelectedFolder(item)}
+        onLongPress={() => handleFolderLongPress(item)}
+        delayLongPress={400}
+      >
         <View style={styles.folderCardRow}>
-          <TouchableOpacity
-            style={styles.folderCardPressable}
-            activeOpacity={0.75}
-            onPress={() => setSelectedFolder(item)}
-          >
+          <View style={styles.folderCardPressable}>
             <Text style={[styles.folderName, { color: colors.text }]} numberOfLines={1}>
               📁 {item.name}
             </Text>
             <View style={[styles.folderBadge, { backgroundColor: colors.accent + '26' }]}>
               <Text style={[styles.folderBadgeText, { color: colors.accent }]}>{count}</Text>
             </View>
-          </TouchableOpacity>
-          {canWrite && !item.is_default ? (
-            <View style={styles.cardActions}>
-              <TouchableOpacity
-                style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                onPress={() => openEditFolderModal(item)}
-                hitSlop={8}
-              >
-                <Text style={{ fontSize: 16 }}>✏️</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                onPress={() => confirmDeleteFolder(item)}
-                hitSlop={8}
-              >
-                <Text style={{ fontSize: 16 }}>🗑️</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
+          </View>
           <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     )
   }
 
@@ -640,12 +644,19 @@ export default function InternalNotesScreen() {
             {selectedFolder ? selectedFolder.name : '📝 Ghi chú'}
           </Text>
         </View>
-        <TouchableOpacity
-          style={[styles.backBtn, { backgroundColor: colors.card }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={{ color: colors.sub }}>← Đóng</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {showFolderTier && canWrite ? (
+            <TouchableOpacity onPress={openCreateFolderModal} hitSlop={8}>
+              <Text style={{ color: colors.accent, fontSize: 15, fontWeight: '600' }}>+ Folder</Text>
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity
+            style={[styles.backBtn, { backgroundColor: colors.card }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={{ color: colors.sub }}>← Đóng</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {showFolderTier ? (
@@ -664,6 +675,17 @@ export default function InternalNotesScreen() {
             renderItem={renderFolderCard}
             contentContainerStyle={styles.list}
             keyboardShouldPersistTaps="handled"
+            ListHeaderComponent={
+              <Text
+                style={{
+                  color: colors.sub,
+                  fontSize: 12,
+                  marginBottom: 8,
+                }}
+              >
+                Giữ ngón tay lên thư mục để đổi tên hoặc xóa
+              </Text>
+            }
           />
         )
       ) : loading && folderNotes.length === 0 ? (
@@ -689,8 +711,13 @@ export default function InternalNotesScreen() {
           style={[styles.fab, { backgroundColor: colors.accent }]}
           activeOpacity={0.85}
           onPress={() => {
-            if (showFolderTier) openCreateFolderModal()
-            else openCreateNote()
+            if (showFolderTier) {
+              openCreateNote(
+                internalNoteFolders.find((f) => f.is_default)?.id ?? null,
+              )
+            } else {
+              openCreateNote()
+            }
           }}
         >
           <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
@@ -1024,6 +1051,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   title: { fontSize: 20, fontWeight: '700', flexShrink: 1 },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },

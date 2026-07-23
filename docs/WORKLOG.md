@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — ui(notes): + Folder trên header; FAB tạo note; long-press folder
+
+- **InternalNotesScreen tầng 1:** header «+ Folder» (staff+); FAB mở tạo note (folder Chung); bỏ ✏️🗑️ trên card → long press Alert Sửa/Xóa; hint giữ ngón tay.
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — feat(notes): UI 2 tầng folder → notes (F31)
 
 - **InternalNotesScreen:** tầng 1 list folder (badge count, CRUD trừ Chung); tầng 2 notes filter theo folder; FAB + tạo folder / note; modal note chọn folder.
