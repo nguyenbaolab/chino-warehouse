@@ -1623,8 +1623,15 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       qtyById.set(row.id as string, row.quantity_boxes as number)
     }
 
-    let deducted = 0
     const failed: string[] = []
+
+    // Phase 1 — tính newQty tuần tự trên map local (cùng lô nhiều item → gộp qty)
+    type UpdatePlan = {
+      entryId: string
+      newQty: number
+      itemLabels: string[]
+    }
+    const updatePlans = new Map<string, UpdatePlan>()
 
     for (const item of picked) {
       const label =
@@ -1646,20 +1653,46 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       }
 
       const newQty = currentQty - item.quantity_boxes
-      const { error: updErr } = await supabase
-        .from('inventory_entries')
-        .update({ quantity_boxes: newQty })
-        .eq('id', item.inventory_entry_id)
+      qtyById.set(item.inventory_entry_id, newQty)
 
-      if (updErr) {
-        if (__DEV__) console.error('[warehouseStore] completePicking (update):', updErr)
-        failed.push(`${label}: lỗi cập nhật tồn`)
+      const existing = updatePlans.get(item.inventory_entry_id)
+      if (existing) {
+        existing.newQty = newQty
+        existing.itemLabels.push(label)
+      } else {
+        updatePlans.set(item.inventory_entry_id, {
+          entryId: item.inventory_entry_id,
+          newQty,
+          itemLabels: [label],
+        })
+      }
+    }
+
+    // Phase 2 — update DB song song (1 request / inventory_entry_id duy nhất)
+    const results = await Promise.all(
+      [...updatePlans.values()].map(async (plan) => {
+        try {
+          const { error } = await supabase
+            .from('inventory_entries')
+            .update({ quantity_boxes: plan.newQty })
+            .eq('id', plan.entryId)
+          return { plan, error: error ?? null }
+        } catch (e) {
+          return { plan, error: e }
+        }
+      }),
+    )
+
+    let deducted = 0
+    for (const { plan, error } of results) {
+      if (error) {
+        if (__DEV__) console.error('[warehouseStore] completePicking (update):', error)
+        for (const label of plan.itemLabels) {
+          failed.push(`${label}: lỗi cập nhật tồn`)
+        }
         continue
       }
-
-      // Cập nhật map để item sau cùng lô (nếu có) thấy qty mới
-      qtyById.set(item.inventory_entry_id, newQty)
-      deducted++
+      deducted += plan.itemLabels.length
     }
 
     if (deducted > 0) {

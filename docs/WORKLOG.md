@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(P1): completePicking sequential → Promise.all (KI-071)
+
+- `stores/warehouseStore.ts` `completePicking`: loop for...await → Promise.all.
+- Các update `inventory_entries` chạy song song thay vì tuần tự (1 request / entry_id sau khi gộp qty local).
+- Giữ nguyên: logic tính newQty, partial fail, deducted counter, `fetchAllInventoryEntries` sau trừ xong.
+
+---
+
 ## [tháng 7/2026] — perf(P4): thêm index expiry_date + is_archived (KI-074)
 
 - Migration `20260723000000_add_perf_indexes.sql`: 2 index mới.

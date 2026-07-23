@@ -39,10 +39,11 @@
 ### [KI-071] `completePicking` update tồn tuần tự từng lô
 
 - **Mức độ:** Medium (perf)
-- **File liên quan:** `stores/warehouseStore.ts` (`completePicking` ≈ 1629–1652); `screens/PickingDetailScreen.tsx`
+- **File liên quan:** `stores/warehouseStore.ts` (`completePicking`); `screens/PickingDetailScreen.tsx`
 - **Mô tả:** Loop `await .update().eq('id')` tuần tự — N lô = N request nối tiếp; chậm khi đơn lớn.
 - **Hướng fix:** Giữ logic tính `newQty` / partial fail; chạy update song song bằng `Promise.all` (mỗi entry unique một update). `resetMarketChecklist` đã batch — không sửa. (PLAN_6 Group G / P1)
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** `completePicking` đổi sequential loop → Promise.all (phase local tính newQty / gộp cùng lô; phase DB song song per `inventory_entry_id`)
 - **Tham chiếu:** PLAN_6 P1
 
 ---
