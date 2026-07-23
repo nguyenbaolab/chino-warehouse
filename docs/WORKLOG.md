@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(S1): dashboardStats products.find → Map lookup
+
+- `utils/dashboardStats.ts`: build `productMap` trước vòng lặp.
+- 2 chỗ `products.find` O(n) → `productMap.get` O(1).
+- Không đổi logic, params, return type.
+
+---
+
 ## [tháng 7/2026] — perf(P2+P3): projection fetchAllInventoryEntries + fetchProducts (KI-072, KI-073)
 
 - `fetchAllInventoryEntries`: bỏ `*` nested products/zones → chỉ select cột đang dùng (recon 7 callers).

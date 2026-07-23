@@ -50,6 +50,12 @@ export function computeDashboardStats(
 ): DashboardStats {
   const filteredEntries = filterInventoryEntries(inventoryEntries, zoneIdsInLocation, selectedZoneId)
 
+  // Perf: build Map productId → Product để tránh O(n) find trong vòng lặp
+  const productMap = new Map<string, Product>()
+  for (const p of products) {
+    productMap.set(p.id, p)
+  }
+
   let totalProducts: number
   if (zoneIdsInLocation === null) {
     totalProducts = products.filter((p) => !p.is_archived).length
@@ -76,7 +82,7 @@ export function computeDashboardStats(
 
   for (const [productId, entries] of productIdToEntries.entries()) {
     if (entries.length === 0) continue
-    const product: Product | undefined = products.find((p) => p.id === productId) ?? entries[0]?.product
+    const product: Product | undefined = productMap.get(productId) ?? entries[0]?.product
     if (!product || product.is_archived) continue
     if (product.ignore_stock_warning) continue
 
@@ -100,7 +106,7 @@ export function computeDashboardStats(
 
   for (const entry of filteredEntries) {
     const product: Product | undefined =
-      products.find((p) => p.id === entry.product_id) ?? entry.product
+      productMap.get(entry.product_id) ?? entry.product
     if (!product || product.is_archived) continue
     if (product.ignore_expiry_warning) continue
 
