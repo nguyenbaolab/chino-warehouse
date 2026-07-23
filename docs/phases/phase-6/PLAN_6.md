@@ -150,7 +150,100 @@ thêm tính năng giảm giá, searchable dropdown, và redesign Settings/Notifi
 
 ---
 
-## 8. Deferred / Optional
+## 8. Group G — Perf: Tối ưu hiệu năng
+
+> Mục tiêu: giảm số lượng DB request, giảm RAM tiêu thụ, loại bỏ các anti-pattern đã xác nhận qua recon tháng 7/2026. Không thay đổi UI, không thay đổi schema.
+
+### P1 — `completePicking`: đổi sequential loop → batch update
+
+- **File:** `stores/warehouseStore.ts` hàm `completePicking` (≈ dòng 1629–1652)
+- **Vấn đề:** Loop `for (const item of picked)` gọi `.update().eq('id', ...)` từng item tuần tự. Picking 20 lô = 20 request riêng lẻ.
+- **Hướng fix:**
+  - Gom tất cả `(inventory_entry_id, newQty)` vào một mảng.
+  - Với mỗi `inventory_entry_id` **duy nhất**, vẫn cần update từng dòng vì `newQty` khác nhau per entry — dùng `Promise.all` thay `await` tuần tự để các request chạy song song thay vì nối tiếp.
+  - Giữ nguyên logic tính `newQty` (cùng lô nhiều item gộp qty), logic partial fail (`in_progress` khi lỗi), và `fetchAllInventoryEntries()` sau khi trừ xong.
+- **Lưu ý:** `resetMarketChecklist` đã dùng batch đúng — không cần sửa.
+- **KI mới:** KI-071
+- **Test:** Tạo picking list ≥ 5 lô khác nhau → Hoàn thành → qty trừ đúng hết, không lỗi partial.
+
+---
+
+### P2 — `fetchAllInventoryEntries`: thêm projection (bỏ `*`)
+
+- **File:** `stores/warehouseStore.ts` hàm `fetchAllInventoryEntries` (≈ dòng 720–740)
+- **Vấn đề:** Query hiện tại:
+```ts
+  .select('*, product:products(*), zone:zones(*)')
+```
+  Load **toàn bộ cột** của 3 bảng về client — bao gồm nhiều cột không dùng đến trong phần lớn màn hình.
+- **Hướng fix:** Đổi select thành chỉ lấy các cột thực sự dùng:
+```ts
+  .select(`
+    id, product_id, zone_id, quantity_boxes, expiry_date,
+    tier, barcode, is_special, is_checked, discount_percent,
+    is_price_reduced, updated_at,
+    product:products(id, name, image_url, is_archived,
+      ignore_expiry_warning, ignore_stock_warning,
+      low_warning_boxes, warning_days,
+      category_level1_id, category_level2_id),
+    zone:zones(id, name, cells, location_id)
+  `)
+```
+- **Quan trọng:** Kiểm tra toàn bộ nơi dùng `inventoryEntries` trong store và các màn hình — đảm bảo không có cột nào đang dùng bị bỏ sót. Nếu phát hiện cột cần thêm thì thêm vào select, **không** được bỏ cột đang dùng.
+- **Không thay đổi:** tên hàm, return type, logic filter/map sau fetch.
+- **KI mới:** KI-072
+- **Test:** Dashboard, Notifications, DiscountScreen, StockCheckScreen, PickingDetailScreen vẫn hiển thị đúng sau thay đổi.
+
+---
+
+### P3 — `fetchProducts` (full): thêm projection (bỏ `*`)
+
+- **File:** `stores/warehouseStore.ts` hàm `fetchProducts` (≈ dòng 415–422)
+- **Vấn đề:** Query hiện tại:
+```ts
+  .from('products').select('*').eq('is_archived', false).order('name')
+```
+  Load toàn bộ cột `products` — bao gồm các cột ít dùng (`is_deferred` DEPRECATED, các cột meta ít truy cập).
+- **Hướng fix:** Đổi select thành:
+```ts
+  .select(`
+    id, name, image_url, is_archived,
+    ignore_expiry_warning, ignore_stock_warning,
+    low_warning_boxes, warning_days,
+    category_level1_id, category_level2_id,
+    created_at, updated_at
+  `)
+```
+- **Quan trọng:** Recon type `Product` trong `types/index.ts` — liệt kê tất cả cột đang có trong type, chỉ bỏ những cột **không có trong type Product** hoặc đã DEPRECATED. Nếu không chắc thì giữ lại cột đó.
+- **Không thay đổi:** `fetchProductsPage` (đã có projection riêng), tên hàm, return type.
+- **KI mới:** KI-073
+- **Test:** AddInventory, MapScreen search, NotificationsScreen, ProductsScreen vẫn hiển thị tên + ảnh + status đúng.
+
+---
+
+### P4 — DB Index: thêm index `inventory_entries.expiry_date` và `products.is_archived`
+
+- **File:** Tạo migration mới `supabase/migrations/<timestamp>_add_perf_indexes.sql`; cập nhật `supabase/migrations/schema.sql`
+- **Vấn đề:** Recon schema.sql xác nhận:
+  - `inventory_entries.expiry_date` — **không có index**. Tab Thông báo hết hạn và ExpiryAlertScreen query cột này mỗi lần mở.
+  - `products.is_archived` — **không có index**. `fetchProducts` filter `.eq('is_archived', false)` scan toàn bảng.
+  - Các cột khác (`inventory_entries.zone_id`, `inventory_entries.product_id`, `audit_logs.changed_at`) đã có index — không cần thêm.
+- **Nội dung migration:**
+```sql
+  CREATE INDEX IF NOT EXISTS idx_inventory_entries_expiry_date
+    ON inventory_entries(expiry_date);
+
+  CREATE INDEX IF NOT EXISTS idx_products_is_archived
+    ON products(is_archived);
+```
+- **Không thay đổi:** Code TypeScript, không cần sửa gì ngoài migration + schema.sql.
+- **schema.sql:** Thêm 2 dòng CREATE INDEX vào đúng vị trí (cạnh các index của bảng tương ứng).
+- **KI mới:** KI-074
+- **Test:** Apply migration trên Supabase Dashboard → không lỗi.
+
+---
+
+## 9. Deferred / Optional
 
 | Hạng mục | Ghi chú |
 |----------|---------|
@@ -163,7 +256,7 @@ thêm tính năng giảm giá, searchable dropdown, và redesign Settings/Notifi
 
 ---
 
-## 9. Tài liệu đi kèm Phase 6
+## 10. Tài liệu đi kèm Phase 6
 
 | File | Mục đích |
 |------|----------|
@@ -174,7 +267,7 @@ thêm tính năng giảm giá, searchable dropdown, và redesign Settings/Notifi
 
 ---
 
-## 10. Tóm tắt scope
+## 11. Tóm tắt scope
 
 | Group | Số task | Bắt buộc |
 |-------|---------|----------|
@@ -184,6 +277,7 @@ thêm tính năng giảm giá, searchable dropdown, và redesign Settings/Notifi
 | D — Hàng giảm giá | 4 | ✅ |
 | E — Searchable dropdown | 2 | ✅ |
 | F — Settings redesign | 1 | ✅ |
-| **Tổng** | **15** | |
+| G — Perf | 4 | ✅ |
+| **Tổng** | **19** | |
 
-**Thứ tự đề xuất:** B1 → B2–B5 → C1–C2 → D1–D4 → E1–E2 → F1 → A1
+**Thứ tự đề xuất:** B1 → B2–B5 → C1–C2 → D1–D4 → E1–E2 → F1 → A1 → P1–P4

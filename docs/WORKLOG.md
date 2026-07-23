@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: thêm Group Perf vào PLAN_6 (P1–P4)
+
+- P1: completePicking sequential → Promise.all (KI-071)
+- P2: fetchAllInventoryEntries projection bỏ * (KI-072)
+- P3: fetchProducts projection bỏ * (KI-073)
+- P4: migration index expiry_date + is_archived (KI-074)
+- **Files:** `PLAN_6.md` (Group G, tổng 19 task); `KNOWN_ISSUES.md` KI-071–074 Open.
+
+---
+
 ## [tháng 7/2026] — ui(notes): + Folder trên header; FAB tạo note; long-press folder
 
 - **InternalNotesScreen tầng 1:** header «+ Folder» (staff+); FAB mở tạo note (folder Chung); bỏ ✏️🗑️ trên card → long press Alert Sửa/Xóa; hint giữ ngón tay.

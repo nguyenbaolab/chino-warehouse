@@ -2,6 +2,50 @@
 
 ---
 
+### [KI-074] Thiếu index `inventory_entries.expiry_date` và `products.is_archived`
+
+- **Mức độ:** Medium (perf)
+- **File liên quan:** `supabase/migrations/schema.sql`; migration mới `*_add_perf_indexes.sql`
+- **Mô tả:** Recon schema: không có index trên `inventory_entries.expiry_date` (Notifications / ExpiryAlert) và `products.is_archived` (`fetchProducts` `.eq('is_archived', false)` scan bảng).
+- **Hướng fix:** Migration `CREATE INDEX idx_inventory_entries_expiry_date` + `idx_products_is_archived`; cập nhật `schema.sql`. Không đổi TypeScript. (PLAN_6 Group G / P4)
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_6 P4, KI-071–073
+
+---
+
+### [KI-073] `fetchProducts` (full) select `*` — payload thừa
+
+- **Mức độ:** Medium (perf / RAM)
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchProducts` ≈ 415–422)
+- **Mô tả:** `.select('*')` load mọi cột `products` (kể cả DEPRECATED / meta ít dùng) về client mỗi lần fetch full.
+- **Hướng fix:** Projection cột dùng thực tế (đối chiếu type `Product`); không đụng `fetchProductsPage`. (PLAN_6 Group G / P3)
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_6 P3
+
+---
+
+### [KI-072] `fetchAllInventoryEntries` select `*` + nested `*` — payload thừa
+
+- **Mức độ:** Medium (perf / RAM)
+- **File liên quan:** `stores/warehouseStore.ts` (`fetchAllInventoryEntries` ≈ 720–740)
+- **Mô tả:** `.select('*, product:products(*), zone:zones(*)')` kéo toàn bộ cột 3 bảng về client (Dashboard, Notifications, Discount, StockCheck, Picking, …).
+- **Hướng fix:** Projection chỉ cột đang dùng; recon callers trước khi bỏ cột; giữ tên hàm / return type. (PLAN_6 Group G / P2)
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_6 P2
+
+---
+
+### [KI-071] `completePicking` update tồn tuần tự từng lô
+
+- **Mức độ:** Medium (perf)
+- **File liên quan:** `stores/warehouseStore.ts` (`completePicking` ≈ 1629–1652); `screens/PickingDetailScreen.tsx`
+- **Mô tả:** Loop `await .update().eq('id')` tuần tự — N lô = N request nối tiếp; chậm khi đơn lớn.
+- **Hướng fix:** Giữ logic tính `newQty` / partial fail; chạy update song song bằng `Promise.all` (mỗi entry unique một update). `resetMarketChecklist` đã batch — không sửa. (PLAN_6 Group G / P1)
+- **Trạng thái:** Open
+- **Tham chiếu:** PLAN_6 P1
+
+---
+
 ### [KI-070] Presence channel crash sau re-login (session 20 phút)
 
 - **Mức độ:** High (crash)
