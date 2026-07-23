@@ -133,6 +133,7 @@ export default function ProductsScreen() {
   const [showCartModal, setShowCartModal] = useState(false)
   const flatListRef = useRef<FlatList<Product>>(null)
   const inventoryFetchedAtRef = useRef<number>(0)
+  const inventoryCountRef = useRef<number>(0)
 
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
@@ -251,21 +252,24 @@ export default function ProductsScreen() {
 
   // KI-064: đảm bảo inventoryEntries đủ cho filter Mode/Kho (không phụ thuộc Map realtime)
   useEffect(() => {
+    inventoryCountRef.current = inventoryEntries.length
+  }, [inventoryEntries.length])
+
+  useEffect(() => {
     const now = Date.now()
     if (filterLocationId) {
       void fetchInventoryByLocation(filterLocationId)
       inventoryFetchedAtRef.current = now
       return
     }
-    // Chỉ fetch full nếu chưa có data hoặc đã quá 30s
     if (
-      inventoryEntries.length === 0 ||
+      inventoryCountRef.current === 0 ||
       now - inventoryFetchedAtRef.current > 30_000
     ) {
       void fetchAllInventoryEntries()
       inventoryFetchedAtRef.current = now
     }
-  }, [filterMode, filterLocationId, fetchInventoryByLocation, fetchAllInventoryEntries, inventoryEntries.length])
+  }, [filterMode, filterLocationId, fetchInventoryByLocation, fetchAllInventoryEntries])
 
   useEffect(() => {
     if (!filterLocationId) {

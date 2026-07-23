@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix: ProductsScreen effect #11 vòng lặp vô tận
+
+- Bỏ `inventoryEntries.length` khỏi deps effect #11 → dùng `inventoryCountRef` thay thế.
+- Thêm effect sync `inventoryCountRef` khi entries thay đổi.
+- Tránh effect chạy lại do store update từ màn hình khác (Map Realtime, Dashboard...).
+
+---
+
 ## [tháng 7/2026] — perf: TTL guard fetchAllInventoryEntries trên ProductsScreen
 
 - ProductsScreen effect #11: thêm `inventoryFetchedAtRef` TTL 30s.
