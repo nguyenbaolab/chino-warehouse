@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(P4): thêm index expiry_date + is_archived (KI-074)
+
+- Migration `20260723000000_add_perf_indexes.sql`: 2 index mới.
+- `idx_inventory_entries_expiry_date` — tăng tốc query tab Thông báo hết hạn / ExpiryAlertScreen.
+- `idx_products_is_archived` — tăng tốc fetchProducts filter `is_archived = false`.
+- `schema.sql` cập nhật 2 dòng index tương ứng (v5.5).
+
+---
+
 ## [tháng 7/2026] — docs: thêm Group Perf vào PLAN_6 (P1–P4)
 
 - P1: completePicking sequential → Promise.all (KI-071)

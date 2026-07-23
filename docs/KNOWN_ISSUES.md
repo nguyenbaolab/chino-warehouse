@@ -5,10 +5,11 @@
 ### [KI-074] Thiếu index `inventory_entries.expiry_date` và `products.is_archived`
 
 - **Mức độ:** Medium (perf)
-- **File liên quan:** `supabase/migrations/schema.sql`; migration mới `*_add_perf_indexes.sql`
+- **File liên quan:** `supabase/migrations/schema.sql`; migration `20260723000000_add_perf_indexes.sql`
 - **Mô tả:** Recon schema: không có index trên `inventory_entries.expiry_date` (Notifications / ExpiryAlert) và `products.is_archived` (`fetchProducts` `.eq('is_archived', false)` scan bảng).
 - **Hướng fix:** Migration `CREATE INDEX idx_inventory_entries_expiry_date` + `idx_products_is_archived`; cập nhật `schema.sql`. Không đổi TypeScript. (PLAN_6 Group G / P4)
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** migration `20260723000000_add_perf_indexes.sql`
 - **Tham chiếu:** PLAN_6 P4, KI-071–073
 
 ---
