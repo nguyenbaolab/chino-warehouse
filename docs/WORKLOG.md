@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(discount): header ＋ thêm SP vào giảm giá (2 bước)
+
+- **DiscountScreen:** nút ＋ (canWrite) giữa 📄 và ⚙️; modal bước 1 tìm SP (`normalizeText`, max 20); bước 2 chọn lô multi + `%` tuỳ chọn → `updateInventoryEntry({ is_price_reduced: true, discount_percent })` → refresh `fetchAllInventoryEntries`.
+- **Docs:** CONTEXT mô tả flow thêm SP giảm giá.
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — ui(notify): badge giảm giá xếp dọc (column)
 
 - **NotificationsScreen:** `badgeWrap` `flexDirection: 'column'` + `alignItems: 'flex-end'`.

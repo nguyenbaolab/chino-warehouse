@@ -23,6 +23,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
 import { isoExpiryToDisplay } from '../utils/dateUtils'
+import { normalizeText } from '../utils/textUtils'
 import type { InventoryEntry, Location, Product, Zone } from '../types'
 
 const NUM_COLUMNS = 3
@@ -75,8 +76,25 @@ export default function DiscountScreen() {
   const [discountInput, setDiscountInput] = useState('')
   const [isExporting, setIsExporting] = useState(false)
 
+  // Modal thêm SP vào giảm giá
+  const [addModalVisible, setAddModalVisible] = useState(false)
+  const [addSearchText, setAddSearchText] = useState('')
+  const [addSelectedProduct, setAddSelectedProduct] = useState<Product | null>(null)
+  const [addSelectedLotIds, setAddSelectedLotIds] = useState<Set<string>>(new Set())
+  const [addDiscountPercent, setAddDiscountPercent] = useState('')
+  const [isApplyingAdd, setIsApplyingAdd] = useState(false)
+
   const lastFetchRef = useRef(0)
   const filterModeMountedRef = useRef(false)
+
+  function resetAddModal() {
+    setAddModalVisible(false)
+    setAddSearchText('')
+    setAddSelectedProduct(null)
+    setAddSelectedLotIds(new Set())
+    setAddDiscountPercent('')
+    setIsApplyingAdd(false)
+  }
 
   async function handleSaveDiscount() {
     if (!editingEntry) return
@@ -230,6 +248,49 @@ export default function DiscountScreen() {
       return a.product.name.localeCompare(b.product.name)
     })
   }, [scopedEntries, products])
+
+  const addProductSuggestions = useMemo(() => {
+    const q = normalizeText(addSearchText.trim())
+    return products
+      .filter((p) => !p.is_archived && (!q || normalizeText(p.name).includes(q)))
+      .slice(0, 20)
+  }, [products, addSearchText])
+
+  const addProductLots = useMemo(() => {
+    if (!addSelectedProduct) return []
+    return inventoryEntries.filter((e) => e.product_id === addSelectedProduct.id)
+  }, [inventoryEntries, addSelectedProduct])
+
+  async function handleApplyAddDiscount() {
+    if (!addSelectedProduct || addSelectedLotIds.size === 0 || isApplyingAdd) return
+
+    const raw = addDiscountPercent.trim()
+    let pct: number | null = null
+    if (raw !== '') {
+      const val = parseFloat(raw)
+      if (Number.isNaN(val) || val < 0 || val > 100) {
+        Alert.alert('Không hợp lệ', 'Phần trăm giảm giá phải từ 0 đến 100.')
+        return
+      }
+      pct = val
+    }
+
+    setIsApplyingAdd(true)
+    try {
+      for (const entryId of addSelectedLotIds) {
+        await updateInventoryEntry(entryId, {
+          is_price_reduced: true,
+          discount_percent: pct,
+        })
+      }
+      resetAddModal()
+      await fetchAllInventoryEntries()
+    } catch {
+      Alert.alert('Lỗi', 'Không thể áp dụng giảm giá. Vui lòng thử lại.')
+    } finally {
+      setIsApplyingAdd(false)
+    }
+  }
 
   const handleExportPDF = useCallback(async () => {
     if (isExporting) return
@@ -429,6 +490,14 @@ export default function DiscountScreen() {
             <Text style={{ fontSize: 16 }}>📄</Text>
           )}
         </TouchableOpacity>
+        {canWrite ? (
+          <TouchableOpacity
+            style={[styles.headerBtn, { backgroundColor: colors.card }]}
+            onPress={() => setAddModalVisible(true)}
+          >
+            <Text style={{ fontSize: 18, color: colors.text }}>＋</Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity
           style={[styles.headerBtn, { backgroundColor: colors.card }]}
           onPress={() => setFilterModalOpen(true)}
@@ -552,6 +621,209 @@ export default function DiscountScreen() {
         </TouchableOpacity>
       </Modal>
 
+      {/* Modal thêm SP vào giảm giá — bước 1 chọn SP / bước 2 chọn lô + % */}
+      <Modal
+        visible={addModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={resetAddModal}
+      >
+        <View style={styles.addModalOverlay}>
+          <View style={[styles.addModalSheet, { backgroundColor: colors.card }]}>
+            {addSelectedProduct === null ? (
+              <>
+                <View style={styles.addModalHeader}>
+                  <Text style={[styles.modalTitle, { color: colors.text, flex: 1 }]}>
+                    Chọn sản phẩm
+                  </Text>
+                  <TouchableOpacity onPress={resetAddModal} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={{ fontSize: 20, color: colors.sub }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={[
+                    styles.addSearchInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.bg,
+                    },
+                  ]}
+                  value={addSearchText}
+                  onChangeText={setAddSearchText}
+                  placeholder="Tìm tên sản phẩm…"
+                  placeholderTextColor={colors.sub}
+                  autoFocus
+                />
+                <FlatList
+                  data={addProductSuggestions}
+                  keyExtractor={(item) => item.id}
+                  keyboardShouldPersistTaps="handled"
+                  style={{ maxHeight: 360 }}
+                  ListEmptyComponent={
+                    <Text style={{ color: colors.sub, padding: 16, textAlign: 'center' }}>
+                      Không tìm thấy sản phẩm.
+                    </Text>
+                  }
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[styles.addProductRow, { borderBottomColor: colors.border }]}
+                      activeOpacity={0.75}
+                      onPress={() => {
+                        setAddSelectedProduct(item)
+                        setAddSelectedLotIds(new Set())
+                        setAddDiscountPercent('')
+                      }}
+                    >
+                      {item.image_url ? (
+                        <Image
+                          source={{ uri: item.image_url }}
+                          style={styles.addProductThumb}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View
+                          style={[
+                            styles.addProductThumb,
+                            styles.addProductThumbPlaceholder,
+                            { backgroundColor: colors.border },
+                          ]}
+                        >
+                          <Text style={{ fontSize: 16 }}>📷</Text>
+                        </View>
+                      )}
+                      <Text
+                        style={[styles.addProductName, { color: colors.text }]}
+                        numberOfLines={2}
+                      >
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </>
+            ) : (
+              <>
+                <View style={styles.addModalHeader}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAddSelectedProduct(null)
+                      setAddSelectedLotIds(new Set())
+                      setAddDiscountPercent('')
+                    }}
+                    style={{ paddingRight: 8 }}
+                  >
+                    <Text style={{ color: colors.accent, fontSize: 16 }}>←</Text>
+                  </TouchableOpacity>
+                  <Text
+                    style={[styles.modalTitle, { color: colors.text, flex: 1 }]}
+                    numberOfLines={2}
+                  >
+                    {addSelectedProduct.name}
+                  </Text>
+                  <TouchableOpacity onPress={resetAddModal} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <Text style={{ fontSize: 20, color: colors.sub }}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                <FlatList
+                  data={addProductLots}
+                  keyExtractor={(item) => item.id}
+                  keyboardShouldPersistTaps="handled"
+                  style={{ maxHeight: 320 }}
+                  ListEmptyComponent={
+                    <Text style={{ color: colors.sub, padding: 16, textAlign: 'center' }}>
+                      Không có lô nào.
+                    </Text>
+                  }
+                  renderItem={({ item: entry }) => {
+                    const alreadyReduced = entry.is_price_reduced === true
+                    const ticked = addSelectedLotIds.has(entry.id)
+                    return (
+                      <View style={[styles.addLotRow, { borderBottomColor: colors.border }]}>
+                        <TouchableOpacity
+                          disabled={alreadyReduced}
+                          onPress={() => {
+                            setAddSelectedLotIds((prev) => {
+                              const next = new Set(prev)
+                              if (ticked) next.delete(entry.id)
+                              else next.add(entry.id)
+                              return next
+                            })
+                          }}
+                          style={styles.addLotCheckbox}
+                        >
+                          <Text style={{ fontSize: 18 }}>
+                            {alreadyReduced ? '☑️' : ticked ? '✅' : '⬜'}
+                          </Text>
+                        </TouchableOpacity>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <Text
+                            style={{
+                              color: alreadyReduced ? colors.sub : colors.text,
+                              fontWeight: '600',
+                              fontSize: 13,
+                            }}
+                          >
+                            {entry.zone?.name ?? 'Zone'} · Tầng {entry.tier}
+                          </Text>
+                          <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
+                            Tồn: {entry.quantity_boxes}
+                            {entry.expiry_date
+                              ? ` · Hạn: ${isoExpiryToDisplay(entry.expiry_date)}`
+                              : ''}
+                          </Text>
+                          {alreadyReduced ? (
+                            <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
+                              Đã giảm giá
+                            </Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    )
+                  }}
+                />
+                <TextInput
+                  style={[
+                    styles.addSearchInput,
+                    {
+                      color: colors.text,
+                      borderColor: colors.border,
+                      backgroundColor: colors.bg,
+                      marginTop: 8,
+                    },
+                  ]}
+                  value={addDiscountPercent}
+                  onChangeText={setAddDiscountPercent}
+                  keyboardType="numeric"
+                  placeholder="% giảm giá (tuỳ chọn)"
+                  placeholderTextColor={colors.sub}
+                  maxLength={5}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.addApplyBtn,
+                    {
+                      backgroundColor:
+                        addSelectedLotIds.size > 0 && !isApplyingAdd
+                          ? colors.accent
+                          : colors.border,
+                    },
+                  ]}
+                  disabled={addSelectedLotIds.size === 0 || isApplyingAdd}
+                  onPress={() => void handleApplyAddDiscount()}
+                >
+                  {isApplyingAdd ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Áp dụng</Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
       <ImageViewerModal uri={zoomImageUrl} onClose={() => setZoomImageUrl(null)} />
     </SafeAreaView>
   )
@@ -640,6 +912,57 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+  addModalSheet: {
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 16,
+    paddingBottom: 28,
+    maxHeight: '85%',
+  },
+  addModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 4,
+  },
+  addSearchInput: {
+    height: 44,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    marginBottom: 8,
+  },
+  addProductRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  addProductThumb: { width: 40, height: 40, borderRadius: 6 },
+  addProductThumbPlaceholder: { alignItems: 'center', justifyContent: 'center' },
+  addProductName: { flex: 1, fontSize: 14, fontWeight: '600' },
+  addLotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  addLotCheckbox: { padding: 4 },
+  addApplyBtn: {
+    marginTop: 12,
+    height: 48,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
