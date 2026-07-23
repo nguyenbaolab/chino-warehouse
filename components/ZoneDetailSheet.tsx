@@ -92,6 +92,7 @@ export default function ZoneDetailSheet({
   const [editLotBarcode, setEditLotBarcode] = useState('')
   const [editIsSpecial, setEditIsSpecial] = useState(false)
   const [editIsPriceReduced, setEditIsPriceReduced] = useState(false)
+  const [editDiscountPercent, setEditDiscountPercent] = useState('')
   const [lotSnapshotUpdatedAt, setLotSnapshotUpdatedAt] = useState<string>('')
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [productNameInput, setProductNameInput] = useState('')
@@ -227,6 +228,7 @@ export default function ZoneDetailSheet({
     setEditLotBarcode(entry.barcode ?? '')
     setEditIsSpecial(entry.is_special ?? false)
     setEditIsPriceReduced(entry.is_price_reduced ?? false)
+    setEditDiscountPercent(entry.discount_percent != null ? String(entry.discount_percent) : '')
   }
 
   async function handleSaveLot(entry: InventoryEntry) {
@@ -241,12 +243,24 @@ export default function ZoneDetailSheet({
       return
     }
 
+    let discountPercentValue: number | null = null
+    if (editIsPriceReduced && editDiscountPercent.trim() !== '') {
+      const parsed = parseFloat(editDiscountPercent)
+      if (Number.isNaN(parsed) || parsed < 0 || parsed > 100) {
+        Alert.alert('Không hợp lệ', 'Phần trăm giảm giá phải từ 0 đến 100.')
+        return
+      }
+      discountPercentValue = parsed
+    }
+
     const payload = {
       quantity_boxes: quantity,
       expiry_date: parseDisplayDateToIso(editExpiryDate),
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
-      ...(appMode === 'market' ? { is_special: editIsSpecial, is_price_reduced: editIsPriceReduced } : {}),
+      ...(appMode === 'market'
+        ? { is_special: editIsSpecial, is_price_reduced: editIsPriceReduced, discount_percent: discountPercentValue }
+        : {}),
     }
 
     async function doSaveLot(entryId: string, payloadToSend: Partial<InventoryEntry>) {
@@ -764,13 +778,41 @@ export default function ZoneDetailSheet({
                                           trackColor={{ false: colors.border, true: '#22C55E' }}
                                         />
                                       </View>
-                                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                                        <Text style={{ color: colors.text, fontSize: 14 }}>Giảm giá</Text>
-                                        <Switch
-                                          value={editIsPriceReduced}
-                                          onValueChange={setEditIsPriceReduced}
-                                          trackColor={{ false: colors.border, true: '#F59E0B' }}
-                                        />
+                                      <View style={{ marginBottom: 8 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                          <Text style={{ color: colors.text, fontSize: 14 }}>Giảm giá</Text>
+                                          <Switch
+                                            value={editIsPriceReduced}
+                                            onValueChange={(val) => {
+                                              setEditIsPriceReduced(val)
+                                              if (!val) setEditDiscountPercent('')
+                                            }}
+                                            trackColor={{ false: colors.border, true: '#EF4444' }}
+                                          />
+                                        </View>
+                                        {editIsPriceReduced && (
+                                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 }}>
+                                            <TextInput
+                                              style={{
+                                                flex: 1,
+                                                borderWidth: 1,
+                                                borderColor: colors.border,
+                                                borderRadius: 6,
+                                                paddingHorizontal: 8,
+                                                paddingVertical: 4,
+                                                color: colors.text,
+                                                fontSize: 14,
+                                              }}
+                                              placeholder="% giảm giá (0–100)"
+                                              placeholderTextColor={colors.sub}
+                                              keyboardType="numeric"
+                                              maxLength={5}
+                                              value={editDiscountPercent}
+                                              onChangeText={setEditDiscountPercent}
+                                            />
+                                            <Text style={{ color: colors.text, fontSize: 14 }}>%</Text>
+                                          </View>
+                                        )}
                                       </View>
                                     </>
                                   )}

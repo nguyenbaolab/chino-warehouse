@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: nhập % giảm giá inline trên lô market
+
+- ZoneDetailSheet + ProductDetailScreen: bật toggle Giảm giá → TextInput % inline.
+- Tắt toggle → clear %; validate 0–100 khi save.
+- Payload + optimistic merge thêm `discount_percent`.
+- trackColor đổi sang đỏ `#EF4444` cho toggle Giảm giá.
+
+---
+
 ## [tháng 7/2026] — feat: icon 💥 Giảm giá cạnh ⭐ Hàng đặc biệt
 
 - ZoneDetailSheet: prefix tên SP hiện ⭐ / 💥 / cả hai tùy `is_special` + `is_price_reduced`.

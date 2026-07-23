@@ -118,6 +118,7 @@ export default function ProductDetailScreen() {
   const [editLotBarcode, setEditLotBarcode] = useState('')
   const [editIsSpecial, setEditIsSpecial] = useState(false)
   const [editIsPriceReduced, setEditIsPriceReduced] = useState(false)
+  const [editDiscountPercent, setEditDiscountPercent] = useState('')
   const [editWarningDays, setEditWarningDays] = useState('30')
   const [editLowWarningBoxes, setEditLowWarningBoxes] = useState('3')
   const [isEditingThresholds, setIsEditingThresholds] = useState(false)
@@ -533,6 +534,7 @@ export default function ProductDetailScreen() {
     setEditLotBarcode(lot.barcode ?? '')
     setEditIsSpecial(lot.is_special ?? false)
     setEditIsPriceReduced(lot.is_price_reduced ?? false)
+    setEditDiscountPercent(lot.discount_percent != null ? String(lot.discount_percent) : '')
   }
 
   async function handleSaveLot(lot: InventoryEntry) {
@@ -600,12 +602,24 @@ export default function ProductDetailScreen() {
     const zoneResolved = (lot.zone as Zone | undefined) ?? zones.find((z) => z.id === lot.zone_id)
     const locType = locationTypeOfEntry({ zone: zoneResolved ?? lot.zone }, locationById)
 
+    let discountPercentValue: number | null = null
+    if (editIsPriceReduced && editDiscountPercent.trim() !== '') {
+      const parsed = parseFloat(editDiscountPercent)
+      if (Number.isNaN(parsed) || parsed < 0 || parsed > 100) {
+        Alert.alert('Không hợp lệ', 'Phần trăm giảm giá phải từ 0 đến 100.')
+        return
+      }
+      discountPercentValue = parsed
+    }
+
     const payload = {
       quantity_boxes: quantity,
       expiry_date: parseDisplayDateToIso(editExpiryDate),
       notes: editNotes.trim() || undefined,
       barcode: editLotBarcode.trim() || undefined,
-      ...(locType === 'market' ? { is_special: editIsSpecial, is_price_reduced: editIsPriceReduced } : {}),
+      ...(locType === 'market'
+        ? { is_special: editIsSpecial, is_price_reduced: editIsPriceReduced, discount_percent: discountPercentValue }
+        : {}),
     }
 
     async function doSaveLot(lotId: string, payloadToSend: Partial<InventoryEntry>) {
@@ -637,7 +651,11 @@ export default function ProductDetailScreen() {
                 expiry_date: payload.expiry_date,
                 notes: payload.notes,
                 barcode: payload.barcode,
-                ...(locType === 'market' ? { is_special: editIsSpecial, is_price_reduced: editIsPriceReduced } : {}),
+                ...(locType === 'market' ? {
+                  is_special: editIsSpecial,
+                  is_price_reduced: editIsPriceReduced,
+                  discount_percent: discountPercentValue,
+                } : {}),
                 updated_at: nextUpdatedAt,
               }
             : item,
@@ -1636,13 +1654,41 @@ export default function ProductDetailScreen() {
                             trackColor={{ false: colors.border, true: '#22C55E' }}
                           />
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <Text style={{ color: colors.text, fontSize: 14 }}>Giảm giá</Text>
-                          <Switch
-                            value={editIsPriceReduced}
-                            onValueChange={setEditIsPriceReduced}
-                            trackColor={{ false: colors.border, true: '#F59E0B' }}
-                          />
+                        <View style={{ marginBottom: 8 }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Text style={{ color: colors.text, fontSize: 14 }}>Giảm giá</Text>
+                            <Switch
+                              value={editIsPriceReduced}
+                              onValueChange={(val) => {
+                                setEditIsPriceReduced(val)
+                                if (!val) setEditDiscountPercent('')
+                              }}
+                              trackColor={{ false: colors.border, true: '#EF4444' }}
+                            />
+                          </View>
+                          {editIsPriceReduced && (
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 }}>
+                              <TextInput
+                                style={{
+                                  flex: 1,
+                                  borderWidth: 1,
+                                  borderColor: colors.border,
+                                  borderRadius: 6,
+                                  paddingHorizontal: 8,
+                                  paddingVertical: 4,
+                                  color: colors.text,
+                                  fontSize: 14,
+                                }}
+                                placeholder="% giảm giá (0–100)"
+                                placeholderTextColor={colors.sub}
+                                keyboardType="numeric"
+                                maxLength={5}
+                                value={editDiscountPercent}
+                                onChangeText={setEditDiscountPercent}
+                              />
+                              <Text style={{ color: colors.text, fontSize: 14 }}>%</Text>
+                            </View>
+                          )}
                         </View>
                       </>
                     )}
