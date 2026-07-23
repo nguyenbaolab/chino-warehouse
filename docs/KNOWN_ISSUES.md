@@ -96,7 +96,8 @@
 - **File liên quan:** `stores/warehouseStore.ts` (`fetchInventoryByZone`, `fetchInventoryByLocationSilent`)
 - **Mô tả:** Cả hai function dùng `.select('*, product:products(*), zone:zones(*)')` — kéo toàn bộ cột 3 bảng. Trong khi `fetchAllInventoryEntries` đã có projection cụ thể. Hai function này được gọi từ MapScreen Realtime, Notifications khi chọn kho, ProductsScreen khi có filterLocationId.
 - **Hướng fix:** Áp dụng cùng projection của `fetchAllInventoryEntries` cho 2 function này. Drop-in fix, không đổi logic.
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** projection cụ thể theo fetchAllInventoryEntries cho fetchInventoryByZone + fetchInventoryByLocationSilent
 - **Tham chiếu:** PLAN_7 B3
 
 ---

@@ -4,6 +4,13 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(store): B3 projection fetchInventoryByZone + fetchInventoryByLocationSilent
+
+- Thay `select('*, product:products(*), zone:zones(*)')` → projection cụ thể (giống fetchAllInventoryEntries) trên 2 function
+- Không đổi logic merge/guard/return
+
+---
+
 ## [tháng 7/2026] — perf: recon hiệu năng toàn app + planning Group B
 
 - Recon toàn bộ codebase (warehouseStore, 7 screens chính, App.tsx, components) phục vụ tối ưu hiệu năng.
