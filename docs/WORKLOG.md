@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf: lazy mount Bottom Tabs
+
+- `App.tsx` `Tab.Navigator` `screenOptions`: thêm `lazy: true` (RN7: `lazy` là screen option, không còn prop navigator).
+- Các tab chỉ mount khi user lần đầu bấm vào thay vì mount hết khi login.
+- Giảm số fetch đồng thời ngay sau login.
+
+---
+
 ## [tháng 7/2026] — ui: đổi emoji 📦 → icon app trên LoginScreen
 
 - `screens/LoginScreen.tsx`: thay Text emoji → Image `assets/adaptive-icon.png` (140×140, contain).
