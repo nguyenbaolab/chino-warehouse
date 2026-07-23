@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat(notes): UI 2 tầng folder → notes (F31)
+
+- **InternalNotesScreen:** tầng 1 list folder (badge count, CRUD trừ Chung); tầng 2 notes filter theo folder; FAB + tạo folder / note; modal note chọn folder.
+- **Docs:** CONTEXT, REQUIREMENTS v1.3.45 F31, DECISIONS «Internal Notes phân folder — Phase 6».
+- **Verify:** `npx tsc --noEmit` pass.
+
+---
+
 ## [tháng 7/2026] — feat(notes): schema/store folder ghi chú (v5.4, chưa UI)
 
 - **Migration:** `20260723125009_add_internal_note_folders.sql` — bảng `internal_note_folders` (seed Chung), `internal_notes.folder_id`, RLS.

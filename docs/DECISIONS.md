@@ -4,6 +4,14 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Internal Notes phân folder — Phase 6
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Thêm bảng `internal_note_folders` + `internal_notes.folder_id` (ON DELETE SET NULL). Seed folder **Chung** (`is_default`). UI **2 tầng trong cùng screen** (state `selectedFolder`, không route mới): tầng 1 list folder + badge count (Chung gồm notes `folder_id` null); tầng 2 list note filter theo folder. FAB tầng 1 tạo folder; tầng 2 tạo note với `folderId` mặc định = folder đang mở. Sửa note đổi được folder. Không xóa folder mặc định.
+- **Lý do:** Gom ghi chú theo chủ đề vận hành; giữ navigation Settings đơn giản.
+
+---
+
 ### F1 Phase 6 — Settings redesign 4 sections
 
 - **Ngày:** tháng 7/2026

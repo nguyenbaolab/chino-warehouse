@@ -22,7 +22,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useCanWrite } from '../stores/authStore'
 import { normalizeText } from '../utils/textUtils'
 import { deleteNoteImage, pickImage, uploadNoteImage } from '../utils/imageUtils'
-import type { InternalNote, Product } from '../types'
+import type { InternalNote, InternalNoteFolder, Product } from '../types'
 import ImageViewerModal from '../components/ImageViewerModal'
 
 /** Format created_at ISO → DD/MM/YYYY HH:mm */
@@ -39,22 +39,33 @@ export default function InternalNotesScreen() {
   const canWrite = useCanWrite()
   const {
     internalNotes,
+    internalNoteFolders,
     products,
     fetchInternalNotes,
+    fetchInternalNoteFolders,
     fetchProducts,
     addInternalNote,
     updateInternalNote,
     deleteInternalNote,
+    addInternalNoteFolder,
+    updateInternalNoteFolder,
+    deleteInternalNoteFolder,
   } = useWarehouseStore()
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const [selectedFolder, setSelectedFolder] = useState<InternalNoteFolder | null>(null)
+  const [folderModalVisible, setFolderModalVisible] = useState(false)
+  const [editingFolder, setEditingFolder] = useState<InternalNoteFolder | null>(null)
+  const [folderNameInput, setFolderNameInput] = useState('')
 
   const [createOpen, setCreateOpen] = useState(false)
   const [productQuery, setProductQuery] = useState('')
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [createReason, setCreateReason] = useState('')
   const [createImageUri, setCreateImageUri] = useState<string | null>(null)
+  const [createFolderId, setCreateFolderId] = useState<string | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
 
   const [editNote, setEditNote] = useState<InternalNote | null>(null)
@@ -62,6 +73,7 @@ export default function InternalNotesScreen() {
   const [editImageUri, setEditImageUri] = useState<string | null>(null)
   const [editProductQuery, setEditProductQuery] = useState('')
   const [editSelectedProduct, setEditSelectedProduct] = useState<Product | null>(null)
+  const [editFolderId, setEditFolderId] = useState<string | null>(null)
   /** Tap-to-zoom ảnh SP */
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
 
@@ -78,16 +90,31 @@ export default function InternalNotesScreen() {
       let cancelled = false
       void (async () => {
         setLoading(true)
-        // Luôn refresh products — tránh dropdown rỗng sau archived toggle (Fix 2)
         await fetchProducts()
+        await fetchInternalNoteFolders()
         await fetchInternalNotes()
         if (!cancelled) setLoading(false)
       })()
       return () => {
         cancelled = true
       }
-    }, [fetchInternalNotes, fetchProducts]),
+    }, [fetchInternalNoteFolders, fetchInternalNotes, fetchProducts]),
   )
+
+  const defaultFolder = useMemo(
+    () => internalNoteFolders.find((f) => f.is_default) ?? null,
+    [internalNoteFolders],
+  )
+
+  const folderNotes = useMemo(() => {
+    if (!selectedFolder) return []
+    if (selectedFolder.is_default) {
+      return internalNotes.filter(
+        (n) => n.folder_id === selectedFolder.id || n.folder_id == null,
+      )
+    }
+    return internalNotes.filter((n) => n.folder_id === selectedFolder.id)
+  }, [selectedFolder, internalNotes])
 
   const productSuggestions = useMemo(() => {
     if (selectedProduct) return []
@@ -112,6 +139,15 @@ export default function InternalNotesScreen() {
     createReason.trim().length > 0 &&
     !saving &&
     !uploadingImage
+
+  function countNotesInFolder(folder: InternalNoteFolder): number {
+    if (folder.is_default) {
+      return internalNotes.filter(
+        (n) => n.folder_id === folder.id || n.folder_id == null,
+      ).length
+    }
+    return internalNotes.filter((n) => n.folder_id === folder.id).length
+  }
 
   function isLocalImageUri(uri: string): boolean {
     return uri.startsWith('file://') || uri.startsWith('content://')
@@ -170,6 +206,45 @@ export default function InternalNotesScreen() {
     )
   }
 
+  function renderFolderPicker(
+    selectedId: string | null,
+    onSelect: (folderId: string) => void,
+  ) {
+    return (
+      <>
+        <Text style={[styles.label, { color: colors.sub }]}>Folder</Text>
+        <View style={styles.folderChipWrap}>
+          {internalNoteFolders.map((folder) => {
+            const active = selectedId === folder.id
+            return (
+              <TouchableOpacity
+                key={folder.id}
+                style={[
+                  styles.folderChip,
+                  {
+                    borderColor: active ? colors.accent : colors.border,
+                    backgroundColor: active ? colors.accent + '22' : colors.bg,
+                  },
+                ]}
+                onPress={() => onSelect(folder.id)}
+              >
+                <Text
+                  style={{
+                    color: active ? colors.accent : colors.text,
+                    fontSize: 13,
+                    fontWeight: active ? '700' : '500',
+                  }}
+                >
+                  📁 {folder.name}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
+        </View>
+      </>
+    )
+  }
+
   function noteDisplayName(note: InternalNote): string {
     if (note.product_id && note.product?.name) return note.product.name
     if (note.custom_product_name?.trim()) return note.custom_product_name.trim()
@@ -181,11 +256,17 @@ export default function InternalNotesScreen() {
     setSelectedProduct(null)
     setCreateReason('')
     setCreateImageUri(null)
+    setCreateFolderId(selectedFolder?.id ?? defaultFolder?.id ?? null)
   }
 
   function closeCreateModal() {
     setCreateOpen(false)
     resetCreateForm()
+  }
+
+  function openCreateNote() {
+    setCreateFolderId(selectedFolder?.id ?? defaultFolder?.id ?? null)
+    setCreateOpen(true)
   }
 
   function openEdit(note: InternalNote) {
@@ -194,6 +275,7 @@ export default function InternalNotesScreen() {
     setEditImageUri(note.image_url ?? null)
     setEditProductQuery(noteDisplayName(note))
     setEditSelectedProduct(note.product ?? null)
+    setEditFolderId(note.folder_id ?? defaultFolder?.id ?? null)
   }
 
   function closeEditModal() {
@@ -202,6 +284,80 @@ export default function InternalNotesScreen() {
     setEditImageUri(null)
     setEditProductQuery('')
     setEditSelectedProduct(null)
+    setEditFolderId(null)
+  }
+
+  function openCreateFolderModal() {
+    setEditingFolder(null)
+    setFolderNameInput('')
+    setFolderModalVisible(true)
+  }
+
+  function openEditFolderModal(folder: InternalNoteFolder) {
+    setEditingFolder(folder)
+    setFolderNameInput(folder.name)
+    setFolderModalVisible(true)
+  }
+
+  function closeFolderModal() {
+    setFolderModalVisible(false)
+    setEditingFolder(null)
+    setFolderNameInput('')
+  }
+
+  async function handleFolderSave() {
+    const name = folderNameInput.trim()
+    if (!name) {
+      Alert.alert('Không hợp lệ', 'Tên folder không được để trống.')
+      return
+    }
+    setSaving(true)
+    try {
+      if (editingFolder) {
+        const { error } = await updateInternalNoteFolder(editingFolder.id, name)
+        if (error) {
+          Alert.alert('Lỗi', error)
+          return
+        }
+        if (selectedFolder?.id === editingFolder.id) {
+          setSelectedFolder({ ...editingFolder, name })
+        }
+      } else {
+        const { error } = await addInternalNoteFolder(name)
+        if (error) {
+          Alert.alert('Lỗi', error)
+          return
+        }
+      }
+      closeFolderModal()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function confirmDeleteFolder(folder: InternalNoteFolder) {
+    Alert.alert(
+      'Xóa folder?',
+      'Xóa folder này? Các ghi chú bên trong sẽ chuyển về Chung.',
+      [
+        { text: 'Huỷ', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              const { error } = await deleteInternalNoteFolder(folder.id)
+              if (error) {
+                Alert.alert('Lỗi', error)
+                return
+              }
+              if (selectedFolder?.id === folder.id) setSelectedFolder(null)
+              await fetchInternalNotes()
+            })()
+          },
+        },
+      ],
+    )
   }
 
   async function handleCreateSave() {
@@ -215,6 +371,7 @@ export default function InternalNotesScreen() {
         customName: !selectedProduct ? productQuery.trim() : undefined,
         reason: createReason.trim(),
         imageUrl: null,
+        folderId: createFolderId,
       })
       if (result.error || !result.note) {
         Alert.alert('Lỗi', result.error ?? 'Không thể tạo ghi chú.')
@@ -274,6 +431,7 @@ export default function InternalNotesScreen() {
         imageUrlParam,
         newProductId,
         newCustomName,
+        editFolderId,
       )
       if (error) {
         Alert.alert('Lỗi', error)
@@ -341,6 +499,47 @@ export default function InternalNotesScreen() {
       },
       { text: 'Huỷ', style: 'cancel' },
     ])
+  }
+
+  function renderFolderCard({ item }: { item: InternalNoteFolder }) {
+    const count = countNotesInFolder(item)
+    return (
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.folderCardRow}>
+          <TouchableOpacity
+            style={styles.folderCardPressable}
+            activeOpacity={0.75}
+            onPress={() => setSelectedFolder(item)}
+          >
+            <Text style={[styles.folderName, { color: colors.text }]} numberOfLines={1}>
+              📁 {item.name}
+            </Text>
+            <View style={[styles.folderBadge, { backgroundColor: colors.accent + '26' }]}>
+              <Text style={[styles.folderBadgeText, { color: colors.accent }]}>{count}</Text>
+            </View>
+          </TouchableOpacity>
+          {canWrite && !item.is_default ? (
+            <View style={styles.cardActions}>
+              <TouchableOpacity
+                style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                onPress={() => openEditFolderModal(item)}
+                hitSlop={8}
+              >
+                <Text style={{ fontSize: 16 }}>✏️</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                onPress={() => confirmDeleteFolder(item)}
+                hitSlop={8}
+              >
+                <Text style={{ fontSize: 16 }}>🗑️</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+          <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
+        </View>
+      </View>
+    )
   }
 
   function renderNoteCard({ item }: { item: InternalNote }) {
@@ -422,10 +621,25 @@ export default function InternalNotesScreen() {
     )
   }
 
+  const showFolderTier = selectedFolder === null
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Ghi chú</Text>
+        <View style={styles.headerLeft}>
+          {selectedFolder ? (
+            <TouchableOpacity
+              onPress={() => setSelectedFolder(null)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ paddingRight: 8 }}
+            >
+              <Text style={{ color: colors.accent, fontSize: 18 }}>←</Text>
+            </TouchableOpacity>
+          ) : null}
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+            {selectedFolder ? selectedFolder.name : '📝 Ghi chú'}
+          </Text>
+        </View>
         <TouchableOpacity
           style={[styles.backBtn, { backgroundColor: colors.card }]}
           onPress={() => navigation.goBack()}
@@ -434,17 +648,35 @@ export default function InternalNotesScreen() {
         </TouchableOpacity>
       </View>
 
-      {loading && internalNotes.length === 0 ? (
+      {showFolderTier ? (
+        loading && internalNoteFolders.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <ActivityIndicator size="large" color={colors.accent} />
+          </View>
+        ) : internalNoteFolders.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <Text style={{ color: colors.sub }}>Chưa có folder nào</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={internalNoteFolders}
+            keyExtractor={(item) => item.id}
+            renderItem={renderFolderCard}
+            contentContainerStyle={styles.list}
+            keyboardShouldPersistTaps="handled"
+          />
+        )
+      ) : loading && folderNotes.length === 0 ? (
         <View style={styles.emptyWrap}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
-      ) : internalNotes.length === 0 ? (
+      ) : folderNotes.length === 0 ? (
         <View style={styles.emptyWrap}>
-          <Text style={{ color: colors.sub }}>Chưa có ghi chú nào</Text>
+          <Text style={{ color: colors.sub }}>Chưa có ghi chú nào trong folder này</Text>
         </View>
       ) : (
         <FlatList
-          data={internalNotes}
+          data={folderNotes}
           keyExtractor={(item) => item.id}
           renderItem={renderNoteCard}
           contentContainerStyle={styles.list}
@@ -456,11 +688,68 @@ export default function InternalNotesScreen() {
         <TouchableOpacity
           style={[styles.fab, { backgroundColor: colors.accent }]}
           activeOpacity={0.85}
-          onPress={() => setCreateOpen(true)}
+          onPress={() => {
+            if (showFolderTier) openCreateFolderModal()
+            else openCreateNote()
+          }}
         >
           <Text style={[styles.fabText, { color: colors.card }]}>+</Text>
         </TouchableOpacity>
       ) : null}
+
+      {/* Modal tạo / sửa folder */}
+      <Modal
+        visible={folderModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeFolderModal}
+      >
+        <Pressable style={styles.folderModalOverlay} onPress={closeFolderModal}>
+          <Pressable
+            style={[styles.folderModalBox, { backgroundColor: colors.card }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              {editingFolder ? 'Sửa folder' : 'Thêm folder'}
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                { backgroundColor: colors.bg, color: colors.text, borderColor: colors.border },
+              ]}
+              value={folderNameInput}
+              onChangeText={setFolderNameInput}
+              placeholder="Tên folder…"
+              placeholderTextColor={colors.sub}
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.btnGhost, { borderColor: colors.border }]}
+                onPress={closeFolderModal}
+                disabled={saving}
+              >
+                <Text style={{ color: colors.sub }}>Huỷ</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.btnPrimary,
+                  {
+                    backgroundColor: colors.accent,
+                    opacity: folderNameInput.trim() && !saving ? 1 : 0.45,
+                  },
+                ]}
+                onPress={() => void handleFolderSave()}
+                disabled={!folderNameInput.trim() || saving}
+              >
+                <Text style={{ color: colors.card, fontWeight: '600' }}>
+                  {saving ? 'Đang lưu...' : 'Lưu'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Modal tạo ghi chú */}
       <Modal visible={createOpen} transparent animationType="slide" onRequestClose={closeCreateModal}>
@@ -476,6 +765,8 @@ export default function InternalNotesScreen() {
                 bounces={false}
               >
                 <Text style={[styles.modalTitle, { color: colors.text }]}>Thêm ghi chú</Text>
+
+                {renderFolderPicker(createFolderId, setCreateFolderId)}
 
                 <Text style={[styles.label, { color: colors.sub }]}>Sản phẩm *</Text>
                 {selectedProduct ? (
@@ -606,7 +897,7 @@ export default function InternalNotesScreen() {
         </Pressable>
       </Modal>
 
-      {/* Modal sửa lý do */}
+      {/* Modal sửa ghi chú */}
       <Modal visible={!!editNote} transparent animationType="slide" onRequestClose={closeEditModal}>
         <Pressable style={styles.modalOverlay} onPress={closeEditModal}>
           <Pressable
@@ -616,6 +907,7 @@ export default function InternalNotesScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
               <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bounces={false}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>Sửa ghi chú</Text>
+                {renderFolderPicker(editFolderId, setEditFolderId)}
                 <Text style={[styles.label, { color: colors.sub }]}>Sản phẩm</Text>
                 <TextInput
                   style={[
@@ -729,8 +1021,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    gap: 8,
   },
-  title: { fontSize: 20, fontWeight: '700' },
+  headerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 },
+  title: { fontSize: 20, fontWeight: '700', flexShrink: 1 },
   backBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
   list: { paddingHorizontal: 16, paddingBottom: 100 },
@@ -740,6 +1034,24 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 10,
   },
+  folderCardRow: { flexDirection: 'row', alignItems: 'center' },
+  folderCardPressable: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minWidth: 0,
+  },
+  folderName: { fontSize: 16, fontWeight: '600', flexShrink: 1 },
+  folderBadge: {
+    minWidth: 28,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  folderBadgeText: { fontSize: 13, fontWeight: '700' },
+  chevron: { fontSize: 22, fontWeight: '300', marginLeft: 4 },
   cardRow: { flexDirection: 'row', alignItems: 'flex-start' },
   cardPressable: { flex: 1, minWidth: 0 },
   cardRowMain: { flexDirection: 'row', alignItems: 'flex-start' },
@@ -781,6 +1093,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
+  folderModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  folderModalBox: {
+    width: '100%',
+    maxWidth: 360,
+    borderRadius: 14,
+    padding: 16,
+  },
   modalBox: {
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
@@ -790,7 +1115,6 @@ const styles = StyleSheet.create({
     maxHeight: '88%',
   },
   modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 12 },
-  editProductName: { fontSize: 14, marginBottom: 8 },
   label: { fontSize: 12, marginBottom: 6, marginTop: 8 },
   input: {
     borderWidth: 1,
@@ -800,6 +1124,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   inputMultiline: { minHeight: 96 },
+  folderChipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
+  folderChip: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
   suggestList: {
     borderWidth: 1,
     borderRadius: 10,
