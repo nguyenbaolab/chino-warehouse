@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — revert: ProductsScreen perf TTL (gây vòng lặp + đơ)
+
+- Revert `inventoryFetchedAtRef`, `inventoryCountRef`, effect sync, TTL guard effect #11.
+- Trả effect #11 về logic gốc (`fetchInventoryByLocation` / `fetchAllInventoryEntries`).
+- Lý do: TTL guard + `inventoryEntries.length` deps gây re-render loop tích lũy.
+
+---
+
 ## [tháng 7/2026] — fix: ProductsScreen effect #11 vòng lặp vô tận
 
 - Bỏ `inventoryEntries.length` khỏi deps effect #11 → dùng `inventoryCountRef` thay thế.
