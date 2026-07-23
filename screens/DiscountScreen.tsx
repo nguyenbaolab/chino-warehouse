@@ -89,6 +89,7 @@ export default function DiscountScreen() {
   } = useWarehouseStore()
 
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
   const [filterModalOpen, setFilterModalOpen] = useState(false)
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
@@ -166,6 +167,16 @@ export default function DiscountScreen() {
         void handleAddBarcodeScan(bc)
       },
     })
+  }
+
+  /** Quét barcode → điền tên SP vào ô search list */
+  async function handleSearchBarcodeScan(barcode: string) {
+    const lookedUp = await lookupProductByBarcode(barcode)
+    if (lookedUp?.product) {
+      setSearchQuery(lookedUp.product.name)
+    } else {
+      Alert.alert('Không tìm thấy', 'Không có sản phẩm nào khớp mã vạch này.')
+    }
   }
 
   async function handleSaveDiscount() {
@@ -305,6 +316,7 @@ export default function DiscountScreen() {
   }, [inventoryEntries, locationZoneSet, filterZoneId, modeZoneIds])
 
   const discountedItems = useMemo(() => {
+    const q = normalizeText(searchQuery.trim())
     const items: DiscountCardItem[] = []
     for (const entry of scopedEntries) {
       if (entry.is_price_reduced !== true) continue
@@ -313,13 +325,16 @@ export default function DiscountScreen() {
       if (!product || product.is_archived) continue
       items.push({ entry, product })
     }
-    return items.sort((a, b) => {
+    const filtered = q
+      ? items.filter((item) => normalizeText(item.product.name).includes(q))
+      : items
+    return filtered.sort((a, b) => {
       const da = a.entry.expiry_date ? new Date(a.entry.expiry_date).getTime() : Infinity
       const db = b.entry.expiry_date ? new Date(b.entry.expiry_date).getTime() : Infinity
       if (da !== db) return da - db
       return a.product.name.localeCompare(b.product.name)
     })
-  }, [scopedEntries, products])
+  }, [scopedEntries, products, searchQuery])
 
   const groupedSections = useMemo(() => {
     const map = new Map<string, { sortKey: string; items: DiscountCardItem[] }>()
@@ -608,6 +623,47 @@ export default function DiscountScreen() {
         >
           <Text style={{ fontSize: 16 }}>⚙️</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Search bar — layout giống ProductsScreen */}
+      <View style={styles.searchWrap}>
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputWrap}>
+            <TextInput
+              style={[
+                styles.searchInput,
+                { backgroundColor: colors.card, color: colors.text, borderColor: colors.border },
+              ]}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Tìm sản phẩm theo tên..."
+              placeholderTextColor={colors.sub}
+              maxLength={100}
+              returnKeyType="search"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                style={styles.searchClearInsideBtn}
+                onPress={() => setSearchQuery('')}
+              >
+                <Text style={{ color: colors.text }}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <TouchableOpacity
+            style={[styles.scanBtn, { backgroundColor: colors.accent }]}
+            onPress={() =>
+              navigation.navigate('BarcodeScanner', {
+                mode: 'search',
+                onScanFillBarcode: (bc: string) => {
+                  void handleSearchBarcodeScan(bc)
+                },
+              })
+            }
+          >
+            <Text style={styles.scanBtnText}>📷</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {hasActiveFilter ? (
@@ -970,6 +1026,36 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   filterLabel: { fontSize: 13, flex: 1 },
+  searchWrap: { paddingHorizontal: 16, marginBottom: 8 },
+  searchRow: { flexDirection: 'row', alignItems: 'center' },
+  searchInputWrap: { flex: 1, position: 'relative' },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingLeft: 12,
+    paddingRight: 38,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  searchClearInsideBtn: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanBtn: {
+    marginLeft: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanBtnText: { fontSize: 16 },
   grid: { padding: CARD_MARGIN },
   row: {
     gap: 6,

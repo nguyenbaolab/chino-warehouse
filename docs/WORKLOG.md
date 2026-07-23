@@ -4,6 +4,14 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — feat: search + camera quét mã trên DiscountScreen
+
+- Thêm search bar (TextInput + ✕) + nút 📷 dưới header.
+- Scan barcode → `lookupProductByBarcode` → set `searchQuery` tên SP.
+- `discountedItems` filter theo `searchQuery` (`normalizeText`).
+
+---
+
 ## [tháng 7/2026] — feat: DiscountScreen group lô theo tháng hết hạn
 
 - Đổi FlatList → SectionList; group `discountedItems` theo tháng/năm hết hạn.
