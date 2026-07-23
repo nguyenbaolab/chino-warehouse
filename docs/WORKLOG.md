@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: Closeout Phase 6 + Planning Phase 7
+
+- Tạo `TESTCASES_6.md`, `SUMMARY_6.md`, `HANDOFF_6.md` trong `docs/phases/phase-6/`.
+- Tạo `docs/phases/phase-7/PLAN_7.md` (folder phase-7 mới).
+- REQUIREMENTS v1.3.46: lộ trình Phase 6 Closed; Phase 7 Planning; F27 Partial → carry Phase 7.
+- Carry bắt buộc: A1 F27 mở rộng (recon OrderDetail/OrderList trước).
+
+---
+
 ## [tháng 7/2026] — feat: search + camera quét mã trên DiscountScreen
 
 - Thêm search bar (TextInput + ✕) + nút 📷 dưới header.
