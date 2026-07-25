@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(notifications): B13.3 migrate NotificationsScreen TTL → store
+
+- Key `notificationsScreen` gate Promise.all(fetchProducts + fetchExpiryEntries + fetchLowStockEntries); markFetched sau cả 3
+- Giữ useEffect clear filterLocationId → bypass TTL gọi lại cặp expiry/lowStock
+- KI-087 Partial (3/6: OrderList + Discount + Notifications)
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(discount): B13.2 migrate DiscountScreen TTL → store
 
 - Key `discountScreen` gate `fetchProducts` + `fetchDiscountedEntries` (tuần tự); markFetched sau cả 2

@@ -30,6 +30,9 @@ import {
 } from '../utils/statusUtils'
 
 const PAGE_SIZE = 10
+
+/** B13 — key TTL trong warehouseStore.fetchTimestamps */
+const TTL_NOTIFICATIONS_SCREEN = 'notificationsScreen'
 const FOCUS_FETCH_TTL_MS = 30_000
 
 function todayISO(): string {
@@ -138,7 +141,6 @@ export default function NotificationsScreen() {
   const [dateRangeActive, setDateRangeActive] = useState(false)
   const [editingDiscountId, setEditingDiscountId] = useState<string | null>(null)
   const [discountInput, setDiscountInput] = useState('')
-  const lastFetchRef = useRef(0)
 
   async function handleSaveDiscount(entryId: string) {
     const val = parseFloat(discountInput)
@@ -915,9 +917,8 @@ export default function NotificationsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const now = Date.now()
-      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
-      lastFetchRef.current = now
+      const { shouldRefetch, markFetched } = useWarehouseStore.getState()
+      if (!shouldRefetch(TTL_NOTIFICATIONS_SCREEN, FOCUS_FETCH_TTL_MS)) return
       let cancelled = false
       void (async () => {
         await Promise.all([
@@ -925,6 +926,7 @@ export default function NotificationsScreen() {
           fetchExpiryEntries(),
           fetchLowStockEntries(),
         ])
+        markFetched(TTL_NOTIFICATIONS_SCREEN)
       })()
       return () => {
         cancelled = true

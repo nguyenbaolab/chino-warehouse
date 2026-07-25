@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.50 | Tháng 7/2026
+**Phiên bản:** 1.3.51 | Tháng 7/2026
 
+> **v1.3.51** — B13.3: migrate NotificationsScreen TTL → key `notificationsScreen`; KI-087 Partial (3/6).
 > **v1.3.50** — B13.2: migrate DiscountScreen TTL → key `discountScreen` (store); KI-087 Partial (2/6).
 > **v1.3.49** — B13.1: `fetchTimestamps` / `shouldRefetch` / `markFetched` trong warehouseStore; migrate OrderListScreen TTL (`orderList`/`pickingList`); KI-087 Partial.
 > **v1.3.48** — B12 Settings: TTL 30s cho 3 subtitle network (stock / discount / notif) trên focus — KI-086 Resolved; biometric vẫn refresh mỗi lần.
