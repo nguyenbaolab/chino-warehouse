@@ -451,9 +451,15 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       const looksLikeBarcode = /^\d{4,}$/.test(search)
       const archived = params.showArchived === true
 
+      // B5 — chỉ cột ProductsScreen thực dùng (không select *)
       let query = supabase
         .from('products')
-        .select('*', { count: 'exact' })
+        .select(
+          `id, name, image_url, is_archived, is_discontinued,
+          category_level1_id, category_level2_id,
+          low_warning_boxes, low_critical_boxes, warning_days`,
+          { count: 'exact' },
+        )
         .eq('is_archived', archived)
         .order('name')
         .limit(1000)
@@ -502,7 +508,15 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
         }
         const missing = [...ids].filter((id) => !byId.has(id))
         if (missing.length > 0) {
-          let bpQuery = supabase.from('products').select('*').in('id', missing).eq('is_archived', archived)
+          let bpQuery = supabase
+            .from('products')
+            .select(
+              `id, name, image_url, is_archived, is_discontinued,
+              category_level1_id, category_level2_id,
+              low_warning_boxes, low_critical_boxes, warning_days`,
+            )
+            .in('id', missing)
+            .eq('is_archived', archived)
           if (params.showNoImageOnly) bpQuery = bpQuery.is('image_url', null)
           const { data: extra } = await bpQuery
           for (const p of (extra as Product[]) ?? []) {

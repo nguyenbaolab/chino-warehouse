@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(store): B5 fetchProductsPage projection cụ thể
+
+- Thay select('*') → 10 cột thực dùng: id, name, image_url, is_archived, is_discontinued, category_level1_id, category_level2_id, low_warning_boxes, low_critical_boxes, warning_days
+- Drop 6 cột không dùng: notes, ignore_expiry_warning, ignore_stock_warning, updated_at, discontinued_reason, created_at
+- Barcode-extra path trong cùng function: áp dụng cùng projection
+- KI-079 → Resolved
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(products): B1 fetchProductsScreenEntries — tách state riêng + TTL 30s
 
 - Store: thêm `productsScreenEntries` state + `fetchProductsScreenEntries(locationId?)` (fetch full hoặc filter theo location; projection giống fetchAllInventoryEntries; ghi vào productsScreenEntries, không đụng inventoryEntries)

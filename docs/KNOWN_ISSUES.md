@@ -74,7 +74,8 @@
 - **File liên quan:** `stores/warehouseStore.ts` (`fetchProductsPage`), `screens/ProductsScreen.tsx`
 - **Mô tả:** `fetchProductsPage` dùng `.select('*', { count: 'exact' }).limit(1000)` — kéo mọi cột products cho tối đa 1000 rows. ProductsScreen card UI chỉ cần một số cột nhất định, không cần toàn bộ.
 - **Hướng fix:** Projection cụ thể chỉ select columns cần cho card UI.
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** projection 10 cột (drop notes, ignore_expiry_warning, ignore_stock_warning, updated_at, discontinued_reason, created_at)
 - **Tham chiếu:** PLAN_7 B5
 
 ---
