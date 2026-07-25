@@ -13,6 +13,7 @@ import { useWarningStore } from './stores/warningStore'
 import { useAuthStore } from './stores/authStore'
 import { useWarehouseStore } from './stores/warehouseStore'
 import ConfigErrorScreen from './components/ConfigErrorScreen'
+import AppLoadingScreen from './components/AppLoadingScreen'
 import LoginScreen from './screens/LoginScreen'
 
 import MapScreen from './screens/MapScreen'
@@ -212,6 +213,10 @@ export default function App() {
   // null = chưa kiểm tra xong, true = đã kiểm tra
   const [isReady, setIsReady] = useState(false)
   const [authBootstrapError, setAuthBootstrapError] = useState<string | null>(null)
+  /** B11 — gate splash sau profile: data prefetch xong (hoặc timeout 5s) */
+  const [dataReady, setDataReady] = useState(false)
+  const [bootstrapDone, setBootstrapDone] = useState(false)
+  const bootstrapFetchStartedRef = useRef(false)
 
   // Dùng ref thay state để tránh re-render toàn app mỗi lần chạm màn hình
   const lastActivityRef = useRef<number>(Date.now())
@@ -327,6 +332,9 @@ export default function App() {
       clearCurrentUserProfile()
       // F37: giữ credentials SecureStore — chỉ xoá khi tắt toggle / password sai
       void cancelAllNotifications()
+      setDataReady(false)
+      setBootstrapDone(false)
+      bootstrapFetchStartedRef.current = false
       return
     }
 
@@ -352,9 +360,17 @@ export default function App() {
 
       void updateLastLogin()
 
-      // B11: prefetch critical path data song song sau login
-      const { fetchLocations, fetchProducts } = useWarehouseStore.getState()
-      void Promise.all([fetchLocations(), fetchProducts()])
+      // B11: prefetch critical path — gate splash chờ race (fetch hoặc timeout 5s)
+      if (!bootstrapFetchStartedRef.current) {
+        bootstrapFetchStartedRef.current = true
+        const { fetchLocations, fetchProducts } = useWarehouseStore.getState()
+        void Promise.race([
+          Promise.all([fetchLocations(), fetchProducts()]),
+          new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+        ]).then(() => {
+          if (!cancelled) setDataReady(true)
+        })
+      }
 
       // F35: schedule local notifications sau login (permission denied = im lặng)
       setupNotificationHandler()
@@ -494,7 +510,17 @@ export default function App() {
     )
   }
 
-  // Đã đăng nhập + profile OK → wrap navigator trong View bắt touch để reset timer
+  // B11 — splash động chờ bootstrap locations/products (hoặc timeout 5s)
+  if (!bootstrapDone) {
+    return (
+      <AppLoadingScreen
+        isDataReady={dataReady}
+        onComplete={() => setBootstrapDone(true)}
+      />
+    )
+  }
+
+  // Đã đăng nhập + profile OK + bootstrap xong → wrap navigator trong View bắt touch để reset timer
   return (
     <SafeAreaProvider>
       <View style={{ flex: 1 }} onTouchStart={updateActivity} onTouchEnd={updateActivity}>
