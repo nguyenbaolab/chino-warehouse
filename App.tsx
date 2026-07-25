@@ -352,6 +352,10 @@ export default function App() {
 
       void updateLastLogin()
 
+      // B11: prefetch critical path data song song sau login
+      const { fetchLocations, fetchProducts } = useWarehouseStore.getState()
+      void Promise.all([fetchLocations(), fetchProducts()])
+
       // F35: schedule local notifications sau login (permission denied = im lặng)
       setupNotificationHandler()
       void bootstrapExpiryNotifications()

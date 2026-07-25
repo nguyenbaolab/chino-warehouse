@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(app): B11 bootstrap fetchLocations + fetchProducts sau login
+
+- App.tsx loadProfile: sau profile hợp lệ, Promise.all([fetchLocations(), fetchProducts()]) song song
+- Dùng useWarehouseStore.getState() (không phải hook — gọi trong async function)
+- Tab Map sau login có locations/products sẵn trong store, giảm spinner lần đầu
+- KI-085 → Resolved
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(products): B10 thu gọn — projection 2 query supabase trực tiếp
 
 - useEffect #8 locations: select('*') → select('id, name, type')
