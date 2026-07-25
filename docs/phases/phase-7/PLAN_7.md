@@ -143,7 +143,7 @@ Phase 7 tập trung **đóng nợ F27 mở rộng (A1)** — feature bắt buộ
 - **KI:** KI-086
 - **Trạng thái:** Done
 
-### B13 — Shared TTL store + warm-cache (Partial — sub-task 4/6)
+### B13 — Shared TTL store + warm-cache (Partial — sub-task 5/6)
 
 - **Vấn đề:** TTL toàn app là `useRef` cục bộ → prefetch/warm-cache không đánh dấu đã fetch → màn vẫn refetch lần đầu.
 - **Files:** `stores/warehouseStore.ts`, screens (migrate dần), sau đó `App.tsx` warm trigger
@@ -152,10 +152,10 @@ Phase 7 tập trung **đóng nợ F27 mở rộng (A1)** — feature bắt buộ
   2. **Done** — migrate **DiscountScreen** (`discountScreen`; filter clear bypass TTL giữ nguyên)
   3. **Done** — migrate **NotificationsScreen** (`notificationsScreen`; filter clear bypass TTL giữ nguyên)
   4. **Done** — migrate **InternalNotesScreen** (`internalNotesScreen`; không filter; CRUD refetch trực tiếp giữ nguyên)
-  5. Migrate SettingsScreen (+ ProductsScreen inventory TTL)
-  6. Warm-cache trigger (prefetch + `markFetched` sau login / idle)
+  5. **Done** — migrate **SettingsScreen** (`settingsSubtitles` + `settingsMain`; biometric / mount / Realtime giữ nguyên)
+  6. Migrate ProductsScreen inventory TTL + warm-cache trigger (prefetch + `markFetched` sau login / idle)
 - **KI:** KI-087 (Partial)
-- **Trạng thái:** In progress (4/6)
+- **Trạng thái:** In progress (5/6)
 
 ---
 

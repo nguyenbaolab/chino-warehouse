@@ -15,6 +15,11 @@ import {
   saveBiometricCredentials,
 } from '../lib/biometricAuth'
 
+/** B13 — keys TTL trong warehouseStore.fetchTimestamps (2 nhóm riêng) */
+const TTL_SETTINGS_SUBTITLES = 'settingsSubtitles'
+const TTL_SETTINGS_MAIN = 'settingsMain'
+const FOCUS_FETCH_TTL_MS = 30_000
+
 export default function SettingsScreen() {
   const navigation = useNavigation<any>()
   const {
@@ -45,11 +50,7 @@ export default function SettingsScreen() {
   const [notifSubtitle, setNotifSubtitle] = useState('Đang tải…')
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
-  const lastFetchedAt = useRef(0)
-  /** TTL riêng cho 3 subtitle network (stock / discount / notif) — KI-086 */
-  const lastSubtitleFetchedAt = useRef(0)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const FOCUS_FETCH_TTL_MS = 30_000
   const REALTIME_DEBOUNCE_MS = 2_000
 
   const discontinuedCount = useMemo(
@@ -143,11 +144,13 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const { shouldRefetch, markFetched } = useWarehouseStore.getState()
+
       // Biometric = local API — luôn refresh; không TTL
       void refreshBiometric()
 
-      // Subtitle network (stock / discount / notif): TTL 30s giống nhóm discontinued/notes/audit
-      if (Date.now() - lastSubtitleFetchedAt.current > FOCUS_FETCH_TTL_MS) {
+      // Nhóm A — subtitle network (stock / discount / notif): TTL 30s
+      if (shouldRefetch(TTL_SETTINGS_SUBTITLES, FOCUS_FETCH_TTL_MS)) {
         void (async () => {
           try {
             await Promise.all([
@@ -155,14 +158,15 @@ export default function SettingsScreen() {
               refreshDiscountSubtitle(),
               refreshNotifSubtitle(),
             ])
-            lastSubtitleFetchedAt.current = Date.now()
+            markFetched(TTL_SETTINGS_SUBTITLES)
           } catch {
-            // Fetch lỗi — không set timestamp, lần focus sau vẫn thử lại
+            // Fetch lỗi — không mark, lần focus sau vẫn thử lại
           }
         })()
       }
 
-      if (Date.now() - lastFetchedAt.current <= FOCUS_FETCH_TTL_MS) return
+      // Nhóm B — discontinued / notes / categories / audit
+      if (!shouldRefetch(TTL_SETTINGS_MAIN, FOCUS_FETCH_TTL_MS)) return
 
       void (async () => {
         await refreshDiscontinuedContext()
@@ -193,7 +197,7 @@ export default function SettingsScreen() {
           }
           setAuditSubtitle(`${who} ${act} ${tbl} · ${timeStr}`)
         }
-        lastFetchedAt.current = Date.now()
+        markFetched(TTL_SETTINGS_MAIN)
       })()
     }, [
       refreshDiscontinuedContext,

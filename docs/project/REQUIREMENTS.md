@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.52 | Tháng 7/2026
+**Phiên bản:** 1.3.53 | Tháng 7/2026
 
+> **v1.3.53** — B13.5: migrate SettingsScreen TTL → keys `settingsSubtitles` + `settingsMain`; KI-087 Partial (5/6).
 > **v1.3.52** — B13.4: migrate InternalNotesScreen TTL → key `internalNotesScreen`; KI-087 Partial (4/6).
 > **v1.3.51** — B13.3: migrate NotificationsScreen TTL → key `notificationsScreen`; KI-087 Partial (3/6).
 > **v1.3.50** — B13.2: migrate DiscountScreen TTL → key `discountScreen` (store); KI-087 Partial (2/6).

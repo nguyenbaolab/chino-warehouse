@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(settings): B13.5 migrate SettingsScreen TTL → store (2 keys)
+
+- `settingsSubtitles`: Promise.all 3 subtitle + try/catch; mark chỉ khi OK
+- `settingsMain`: tuần tự discontinued → notes → categories? → audit; mark sau chuỗi
+- Giữ biometric mỗi focus; mount loadTheme/fetchLocations; Realtime debounce
+- KI-087 Partial (5/6)
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(notes): B13.4 migrate InternalNotesScreen TTL → store
 
 - Key `internalNotesScreen` gate tuần tự fetchProducts → folders → notes; markFetched sau cả 3
