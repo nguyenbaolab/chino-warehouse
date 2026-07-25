@@ -210,7 +210,7 @@ README.md
 
 **Actions — locate:** `setLocateIntent`, `clearLocateIntent`.
 
-**Actions — TTL / warm-cache (B13):** **`shouldRefetch(key, ttlMs)`** — `true` nếu chưa có timestamp hoặc đã quá TTL; **`markFetched(key)`** — ghi `fetchTimestamps[key] = Date.now()` (gọi sau fetch OK). Keys đang dùng: `'orderList'`, `'pickingList'` (OrderListScreen). Màn khác vẫn `useRef` cục bộ — migrate dần.
+**Actions — TTL / warm-cache (B13):** **`shouldRefetch(key, ttlMs)`** — `true` nếu chưa có timestamp hoặc đã quá TTL; **`markFetched(key)`** — ghi `fetchTimestamps[key] = Date.now()` (gọi sau fetch OK). Keys đang dùng: `'orderList'`, `'pickingList'` (OrderListScreen), **`'discountScreen'`** (DiscountScreen — gate `fetchProducts` + `fetchDiscountedEntries`). Màn khác vẫn `useRef` cục bộ — migrate dần.
 
 **Actions — user management (F24 Task 2+):** `fetchUsers`, `createUser`, `updateUserRole`, `toggleUserDisabled`, `toggleUserGuest`.
 

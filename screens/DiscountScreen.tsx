@@ -31,6 +31,9 @@ const NUM_COLUMNS = 3
 const CARD_MARGIN = 6
 const SCREEN_WIDTH = Dimensions.get('window').width
 const CARD_WIDTH = (SCREEN_WIDTH - CARD_MARGIN * (NUM_COLUMNS + 1) * 2) / NUM_COLUMNS
+
+/** B13 — key TTL trong warehouseStore.fetchTimestamps */
+const TTL_DISCOUNT_SCREEN = 'discountScreen'
 const FOCUS_FETCH_TTL_MS = 30_000
 
 type DiscountCardItem = {
@@ -94,7 +97,6 @@ export default function DiscountScreen() {
   const [addLots, setAddLots] = useState<InventoryEntry[]>([])
   const [addLotsLoading, setAddLotsLoading] = useState(false)
 
-  const lastFetchRef = useRef(0)
   const filterModeMountedRef = useRef(false)
 
   function resetAddModal() {
@@ -177,15 +179,15 @@ export default function DiscountScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const now = Date.now()
-      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
-      lastFetchRef.current = now
+      const { shouldRefetch, markFetched } = useWarehouseStore.getState()
+      if (!shouldRefetch(TTL_DISCOUNT_SCREEN, FOCUS_FETCH_TTL_MS)) return
 
       let cancelled = false
       void (async () => {
         setLoading(true)
         await fetchProducts()
         await fetchDiscountedEntries()
+        markFetched(TTL_DISCOUNT_SCREEN)
         if (!cancelled) setLoading(false)
       })()
 

@@ -5,11 +5,11 @@
 ### [KI-087] TTL toàn app là useRef cục bộ — không warm-cache được
 
 - **Mức độ:** Medium (perf / architecture)
-- **File liên quan:** `stores/warehouseStore.ts`, `screens/OrderListScreen.tsx` (+ Discount, Notifications, InternalNotes, Settings, Products — chưa migrate)
+- **File liên quan:** `stores/warehouseStore.ts`, `screens/OrderListScreen.tsx`, `screens/DiscountScreen.tsx` (+ Notifications, InternalNotes, Settings, Products — chưa migrate)
 - **Mô tả:** Mọi TTL focus (KI-039 / B12) lưu `useRef` trong từng screen. Prefetch / warm-cache từ App hoặc store không cập nhật được timestamp → lần đầu vào màn vẫn refetch dù data đã có trong store.
 - **Hướng fix:** `fetchTimestamps` + `shouldRefetch` / `markFetched` trong warehouseStore; migrate từng màn; sau đó warm-cache trigger (markFetched sau prefetch).
 - **Trạng thái:** Partial
-- **Đã làm (B13 sub-task 1/6):** cơ chế store + migrate OrderListScreen (`orderList` / `pickingList`, mark sau Promise resolve). Còn 5 màn: Discount, Notifications, InternalNotes, Settings, Products + warm-cache trigger.
+- **Đã làm (B13 sub-task 2/6):** cơ chế store + migrate OrderListScreen (`orderList` / `pickingList`) + DiscountScreen (`discountScreen`). Còn 4 màn: Notifications, InternalNotes, Settings, Products + warm-cache trigger.
 - **Tham chiếu:** PLAN_7 B13
 
 ---

@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(discount): B13.2 migrate DiscountScreen TTL → store
+
+- Key `discountScreen` gate `fetchProducts` + `fetchDiscountedEntries` (tuần tự); markFetched sau cả 2
+- Giữ useEffect clear filterLocationId → bypass TTL gọi lại fetchDiscountedEntries
+- KI-087 Partial (2/6: OrderList + Discount)
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(store): B13.1 fetchTimestamps + migrate OrderList TTL
 
 - warehouseStore: `fetchTimestamps`, `shouldRefetch(key, ttlMs)`, `markFetched(key)`
