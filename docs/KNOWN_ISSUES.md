@@ -20,6 +20,7 @@
 - **Mô tả:** Mount ProductsScreen trigger đồng thời: fetchCategories, fetchPickingLists, fetchProducts, fetchProductsPage (select * limit 1000), locations ×2, fetchAllInventoryEntries, zones. Không có TTL/useFocusEffect → một số useEffect trigger lại khi deps thay đổi khi quay về tab.
 - **Hướng fix:** Gom locations/zones vào 1 call; thêm useFocusEffect + TTL cho data cần refresh; giải quyết khi làm B1 (bỏ fetchAllInventoryEntries) + B5 (projection).
 - **Trạng thái:** Open
+- **Partial fix tháng 7/2026:** projection 2 query supabase trực tiếp (#8 locations, #11 zones); cascade useEffect giữ nguyên
 - **Tham chiếu:** PLAN_7 B10
 
 ---

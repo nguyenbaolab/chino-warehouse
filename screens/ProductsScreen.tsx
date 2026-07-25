@@ -225,7 +225,7 @@ export default function ProductsScreen() {
     setFilterLocations([])
     setFilterLocationsReady(false)
     async function loadFilterLocations() {
-      let query = supabase.from('locations').select('*').order('name')
+      let query = supabase.from('locations').select('id, name, type').order('name')
       if (filterMode !== 'all') query = query.eq('type', filterMode)
       const { data } = await query
       if (!cancelled) {
@@ -298,7 +298,7 @@ export default function ProductsScreen() {
     let cancelled = false
     void supabase
       .from('zones')
-      .select('*')
+      .select('id, name')
       .eq('location_id', filterLocationId)
       .order('name')
       .then(({ data }) => {

@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(products): B10 thu gọn — projection 2 query supabase trực tiếp
+
+- useEffect #8 locations: select('*') → select('id, name, type')
+- useEffect #11 zones: select('*') → select('id, name')
+- Drop: description, created_at, grid_rows, grid_cols (locations); location_id, cells, has_tiers, tier_count, color, notes, updated_at (zones)
+- Recon xác nhận FilterModal + formatFilterSummary chỉ dùng id + name
+- KI-084 → Partial (cascade 7+ call giữ nguyên; chỉ fix payload thừa)
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — docs: B8 virtualize list — đánh giá và đóng
 
 - Recon 6 file: OrderListScreen, OrderDetailScreen, MapScreen search, ZoneDetailSheet, LotPickerModal, FilterModal
