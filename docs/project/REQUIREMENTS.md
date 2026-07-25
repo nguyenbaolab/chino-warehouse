@@ -2,8 +2,10 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.53 | Tháng 7/2026
+**Phiên bản:** 1.3.55 | Tháng 7/2026
 
+> **v1.3.55** — B13.7: `settingsSubtitles` + `fetchSettingsSubtitles` trong warehouseStore; SettingsScreen đọc store (warm-cache sẵn sàng).
+> **v1.3.54** — B13.6: migrate ProductsScreen inventory TTL → key `productsEntries:${loc|all}`; KI-087 Resolved (6/6 màn). Warm-cache App.tsx còn lại.
 > **v1.3.53** — B13.5: migrate SettingsScreen TTL → keys `settingsSubtitles` + `settingsMain`; KI-087 Partial (5/6).
 > **v1.3.52** — B13.4: migrate InternalNotesScreen TTL → key `internalNotesScreen`; KI-087 Partial (4/6).
 > **v1.3.51** — B13.3: migrate NotificationsScreen TTL → key `notificationsScreen`; KI-087 Partial (3/6).

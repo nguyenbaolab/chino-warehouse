@@ -143,19 +143,21 @@ Phase 7 tập trung **đóng nợ F27 mở rộng (A1)** — feature bắt buộ
 - **KI:** KI-086
 - **Trạng thái:** Done
 
-### B13 — Shared TTL store + warm-cache (Partial — sub-task 5/6)
+### B13 — Shared TTL store + warm-cache (6/6 màn Done; warm trigger còn lại)
 
 - **Vấn đề:** TTL toàn app là `useRef` cục bộ → prefetch/warm-cache không đánh dấu đã fetch → màn vẫn refetch lần đầu.
-- **Files:** `stores/warehouseStore.ts`, screens (migrate dần), sau đó `App.tsx` warm trigger
+- **Files:** `stores/warehouseStore.ts`, screens (đã migrate), **`App.tsx` warm trigger còn lại**
 - **Sub-tasks:**
   1. **Done** — `fetchTimestamps` + `shouldRefetch` / `markFetched`; migrate **OrderListScreen** (`orderList`, `pickingList`)
-  2. **Done** — migrate **DiscountScreen** (`discountScreen`; filter clear bypass TTL giữ nguyên)
-  3. **Done** — migrate **NotificationsScreen** (`notificationsScreen`; filter clear bypass TTL giữ nguyên)
-  4. **Done** — migrate **InternalNotesScreen** (`internalNotesScreen`; không filter; CRUD refetch trực tiếp giữ nguyên)
-  5. **Done** — migrate **SettingsScreen** (`settingsSubtitles` + `settingsMain`; biometric / mount / Realtime giữ nguyên)
-  6. Migrate ProductsScreen inventory TTL + warm-cache trigger (prefetch + `markFetched` sau login / idle)
-- **KI:** KI-087 (Partial)
-- **Trạng thái:** In progress (5/6)
+  2. **Done** — migrate **DiscountScreen** (`discountScreen`)
+  3. **Done** — migrate **NotificationsScreen** (`notificationsScreen`)
+  4. **Done** — migrate **InternalNotesScreen** (`internalNotesScreen`)
+  5. **Done** — migrate **SettingsScreen** (`settingsSubtitles` + `settingsMain`)
+  6. **Done** — migrate **ProductsScreen** inventory (`productsEntries:${loc|all}`); cascade mount không TTL (KI-084)
+  7. **Done (B13.7)** — `settingsSubtitles` + `fetchSettingsSubtitles` trong store — Settings subtitle warm-cache được; sẵn sàng bước trigger cuối
+  8. **Todo** — Warm-cache trigger (`App.tsx`: prefetch + `markFetched` sau login / idle) — làm riêng
+- **KI:** KI-087 (Resolved — TTL trong store; warm trigger còn lại)
+- **Trạng thái:** Màn migrate Done (6/6) + B13.7 store subtitles; warm-cache trigger Pending
 
 ---
 

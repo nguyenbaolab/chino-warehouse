@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Switch, ScrollView, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import { useShallow } from 'zustand/react/shallow'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
@@ -35,6 +36,13 @@ export default function SettingsScreen() {
     fetchLatestAuditEntry,
     fetchInternalNotes,
   } = useWarehouseStore()
+  const { stockCheck, discount, notif } = useWarehouseStore(
+    useShallow((s) => ({
+      stockCheck: s.settingsSubtitles.stockCheck,
+      discount: s.settingsSubtitles.discount,
+      notif: s.settingsSubtitles.notif,
+    })),
+  )
   const { isDark, colors, loadTheme, toggleTheme } = useThemeStore()
   const isAdmin = useIsAdmin()
   const {
@@ -45,9 +53,6 @@ export default function SettingsScreen() {
   } = useWarningStore()
 
   const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
-  const [stockCheckSubtitle, setStockCheckSubtitle] = useState('Chưa có hàng đặc biệt')
-  const [discountSubtitle, setDiscountSubtitle] = useState('Lô đã đánh dấu giảm giá')
-  const [notifSubtitle, setNotifSubtitle] = useState('Đang tải…')
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -68,67 +73,6 @@ export default function SettingsScreen() {
     return `${skuCount} SKU · ${locations.length} kho`
   }, [products, locations.length])
 
-  /** C4 — subtitle Kiểm hàng: X/Y đã kiểm (market + is_special) */
-  const refreshStockCheckSubtitle = useCallback(async () => {
-    const { data: locs } = await supabase.from('locations').select('id').eq('type', 'market')
-    const locIds = (locs ?? []).map((l) => l.id as string)
-    if (locIds.length === 0) {
-      setStockCheckSubtitle('Chưa có hàng đặc biệt')
-      return
-    }
-    const { data: zones } = await supabase.from('zones').select('id').in('location_id', locIds)
-    const zoneIds = (zones ?? []).map((z) => z.id as string)
-    if (zoneIds.length === 0) {
-      setStockCheckSubtitle('Chưa có hàng đặc biệt')
-      return
-    }
-    const { data: entries } = await supabase
-      .from('inventory_entries')
-      .select('is_checked')
-      .eq('is_special', true)
-      .in('zone_id', zoneIds)
-    const total = entries?.length ?? 0
-    if (total === 0) {
-      setStockCheckSubtitle('Chưa có hàng đặc biệt')
-      return
-    }
-    const checked = (entries ?? []).filter((e) => e.is_checked === true).length
-    setStockCheckSubtitle(`${checked}/${total} đã kiểm`)
-  }, [])
-
-  /** Subtitle Hàng giảm giá: đếm lô is_price_reduced */
-  const refreshDiscountSubtitle = useCallback(async () => {
-    const { data } = await supabase
-      .from('inventory_entries')
-      .select('id')
-      .eq('is_price_reduced', true)
-    if (data) {
-      const count = data.length
-      setDiscountSubtitle(
-        count > 0 ? `${count} lô đang giảm giá` : 'Chưa có lô giảm giá'
-      )
-    }
-  }, [])
-
-  /** F35 — subtitle Thông báo hết hạn từ app_settings */
-  const refreshNotifSubtitle = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('app_settings')
-      .select('notification_enabled, notification_time')
-      .limit(1)
-      .maybeSingle()
-    if (error || !data) {
-      if (__DEV__ && error) console.error('[Settings] fetch app_settings:', error)
-      setNotifSubtitle('Chưa cấu hình')
-      return
-    }
-    if (data.notification_enabled) {
-      setNotifSubtitle(`Bật · ${data.notification_time as string} hàng ngày`)
-    } else {
-      setNotifSubtitle('Đã tắt')
-    }
-  }, [])
-
   /** F37 — trạng thái biometric */
   const refreshBiometric = useCallback(async () => {
     const available = await isBiometricAvailable()
@@ -144,20 +88,16 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const { shouldRefetch, markFetched } = useWarehouseStore.getState()
+      const { shouldRefetch, markFetched, fetchSettingsSubtitles } = useWarehouseStore.getState()
 
       // Biometric = local API — luôn refresh; không TTL
       void refreshBiometric()
 
-      // Nhóm A — subtitle network (stock / discount / notif): TTL 30s
+      // Nhóm A — subtitle network: TTL 30s (logic trong store — B13.7)
       if (shouldRefetch(TTL_SETTINGS_SUBTITLES, FOCUS_FETCH_TTL_MS)) {
         void (async () => {
           try {
-            await Promise.all([
-              refreshStockCheckSubtitle(),
-              refreshDiscountSubtitle(),
-              refreshNotifSubtitle(),
-            ])
+            await fetchSettingsSubtitles()
             markFetched(TTL_SETTINGS_SUBTITLES)
           } catch {
             // Fetch lỗi — không mark, lần focus sau vẫn thử lại
@@ -202,9 +142,6 @@ export default function SettingsScreen() {
     }, [
       refreshDiscontinuedContext,
       fetchInternalNotes,
-      refreshStockCheckSubtitle,
-      refreshDiscountSubtitle,
-      refreshNotifSubtitle,
       refreshBiometric,
       fetchCategories,
       fetchLatestAuditEntry,
@@ -345,7 +282,7 @@ export default function SettingsScreen() {
       >
         <View style={{ flex: 1 }}>
           <Text style={[styles.linkTitle, { color: colors.text }]}>📋 Kiểm hàng</Text>
-          <Text style={[styles.linkSub, { color: colors.sub }]}>{stockCheckSubtitle}</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>{stockCheck}</Text>
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
@@ -357,7 +294,7 @@ export default function SettingsScreen() {
       >
         <View style={{ flex: 1 }}>
           <Text style={[styles.linkTitle, { color: colors.text }]}>🏷️ Hàng giảm giá</Text>
-          <Text style={[styles.linkSub, { color: colors.sub }]}>{discountSubtitle}</Text>
+          <Text style={[styles.linkSub, { color: colors.sub }]}>{discount}</Text>
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
       </TouchableOpacity>
@@ -373,7 +310,7 @@ export default function SettingsScreen() {
         <View style={{ flex: 1 }}>
           <Text style={[styles.linkTitle, { color: colors.text }]}>⏰ Thông báo hết hạn</Text>
           <Text style={[styles.linkSub, { color: colors.sub }]}>
-            {notifSubtitle}
+            {notif}
           </Text>
         </View>
         <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>

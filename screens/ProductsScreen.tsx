@@ -51,6 +51,7 @@ import {
 import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 
 const PAGE_SIZE = 10
+/** B13 — TTL inventory scope theo filter location */
 const FOCUS_FETCH_TTL_MS = 30_000
 /** UUID sentinel — SP chưa tạo; mọi barcode đã gán SP khác đều là conflict. */
 const NEW_PRODUCT_CONFLICT_SENTINEL = '00000000-0000-0000-0000-000000000000'
@@ -157,8 +158,6 @@ export default function ProductsScreen() {
   const [cartPickingListId, setCartPickingListId] = useState<string | null>(null)
   const [showCartModal, setShowCartModal] = useState(false)
   const flatListRef = useRef<FlatList<Product>>(null)
-  const lastInventoryFetchRef = useRef<number>(0)
-  const lastFilterLocationRef = useRef<string | null | undefined>(undefined)
 
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
@@ -275,16 +274,16 @@ export default function ProductsScreen() {
     }
   }, [filterMode, filterLocations, filterLocationId, filterLocationsReady])
 
-  // B1 Products: inventory scope riêng + TTL 30s (không đụng inventoryEntries)
-  // Đổi filterLocationId → bỏ qua TTL để list khớp kho đang chọn
+  // B1 + B13: inventory scope riêng; TTL theo key ghép filter (đổi kho = key mới → refetch)
   useFocusEffect(
     useCallback(() => {
-      const now = Date.now()
-      const locationChanged = lastFilterLocationRef.current !== filterLocationId
-      lastFilterLocationRef.current = filterLocationId
-      if (!locationChanged && now - lastInventoryFetchRef.current < FOCUS_FETCH_TTL_MS) return
-      lastInventoryFetchRef.current = now
-      void fetchProductsScreenEntries(filterLocationId ?? undefined)
+      const ttlKey = `productsEntries:${filterLocationId ?? 'all'}`
+      const { shouldRefetch, markFetched } = useWarehouseStore.getState()
+      if (!shouldRefetch(ttlKey, FOCUS_FETCH_TTL_MS)) return
+      void (async () => {
+        await fetchProductsScreenEntries(filterLocationId ?? undefined)
+        markFetched(ttlKey)
+      })()
     }, [filterLocationId, fetchProductsScreenEntries]),
   )
 

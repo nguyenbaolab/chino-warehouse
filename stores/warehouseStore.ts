@@ -56,12 +56,20 @@ type WarehouseStore = {
   locateIntent: LocateIntent | null
   /** B13 — TTL timestamps theo key (vd 'orderList', 'pickingList'); warm-cache dùng chung */
   fetchTimestamps: Record<string, number>
+  /** B13.7 — subtitle Settings (Kiểm hàng / Giảm giá / Thông báo hết hạn) */
+  settingsSubtitles: {
+    stockCheck: string
+    discount: string
+    notif: string
+  }
 
   setSelectedLocation: (id: string) => void
   setAppMode: (mode: 'warehouse' | 'market') => void
   /** true nếu chưa fetch hoặc đã quá ttlMs kể từ markFetched */
   shouldRefetch: (key: string, ttlMs: number) => boolean
   markFetched: (key: string) => void
+  /** B13.7 — query + format 3 subtitle Settings; throw nếu lỗi → không set */
+  fetchSettingsSubtitles: () => Promise<void>
   /** Label đơn vị số lượng theo mode: thùng | sản phẩm */
   // TODO: Phase tiếp theo — cho user tự thêm mode + đơn vị custom (bảng location_types).
   // Hiện tại hardcode 'warehouse' → 'thùng', 'market' → 'sản phẩm'.
@@ -261,6 +269,11 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   isLoading: false,
   locateIntent: null,
   fetchTimestamps: {},
+  settingsSubtitles: {
+    stockCheck: 'Chưa có hàng đặc biệt',
+    discount: 'Lô đã đánh dấu giảm giá',
+    notif: 'Đang tải…',
+  },
 
   setSelectedLocation: (id) => {
     set({ selectedLocationId: id })
@@ -296,6 +309,68 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     set((state) => ({
       fetchTimestamps: { ...state.fetchTimestamps, [key]: Date.now() },
     }))
+  },
+
+  // B13.7 — logic cũ từ SettingsScreen (query + wording giữ nguyên)
+  fetchSettingsSubtitles: async () => {
+    const [stockCheck, discount, notif] = await Promise.all([
+      (async () => {
+        const { data: locs, error: locErr } = await supabase
+          .from('locations')
+          .select('id')
+          .eq('type', 'market')
+        if (locErr) throw locErr
+        const locIds = (locs ?? []).map((l) => l.id as string)
+        if (locIds.length === 0) return 'Chưa có hàng đặc biệt'
+        const { data: zones, error: zoneErr } = await supabase
+          .from('zones')
+          .select('id')
+          .in('location_id', locIds)
+        if (zoneErr) throw zoneErr
+        const zoneIds = (zones ?? []).map((z) => z.id as string)
+        if (zoneIds.length === 0) return 'Chưa có hàng đặc biệt'
+        const { data: entries, error: entryErr } = await supabase
+          .from('inventory_entries')
+          .select('is_checked')
+          .eq('is_special', true)
+          .in('zone_id', zoneIds)
+        if (entryErr) throw entryErr
+        const total = entries?.length ?? 0
+        if (total === 0) return 'Chưa có hàng đặc biệt'
+        const checked = (entries ?? []).filter((e) => e.is_checked === true).length
+        return `${checked}/${total} đã kiểm`
+      })(),
+      (async () => {
+        const { data, error } = await supabase
+          .from('inventory_entries')
+          .select('id')
+          .eq('is_price_reduced', true)
+        if (error) throw error
+        // Giống cũ: chỉ đổi text khi có data; không data → giữ giá trị store hiện tại
+        if (!data) return get().settingsSubtitles.discount
+        const count = data.length
+        return count > 0 ? `${count} lô đang giảm giá` : 'Chưa có lô giảm giá'
+      })(),
+      (async () => {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('notification_enabled, notification_time')
+          .limit(1)
+          .maybeSingle()
+        if (error || !data) {
+          if (__DEV__ && error) console.error('[warehouseStore] fetchSettingsSubtitles app_settings:', error)
+          // Cũ: set 'Chưa cấu hình' khi error || !data (không throw)
+          return 'Chưa cấu hình'
+        }
+        if (data.notification_enabled) {
+          return `Bật · ${data.notification_time as string} hàng ngày`
+        }
+        return 'Đã tắt'
+      })(),
+    ])
+    set({
+      settingsSubtitles: { stockCheck, discount, notif },
+    })
   },
 
   fetchLocations: async () => {

@@ -4,6 +4,26 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — refactor(settings): B13.7 settingsSubtitles → warehouseStore
+
+- State `settingsSubtitles` + action `fetchSettingsSubtitles` (query + wording y hệt 3 hàm cũ)
+- SettingsScreen: bỏ 3 useState/refresh; đọc store qua useShallow; TTL `settingsSubtitles` giữ nguyên
+- Throw/lỗi DB → không set (giữ text cũ); markFetched chỉ khi OK
+- Sẵn sàng warm-cache từ App.tsx; chưa đụng App.tsx
+- npx tsc --noEmit pass
+
+---
+
+## [tháng 7/2026] — perf(products): B13.6 migrate ProductsScreen inventory TTL → store
+
+- Key `productsEntries:${filterLocationId ?? 'all'}` — đổi kho = key mới → bypass TTL tự nhiên
+- markFetched sau await fetchProductsScreenEntries; bỏ 2 useRef
+- Không đụng cascade mount (categories/picking/products/page/locations/zones) — KI-084
+- KI-087 → Resolved (6/6 màn); warm-cache App.tsx làm riêng
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(settings): B13.5 migrate SettingsScreen TTL → store (2 keys)
 
 - `settingsSubtitles`: Promise.all 3 subtitle + try/catch; mark chỉ khi OK
