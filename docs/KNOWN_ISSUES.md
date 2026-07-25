@@ -42,7 +42,8 @@
 - **File liên quan:** `screens/OrderListScreen.tsx`, `screens/OrderDetailScreen.tsx`, `screens/MapScreen.tsx`, `components/ZoneDetailSheet.tsx`, `components/LotPickerModal.tsx`, `components/FilterModal.tsx`
 - **Mô tả:** Các list trên dùng ScrollView + .map thay FlatList — render toàn bộ DOM cùng lúc. Khi list lớn (nhiều orders, nhiều lots, search results MapScreen) → JS thread block → app đơ.
 - **Hướng fix:** Chuyển sang FlatList hoặc SectionList. Ưu tiên ZoneDetailSheet và MapScreen search results vì có thể nhiều items nhất.
-- **Trạng thái:** Open
+- **Trạng thái:** Closed
+- **Đánh giá tháng 7/2026:** recon 6 file xác nhận không có list nào đủ lớn để justify virtualize. FilterModal zones là candidate lớn nhất nhưng maxHeight 180 đã giới hạn; item height động. Won't fix ở quy mô hiện tại — reopen nếu data volume tăng đáng kể.
 - **Tham chiếu:** PLAN_7 B8
 
 ---

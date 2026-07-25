@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — docs: B8 virtualize list — đánh giá và đóng
+
+- Recon 6 file: OrderListScreen, OrderDetailScreen, MapScreen search, ZoneDetailSheet, LotPickerModal, FilterModal
+- Kết luận: không có list nào đủ lớn để gây block JS thread với quy mô cửa hàng hiện tại (~50 orders, ~80 zones max)
+- FilterModal zones (candidate lớn nhất): maxHeight 180 giới hạn viewport sẵn; item height động → getItemLayout không áp dụng; ScrollView đủ dùng
+- Quyết định: không implement B8 — effort cao, lợi ích thực tế thấp ở quy mô hiện tại
+- KI-082 → Closed (won't fix — không đủ data volume để justify)
+
+---
+
 ## [tháng 7/2026] — perf(store): B7 Zustand useShallow selector — 4 màn
 
 - Import useShallow từ zustand/react/shallow
