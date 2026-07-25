@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(products): B10 / KI-084 gộp locations + TTL picking/catalog
+
+- Locations: 1 query allLocations; filterLocations derive local theo filterMode
+- TTL pickingList (trùng warm App) + productsCatalog (tạo SP bypass + markFetched)
+- Không đụng categories / productsPage / zones / productsScreenEntries
+- KI-084 → Resolved; PLAN_7 B10 → Done
+- PHẦN B: warm-cache candidate rule → .cursorrules + DECISIONS
+- REQUIREMENTS v1.3.62; npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — fix(ui): KI-092 Dashboard double-fetch + spinner refcount + Realtime stable
 
 - Filter inventory effect: skip mount + fetchAll chỉ khi filterLocationId đổi

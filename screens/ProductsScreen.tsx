@@ -129,11 +129,9 @@ export default function ProductsScreen() {
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
   const [filterModalOpen, setFilterModalOpen] = useState(false)
-  const [filterLocations, setFilterLocations] = useState<Location[]>([])
-  /** false khi đang fetch locations theo filterMode (tránh dùng list kho cũ) */
-  const [filterLocationsReady, setFilterLocationsReady] = useState(true)
-  /** All locations — đơn vị thùng/sản phẩm theo type (cách A) */
+  /** All locations — nguồn duy nhất (đơn vị + FilterModal); B10 gộp query ×2 */
   const [allLocations, setAllLocations] = useState<Location[]>([])
+  const [allLocationsReady, setAllLocationsReady] = useState(false)
   const [zonesForFilterLoc, setZonesForFilterLoc] = useState<Zone[]>([])
   /** false khi đang fetch zones của kho đã chọn (tránh Set zone rỗng lọc hết mọi lô) */
   const [filterZonesReady, setFilterZonesReady] = useState(true)
@@ -166,7 +164,9 @@ export default function ProductsScreen() {
   }, [fetchCategories])
 
   useEffect(() => {
-    void fetchPickingLists()
+    const { shouldRefetch, markFetched } = useWarehouseStore.getState()
+    if (!shouldRefetch('pickingList', FOCUS_FETCH_TTL_MS)) return
+    void fetchPickingLists().then(() => markFetched('pickingList'))
   }, [fetchPickingLists])
 
   useEffect(() => {
@@ -176,20 +176,25 @@ export default function ProductsScreen() {
     }
   }, [showCreateProductModal, fetchCategories])
 
-  // Catalog full (không archived) — dùng khi resolve + tạo SP
+  // Catalog full (không archived) — dùng khi resolve + tạo SP; TTL productsCatalog (B10)
   useEffect(() => {
     if (showArchived) return
-    void fetchProducts()
+    const { shouldRefetch, markFetched } = useWarehouseStore.getState()
+    if (!shouldRefetch('productsCatalog', FOCUS_FETCH_TTL_MS)) return
+    void fetchProducts().then(() => markFetched('productsCatalog'))
   }, [fetchProducts, showArchived])
 
-  // All locations cho đơn vị theo type (không phụ thuộc filterMode / appMode)
+  // All locations — nguồn duy nhất (đơn vị theo type + FilterModal); B10 gộp #1+#2
   useEffect(() => {
     let cancelled = false
     void supabase
       .from('locations')
       .select('id, type, name')
       .then(({ data }) => {
-        if (!cancelled) setAllLocations((data as Location[]) ?? [])
+        if (!cancelled) {
+          setAllLocations((data as Location[]) ?? [])
+          setAllLocationsReady(true)
+        }
       })
     return () => {
       cancelled = true
@@ -200,6 +205,17 @@ export default function ProductsScreen() {
     () => new Map(allLocations.map((l) => [l.id, l])),
     [allLocations],
   )
+
+  /** FilterModal / modeZoneIds — derive local từ allLocations (không query lại theo filterMode) */
+  const filterLocations = useMemo(() => {
+    const list =
+      filterMode === 'all'
+        ? [...allLocations]
+        : allLocations.filter((l) => l.type === filterMode)
+    return list.sort((a, b) => a.name.localeCompare(b.name))
+  }, [allLocations, filterMode])
+
+  const filterLocationsReady = allLocationsReady
 
   // KI-040: debounce search 300ms trước khi gọi server
   useEffect(() => {
@@ -217,26 +233,6 @@ export default function ProductsScreen() {
       showNoImageOnly,
     })
   }, [fetchProductsPage, debouncedSearch, showArchived, showNoImageOnly])
-
-  // FilterModal: danh sách kho theo filterMode (all = mọi type) — clear stale trước khi fetch
-  useEffect(() => {
-    let cancelled = false
-    setFilterLocations([])
-    setFilterLocationsReady(false)
-    async function loadFilterLocations() {
-      let query = supabase.from('locations').select('id, name, type').order('name')
-      if (filterMode !== 'all') query = query.eq('type', filterMode)
-      const { data } = await query
-      if (!cancelled) {
-        setFilterLocations((data as Location[]) ?? [])
-        setFilterLocationsReady(true)
-      }
-    }
-    void loadFilterLocations()
-    return () => {
-      cancelled = true
-    }
-  }, [filterMode])
 
   // Đổi mode filter → reset kho + zone
   useEffect(() => {
@@ -633,7 +629,10 @@ export default function ProductsScreen() {
 
     setIsCreatingProduct(false)
     closeCreateProductModal()
-    void fetchProducts()
+    // Bypass TTL productsCatalog — SP mới cần catalog tươi ngay; mark để tránh remount fetch thừa
+    void fetchProducts().then(() => {
+      useWarehouseStore.getState().markFetched('productsCatalog')
+    })
     void fetchProductsPage({
       page: 0,
       search: debouncedSearch,

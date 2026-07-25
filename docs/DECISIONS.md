@@ -4,6 +4,16 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
+### Warm-cache candidate rule (B13) — 3 điều kiện bắt buộc
+
+- **Ngày:** tháng 7/2026
+- **Quyết định:** Trước khi thêm fetch vào warm-cache `App.tsx` (sau B11 splash), phải đủ cả 3: (1) màn hay dùng trong phiên (không phải admin/cấu hình ít mở); (2) màn **không** có Realtime tự cập nhật data đó; (3) fetch không quá nặng làm kéo dài warm ngầm sau login. Thiếu 1 → không warm, để màn tự fetch theo TTL khi vào. Quy tắc ghi vào `.cursorrules`.
+- **Lý do:** Sau B13: Dashboard / Discontinued có Realtime → warm gần như stale ngay; LocationManagement là màn admin ít dùng → không đáng warm. Đúc kết thành rule chung cho màn tương lai, tránh phình warm-cache vô ích.
+- **Thay thế đã xem xét:** Warm mọi màn có TTL — từ chối, tốn mạng/CPU sau login; chỉ soft guideline không ghi rules — từ chối, dễ quên khi thêm màn mới.
+- **Tham chiếu:** B13, KI-084 follow-up, `.cursorrules` Warm-cache candidate rule
+
+---
+
 ### B11 splash bootstrap — progress giả lập 0→90→100 + timeout 5s
 
 - **Ngày:** tháng 7/2026

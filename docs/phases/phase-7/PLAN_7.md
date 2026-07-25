@@ -121,12 +121,13 @@ Phase 7 tập trung **đóng nợ F27 mở rộng (A1)** — feature bắt buộ
 
 **Tier 4 — Làm sau khi Tier 1–3 ổn định**
 
-### B10 — Consolidate fetch cascade trên ProductsScreen
+### B10 — Consolidate fetch cascade trên ProductsScreen — **Done**
 
 - **Vấn đề:** ProductsScreen mount trigger 7+ network call cascading: fetchCategories, fetchPickingLists, fetchProducts, fetchProductsPage, locations (2 lần), fetchAllInventoryEntries, zones. Không có TTL → một số useEffect có thể trigger lại khi deps thay đổi.
 - **Files:** `screens/ProductsScreen.tsx`
 - **Hướng fix:** Gom các call locations/zones vào 1 call. Thêm `useFocusEffect` + TTL thay `useEffect` mount-once cho data cần refresh.
 - **KI:** KI-084
+- **Trạng thái:** **Done** — gộp locations #1+#2; TTL `pickingList` + `productsCatalog`; categories/productsPage/zones cố ý giữ reactive (không TTL). `fetchAll` đã bỏ từ B1; inventory TTL từ B13.6.
 
 ### B11 — Bootstrap data sau login
 

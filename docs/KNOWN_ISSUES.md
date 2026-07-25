@@ -102,10 +102,13 @@
 
 - **Mức độ:** Medium (perf)
 - **File liên quan:** `screens/ProductsScreen.tsx`
-- **Mô tả:** Mount ProductsScreen trigger đồng thời: fetchCategories, fetchPickingLists, fetchProducts, fetchProductsPage (select * limit 1000), locations ×2, fetchAllInventoryEntries, zones. Không có TTL/useFocusEffect → một số useEffect trigger lại khi deps thay đổi khi quay về tab.
-- **Hướng fix:** Gom locations/zones vào 1 call; thêm useFocusEffect + TTL cho data cần refresh; giải quyết khi làm B1 (bỏ fetchAllInventoryEntries) + B5 (projection).
-- **Trạng thái:** Open
-- **Partial fix tháng 7/2026:** projection 2 query supabase trực tiếp (#8 locations, #11 zones); cascade useEffect giữ nguyên
+- **Mô tả (cũ):** Mount trigger nhiều call: categories, picking, products, productsPage, locations ×2, fetchAll, zones — không TTL.
+- **Trạng thái:** Resolved (B10)
+- **Đã fix / scope:**
+  - B1: bỏ `fetchAllInventoryEntries` → `fetchProductsScreenEntries` + B13.6 TTL `productsEntries:${loc|all}`
+  - B5: projection `fetchProductsPage`
+  - B10: gộp locations #1+#2 → 1 query `allLocations` + derive `filterLocations` theo `filterMode`; TTL `pickingList` (trùng warm App); TTL `productsCatalog` (key mới, remount trong phiên; tạo SP bypass + `markFetched`)
+- **Cố ý ngoài phạm vi B10:** `fetchCategories` (guard L1 rỗng); `fetchProductsPage` (phải reactive search/filter); zones A/B (phải reactive filter — TTL rủi ro cao hơn lợi).
 - **Tham chiếu:** PLAN_7 B10
 
 ---

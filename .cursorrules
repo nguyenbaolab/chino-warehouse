@@ -159,3 +159,17 @@ có onPress navigate tới `ProductDetailScreen` với param
 `{ productId: product.id }`. Ngoại trừ: suggestion list khi đang chọn SP
 cho form (ví dụ AddInventoryScreen, OrderDetailScreen, PickingDetail
 suggestion) — những chỗ này giữ behavior chọn SP.
+
+## Warm-cache candidate rule (B13)
+
+Trước khi thêm 1 fetch mới vào warm-cache trigger (App.tsx, sau B11 
+splash), kiểm tra ĐỦ CẢ 3 điều kiện:
+1. Màn thuộc nhóm hay dùng ngay trong phiên làm việc (không phải màn 
+   admin/cấu hình ít khi mở)
+2. Màn KHÔNG có Realtime subscription tự cập nhật data đó (nếu có, 
+   cache warm xong sẽ stale gần như ngay — warm không có giá trị)
+3. Fetch không quá nặng (không kéo dài đáng kể tổng thời gian warm-cache 
+   chạy ngầm sau login)
+
+Nếu thiếu 1 trong 3 → KHÔNG thêm vào warm-cache, để màn đó tự fetch theo 
+TTL bình thường khi user vào.
