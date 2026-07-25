@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.62 | Tháng 7/2026
+**Phiên bản:** 1.3.63 | Tháng 7/2026
 
+> **v1.3.63** — KI-078 / B4 Partial: `fetchInventoryByZone` skip merge store khi fetchAll in-flight (vẫn return entries); Map Realtime focus-gated. Tách field màn chưa làm.
 > **v1.3.62** — B10 / KI-084: ProductsScreen gộp locations 1 query + derive filterMode; TTL `pickingList` + `productsCatalog` (tạo SP bypass TTL); warm-cache candidate rule trong `.cursorrules`.
 > **v1.3.61** — KI-092: Dashboard skip double fetch mount; refcount isRefreshing; Realtime deps ổn định (refreshDataRef); useShallow. KI-078 vẫn mở.
 > **v1.3.60** — KI-091: DiscontinuedProducts Realtime debounce 2s + fix spinner TTL + useShallow (không đụng refreshDiscontinuedContext / KI-078).

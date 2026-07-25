@@ -818,10 +818,13 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .eq('zone_id', zoneId)
     // TODO: refactor — cast tạm vì Supabase infer hẹp hơn type InventoryEntry sau projection
     const entries = (data as unknown as InventoryEntry[]) || []
-    set((s) => {
-      const next = s.inventoryEntries.filter((entry) => entry.zone_id !== zoneId)
-      return { inventoryEntries: [...next, ...entries] }
-    })
+    // KI-078 / B4: đang fetchAll → không merge store (tránh race); vẫn return cho ZoneDetailSheet
+    if (!allInventoryFetchInFlight) {
+      set((s) => {
+        const next = s.inventoryEntries.filter((entry) => entry.zone_id !== zoneId)
+        return { inventoryEntries: [...next, ...entries] }
+      })
+    }
     return entries
   },
 

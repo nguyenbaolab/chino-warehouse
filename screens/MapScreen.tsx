@@ -311,7 +311,7 @@ export default function MapScreen() {
   }, [isFocused, selectedLocationId, zones, fetchInventoryByLocation])
 
   useEffect(() => {
-    if (!selectedLocationId) return
+    if (!isFocused || !selectedLocationId) return
 
     const scheduleRefresh = () => {
       if (ownMutationRef.current) return
@@ -346,7 +346,7 @@ export default function MapScreen() {
       ownMutationTimerRef.current = null
       void supabase.removeChannel(channel)
     }
-  }, [selectedLocationId])
+  }, [isFocused, selectedLocationId])
 
   async function handleSearch(text: string) {
     setSearchQuery(text)

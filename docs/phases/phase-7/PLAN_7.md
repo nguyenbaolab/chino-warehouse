@@ -72,12 +72,13 @@ Phase 7 tập trung **đóng nợ F27 mở rộng (A1)** — feature bắt buộ
 - **Hướng fix:** Áp dụng cùng projection của `fetchAllInventoryEntries` cho 2 function này. Drop-in fix, không đổi logic.
 - **KI:** KI-077
 
-### B4 — Fix race condition 3 function ghi đồng thời vào inventoryEntries
+### B4 — Fix race condition 3 function ghi đồng thời vào inventoryEntries — **Partial**
 
 - **Vấn đề:** `fetchAllInventoryEntries` (set toàn bộ), `fetchInventoryByZone` (merge theo zone_id), `fetchInventoryByLocationSilent` (merge theo zoneIdSet) có thể chạy đồng thời → ghi đè lẫn nhau → data thiếu hoặc stale.
-- **Files:** `stores/warehouseStore.ts`
+- **Files:** `stores/warehouseStore.ts`, `screens/MapScreen.tsx`
 - **Hướng fix:** Giải quyết khi làm B1 (mỗi màn fetch scope riêng, không merge chung). Nếu vẫn giữ shared state thì cần sequence lock nhất quán hơn.
 - **KI:** KI-078
+- **Trạng thái:** **Partial** — siết lock xong: byZone skip merge store khi fetchAll in-flight (vẫn return); Map Realtime focus-gated. **Chưa** tách field StockCheck/PickingDetail/Discontinued; chưa bỏ byZone thừa Discount/Notifications; ZoneDetailSheet vẫn có thể ghi store khi không in-flight.
 
 ### B5 — `fetchProductsPage` select * limit 1000
 

@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(store): KI-078 / B4 Partial — byZone skip merge + Map Realtime focus
+
+- fetchInventoryByZone: query+return giữ nguyên; chỉ skip set() khi allInventoryFetchInFlight
+- Map Realtime: !isFocused → không subscribe; deps [isFocused, selectedLocationId]
+- Không tách field màn; không đụng fetchAll / Silent
+- KI-078 → Partial; PLAN_7 B4 → Partial
+- REQUIREMENTS v1.3.63; npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(products): B10 / KI-084 gộp locations + TTL picking/catalog
 
 - Locations: 1 query allLocations; filterLocations derive local theo filterMode

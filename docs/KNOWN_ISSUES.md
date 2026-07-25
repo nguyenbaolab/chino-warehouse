@@ -177,11 +177,16 @@
 ### [KI-078] Race condition 3 function ghi đồng thời vào inventoryEntries
 
 - **Mức độ:** High (data consistency)
-- **File liên quan:** `stores/warehouseStore.ts` (`fetchAllInventoryEntries`, `fetchInventoryByZone`, `fetchInventoryByLocationSilent`)
-- **Mô tả:** Ba function cùng ghi vào `store.inventoryEntries` với strategy khác nhau: fetchAll set toàn bộ, fetchByZone merge theo zone_id, fetchByLocation merge theo zoneIdSet. Khi chạy đồng thời (ví dụ MapScreen Realtime + Notifications mount) → merge partial đè mất data → list hiển thị thiếu hoặc stale.
-- **Hướng fix:** Giải quyết tự nhiên khi làm B1 (mỗi màn fetch scope riêng). Nếu vẫn giữ shared state, cần sequence lock nhất quán.
-- **Trạng thái:** Open
-- **Partial — race condition giảm do productsScreenEntries / discountedEntries / expiryEntries / lowStockEntries tách riêng; fetchAllInventoryEntries vẫn dùng bởi Dashboard**
+- **File liên quan:** `stores/warehouseStore.ts`, `screens/MapScreen.tsx`
+- **Mô tả:** Ba function cùng ghi `inventoryEntries`: fetchAll (set full + flag/seq), byZone (merge zone), Silent (merge location). byZone trước đây không tôn trọng flag → race với fetchAll; Map Realtime không focus-gate → writer nền khi ở tab khác.
+- **Trạng thái:** Partial (Hướng B — siết lock)
+- **Đã fix (B4 lock):**
+  - `fetchInventoryByZone`: vẫn query + return entries; **chỉ skip `set()` merge store** khi `allInventoryFetchInFlight` (ZoneDetailSheet vẫn nhận data tươi).
+  - Map Realtime: chỉ subscribe khi `isFocused` (+ `selectedLocationId`); rời tab → removeChannel.
+- **Còn lại (làm sau, Hướng A / cleanup):**
+  - Tách field riêng: StockCheck / PickingDetail / Discontinued
+  - Discount/Notifications: xem xét bỏ `fetchInventoryByZone` khi chọn kho (cần recon barcode dependency trước)
+  - ZoneDetailSheet: cân nhắc ngừng ghi shared store (chỉ local từ return)
 - **Tham chiếu:** PLAN_7 B4
 
 ---
