@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(settings): B13.9 auditSubtitle useMemo từ latestAuditEntry
+
+- store: `latestAuditEntry`; `fetchLatestAuditEntry` ghi state
+- SettingsScreen: bỏ useState/setAuditSubtitle; useMemo format y hệt logic cũ
+- Fix warm-cache skip settingsMain → subtitle audit rỗng (KI-088 Resolved)
+- PLAN_7 B13.9 Done — đóng hẳn B13
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(app): B13 warm-cache trigger sau bootstrapDone
 
 - App.tsx: sau bootstrapDone → 8 group fire-and-forget độc lập + markFetched từng key

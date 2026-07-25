@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-088] Settings auditSubtitle rỗng sau warm-cache settingsMain
+
+- **Mức độ:** Low (UX)
+- **File liên quan:** `screens/SettingsScreen.tsx`, `stores/warehouseStore.ts`, `App.tsx`
+- **Mô tả:** `auditSubtitle` là `useState` set thủ công trong chuỗi `settingsMain` sau `fetchLatestAuditEntry()`. Warm-cache App gọi fetch + `markFetched('settingsMain')` → focus Settings trong TTL 30s skip cả chuỗi → không `setAuditSubtitle` → hiện «Chưa có thay đổi nào» dù audit đã fetch.
+- **Hướng fix:** Lưu `latestAuditEntry` trong store; Settings dùng `useMemo` derived (giống discontinuedCount/categorySummary).
+- **Trạng thái:** Resolved
+- **Đã fix:** B13.9 — `fetchLatestAuditEntry` ghi `latestAuditEntry`; bỏ setState thủ công.
+- **Tham chiếu:** PLAN_7 B13.9
+
+---
+
 ### [KI-087] TTL toàn app là useRef cục bộ — không warm-cache được
 
 - **Mức độ:** Medium (perf / architecture)

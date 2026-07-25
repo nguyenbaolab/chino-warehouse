@@ -62,6 +62,8 @@ type WarehouseStore = {
     discount: string
     notif: string
   }
+  /** B13.9 — entry audit mới nhất (Settings subtitle derived) */
+  latestAuditEntry: AuditLog | null
 
   setSelectedLocation: (id: string) => void
   setAppMode: (mode: 'warehouse' | 'market') => void
@@ -274,6 +276,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     discount: 'Lô đã đánh dấu giảm giá',
     notif: 'Đang tải…',
   },
+  latestAuditEntry: null,
 
   setSelectedLocation: (id) => {
     set({ selectedLocationId: id })
@@ -2110,7 +2113,9 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
       .order('changed_at', { ascending: false })
       .limit(1)
       .maybeSingle()
-    return (data as AuditLog) ?? null
+    const entry = (data as AuditLog) ?? null
+    set({ latestAuditEntry: entry })
+    return entry
   },
 
   fetchAuditLogs: async ({ cursor, direction = 'older', filterLocationId, filterChangedBy, filterProductId, limit = 10 }) => {

@@ -204,7 +204,7 @@ README.md
 
 ## §4a Store — `warehouseStore.ts`
 
-**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`, **`type`**), `selectedLocationId`, **`appMode`** (`'warehouse' | 'market'`, default `'warehouse'`), `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, **`discountedEntries`**, **`productsScreenEntries`**, **`expiryEntries`**, **`lowStockEntries`** (B1 Phase 7 — scope riêng từng màn), `orderLists`, `orderItems`, **`internalNotes`** (F31), `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail), **`fetchTimestamps`** (`Record<string, number>` — B13 TTL dùng chung), **`settingsSubtitles`** (`{ stockCheck, discount, notif }` — B13.7). **F24 Task 2+ (planned):** `users` (danh sách cho admin/super_admin).
+**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`, **`type`**), `selectedLocationId`, **`appMode`** (`'warehouse' | 'market'`, default `'warehouse'`), `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, **`discountedEntries`**, **`productsScreenEntries`**, **`expiryEntries`**, **`lowStockEntries`** (B1 Phase 7 — scope riêng từng màn), `orderLists`, `orderItems`, **`internalNotes`** (F31), `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail), **`fetchTimestamps`** (`Record<string, number>` — B13 TTL dùng chung), **`settingsSubtitles`** (`{ stockCheck, discount, notif }` — B13.7), **`latestAuditEntry`** (`AuditLog | null` — B13.9; Settings audit subtitle derived). **F24 Task 2+ (planned):** `users` (danh sách cho admin/super_admin).
 
 **Actions — mode (F36 C2):** `setAppMode(mode)` — set `appMode`, clear `selectedLocationId` / `zones` / `inventoryEntries`, gọi `fetchLocations()`; **`getQtyUnit()`** → `'thùng'` | `'sản phẩm'`.
 
@@ -230,7 +230,7 @@ README.md
 
 **Actions — ghi chú nội bộ (F31):** `fetchInternalNoteFolders` / CRUD folders; `fetchInternalNotes`, `addInternalNote({ productId?, customName?, reason, imageUrl?, folderId? })`, `updateInternalNote(id, reason, imageUrl?, productId?, customName?, folderId?)`, `deleteInternalNote` (xóa Storage `notes/{id}.jpg` nếu có `image_url`; join `product:products(id, name, image_url)`). **UI:** tầng 1 list folder (badge count; Chung gồm `folder_id` null); tầng 2 notes trong folder; FAB + = tạo folder / tạo note tùy tầng.
 
-**Actions — audit log:** `fetchAuditLogs` (cursor-based, filter kho + loại + người + sản phẩm), `fetchLatestAuditEntry`, `fetchAuditLogsForProduct`.
+**Actions — audit log:** `fetchAuditLogs` (cursor-based, filter kho + loại + người + sản phẩm), **`fetchLatestAuditEntry`** (ghi **`latestAuditEntry`**; Settings subtitle = `useMemo` từ field này — B13.9 / KI-088), `fetchAuditLogsForProduct`.
 
 ---
 

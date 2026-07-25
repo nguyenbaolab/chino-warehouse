@@ -52,11 +52,12 @@ export default function SettingsScreen() {
     toggleLowStockWarning,
   } = useWarningStore()
 
-  const [auditSubtitle, setAuditSubtitle] = useState('Chưa có thay đổi nào')
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const REALTIME_DEBOUNCE_MS = 2_000
+
+  const latestAuditEntry = useWarehouseStore((s) => s.latestAuditEntry)
 
   const discontinuedCount = useMemo(
     () => products.filter((p) => !p.is_archived && p.is_discontinued === true).length,
@@ -72,6 +73,29 @@ export default function SettingsScreen() {
     const skuCount = products.filter((p) => !p.is_archived).length
     return `${skuCount} SKU · ${locations.length} kho`
   }, [products, locations.length])
+
+  /** B13.9 — derived từ store (warm-cache đã set latestAuditEntry) */
+  const auditSubtitle = useMemo(() => {
+    if (!latestAuditEntry) return 'Chưa có thay đổi nào'
+    const actionMap: Record<string, string> = { INSERT: 'thêm', UPDATE: 'sửa', DELETE: 'xóa' }
+    const tableMap: Record<string, string> = { inventory_entries: 'Lô hàng', products: 'Sản phẩm' }
+    const who = latestAuditEntry.changed_by_name ?? 'Không rõ'
+    const act = actionMap[latestAuditEntry.action] ?? latestAuditEntry.action
+    const tbl = tableMap[latestAuditEntry.table_name] ?? latestAuditEntry.table_name
+    const diff = Date.now() - new Date(latestAuditEntry.changed_at).getTime()
+    const mins = Math.floor(diff / 60000)
+    const hours = Math.floor(diff / 3600000)
+    let timeStr: string
+    if (mins < 1) timeStr = 'vừa xong'
+    else if (mins < 60) timeStr = `${mins} phút trước`
+    else if (hours < 24) timeStr = `${hours} giờ trước`
+    else {
+      const d = new Date(latestAuditEntry.changed_at)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
+    }
+    return `${who} ${act} ${tbl} · ${timeStr}`
+  }, [latestAuditEntry])
 
   /** F37 — trạng thái biometric */
   const refreshBiometric = useCallback(async () => {
@@ -114,29 +138,7 @@ export default function SettingsScreen() {
         if (productCategoriesL1.length === 0 && productCategoriesL2.length === 0) {
           await fetchCategories()
         }
-        const entry = await fetchLatestAuditEntry()
-        if (!entry) {
-          setAuditSubtitle('Chưa có thay đổi nào')
-        } else {
-          const actionMap: Record<string, string> = { INSERT: 'thêm', UPDATE: 'sửa', DELETE: 'xóa' }
-          const tableMap: Record<string, string> = { inventory_entries: 'Lô hàng', products: 'Sản phẩm' }
-          const who = entry.changed_by_name ?? 'Không rõ'
-          const act = actionMap[entry.action] ?? entry.action
-          const tbl = tableMap[entry.table_name] ?? entry.table_name
-          const diff = Date.now() - new Date(entry.changed_at).getTime()
-          const mins = Math.floor(diff / 60000)
-          const hours = Math.floor(diff / 3600000)
-          let timeStr: string
-          if (mins < 1) timeStr = 'vừa xong'
-          else if (mins < 60) timeStr = `${mins} phút trước`
-          else if (hours < 24) timeStr = `${hours} giờ trước`
-          else {
-            const d = new Date(entry.changed_at)
-            const pad = (n: number) => String(n).padStart(2, '0')
-            timeStr = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
-          }
-          setAuditSubtitle(`${who} ${act} ${tbl} · ${timeStr}`)
-        }
+        await fetchLatestAuditEntry()
         markFetched(TTL_SETTINGS_MAIN)
       })()
     }, [
