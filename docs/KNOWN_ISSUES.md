@@ -5,11 +5,11 @@
 ### [KI-085] App không bootstrap data sau login — tab đầu luôn spinner
 
 - **Mức độ:** Medium (perf / UX)
-- **File liên quan:** `App.tsx`, `stores/warehouseStore.ts`, `components/AppLoadingScreen.tsx`
+- **File liên quan:** `App.tsx`, `stores/warehouseStore.ts`
 - **Mô tả:** App.tsx sau login thành công chỉ fetch profile + schedule notifications. Không prefetch locations/products. Tab đầu tiên user bấm vào (thường MapScreen) phải fetch từ đầu → spinner chờ mỗi lần mở app.
 - **Hướng fix:** Sau login OK, prefetch song song `fetchLocations` + `fetchProducts` (critical path MapScreen). Lazy fetch phần còn lại khi user vào các tab khác.
 - **Trạng thái:** Resolved
-- **Đã fix:** Prefetch `Promise.all([fetchLocations(), fetchProducts()])` đã có sẵn; task này thêm **gating** (`Promise.race` + timeout 5s → `dataReady`) thay vì fire-and-forget, và UI splash động `AppLoadingScreen` (stroke progress giả lập) trước khi vào `NavigationContainer`.
+- **Đã fix:** prefetch Promise.all([fetchLocations(), fetchProducts()]) trong App.tsx loadProfile sau login thành công
 - **Tham chiếu:** PLAN_7 B11
 
 ---

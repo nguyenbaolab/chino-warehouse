@@ -4,16 +4,6 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
-## [tháng 7/2026] — feat(app): B11 splash loading động — gate bootstrap sau login
-
-- Thêm `components/AppLoadingScreen.tsx`: logo splash-icon + SVG rounded rect stroke progress (0→90→100)
-- App.tsx: await `Promise.race([Promise.all(fetchLocations+fetchProducts), timeout 5s])` → `dataReady`; hiện splash đến `bootstrapDone`
-- Notifications bootstrap vẫn fire-and-forget; không đụng gate `!isReady` / `isLoadingProfile`
-- KI-085 → Resolved (prefetch đã có; task này thêm gating + UI)
-- npx tsc --noEmit pass
-
----
-
 ## [tháng 7/2026] — perf(app): B11 bootstrap fetchLocations + fetchProducts sau login
 
 - App.tsx loadProfile: sau profile hợp lệ, Promise.all([fetchLocations(), fetchProducts()]) song song

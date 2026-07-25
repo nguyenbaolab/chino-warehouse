@@ -2,9 +2,8 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.47 | Tháng 7/2026
+**Phiên bản:** 1.3.46 | Tháng 7/2026
 
-> **v1.3.47** — B11 UI splash Done: `AppLoadingScreen` gate bootstrap `fetchLocations`+`fetchProducts` sau login (progress giả 0→90→100, timeout 5s); KI-085 Resolved.
 > **v1.3.46** — Closeout Phase 6: SUMMARY_6 / HANDOFF_6 / TESTCASES_6; PLAN_7; B/C/D/E/F/G Done; **F27 mở rộng** carry → Phase 7 (A1). Schema v5.5.
 > **v1.3.45** — F31: Internal Notes phân folder (2 tầng UI; `internal_note_folders` + `folder_id`; seed «Chung»).
 > **v1.3.44** — F1 Phase 6: SettingsScreen 4 section (Kho & Hàng hóa · Vận hành · Thông báo & Cảnh báo · Hệ thống); bỏ info box zone.

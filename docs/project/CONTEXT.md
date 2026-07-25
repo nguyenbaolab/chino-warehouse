@@ -37,13 +37,10 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 ```
 assets/
 components/
-  AppLoadingScreen.tsx     # B11 splash động (logo + SVG stroke) — gate bootstrap sau login
   FilterModal.tsx          # Shared filter Mode + Kho + Zone (Products/Notifications/Dashboard)
   ImageViewerModal.tsx     # Tap-to-zoom ảnh SP (uri + onClose; pinch/double-tap)
   LotPickerModal.tsx       # Modal tick nhiều lô + qty (PickingDetail / Products C1)
   ZoneDetailSheet.tsx
-  SimplePieChart.tsx       # Dashboard pie (react-native-svg)
-  ConfigErrorScreen.tsx
 docs/
   project/
     REQUIREMENTS.md
@@ -158,7 +155,7 @@ README.md
 
 ## §3 Navigation structure
 
-- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />` (**F37:** auto biometric prompt nếu SecureStore credentials + enabled); loading bootstrap / **đang fetch `user_profiles`** → `<ActivityIndicator />`; có session + profile OK → **B11** `<AppLoadingScreen />` (chờ `Promise.race([fetchLocations+fetchProducts, timeout 5s])` + progress giả lập) → `SafeAreaProvider` → `NavigationContainer`. **F24:** sau login gọi `authStore.fetchCurrentUserProfile()`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC `update_my_last_login()` + prefetch warehouse. Logout **giữ** biometric credentials. **Realtime (F24):** sau profile OK — subscribe `postgres_changes` UPDATE own `user_profiles` (kick disable + silent refetch role); join presence `presence:warehouse-online` qua `lib/presence.ts`; cleanup khi logout.
+- **Auth gate** (`App.tsx`): kiểm tra `supabase.auth.getSession()` khi mount + subscribe `onAuthStateChange`. Chưa có session → `<LoginScreen />` (**F37:** auto biometric prompt nếu SecureStore credentials + enabled); loading bootstrap / **đang fetch `user_profiles`** → `<ActivityIndicator />`; có session + profile OK → `SafeAreaProvider` → `NavigationContainer`. **F24:** sau login gọi `authStore.fetchCurrentUserProfile()`; `is_disabled` hoặc thiếu profile → `signOut` + Alert; OK → RPC `update_my_last_login()`. Logout **giữ** biometric credentials. **Realtime (F24):** sau profile OK — subscribe `postgres_changes` UPDATE own `user_profiles` (kick disable + silent refetch role); join presence `presence:warehouse-online` qua `lib/presence.ts`; cleanup khi logout.
 - **Root:** `NavigationContainer` → **Native Stack** (`headerShown: false`) với 2 route: `Tabs` + `BarcodeScanner`.
 - **Root / BarcodeScanner:** `fullScreenModal`, fullscreen, **không** có bottom tab bar. **Flow quét (search/locate):** `searchByBarcode` (lô) → nếu không có → `lookupProductByBarcode` (`product_barcodes`) → Alert **"Hàng đã hết"** + **Xem chi tiết** → `returnTab` với **state tường minh** `[Main, ProductDetail]` (`tabsParamsForProductDetail` / `getMainScreenName` trong `lib/tabNavigation.ts`) — KI-057 lần 2, tránh stack cụt; fallback tab `'Products'`; nếu vẫn không có SP → Alert **Không tìm thấy** (Thử lại / Thêm thủ công / Huỷ).
 - **Bottom tabs:** `Map` — `tabBarLabel` **dynamic** theo `appMode` (**Kho** warehouse / **Siêu thị** market) → `Products` (**Sản phẩm**) → `Orders` (**Lấy hàng**) → `Notifications` (**Thông báo**) → `Settings` (**Cài đặt**).

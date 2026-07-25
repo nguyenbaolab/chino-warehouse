@@ -4,16 +4,6 @@ Các quyết định quan trọng đã chốt cho Chino's Warehouse.
 
 ---
 
-### B11 splash bootstrap — progress giả lập 0→90→100 + timeout 5s
-
-- **Ngày:** tháng 7/2026
-- **Quyết định:** Sau profile login OK, hiện `AppLoadingScreen` (logo + SVG rounded-rect stroke) cho tới khi `Promise.race([Promise.all([fetchLocations(), fetchProducts()]), timeout 5s])` resolve. Progress UI giả lập: animate 0→90% (~1.4s ease-out), giữ 90% nếu data chưa về, rồi 90→100% (~300ms) khi `isDataReady`; safety timeout 5s luôn mở gate.
-- **Lý do:** `fetchLocations` / `fetchProducts` không expose % tiến độ thật (không set `isLoading`, không throw). Fire-and-forget khiến Map tab vẫn spinner. Progress giả + timeout tránh kẹt splash nếu mạng chậm/fail im lặng.
-- **Thay thế đã xem xét:** Chỉ `ActivityIndicator` chờ fetch — từ chối, UX khô; chờ fetch vô hạn không timeout — từ chối, rủi ro kẹt login; đo % thật qua progress events — không có API.
-- **Tham chiếu:** KI-085, PLAN_7 B11
-
----
-
 ### expo-image thay Image RN — disk cache cho ảnh Supabase Storage
 
 - **Ngày:** tháng 7/2026
