@@ -5,12 +5,12 @@
 ### [KI-087] TTL toàn app là useRef cục bộ — không warm-cache được
 
 - **Mức độ:** Medium (perf / architecture)
-- **File liên quan:** `stores/warehouseStore.ts`, OrderList / Discount / Notifications / InternalNotes / Settings / Products
-- **Mô tả:** Mọi TTL focus (KI-039 / B12) lưu `useRef` trong từng screen. Prefetch / warm-cache từ App hoặc store không cập nhật được timestamp → lần đầu vào màn vẫn refetch dù data đã có trong store.
-- **Hướng fix:** `fetchTimestamps` + `shouldRefetch` / `markFetched` trong warehouseStore; migrate từng màn; sau đó warm-cache trigger (markFetched sau prefetch).
+- **File liên quan:** `stores/warehouseStore.ts`, screens (6 màn), `App.tsx`
+- **Mô tả:** Mọi TTL focus lưu `useRef` trong từng screen. Prefetch không đánh dấu timestamp → lần đầu vào màn vẫn refetch / đợi lâu.
+- **Hướng fix:** `fetchTimestamps` + `shouldRefetch` / `markFetched`; migrate màn; warm-cache trigger sau bootstrap.
 - **Trạng thái:** Resolved
-- **Đã làm (B13 6/6 màn):** TTL focus nằm trong store — sẵn sàng warm-cache trigger. Products: key ``productsEntries:${filterLocationId ?? 'all'}``. Cascade mount Products (KI-084) không thuộc scope này. **Còn lại:** warm-cache trigger ở `App.tsx` (làm riêng sau).
-- **Tham chiếu:** PLAN_7 B13
+- **Đã fix:** TTL trong store (6/6 màn + B13.7 settingsSubtitles); **warm-cache trigger live** trong `App.tsx` (8 group sau `bootstrapDone`, không kéo dài splash B11; reset khi logout). Case filter theo kho cụ thể vẫn fetch riêng (đúng thiết kế). Đóng issue gốc «vào app phải đợi lâu ở nhiều màn».
+- **Tham chiếu:** PLAN_7 B13 Done
 
 ---
 

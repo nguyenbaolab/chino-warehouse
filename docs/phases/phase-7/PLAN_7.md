@@ -143,21 +143,21 @@ Phase 7 tập trung **đóng nợ F27 mở rộng (A1)** — feature bắt buộ
 - **KI:** KI-086
 - **Trạng thái:** Done
 
-### B13 — Shared TTL store + warm-cache (6/6 màn Done; warm trigger còn lại)
+### B13 — Shared TTL store + warm-cache — **Done**
 
 - **Vấn đề:** TTL toàn app là `useRef` cục bộ → prefetch/warm-cache không đánh dấu đã fetch → màn vẫn refetch lần đầu.
-- **Files:** `stores/warehouseStore.ts`, screens (đã migrate), **`App.tsx` warm trigger còn lại**
+- **Files:** `stores/warehouseStore.ts`, screens (đã migrate), `App.tsx` warm trigger
 - **Sub-tasks:**
-  1. **Done** — `fetchTimestamps` + `shouldRefetch` / `markFetched`; migrate **OrderListScreen** (`orderList`, `pickingList`)
-  2. **Done** — migrate **DiscountScreen** (`discountScreen`)
-  3. **Done** — migrate **NotificationsScreen** (`notificationsScreen`)
-  4. **Done** — migrate **InternalNotesScreen** (`internalNotesScreen`)
+  1. **Done** — `fetchTimestamps` + `shouldRefetch` / `markFetched`; migrate **OrderListScreen**
+  2. **Done** — migrate **DiscountScreen**
+  3. **Done** — migrate **NotificationsScreen**
+  4. **Done** — migrate **InternalNotesScreen**
   5. **Done** — migrate **SettingsScreen** (`settingsSubtitles` + `settingsMain`)
-  6. **Done** — migrate **ProductsScreen** inventory (`productsEntries:${loc|all}`); cascade mount không TTL (KI-084)
-  7. **Done (B13.7)** — `settingsSubtitles` + `fetchSettingsSubtitles` trong store — Settings subtitle warm-cache được; sẵn sàng bước trigger cuối
-  8. **Todo** — Warm-cache trigger (`App.tsx`: prefetch + `markFetched` sau login / idle) — làm riêng
-- **KI:** KI-087 (Resolved — TTL trong store; warm trigger còn lại)
-- **Trạng thái:** Màn migrate Done (6/6) + B13.7 store subtitles; warm-cache trigger Pending
+  6. **Done** — migrate **ProductsScreen** inventory (`productsEntries:${loc|all}`)
+  7. **Done (B13.7)** — `settingsSubtitles` + `fetchSettingsSubtitles` trong store
+  8. **Done** — Warm-cache trigger (`App.tsx`: 8 group sau `bootstrapDone`, không gate splash; reset khi logout)
+- **KI:** KI-087 (Resolved)
+- **Trạng thái:** **Done** toàn bộ
 
 ---
 

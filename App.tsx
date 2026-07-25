@@ -217,6 +217,8 @@ export default function App() {
   const [dataReady, setDataReady] = useState(false)
   const [bootstrapDone, setBootstrapDone] = useState(false)
   const bootstrapFetchStartedRef = useRef(false)
+  /** B13 — warm-cache 1 lần sau bootstrapDone; reset khi logout */
+  const warmCacheStartedRef = useRef(false)
 
   // Dùng ref thay state để tránh re-render toàn app mỗi lần chạm màn hình
   const lastActivityRef = useRef<number>(Date.now())
@@ -335,6 +337,7 @@ export default function App() {
       setDataReady(false)
       setBootstrapDone(false)
       bootstrapFetchStartedRef.current = false
+      warmCacheStartedRef.current = false
       return
     }
 
@@ -383,6 +386,72 @@ export default function App() {
       cancelled = true
     }
   }, [session, fetchCurrentUserProfile, clearCurrentUserProfile, updateLastLogin])
+
+  // B13 — warm-cache background SAU khi Tabs hiện (không gate splash)
+  useEffect(() => {
+    if (!bootstrapDone) return
+    if (warmCacheStartedRef.current) return
+    warmCacheStartedRef.current = true
+
+    const store = useWarehouseStore.getState()
+    const warn = (label: string, err: unknown) => {
+      if (__DEV__) console.warn(`[App] warm-cache ${label}:`, err)
+    }
+
+    // 8 group độc lập — lỗi 1 group không chặn group khác
+    void store
+      .fetchOrderLists()
+      .then(() => store.markFetched('orderList'))
+      .catch((err) => warn('orderList', err))
+
+    void store
+      .fetchPickingLists()
+      .then(() => store.markFetched('pickingList'))
+      .catch((err) => warn('pickingList', err))
+
+    void store
+      .fetchProducts()
+      .then(() => store.fetchDiscountedEntries())
+      .then(() => store.markFetched('discountScreen'))
+      .catch((err) => warn('discountScreen', err))
+
+    void Promise.all([
+      store.fetchProducts(),
+      store.fetchExpiryEntries(),
+      store.fetchLowStockEntries(),
+    ])
+      .then(() => store.markFetched('notificationsScreen'))
+      .catch((err) => warn('notificationsScreen', err))
+
+    void store
+      .fetchProducts()
+      .then(() => store.fetchInternalNoteFolders())
+      .then(() => store.fetchInternalNotes())
+      .then(() => store.markFetched('internalNotesScreen'))
+      .catch((err) => warn('internalNotesScreen', err))
+
+    void store
+      .refreshDiscontinuedContext()
+      .then(() => store.fetchInternalNotes())
+      .then(() => {
+        if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
+          return store.fetchCategories()
+        }
+      })
+      .then(() => store.fetchLatestAuditEntry())
+      .then(() => store.markFetched('settingsMain'))
+      .catch((err) => warn('settingsMain', err))
+
+    void store
+      .fetchSettingsSubtitles()
+      .then(() => store.markFetched('settingsSubtitles'))
+      .catch((err) => warn('settingsSubtitles', err))
+
+    void store
+      .fetchProductsScreenEntries()
+      .then(() => store.markFetched('productsEntries:all'))
+      .catch((err) => warn('productsEntries:all', err))
+  }, [bootstrapDone])
 
   // F24: Realtime kick disable + presence tracking (sau profile OK)
   useEffect(() => {

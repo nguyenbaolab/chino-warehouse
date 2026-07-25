@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(app): B13 warm-cache trigger sau bootstrapDone
+
+- App.tsx: sau bootstrapDone → 8 group fire-and-forget độc lập + markFetched từng key
+- Không await/gate splash B11; warmCacheStartedRef reset khi logout (cùng B11 refs)
+- KI-087 → Resolved (warm-cache live); PLAN_7 B13 Done toàn bộ
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — refactor(settings): B13.7 settingsSubtitles → warehouseStore
 
 - State `settingsSubtitles` + action `fetchSettingsSubtitles` (query + wording y hệt 3 hàm cũ)
