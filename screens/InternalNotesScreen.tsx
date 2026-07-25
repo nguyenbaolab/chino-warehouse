@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
@@ -33,6 +33,10 @@ function formatNoteDate(iso: string): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+
+/** B13 — key TTL trong warehouseStore.fetchTimestamps */
+const TTL_INTERNAL_NOTES_SCREEN = 'internalNotesScreen'
+const FOCUS_FETCH_TTL_MS = 30_000
 
 export default function InternalNotesScreen() {
   const navigation = useNavigation<any>()
@@ -93,15 +97,11 @@ export default function InternalNotesScreen() {
   /** Tap-to-zoom ảnh SP */
   const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null)
 
-  // KI-039: TTL 30s — tránh fetchProducts mỗi lần re-focus
-  const FOCUS_FETCH_TTL_MS = 30_000
-  const lastFetchRef = useRef(0)
-
+  // B13: TTL 30s qua store — gate products + folders + notes
   useFocusEffect(
     useCallback(() => {
-      const now = Date.now()
-      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
-      lastFetchRef.current = now
+      const { shouldRefetch, markFetched } = useWarehouseStore.getState()
+      if (!shouldRefetch(TTL_INTERNAL_NOTES_SCREEN, FOCUS_FETCH_TTL_MS)) return
 
       let cancelled = false
       void (async () => {
@@ -109,6 +109,7 @@ export default function InternalNotesScreen() {
         await fetchProducts()
         await fetchInternalNoteFolders()
         await fetchInternalNotes()
+        markFetched(TTL_INTERNAL_NOTES_SCREEN)
         if (!cancelled) setLoading(false)
       })()
       return () => {

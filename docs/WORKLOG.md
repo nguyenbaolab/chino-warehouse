@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(notes): B13.4 migrate InternalNotesScreen TTL → store
+
+- Key `internalNotesScreen` gate tuần tự fetchProducts → folders → notes; markFetched sau cả 3
+- CRUD vẫn gọi trực tiếp `fetchInternalNotes()` (bypass TTL focus) — giữ nguyên
+- KI-087 Partial (4/6)
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(notifications): B13.3 migrate NotificationsScreen TTL → store
 
 - Key `notificationsScreen` gate Promise.all(fetchProducts + fetchExpiryEntries + fetchLowStockEntries); markFetched sau cả 3
