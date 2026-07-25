@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(ui): KI-091 DiscontinuedProducts debounce + spinner + useShallow
+
+- Realtime products/inventory: debounce 2s (mẫu Dashboard), clearTimeout khi unmount
+- useFocusEffect TTL early-return: setInitialBusy(false) (họ KI-089)
+- useWarehouseStore(useShallow) — chỉ field màn dùng
+- Không đụng refreshDiscontinuedContext (KI-078 / B4)
+- KI-091 → Resolved; REQUIREMENTS v1.3.60
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(locations): KI-090 buildSkuCountByLocation 2N→2 query
 
 - buildSkuCountByLocation: 1 query zones + 1 query inventory; distinct product_id theo location

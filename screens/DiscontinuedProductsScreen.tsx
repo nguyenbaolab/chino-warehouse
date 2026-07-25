@@ -9,11 +9,15 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import { useShallow } from 'zustand/react/shallow'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
 import { supabase } from '../lib/supabase'
 import { Product } from '../types'
 import { useCanWrite, useIsReadOnly } from '../stores/authStore'
+
+const FOCUS_FETCH_TTL_MS = 30_000
+const REALTIME_DEBOUNCE_MS = 2_000
 
 export default function DiscontinuedProductsScreen() {
   const navigation = useNavigation<any>()
@@ -30,15 +34,27 @@ export default function DiscontinuedProductsScreen() {
     refreshDiscontinuedContext,
     setProductDiscontinued,
     getQtyUnit,
-  } = useWarehouseStore()
+  } = useWarehouseStore(
+    useShallow((s) => ({
+      products: s.products,
+      inventoryEntries: s.inventoryEntries,
+      zones: s.zones,
+      fetchLocations: s.fetchLocations,
+      fetchZones: s.fetchZones,
+      selectedLocationId: s.selectedLocationId,
+      refreshDiscontinuedContext: s.refreshDiscontinuedContext,
+      setProductDiscontinued: s.setProductDiscontinued,
+      getQtyUnit: s.getQtyUnit,
+    })),
+  )
   const qtyUnit = getQtyUnit()
 
   const [savingId, setSavingId] = useState<string | null>(null)
   const [initialBusy, setInitialBusy] = useState(true)
 
   // KI-039: TTL 30s
-  const FOCUS_FETCH_TTL_MS = 30_000
   const lastFetchRef = useRef(0)
+  const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     void fetchLocations()
@@ -51,7 +67,11 @@ export default function DiscontinuedProductsScreen() {
   useFocusEffect(
     useCallback(() => {
       const now = Date.now()
-      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      // TTL còn hiệu lực — tắt spinner (KI-091 / cùng họ KI-089)
+      if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) {
+        setInitialBusy(false)
+        return
+      }
       lastFetchRef.current = now
 
       let cancelled = false
@@ -67,27 +87,29 @@ export default function DiscontinuedProductsScreen() {
   )
 
   useEffect(() => {
+    const scheduleRefresh = () => {
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
+      realtimeDebounceRef.current = setTimeout(() => {
+        realtimeDebounceRef.current = null
+        void refreshDiscontinuedContext()
+      }, REALTIME_DEBOUNCE_MS)
+    }
+
     const channel = supabase
       .channel(`discontinued-screen-${Date.now()}`, {
         config: { private: true }, // SEC-08: yêu cầu authenticated token
       })
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
-        () => {
-          void refreshDiscontinuedContext()
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, scheduleRefresh)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'inventory_entries' },
-        () => {
-          void refreshDiscontinuedContext()
-        }
+        scheduleRefresh,
       )
       .subscribe()
 
     return () => {
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
+      realtimeDebounceRef.current = null
       void supabase.removeChannel(channel)
     }
   }, [refreshDiscontinuedContext])

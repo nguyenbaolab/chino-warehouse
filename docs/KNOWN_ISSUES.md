@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-091] DiscontinuedProducts — Realtime không debounce + spinner TTL + full store subscribe
+
+- **Mức độ:** Medium (perf / UX)
+- **File liên quan:** `screens/DiscontinuedProductsScreen.tsx`
+- **Mô tả:** (1) Realtime `products` + `inventory_entries` event `*` gọi `refreshDiscontinuedContext()` ngay — không debounce; (2) `useFocusEffect` TTL early-return không `setInitialBusy(false)` → spinner kẹt khi list rỗng (họ KI-088/089); (3) `useWarehouseStore()` full destructure → re-render mọi lần store đổi.
+- **Hướng fix:** Debounce Realtime 2s (mẫu Dashboard); `setInitialBusy(false)` trên TTL skip; `useShallow` chỉ field màn dùng.
+- **Trạng thái:** Resolved
+- **Đã fix:** Debounce + clearTimeout cleanup; spinner TTL; useShallow. **Chưa đụng** `refreshDiscontinuedContext` nặng (Promise.all theo zone) — còn thuộc **KI-078 / B4**.
+- **Tham chiếu:** Recon Discontinued lag sau B13; KI-078
+
+---
+
 ### [KI-090] LocationManagement load chậm — buildSkuCountByLocation N×2 query tuần tự
 
 - **Mức độ:** Medium (perf / UX)
