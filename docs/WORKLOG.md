@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(locations): KI-090 buildSkuCountByLocation 2N→2 query
+
+- buildSkuCountByLocation: 1 query zones + 1 query inventory; distinct product_id theo location
+- Focus: bỏ fetchLocations trùng; chỉ refetchAllLocations (TTL 30s)
+- Migration + schema v5.6: idx_zones_location_id
+- KI-090 → Resolved
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — fix(ui): KI-089 setLoading(false) khi TTL skip (Discount + Notes)
 
 - DiscountScreen + InternalNotesScreen: early-return `!shouldRefetch` → `setLoading(false)` trước return

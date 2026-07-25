@@ -1,8 +1,10 @@
 -- ============================================================
 -- Chino's Store — Full Database Schema
--- Phiên bản: 5.5 | Tháng 7/2026
+-- Phiên bản: 5.6 | Tháng 7/2026
 -- Chạy file này trên một database trắng để tạo lại toàn bộ cấu trúc
 -- ============================================================
+-- Thay đổi so với v5.5:
+--   - v5.6: idx_zones_location_id ON zones(location_id) (KI-090 LocationManagement perf)
 -- Thay đổi so với v5.4:
 --   - v5.5: idx_inventory_entries_expiry_date; idx_products_is_archived (Perf P4 / KI-074)
 -- Thay đổi so với v5.3:
@@ -302,6 +304,7 @@ CREATE TABLE audit_logs (
 
 CREATE INDEX ON products(name);
 CREATE INDEX IF NOT EXISTS idx_products_is_archived ON products(is_archived);
+CREATE INDEX IF NOT EXISTS idx_zones_location_id ON zones(location_id);
 CREATE INDEX ON inventory_entries(zone_id);
 CREATE INDEX ON inventory_entries(product_id);
 CREATE INDEX ON inventory_entries(barcode);

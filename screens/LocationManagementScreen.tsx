@@ -23,18 +23,46 @@ import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 
 const DEFAULT_GRID = 6
 
+/** Đếm SKU (distinct product_id) theo từng kho — 2 query gom (không 2N tuần tự) */
 async function buildSkuCountByLocation(locationsList: Location[]): Promise<Map<string, number>> {
   const map = new Map<string, number>()
   for (const loc of locationsList) {
-    const { data: zoneRows } = await supabase.from('zones').select('id').eq('location_id', loc.id)
-    const zids = (zoneRows ?? []).map((z) => z.id)
-    if (zids.length === 0) {
-      map.set(loc.id, 0)
-      continue
+    map.set(loc.id, 0)
+  }
+  if (locationsList.length === 0) return map
+
+  const locIds = locationsList.map((l) => l.id)
+  const { data: zoneRows } = await supabase
+    .from('zones')
+    .select('id, location_id')
+    .in('location_id', locIds)
+
+  const zoneToLoc = new Map<string, string>()
+  for (const z of zoneRows ?? []) {
+    zoneToLoc.set(z.id as string, z.location_id as string)
+  }
+  if (zoneToLoc.size === 0) return map
+
+  const zoneIds = [...zoneToLoc.keys()]
+  const { data: inv } = await supabase
+    .from('inventory_entries')
+    .select('product_id, zone_id')
+    .in('zone_id', zoneIds)
+
+  const productsByLoc = new Map<string, Set<string>>()
+  for (const row of inv ?? []) {
+    const locId = zoneToLoc.get(row.zone_id as string)
+    if (!locId) continue
+    let set = productsByLoc.get(locId)
+    if (!set) {
+      set = new Set()
+      productsByLoc.set(locId, set)
     }
-    const { data: inv } = await supabase.from('inventory_entries').select('product_id').in('zone_id', zids)
-    const distinct = new Set((inv ?? []).map((r) => r.product_id))
-    map.set(loc.id, distinct.size)
+    if (row.product_id) set.add(row.product_id as string)
+  }
+
+  for (const [locId, set] of productsByLoc) {
+    map.set(locId, set.size)
   }
   return map
 }
@@ -45,7 +73,7 @@ export default function LocationManagementScreen() {
   const { colors } = useThemeStore()
   const canWrite = useCanWrite()
   const isReadOnly = useIsReadOnly()
-  const { fetchLocations, addLocation, updateLocation, deleteLocation, setSelectedLocation } =
+  const { addLocation, updateLocation, deleteLocation, setSelectedLocation } =
     useWarehouseStore()
 
   const [viewMode, setViewMode] = useState<'all' | 'warehouse' | 'market'>('all')
@@ -101,13 +129,9 @@ export default function LocationManagementScreen() {
       if (now - lastFetchRef.current < FOCUS_FETCH_TTL_MS) return
       lastFetchRef.current = now
 
-      void (async () => {
-        // Vẫn gọi fetchLocations() cho store (các màn khác cần)
-        await fetchLocations()
-        // Fetch riêng tất cả locations cho màn này
-        await refetchAllLocations()
-      })()
-    }, [fetchLocations])
+      // Chỉ refetch local (mọi type) — store.locations sync qua CRUD actions / Map / B11
+      void refetchAllLocations()
+    }, [])
   )
 
   useEffect(() => {

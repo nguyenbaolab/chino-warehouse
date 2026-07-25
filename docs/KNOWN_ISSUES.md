@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-090] LocationManagement load chậm — buildSkuCountByLocation N×2 query tuần tự
+
+- **Mức độ:** Medium (perf / UX)
+- **File liên quan:** `screens/LocationManagementScreen.tsx`, `supabase/migrations/20260725_add_zones_location_id_index.sql`
+- **Mô tả:** `buildSkuCountByLocation` loop từng kho: 1 query zones + 1 query inventory → ~2N round-trip. Focus còn gọi thừa `fetchLocations()` (store appMode) rồi `refetchAllLocations()` (mọi type).
+- **Hướng fix:** Gộp thành 2 query (zones `.in(location_id)` + inventory `.in(zone_id)`); distinct `product_id` theo location; bỏ `fetchLocations` trên focus; index `idx_zones_location_id`.
+- **Trạng thái:** Resolved
+- **Đã fix:** 2N→2 query; schema v5.6 + migration index; focus chỉ `refetchAllLocations`.
+- **Tham chiếu:** Recon LocationManagement lag sau B13
+
+---
+
 ### [KI-089] Spinner kẹt sau TTL skip (Discount / InternalNotes)
 
 - **Mức độ:** Medium (UX)

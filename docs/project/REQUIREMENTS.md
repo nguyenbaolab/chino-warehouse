@@ -2,8 +2,9 @@
 
 **Ứng dụng:** Chino's Warehouse — Quản lý Kho Hàng Nội Bộ
 **Cửa hàng:** Chino's Boba Tea & Asian Market | Joensuu, Finland
-**Phiên bản:** 1.3.58 | Tháng 7/2026
+**Phiên bản:** 1.3.59 | Tháng 7/2026
 
+> **v1.3.59** — KI-090: LocationManagement SKU count 2N→2 query; index `zones.location_id`; bỏ fetchLocations trùng trên focus; schema v5.6.
 > **v1.3.58** — KI-089: Discount + InternalNotes `setLoading(false)` khi TTL skip (không spinner kẹt sau warm-cache).
 > **v1.3.57** — B13.9: Settings `auditSubtitle` = useMemo từ `latestAuditEntry` (KI-088); đóng hẳn B13.
 > **v1.3.56** — B13 Done: warm-cache trigger trong App.tsx (8 group sau bootstrapDone, không gate splash); KI-087 đóng hẳn.
