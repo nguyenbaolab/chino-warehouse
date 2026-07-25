@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(store): B7 Zustand useShallow selector — 4 màn
+
+- Import useShallow từ zustand/react/shallow
+- ProductsScreen, MapScreen, InternalNotesScreen, OrderDetailScreen: đổi useWarehouseStore() → useWarehouseStore(useShallow(s => ({...})))
+- Không bỏ field nào — chỉ đổi cách subscribe
+- KI-081 → Resolved
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(ui): B9 useCallback cho renderItem FlatList
 
 - InternalNotesScreen: renderFolderCard + renderNoteCard → useCallback

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { useShallow } from 'zustand/react/shallow'
 import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { OrderItem, OrderListStatus } from '../types'
 import { normalizeText } from '../utils/textUtils'
@@ -50,7 +51,23 @@ export default function OrderDetailScreen() {
     confirmOrderList,
     markOrderPlaced,
     getQtyUnit,
-  } = useWarehouseStore()
+  } = useWarehouseStore(
+    useShallow((s) => ({
+      products: s.products,
+      orderLists: s.orderLists,
+      orderItems: s.orderItems,
+      fetchProducts: s.fetchProducts,
+      fetchOrderLists: s.fetchOrderLists,
+      addOrderItem: s.addOrderItem,
+      updateOrderItem: s.updateOrderItem,
+      deleteOrderItem: s.deleteOrderItem,
+      updateOrderList: s.updateOrderList,
+      deleteOrderList: s.deleteOrderList,
+      confirmOrderList: s.confirmOrderList,
+      markOrderPlaced: s.markOrderPlaced,
+      getQtyUnit: s.getQtyUnit,
+    })),
+  )
   const qtyUnit = getQtyUnit()
 
   const [searchQuery, setSearchQuery] = useState('')

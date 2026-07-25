@@ -53,7 +53,8 @@
 - **File liên quan:** `screens/ProductsScreen.tsx` (23 fields), `screens/MapScreen.tsx` (17 fields), `screens/InternalNotesScreen.tsx` (13 fields), `screens/OrderDetailScreen.tsx` (13 fields), và các màn khác
 - **Mô tả:** Tất cả màn destructure useWarehouseStore() không dùng selector → bất kỳ field nào trong store thay đổi (kể cả field không liên quan, ví dụ MapScreen Realtime update zones) → toàn bộ component re-render kể cả khi đang ở tab khác.
 - **Hướng fix:** Chuyển sang selector cụ thể `useWarehouseStore(s => s.field)` hoặc `useShallow` cho nhóm fields liên quan. Thêm `React.memo` cho render item components.
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** useShallow selector trên 4 màn chính (ProductsScreen, MapScreen, InternalNotesScreen, OrderDetailScreen)
 - **Tham chiếu:** PLAN_7 B7
 
 ---

@@ -18,6 +18,7 @@ import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { useShallow } from 'zustand/react/shallow'
 import { useThemeStore } from '../stores/themeStore'
 import { useCanWrite } from '../stores/authStore'
 import { normalizeText } from '../utils/textUtils'
@@ -50,7 +51,22 @@ export default function InternalNotesScreen() {
     addInternalNoteFolder,
     updateInternalNoteFolder,
     deleteInternalNoteFolder,
-  } = useWarehouseStore()
+  } = useWarehouseStore(
+    useShallow((s) => ({
+      internalNotes: s.internalNotes,
+      internalNoteFolders: s.internalNoteFolders,
+      products: s.products,
+      fetchInternalNotes: s.fetchInternalNotes,
+      fetchInternalNoteFolders: s.fetchInternalNoteFolders,
+      fetchProducts: s.fetchProducts,
+      addInternalNote: s.addInternalNote,
+      updateInternalNote: s.updateInternalNote,
+      deleteInternalNote: s.deleteInternalNote,
+      addInternalNoteFolder: s.addInternalNoteFolder,
+      updateInternalNoteFolder: s.updateInternalNoteFolder,
+      deleteInternalNoteFolder: s.deleteInternalNoteFolder,
+    })),
+  )
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)

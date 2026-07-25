@@ -22,6 +22,7 @@ import ImageViewerModal from '../components/ImageViewerModal'
 import LotPickerModal from '../components/LotPickerModal'
 import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { useShallow } from 'zustand/react/shallow'
 import { useThemeStore } from '../stores/themeStore'
 import { useWarningStore } from '../stores/warningStore'
 import {
@@ -79,7 +80,31 @@ export default function ProductsScreen() {
     upsertProductBarcode,
     logBarcodeConflict,
     lookupProductByBarcode,
-  } = useWarehouseStore()
+  } = useWarehouseStore(
+    useShallow((s) => ({
+      products: s.products,
+      productsPage: s.productsPage,
+      productsPageLoading: s.productsPageLoading,
+      productsScreenEntries: s.productsScreenEntries,
+      productCategoriesL1: s.productCategoriesL1,
+      productCategoriesL2: s.productCategoriesL2,
+      pickingLists: s.pickingLists,
+      pickingListItems: s.pickingListItems,
+      fetchProducts: s.fetchProducts,
+      fetchProductsPage: s.fetchProductsPage,
+      fetchProductsScreenEntries: s.fetchProductsScreenEntries,
+      fetchCategories: s.fetchCategories,
+      fetchPickingLists: s.fetchPickingLists,
+      createPickingList: s.createPickingList,
+      addPickingItem: s.addPickingItem,
+      addProduct: s.addProduct,
+      updateProductImage: s.updateProductImage,
+      checkBarcodeConflict: s.checkBarcodeConflict,
+      upsertProductBarcode: s.upsertProductBarcode,
+      logBarcodeConflict: s.logBarcodeConflict,
+      lookupProductByBarcode: s.lookupProductByBarcode,
+    })),
+  )
   const { colors } = useThemeStore()
   const { expiryWarningEnabled, lowStockWarningEnabled } = useWarningStore()
   const canWrite = useCanWrite()

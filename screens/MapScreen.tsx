@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useIsFocused, useNavigation, useRoute } from '@react-navigation/native'
 import { supabase } from '../lib/supabase'
 import { useWarehouseStore } from '../stores/warehouseStore'
+import { useShallow } from 'zustand/react/shallow'
 import { useThemeStore, type ThemeColors } from '../stores/themeStore'
 import { Zone, ZoneCell, InventoryEntry, Product, Location, formatExpiryDate, getCombinedStatus, getCombinedStatusRank, ZONE_COLORS } from '../types'
 import { useWarningStore } from '../stores/warningStore'
@@ -128,7 +129,31 @@ export default function MapScreen() {
     deleteZone,
     searchProducts,
     searchInventoryByBarcode,
-  } = useWarehouseStore()
+  } = useWarehouseStore(
+    useShallow((s) => ({
+      locations: s.locations,
+      selectedLocationId: s.selectedLocationId,
+      zones: s.zones,
+      products: s.products,
+      inventoryEntries: s.inventoryEntries,
+      isLoading: s.isLoading,
+      appMode: s.appMode,
+      fetchLocations: s.fetchLocations,
+      fetchProducts: s.fetchProducts,
+      fetchInventoryByLocation: s.fetchInventoryByLocation,
+      fetchZonesSilent: s.fetchZonesSilent,
+      fetchInventoryByLocationSilent: s.fetchInventoryByLocationSilent,
+      setSelectedLocation: s.setSelectedLocation,
+      setAppMode: s.setAppMode,
+      getQtyUnit: s.getQtyUnit,
+      clearLocateIntent: s.clearLocateIntent,
+      addZone: s.addZone,
+      updateZone: s.updateZone,
+      deleteZone: s.deleteZone,
+      searchProducts: s.searchProducts,
+      searchInventoryByBarcode: s.searchInventoryByBarcode,
+    })),
+  )
   const qtyUnit = getQtyUnit()
 
   // Realtime dùng silent (không isLoading) — giữ fetchZones/fetchInventoryByLocation cho load chủ động
