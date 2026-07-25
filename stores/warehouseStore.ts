@@ -42,6 +42,8 @@ type WarehouseStore = {
   productCategoriesL2: ProductCategoryL2[]
   inventoryEntries: InventoryEntry[]
   discountedEntries: InventoryEntry[]
+  /** B1 Products — inventory scope riêng, không đụng inventoryEntries */
+  productsScreenEntries: InventoryEntry[]
   expiryEntries: InventoryEntry[]
   lowStockEntries: InventoryEntry[]
   orderLists: OrderList[]
@@ -91,6 +93,8 @@ type WarehouseStore = {
   fetchInventoryByLocationSilent: (locationId: string) => Promise<void>
   fetchAllInventoryEntries: () => Promise<{ error: string | null }>
   fetchDiscountedEntries: () => Promise<{ error: string | null }>
+  /** B1 Products — full hoặc theo location; ghi productsScreenEntries */
+  fetchProductsScreenEntries: (locationId?: string) => Promise<void>
   fetchExpiryEntries: () => Promise<{ error: string | null }>
   fetchLowStockEntries: () => Promise<{ error: string | null }>
   fetchProductLots: (productId: string) => Promise<InventoryEntry[]>
@@ -240,6 +244,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   productCategoriesL2: [],
   inventoryEntries: [],
   discountedEntries: [],
+  productsScreenEntries: [],
   expiryEntries: [],
   lowStockEntries: [],
   orderLists: [],
@@ -831,6 +836,66 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
     } catch (e) {
       if (__DEV__) console.error('[warehouseStore] fetchDiscountedEntries:', e)
       return { error: getErrorMessage(e, 'fetch') }
+    }
+  },
+
+  fetchProductsScreenEntries: async (locationId) => {
+    try {
+      const projection = `
+          id, product_id, zone_id, tier, quantity_boxes,
+          barcode, expiry_date, is_price_reduced, discount_percent,
+          is_special, is_checked, updated_at, notes,
+          product:products(
+            id, name, image_url, is_archived, is_discontinued,
+            ignore_expiry_warning, ignore_stock_warning,
+            low_warning_boxes, low_critical_boxes, warning_days,
+            category_level1_id, category_level2_id, updated_at
+          ),
+          zone:zones(
+            id, name, cells, location_id,
+            has_tiers, tier_count, color, updated_at
+          )
+        `
+
+      if (locationId) {
+        // Zone IDs theo location từ DB — giống fetchInventoryByLocationSilent, nhưng set riêng
+        const { data: zoneRows, error: zoneErr } = await supabase
+          .from('zones')
+          .select('id')
+          .eq('location_id', locationId)
+        if (zoneErr) {
+          if (__DEV__) console.error('[warehouseStore] fetchProductsScreenEntries (zones):', zoneErr)
+          return
+        }
+        const zoneIds = ((zoneRows as { id: string }[]) ?? []).map((z) => z.id)
+        if (zoneIds.length === 0) {
+          set({ productsScreenEntries: [] })
+          return
+        }
+        const { data, error } = await supabase
+          .from('inventory_entries')
+          .select(projection)
+          .in('zone_id', zoneIds)
+        if (error) {
+          if (__DEV__) console.error('[warehouseStore] fetchProductsScreenEntries:', error)
+          return
+        }
+        // TODO: refactor — cast tạm vì Supabase infer hẹp hơn type InventoryEntry sau projection
+        set({ productsScreenEntries: (data as unknown as InventoryEntry[]) ?? [] })
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('inventory_entries')
+        .select(projection)
+      if (error) {
+        if (__DEV__) console.error('[warehouseStore] fetchProductsScreenEntries:', error)
+        return
+      }
+      // TODO: refactor — cast tạm vì Supabase infer hẹp hơn type InventoryEntry sau projection
+      set({ productsScreenEntries: (data as unknown as InventoryEntry[]) ?? [] })
+    } catch (e) {
+      if (__DEV__) console.error('[warehouseStore] fetchProductsScreenEntries:', e)
     }
   },
 

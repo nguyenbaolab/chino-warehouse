@@ -86,6 +86,7 @@
 - **Mô tả:** Ba function cùng ghi vào `store.inventoryEntries` với strategy khác nhau: fetchAll set toàn bộ, fetchByZone merge theo zone_id, fetchByLocation merge theo zoneIdSet. Khi chạy đồng thời (ví dụ MapScreen Realtime + Notifications mount) → merge partial đè mất data → list hiển thị thiếu hoặc stale.
 - **Hướng fix:** Giải quyết tự nhiên khi làm B1 (mỗi màn fetch scope riêng). Nếu vẫn giữ shared state, cần sequence lock nhất quán.
 - **Trạng thái:** Open
+- **Partial — race condition giảm do productsScreenEntries / discountedEntries / expiryEntries / lowStockEntries tách riêng; fetchAllInventoryEntries vẫn dùng bởi Dashboard**
 - **Tham chiếu:** PLAN_7 B4
 
 ---
@@ -105,11 +106,11 @@
 ### [KI-076] Double-fetch fetchAllInventoryEntries — Notifications không TTL, Discount 2 lần mỗi focus
 
 - **Mức độ:** High (perf)
-- **File liên quan:** `screens/NotificationsScreen.tsx`, `screens/DiscountScreen.tsx`
+- **File liên quan:** `screens/NotificationsScreen.tsx`, `screens/DiscountScreen.tsx`, `screens/ProductsScreen.tsx`
 - **Mô tả:** Discount: `useFocusEffect` (TTL 30s) + `useEffect [filterLocationId]` (không TTL) cùng gọi `fetchAllInventoryEntries` → 2 call full data mỗi lần focus khi TTL chưa hết ở useFocusEffect. Notifications: chỉ có `useEffect [filterLocationId]` không TTL → fetch full mỗi lần focus vào tab.
 - **Hướng fix:** Loại bỏ duplicate call; thêm TTL cho Notifications. Giải quyết tự nhiên khi làm B1.
-- **Trạng thái:** Open
-- **Partial — Discount double-fetch fixed; Notifications TTL 30s done; Products còn lại**
+- **Trạng thái:** Resolved
+- **Đã fix:** Discount + Notifications + Products đều dùng useFocusEffect TTL 30s / fetch scope riêng — không còn double-fetch `fetchAllInventoryEntries` từ 3 màn này
 - **Tham chiếu:** PLAN_7 B2
 
 ---
@@ -120,8 +121,8 @@
 - **File liên quan:** `stores/warehouseStore.ts` (`fetchAllInventoryEntries`), `screens/NotificationsScreen.tsx`, `screens/DiscountScreen.tsx`, `screens/ProductsScreen.tsx`
 - **Mức độ chi tiết:** Kéo toàn bộ 550+ lô không có `.eq()` / `.filter()` / `.limit()` / pagination. Mỗi lô kèm nested product (12 cột) + zone (8 cột). Được gọi từ ít nhất 3 màn chính, mỗi màn filter local sau khi fetch. Là nguyên nhân chính gây lag và đơ app.
 - **Hướng fix:** Tạo function fetch chuyên biệt theo scope (expiry range cho Notifications, is_price_reduced cho Discount, location_id cho Products). Mỗi màn chỉ fetch đúng data cần hiển thị.
-- **Trạng thái:** Open
-- **Partial — Discount: done (fetchDiscountedEntries); Notifications done (fetchExpiryEntries + fetchLowStockEntries); Products còn lại**
+- **Trạng thái:** Resolved
+- **Đã fix:** Discount (`fetchDiscountedEntries`); Notifications (`fetchExpiryEntries` + `fetchLowStockEntries`); Products (`fetchProductsScreenEntries` → `productsScreenEntries`)
 - **Tham chiếu:** PLAN_7 B1
 
 ---

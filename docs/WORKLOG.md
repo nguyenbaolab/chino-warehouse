@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(products): B1 fetchProductsScreenEntries — tách state riêng + TTL 30s
+
+- Store: thêm `productsScreenEntries` state + `fetchProductsScreenEntries(locationId?)` (fetch full hoặc filter theo location; projection giống fetchAllInventoryEntries; ghi vào productsScreenEntries, không đụng inventoryEntries)
+- ProductsScreen: useFocusEffect TTL 30s thay useEffect #11; dùng productsScreenEntries thay inventoryEntries cho filter/qty (đổi filterLocationId bỏ qua TTL)
+- KI-075 → thêm Products done (Discount + Notifications + Products = fully resolved)
+- KI-076 → thêm Products TTL done (fully resolved)
+- KI-078 → race condition giảm: productsScreenEntries tách khỏi inventoryEntries
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — revert(discount): SectionList → FlatList tạm, xoá month group
 
 - DiscountScreen: xoá SectionList, chunkArray, getMonthKey, getMonthSortKey,

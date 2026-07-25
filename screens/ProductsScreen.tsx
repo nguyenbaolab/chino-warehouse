@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useNavigation, useRoute } from '@react-navigation/native'
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import ImageViewerModal from '../components/ImageViewerModal'
 import LotPickerModal from '../components/LotPickerModal'
 import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
@@ -50,6 +50,7 @@ import {
 import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 
 const PAGE_SIZE = 10
+const FOCUS_FETCH_TTL_MS = 30_000
 /** UUID sentinel — SP chưa tạo; mọi barcode đã gán SP khác đều là conflict. */
 const NEW_PRODUCT_CONFLICT_SENTINEL = '00000000-0000-0000-0000-000000000000'
 
@@ -60,15 +61,14 @@ export default function ProductsScreen() {
     products,
     productsPage,
     productsPageLoading,
-    inventoryEntries,
+    productsScreenEntries,
     productCategoriesL1,
     productCategoriesL2,
     pickingLists,
     pickingListItems,
     fetchProducts,
     fetchProductsPage,
-    fetchInventoryByLocation,
-    fetchAllInventoryEntries,
+    fetchProductsScreenEntries,
     fetchCategories,
     fetchPickingLists,
     createPickingList,
@@ -132,6 +132,8 @@ export default function ProductsScreen() {
   const [cartPickingListId, setCartPickingListId] = useState<string | null>(null)
   const [showCartModal, setShowCartModal] = useState(false)
   const flatListRef = useRef<FlatList<Product>>(null)
+  const lastInventoryFetchRef = useRef<number>(0)
+  const lastFilterLocationRef = useRef<string | null | undefined>(undefined)
 
   useEffect(() => {
     if (useWarehouseStore.getState().productCategoriesL1.length === 0) {
@@ -248,15 +250,18 @@ export default function ProductsScreen() {
     }
   }, [filterMode, filterLocations, filterLocationId, filterLocationsReady])
 
-  // KI-064: đảm bảo inventoryEntries đủ cho filter Mode/Kho (không phụ thuộc Map realtime)
-  useEffect(() => {
-    if (filterLocationId) {
-      void fetchInventoryByLocation(filterLocationId)
-      return
-    }
-    // all | warehouse | market chưa chọn kho → cần full entries để match modeZoneIds
-    void fetchAllInventoryEntries()
-  }, [filterMode, filterLocationId, fetchInventoryByLocation, fetchAllInventoryEntries])
+  // B1 Products: inventory scope riêng + TTL 30s (không đụng inventoryEntries)
+  // Đổi filterLocationId → bỏ qua TTL để list khớp kho đang chọn
+  useFocusEffect(
+    useCallback(() => {
+      const now = Date.now()
+      const locationChanged = lastFilterLocationRef.current !== filterLocationId
+      lastFilterLocationRef.current = filterLocationId
+      if (!locationChanged && now - lastInventoryFetchRef.current < FOCUS_FETCH_TTL_MS) return
+      lastInventoryFetchRef.current = now
+      void fetchProductsScreenEntries(filterLocationId ?? undefined)
+    }, [filterLocationId, fetchProductsScreenEntries]),
+  )
 
   useEffect(() => {
     if (!filterLocationId) {
@@ -297,7 +302,7 @@ export default function ProductsScreen() {
   useEffect(() => {
     const scannedInventoryEntryId: string | undefined = route.params?.scannedInventoryEntryId
     if (!scannedInventoryEntryId) return
-    const lot = inventoryEntries.find((entry) => entry.id === scannedInventoryEntryId)
+    const lot = productsScreenEntries.find((entry) => entry.id === scannedInventoryEntryId)
     if (lot) {
       setScannedLotId(lot.id)
       setSelectedZoneId(lot.zone_id)
@@ -308,7 +313,7 @@ export default function ProductsScreen() {
       scannedBarcode: undefined,
       scannedAt: undefined,
     })
-  }, [route.params?.scannedInventoryEntryId, route.params?.scannedBarcode, route.params?.scannedAt, inventoryEntries, navigation])
+  }, [route.params?.scannedInventoryEntryId, route.params?.scannedBarcode, route.params?.scannedAt, productsScreenEntries, navigation])
 
   function clearSearch() {
     setSearchQuery('')
@@ -341,11 +346,11 @@ export default function ProductsScreen() {
     const map = new Map<string, Product>()
     for (const p of products) map.set(p.id, p)
     for (const p of productsPage) map.set(p.id, p)
-    for (const entry of inventoryEntries) {
+    for (const entry of productsScreenEntries) {
       if (entry.product?.id) map.set(entry.product.id, entry.product)
     }
     return map
-  }, [products, productsPage, inventoryEntries])
+  }, [products, productsPage, productsScreenEntries])
 
   function entryInFilterScope(entry: { zone_id: string }): boolean {
     if (selectedZoneId != null && entry.zone_id !== selectedZoneId) return false
@@ -358,7 +363,7 @@ export default function ProductsScreen() {
 
   const qtySplitByProduct = useMemo(() => {
     const map = new Map<string, { warehouse: number; market: number; total: number }>()
-    for (const entry of inventoryEntries) {
+    for (const entry of productsScreenEntries) {
       if (!entryInFilterScope(entry)) continue
       const locType = locationTypeOfEntry(entry, locationById)
       const prev = map.get(entry.product_id) ?? { warehouse: 0, market: 0, total: 0 }
@@ -368,7 +373,7 @@ export default function ProductsScreen() {
       map.set(entry.product_id, prev)
     }
     return map
-  }, [inventoryEntries, selectedZoneId, filterLocationId, locationZoneSet, modeZoneIds, locationById])
+  }, [productsScreenEntries, selectedZoneId, filterLocationId, locationZoneSet, modeZoneIds, locationById])
 
   const filteredProducts = useMemo(() => {
     if (placeFilterActive && !placeFilterReady) return []
@@ -383,7 +388,7 @@ export default function ProductsScreen() {
     } else {
       // Mode Kho/Siêu thị hoặc kho/zone → chỉ SP có lô trong scope
       const idsInScope = new Set<string>()
-      for (const entry of inventoryEntries) {
+      for (const entry of productsScreenEntries) {
         if (entryInFilterScope(entry)) idsInScope.add(entry.product_id)
       }
       candidates = []
@@ -406,7 +411,7 @@ export default function ProductsScreen() {
         continue
       }
       if (showSpecialOnly) {
-        const hasSpecial = inventoryEntries.some((entry) => {
+        const hasSpecial = productsScreenEntries.some((entry) => {
           if (entry.product_id !== product.id || !entry.is_special) return false
           return entryInFilterScope(entry)
         })
@@ -415,7 +420,7 @@ export default function ProductsScreen() {
 
       if (searchNorm && looksLikeBarcode) {
         const nameOk = normalizeText(product.name).includes(searchNorm)
-        const barcodeOk = inventoryEntries.some(
+        const barcodeOk = productsScreenEntries.some(
           (entry) =>
             entry.product_id === product.id &&
             entry.barcode &&
@@ -437,7 +442,7 @@ export default function ProductsScreen() {
     placeFilterReady,
     productsPage,
     productById,
-    inventoryEntries,
+    productsScreenEntries,
     selectedZoneId,
     filterLocationId,
     locationZoneSet,
@@ -658,7 +663,7 @@ export default function ProductsScreen() {
   }
 
   async function handleCartPress(product: Product) {
-    const lots = inventoryEntries.filter(
+    const lots = productsScreenEntries.filter(
       (e) => e.product_id === product.id && (e.quantity_boxes ?? 0) > 0,
     )
     if (lots.length === 0) {
@@ -784,7 +789,7 @@ export default function ProductsScreen() {
             {product.is_archived && (
               <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
             )}
-            {scannedLotId && inventoryEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
+            {scannedLotId && productsScreenEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
               <Text style={[styles.itemSub, { color: colors.accent }]} numberOfLines={1}>
                 Kết quả quét barcode theo lô
               </Text>
@@ -847,7 +852,7 @@ export default function ProductsScreen() {
   }
 
   function getFilteredLotsByExpiry(productId: string) {
-    const relevantEntries = inventoryEntries.filter(
+    const relevantEntries = productsScreenEntries.filter(
       (entry) => entry.product_id === productId && entryInFilterScope(entry),
     )
 
@@ -859,7 +864,7 @@ export default function ProductsScreen() {
   }
 
   function getWorstStatusForProduct(productId: string): CombinedStatus {
-    const entries = inventoryEntries.filter(
+    const entries = productsScreenEntries.filter(
       (entry) => entry.product_id === productId && entryInFilterScope(entry),
     )
     if (entries.length === 0) return 'ok'
