@@ -180,7 +180,11 @@ export default function DiscountScreen() {
   useFocusEffect(
     useCallback(() => {
       const { shouldRefetch, markFetched } = useWarehouseStore.getState()
-      if (!shouldRefetch(TTL_DISCOUNT_SCREEN, FOCUS_FETCH_TTL_MS)) return
+      // TTL còn hiệu lực — data store coi như mới; tắt spinner (KI-089 / warm-cache)
+      if (!shouldRefetch(TTL_DISCOUNT_SCREEN, FOCUS_FETCH_TTL_MS)) {
+        setLoading(false)
+        return
+      }
 
       let cancelled = false
       void (async () => {

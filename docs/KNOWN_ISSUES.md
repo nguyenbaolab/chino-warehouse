@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-089] Spinner kẹt sau TTL skip (Discount / InternalNotes)
+
+- **Mức độ:** Medium (UX)
+- **File liên quan:** `screens/DiscountScreen.tsx`, `screens/InternalNotesScreen.tsx`
+- **Mô tả:** `loading` init `true`; `setLoading(false)` chỉ chạy sau fetch trong khối `shouldRefetch`. Warm-cache / TTL skip early-return → không tắt loading → Discount hiện spinner chặn cả màn dù store đã có data (tới khi TTL hết ~30s). InternalNotes rủi ro thấp hơn (`loading && length === 0`) nhưng cùng pattern.
+- **Hướng fix:** `setLoading(false)` trong nhánh early-return khi `!shouldRefetch`.
+- **Trạng thái:** Resolved
+- **Đã fix:** Cả 2 file — early-return gọi `setLoading(false)` trước `return`.
+- **Tham chiếu:** Rà soát sau B13 (cùng họ KI-088); PLAN_7 B13 follow-up
+
+---
+
 ### [KI-088] Settings auditSubtitle rỗng sau warm-cache settingsMain
 
 - **Mức độ:** Low (UX)

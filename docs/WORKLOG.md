@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(ui): KI-089 setLoading(false) khi TTL skip (Discount + Notes)
+
+- DiscountScreen + InternalNotesScreen: early-return `!shouldRefetch` → `setLoading(false)` trước return
+- Tránh spinner kẹt sau warm-cache B13 (loading init true không bao giờ tắt)
+- Không đổi nhánh fetch thật / TTL key / UI condition
+- KI-089 → Resolved
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — fix(settings): B13.9 auditSubtitle useMemo từ latestAuditEntry
 
 - store: `latestAuditEntry`; `fetchLatestAuditEntry` ghi state

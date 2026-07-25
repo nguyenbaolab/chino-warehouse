@@ -157,8 +157,9 @@ Phase 7 tập trung **đóng nợ F27 mở rộng (A1)** — feature bắt buộ
   7. **Done (B13.7)** — `settingsSubtitles` + `fetchSettingsSubtitles` trong store
   8. **Done** — Warm-cache trigger (`App.tsx`: 8 group sau `bootstrapDone`, không gate splash; reset khi logout)
   9. **Done (B13.9)** — `latestAuditEntry` + Settings `auditSubtitle` useMemo (KI-088) — đóng hẳn B13
-- **KI:** KI-087, KI-088 (Resolved)
-- **Trạng thái:** **Done** toàn bộ (kể cả B13.9)
+  10. **Done (follow-up)** — KI-089: Discount + InternalNotes `setLoading(false)` trên TTL early-return (rà soát sau B13, cùng họ KI-088)
+- **KI:** KI-087, KI-088, KI-089 (Resolved)
+- **Trạng thái:** **Done** toàn bộ (kể cả B13.9 + KI-089)
 
 ---
 
