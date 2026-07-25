@@ -521,109 +521,115 @@ export default function InternalNotesScreen() {
     ])
   }
 
-  function renderFolderCard({ item }: { item: InternalNoteFolder }) {
-    const count = countNotesInFolder(item)
-    return (
-      <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-        activeOpacity={0.75}
-        onPress={() => setSelectedFolder(item)}
-        onLongPress={() => handleFolderLongPress(item)}
-        delayLongPress={400}
-      >
-        <View style={styles.folderCardRow}>
-          <View style={styles.folderCardPressable}>
-            <Text style={[styles.folderName, { color: colors.text }]} numberOfLines={1}>
-              📁 {item.name}
-            </Text>
-            <View style={[styles.folderBadge, { backgroundColor: colors.accent + '26' }]}>
-              <Text style={[styles.folderBadgeText, { color: colors.accent }]}>{count}</Text>
+  const renderFolderCard = useCallback(
+    ({ item }: { item: InternalNoteFolder }) => {
+      const count = countNotesInFolder(item)
+      return (
+        <TouchableOpacity
+          style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
+          activeOpacity={0.75}
+          onPress={() => setSelectedFolder(item)}
+          onLongPress={() => handleFolderLongPress(item)}
+          delayLongPress={400}
+        >
+          <View style={styles.folderCardRow}>
+            <View style={styles.folderCardPressable}>
+              <Text style={[styles.folderName, { color: colors.text }]} numberOfLines={1}>
+                📁 {item.name}
+              </Text>
+              <View style={[styles.folderBadge, { backgroundColor: colors.accent + '26' }]}>
+                <Text style={[styles.folderBadgeText, { color: colors.accent }]}>{count}</Text>
+              </View>
             </View>
+            <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
           </View>
-          <Text style={[styles.chevron, { color: colors.sub }]}>›</Text>
-        </View>
-      </TouchableOpacity>
-    )
-  }
+        </TouchableOpacity>
+      )
+    },
+    [colors, internalNotes, canWrite],
+  )
 
-  function renderNoteCard({ item }: { item: InternalNote }) {
-    const hasLinkedProduct = !!item.product_id
-    const imageUrl = item.image_url ?? item.product?.image_url ?? null
-    const displayName = noteDisplayName(item)
-    const isCustomOnly = !hasLinkedProduct && !!item.custom_product_name?.trim()
+  const renderNoteCard = useCallback(
+    ({ item }: { item: InternalNote }) => {
+      const hasLinkedProduct = !!item.product_id
+      const imageUrl = item.image_url ?? item.product?.image_url ?? null
+      const displayName = noteDisplayName(item)
+      const isCustomOnly = !hasLinkedProduct && !!item.custom_product_name?.trim()
 
-    const mainContent = (
-      <View style={styles.cardRowMain}>
-        <View style={styles.thumbnailContainer}>
-          {imageUrl ? (
-            <TouchableOpacity activeOpacity={0.85} onPress={() => setZoomImageUrl(imageUrl)}>
-              <Image source={{ uri: imageUrl }} style={styles.thumbnail} contentFit="cover" cachePolicy="disk" />
-            </TouchableOpacity>
-          ) : canWrite ? (
-            <TouchableOpacity
-              onPress={() => void handlePickCardNoteImage(item)}
-              style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}
-              activeOpacity={0.7}
-            >
-              <Text style={{ fontSize: 24 }}>📷</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
-              <Text style={{ fontSize: 22 }}>{isCustomOnly ? '📝' : '📷'}</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.cardBody}>
-          <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-            {displayName}
-          </Text>
-          {isCustomOnly ? (
-            <Text style={[styles.customHint, { color: colors.sub }]}>
-              Sản phẩm chưa có trong hệ thống
+      const mainContent = (
+        <View style={styles.cardRowMain}>
+          <View style={styles.thumbnailContainer}>
+            {imageUrl ? (
+              <TouchableOpacity activeOpacity={0.85} onPress={() => setZoomImageUrl(imageUrl)}>
+                <Image source={{ uri: imageUrl }} style={styles.thumbnail} contentFit="cover" cachePolicy="disk" />
+              </TouchableOpacity>
+            ) : canWrite ? (
+              <TouchableOpacity
+                onPress={() => void handlePickCardNoteImage(item)}
+                style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 24 }}>📷</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+                <Text style={{ fontSize: 22 }}>{isCustomOnly ? '📝' : '📷'}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.cardBody}>
+            <Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+              {displayName}
             </Text>
-          ) : null}
-          <Text style={[styles.reason, { color: colors.text }]}>{item.reason}</Text>
-          <Text style={[styles.date, { color: colors.sub }]}>{formatNoteDate(item.created_at)}</Text>
+            {isCustomOnly ? (
+              <Text style={[styles.customHint, { color: colors.sub }]}>
+                Sản phẩm chưa có trong hệ thống
+              </Text>
+            ) : null}
+            <Text style={[styles.reason, { color: colors.text }]}>{item.reason}</Text>
+            <Text style={[styles.date, { color: colors.sub }]}>{formatNoteDate(item.created_at)}</Text>
+          </View>
         </View>
-      </View>
-    )
+      )
 
-    return (
-      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.cardRow}>
-          {hasLinkedProduct ? (
-            <TouchableOpacity
-              style={styles.cardPressable}
-              activeOpacity={0.7}
-              onPress={() => openProductDetail(item.product_id!)}
-            >
-              {mainContent}
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.cardPressable}>{mainContent}</View>
-          )}
-          {canWrite ? (
-            <View style={styles.cardActions}>
+      return (
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.cardRow}>
+            {hasLinkedProduct ? (
               <TouchableOpacity
-                style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                onPress={() => openEdit(item)}
-                hitSlop={8}
+                style={styles.cardPressable}
+                activeOpacity={0.7}
+                onPress={() => openProductDetail(item.product_id!)}
               >
-                <Text style={{ fontSize: 16 }}>✏️</Text>
+                {mainContent}
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
-                onPress={() => confirmDelete(item)}
-                hitSlop={8}
-              >
-                <Text style={{ fontSize: 16 }}>🗑️</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
+            ) : (
+              <View style={styles.cardPressable}>{mainContent}</View>
+            )}
+            {canWrite ? (
+              <View style={styles.cardActions}>
+                <TouchableOpacity
+                  style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                  onPress={() => openEdit(item)}
+                  hitSlop={8}
+                >
+                  <Text style={{ fontSize: 16 }}>✏️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.bg }]}
+                  onPress={() => confirmDelete(item)}
+                  hitSlop={8}
+                >
+                  <Text style={{ fontSize: 16 }}>🗑️</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+          </View>
         </View>
-      </View>
-    )
-  }
+      )
+    },
+    [colors, canWrite, navigation, deleteInternalNote, updateInternalNote],
+  )
 
   const showFolderTier = selectedFolder === null
 

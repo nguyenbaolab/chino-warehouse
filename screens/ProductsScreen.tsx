@@ -723,134 +723,6 @@ export default function ProductsScreen() {
     setCartPickingListId(null)
   }
 
-  function renderProductItem({ item: product }: { item: Product }) {
-    const groupedLots = getFilteredLotsByExpiry(product.id)
-    const categoryLine = getProductCategoryLine(product)
-    const productDotColor = getWorstDisplayColorForEntries(
-      groupedLots,
-      product,
-      colors,
-      expiryWarningEnabled,
-      lowStockWarningEnabled,
-    )
-    const isUploading = uploadingProductId === product.id
-    const totalSplit = qtySplitByProduct.get(product.id) ?? { warehouse: 0, market: 0, total: 0 }
-    const metaLine = categoryLine
-      ? `Tổng ${formatSplitQtyLabel(totalSplit.warehouse, totalSplit.market)} · ${categoryLine}`
-      : `Tổng ${formatSplitQtyLabel(totalSplit.warehouse, totalSplit.market)}`
-    return (
-      <View style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <View style={styles.itemRow}>
-          <TouchableOpacity
-            style={styles.thumbnailContainer}
-            activeOpacity={0.8}
-            disabled={isUploading}
-            onPress={() => {
-              if (isUploading) return
-              if (product.image_url) {
-                setViewingImage({ uri: product.image_url, productId: product.id })
-              } else if (canWrite) {
-                showImageOptions(product)
-              }
-            }}
-          >
-            {isUploading ? (
-              <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
-                <ActivityIndicator />
-              </View>
-            ) : product.image_url ? (
-              <Image source={{ uri: product.image_url }} style={styles.thumbnail} contentFit="cover" cachePolicy="disk" />
-            ) : (
-              <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
-                <Text style={{ fontSize: 24 }}>📷</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.itemContent}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
-          >
-            <View style={styles.itemTitleRow}>
-              <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
-              <Text
-                style={[
-                  styles.itemName,
-                  { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
-                ]}
-              >
-                {product.name}
-              </Text>
-            </View>
-            <Text style={[styles.itemMetaLine, { color: colors.sub }]} numberOfLines={2}>
-              {metaLine}
-            </Text>
-            {product.is_archived && (
-              <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
-            )}
-            {scannedLotId && productsScreenEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
-              <Text style={[styles.itemSub, { color: colors.accent }]} numberOfLines={1}>
-                Kết quả quét barcode theo lô
-              </Text>
-            )}
-
-            {groupedLots.length === 0 ? (
-              <Text style={[styles.noLotText, { color: colors.sub }]}>Chưa có lô hàng</Text>
-            ) : (
-              <View style={styles.lotGroupWrap}>
-                {groupedLots.map((lot, index) => {
-                  const lotStatus = getCombinedStatus(
-                    lot.quantity_boxes,
-                    lot.expiry_date,
-                    product.low_warning_boxes ?? 3,
-                    product.low_critical_boxes ?? 1,
-                    product.warning_days ?? 30
-                  )
-                  const dotColor = getDisplayColor(
-                    lotStatus,
-                    colors,
-                    expiryWarningEnabled,
-                    lowStockWarningEnabled,
-                    getDisplayColorContextFromEntry(lot, product),
-                  )
-                  return (
-                    <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotGroupItem}>
-                      <View style={styles.lotRow}>
-                        <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
-                        <Text style={[styles.lotText, { color: colors.sub }]}>
-                          Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes}{' '}
-                          {qtyUnitForLocationType(locationTypeOfEntry(lot, locationById))}
-                        </Text>
-                      </View>
-                    </View>
-                  )
-                })}
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-        {canWrite ? (
-          <TouchableOpacity
-            style={[
-              styles.cartBtn,
-              {
-                backgroundColor: colors.accent + '26',
-                position: 'absolute',
-                bottom: 8,
-                right: 8,
-              },
-            ]}
-            onPress={() => void handleCartPress(product)}
-            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-          >
-            <Text style={{ fontSize: 15 }}>🛒</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-    )
-  }
-
   function getFilteredLotsByExpiry(productId: string) {
     const relevantEntries = productsScreenEntries.filter(
       (entry) => entry.product_id === productId && entryInFilterScope(entry),
@@ -862,6 +734,168 @@ export default function ProductsScreen() {
       return aTime - bTime
     })
   }
+
+  function getProductCategoryLine(product: Product): string | null {
+    const l1name = product.category_level1_id
+      ? productCategoriesL1.find((c) => c.id === product.category_level1_id)?.name
+      : undefined
+    const l2name = product.category_level2_id
+      ? productCategoriesL2.find((c) => c.id === product.category_level2_id)?.name
+      : undefined
+    if (l1name && l2name) return `${l1name} · ${l2name}`
+    if (l1name) return l1name
+    return null
+  }
+
+  const renderProductItem = useCallback(
+    ({ item: product }: { item: Product }) => {
+      const groupedLots = getFilteredLotsByExpiry(product.id)
+      const categoryLine = getProductCategoryLine(product)
+      const productDotColor = getWorstDisplayColorForEntries(
+        groupedLots,
+        product,
+        colors,
+        expiryWarningEnabled,
+        lowStockWarningEnabled,
+      )
+      const isUploading = uploadingProductId === product.id
+      const totalSplit = qtySplitByProduct.get(product.id) ?? { warehouse: 0, market: 0, total: 0 }
+      const metaLine = categoryLine
+        ? `Tổng ${formatSplitQtyLabel(totalSplit.warehouse, totalSplit.market)} · ${categoryLine}`
+        : `Tổng ${formatSplitQtyLabel(totalSplit.warehouse, totalSplit.market)}`
+      return (
+        <View style={[styles.item, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.itemRow}>
+            <TouchableOpacity
+              style={styles.thumbnailContainer}
+              activeOpacity={0.8}
+              disabled={isUploading}
+              onPress={() => {
+                if (isUploading) return
+                if (product.image_url) {
+                  setViewingImage({ uri: product.image_url, productId: product.id })
+                } else if (canWrite) {
+                  showImageOptions(product)
+                }
+              }}
+            >
+              {isUploading ? (
+                <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+                  <ActivityIndicator />
+                </View>
+              ) : product.image_url ? (
+                <Image source={{ uri: product.image_url }} style={styles.thumbnail} contentFit="cover" cachePolicy="disk" />
+              ) : (
+                <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
+                  <Text style={{ fontSize: 24 }}>📷</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.itemContent}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('ProductDetail', { productId: product.id })}
+            >
+              <View style={styles.itemTitleRow}>
+                <View style={[styles.titleDot, { backgroundColor: productDotColor }]} />
+                <Text
+                  style={[
+                    styles.itemName,
+                    { color: colors.text, opacity: product.is_archived ? 0.55 : 1 },
+                  ]}
+                >
+                  {product.name}
+                </Text>
+              </View>
+              <Text style={[styles.itemMetaLine, { color: colors.sub }]} numberOfLines={2}>
+                {metaLine}
+              </Text>
+              {product.is_archived && (
+                <Text style={[styles.archivedTag, { color: colors.sub }]}>Đã ẩn</Text>
+              )}
+              {scannedLotId && productsScreenEntries.some((entry) => entry.id === scannedLotId && entry.product_id === product.id) && (
+                <Text style={[styles.itemSub, { color: colors.accent }]} numberOfLines={1}>
+                  Kết quả quét barcode theo lô
+                </Text>
+              )}
+
+              {groupedLots.length === 0 ? (
+                <Text style={[styles.noLotText, { color: colors.sub }]}>Chưa có lô hàng</Text>
+              ) : (
+                <View style={styles.lotGroupWrap}>
+                  {groupedLots.map((lot, index) => {
+                    const lotStatus = getCombinedStatus(
+                      lot.quantity_boxes,
+                      lot.expiry_date,
+                      product.low_warning_boxes ?? 3,
+                      product.low_critical_boxes ?? 1,
+                      product.warning_days ?? 30
+                    )
+                    const dotColor = getDisplayColor(
+                      lotStatus,
+                      colors,
+                      expiryWarningEnabled,
+                      lowStockWarningEnabled,
+                      getDisplayColorContextFromEntry(lot, product),
+                    )
+                    return (
+                      <View key={`${product.id}-${lot.expiry_date ?? 'none'}-${index}`} style={styles.lotGroupItem}>
+                        <View style={styles.lotRow}>
+                          <View style={[styles.lotDot, { backgroundColor: dotColor }]} />
+                          <Text style={[styles.lotText, { color: colors.sub }]}>
+                            Hạn: {formatExpiryDate(lot.expiry_date)} · {lot.quantity_boxes}{' '}
+                            {qtyUnitForLocationType(locationTypeOfEntry(lot, locationById))}
+                          </Text>
+                        </View>
+                      </View>
+                    )
+                  })}
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+          {canWrite ? (
+            <TouchableOpacity
+              style={[
+                styles.cartBtn,
+                {
+                  backgroundColor: colors.accent + '26',
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                },
+              ]}
+              onPress={() => void handleCartPress(product)}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+            >
+              <Text style={{ fontSize: 15 }}>🛒</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      )
+    },
+    [
+      canWrite,
+      colors,
+      expiryWarningEnabled,
+      lowStockWarningEnabled,
+      uploadingProductId,
+      qtySplitByProduct,
+      navigation,
+      scannedLotId,
+      productsScreenEntries,
+      locationById,
+      productCategoriesL1,
+      productCategoriesL2,
+      selectedZoneId,
+      filterLocationId,
+      locationZoneSet,
+      modeZoneIds,
+      pickingLists,
+      createPickingList,
+    ],
+  )
 
   function getWorstStatusForProduct(productId: string): CombinedStatus {
     const entries = productsScreenEntries.filter(
@@ -886,18 +920,6 @@ export default function ProductsScreen() {
       }
     }
     return worstStatus
-  }
-
-  function getProductCategoryLine(product: Product): string | null {
-    const l1name = product.category_level1_id
-      ? productCategoriesL1.find((c) => c.id === product.category_level1_id)?.name
-      : undefined
-    const l2name = product.category_level2_id
-      ? productCategoriesL2.find((c) => c.id === product.category_level2_id)?.name
-      : undefined
-    if (l1name && l2name) return `${l1name} · ${l2name}`
-    if (l1name) return l1name
-    return null
   }
 
   return (

@@ -4,6 +4,17 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(ui): B9 useCallback cho renderItem FlatList
+
+- InternalNotesScreen: renderFolderCard + renderNoteCard → useCallback
+- ProductsScreen: renderProductItem → useCallback
+- DiscountScreen: 2 inline renderItem trong modal → named const + useCallback
+- getItemLayout không áp dụng (không có item chiều cao cố định)
+- KI-083 → Resolved
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(ui): B6 expo-image thay Image RN — disk cache
 
 - Install expo-image (npx expo install)

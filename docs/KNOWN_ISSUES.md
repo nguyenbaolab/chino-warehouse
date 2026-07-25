@@ -30,7 +30,8 @@
 - **File liên quan:** `screens/NotificationsScreen.tsx`, `screens/DiscountScreen.tsx`, `screens/InternalNotesScreen.tsx`, `screens/ProductsScreen.tsx`
 - **Mô tả:** Tất cả FlatList/SectionList trong app đều không khai báo `getItemLayout`. Không có `React.memo` nào trong toàn bộ codebase. Scroll list lớn (Products 500+ SP) không tận dụng được optimization của FlatList.
 - **Hướng fix:** Thêm `getItemLayout` cho list item chiều cao cố định. Wrap render item bằng `React.memo`.
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** renderItem wrap useCallback trên 4 file; getItemLayout không áp dụng (height động)
 - **Tham chiếu:** PLAN_7 B9
 
 ---

@@ -554,6 +554,96 @@ export default function DiscountScreen() {
     [canWrite, colors, navigation],
   )
 
+  const renderAddProductSuggestion = useCallback(
+    ({ item }: { item: Product }) => (
+      <TouchableOpacity
+        style={[styles.addProductRow, { borderBottomColor: colors.border }]}
+        activeOpacity={0.75}
+        onPress={() => {
+          setAddSelectedProduct(item)
+          setAddSelectedLotIds(new Set())
+          setAddDiscountPercent('')
+        }}
+      >
+        {item.image_url ? (
+          <Image
+            source={{ uri: item.image_url }}
+            style={styles.addProductThumb}
+            contentFit="cover"
+            cachePolicy="disk"
+          />
+        ) : (
+          <View
+            style={[
+              styles.addProductThumb,
+              styles.addProductThumbPlaceholder,
+              { backgroundColor: colors.border },
+            ]}
+          >
+            <Text style={{ fontSize: 16 }}>📷</Text>
+          </View>
+        )}
+        <Text
+          style={[styles.addProductName, { color: colors.text }]}
+          numberOfLines={2}
+        >
+          {item.name}
+        </Text>
+      </TouchableOpacity>
+    ),
+    [colors],
+  )
+
+  const renderAddLotItem = useCallback(
+    ({ item: entry }: { item: InventoryEntry }) => {
+      const alreadyReduced = entry.is_price_reduced === true
+      const ticked = addSelectedLotIds.has(entry.id)
+      return (
+        <View style={[styles.addLotRow, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity
+            disabled={alreadyReduced}
+            onPress={() => {
+              setAddSelectedLotIds((prev) => {
+                const next = new Set(prev)
+                if (ticked) next.delete(entry.id)
+                else next.add(entry.id)
+                return next
+              })
+            }}
+            style={styles.addLotCheckbox}
+          >
+            <Text style={{ fontSize: 18 }}>
+              {alreadyReduced ? '☑️' : ticked ? '✅' : '⬜'}
+            </Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              style={{
+                color: alreadyReduced ? colors.sub : colors.text,
+                fontWeight: '600',
+                fontSize: 13,
+              }}
+            >
+              {entry.zone?.name ?? 'Zone'} · Tầng {entry.tier}
+            </Text>
+            <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
+              Tồn: {entry.quantity_boxes}
+              {entry.expiry_date
+                ? ` · Hạn: ${isoExpiryToDisplay(entry.expiry_date)}`
+                : ''}
+            </Text>
+            {alreadyReduced ? (
+              <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
+                Đã giảm giá
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      )
+    },
+    [addSelectedLotIds, colors],
+  )
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>
       <View style={styles.header}>
@@ -802,42 +892,7 @@ export default function DiscountScreen() {
                       Không tìm thấy sản phẩm.
                     </Text>
                   }
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={[styles.addProductRow, { borderBottomColor: colors.border }]}
-                      activeOpacity={0.75}
-                      onPress={() => {
-                        setAddSelectedProduct(item)
-                        setAddSelectedLotIds(new Set())
-                        setAddDiscountPercent('')
-                      }}
-                    >
-                      {item.image_url ? (
-                        <Image
-                          source={{ uri: item.image_url }}
-                          style={styles.addProductThumb}
-                          contentFit="cover"
-                          cachePolicy="disk"
-                        />
-                      ) : (
-                        <View
-                          style={[
-                            styles.addProductThumb,
-                            styles.addProductThumbPlaceholder,
-                            { backgroundColor: colors.border },
-                          ]}
-                        >
-                          <Text style={{ fontSize: 16 }}>📷</Text>
-                        </View>
-                      )}
-                      <Text
-                        style={[styles.addProductName, { color: colors.text }]}
-                        numberOfLines={2}
-                      >
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
+                  renderItem={renderAddProductSuggestion}
                 />
               </>
             ) : (
@@ -876,52 +931,7 @@ export default function DiscountScreen() {
                       Không có lô nào.
                     </Text>
                   }
-                  renderItem={({ item: entry }) => {
-                    const alreadyReduced = entry.is_price_reduced === true
-                    const ticked = addSelectedLotIds.has(entry.id)
-                    return (
-                      <View style={[styles.addLotRow, { borderBottomColor: colors.border }]}>
-                        <TouchableOpacity
-                          disabled={alreadyReduced}
-                          onPress={() => {
-                            setAddSelectedLotIds((prev) => {
-                              const next = new Set(prev)
-                              if (ticked) next.delete(entry.id)
-                              else next.add(entry.id)
-                              return next
-                            })
-                          }}
-                          style={styles.addLotCheckbox}
-                        >
-                          <Text style={{ fontSize: 18 }}>
-                            {alreadyReduced ? '☑️' : ticked ? '✅' : '⬜'}
-                          </Text>
-                        </TouchableOpacity>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text
-                            style={{
-                              color: alreadyReduced ? colors.sub : colors.text,
-                              fontWeight: '600',
-                              fontSize: 13,
-                            }}
-                          >
-                            {entry.zone?.name ?? 'Zone'} · Tầng {entry.tier}
-                          </Text>
-                          <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
-                            Tồn: {entry.quantity_boxes}
-                            {entry.expiry_date
-                              ? ` · Hạn: ${isoExpiryToDisplay(entry.expiry_date)}`
-                              : ''}
-                          </Text>
-                          {alreadyReduced ? (
-                            <Text style={{ color: colors.sub, fontSize: 12, marginTop: 2 }}>
-                              Đã giảm giá
-                            </Text>
-                          ) : null}
-                        </View>
-                      </View>
-                    )
-                  }}
+                  renderItem={renderAddLotItem}
                 />
                 )}
                 <TextInput
