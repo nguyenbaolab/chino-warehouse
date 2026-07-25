@@ -11,6 +11,7 @@ Tài liệu kỹ thuật cho Cursor (và dev) khi đọc/ghi code. Business đ�
 - **Supabase** — PostgreSQL + Realtime (backend)
 - **React Navigation** — Bottom Tabs + Native Stack
 - **expo-camera** — `CameraView`, quét barcode
+- **expo-image** — `Image` với `cachePolicy="disk"` (thumbnail list; KI-080 / B6)
 - **expo-notifications** — F35 local scheduled (daily/weekly/monthly expiry alerts)
 - **expo-print** — D4 xuất PDF (`printToFileAsync`) trên DiscountScreen
 - **expo-sharing** — D4 Share sheet sau xuất PDF (`shareAsync`)

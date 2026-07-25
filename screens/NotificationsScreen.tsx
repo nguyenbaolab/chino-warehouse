@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   FlatList,
-  Image,
   Platform,
   StyleSheet,
   Text,
@@ -10,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 import { useThemeStore } from '../stores/themeStore'
@@ -667,7 +667,8 @@ export default function NotificationsScreen() {
                     <Image
                       source={{ uri: item.image_url }}
                       style={styles.cardThumb}
-                      resizeMode="cover"
+                      contentFit="cover"
+                      cachePolicy="disk"
                     />
                   </TouchableOpacity>
                 ) : (

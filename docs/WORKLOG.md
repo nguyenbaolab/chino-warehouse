@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(ui): B6 expo-image thay Image RN — disk cache
+
+- Install expo-image (npx expo install)
+- Thay Image từ react-native → Image từ expo-image trên 5 file: ProductsScreen, DiscountScreen, NotificationsScreen, InternalNotesScreen, LotPickerModal
+- 9 chỗ tổng cộng: resizeMode → contentFit, thêm cachePolicy="disk"
+- ImageViewerModal giữ nguyên (dùng Animated.Image)
+- KI-080 → Resolved
+- Cần rebuild APK để có hiệu lực
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(store): B5 fetchProductsPage projection cụ thể
 
 - Thay select('*') → 10 cột thực dùng: id, name, image_url, is_archived, is_discontinued, category_level1_id, category_level2_id, low_warning_boxes, low_critical_boxes, warning_days

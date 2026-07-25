@@ -63,7 +63,9 @@
 - **File liên quan:** `screens/ProductsScreen.tsx`, `screens/DiscountScreen.tsx`, `screens/NotificationsScreen.tsx`, `screens/InternalNotesScreen.tsx`, `components/LotPickerModal.tsx`, `components/ImageViewerModal.tsx`
 - **Mô tả:** Toàn app dùng `Image` từ `react-native`, không có cache policy. Mỗi lần component mount lại (chuyển tab rồi quay về, scroll) → re-download ảnh từ Supabase Storage từ đầu. ProductsScreen 500+ SP có ảnh → hàng chục request đồng thời khi scroll.
 - **Hướng fix:** Install `expo-image`; thay `Image` RN → `Image` từ `expo-image` với `cachePolicy="disk"`. Cần rebuild APK.
-- **Trạng thái:** Open
+- **Trạng thái:** Resolved
+- **Đã fix:** expo-image + cachePolicy="disk" trên 5 file (9 chỗ); ImageViewerModal giữ Animated.Image
+- **Lưu ý:** cần rebuild APK để cache có hiệu lực
 - **Tham chiếu:** PLAN_7 B6
 
 ---

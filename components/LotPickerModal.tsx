@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
   Alert,
-  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -10,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { useThemeStore } from '../stores/themeStore'
 import ImageViewerModal from './ImageViewerModal'
 import { formatExpiryDate, InventoryEntry, Product } from '../types'
@@ -90,7 +90,7 @@ export default function LotPickerModal({
                   activeOpacity={0.85}
                   onPress={() => setZoomImageUrl(product.image_url!)}
                 >
-                  <Image source={{ uri: product.image_url }} style={styles.modalThumb} />
+                  <Image source={{ uri: product.image_url }} style={styles.modalThumb} contentFit="cover" cachePolicy="disk" />
                 </TouchableOpacity>
               ) : (
                 <View

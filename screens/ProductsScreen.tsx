@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'
 import ImageViewerModal from '../components/ImageViewerModal'
@@ -759,7 +759,7 @@ export default function ProductsScreen() {
                 <ActivityIndicator />
               </View>
             ) : product.image_url ? (
-              <Image source={{ uri: product.image_url }} style={styles.thumbnail} resizeMode="cover" />
+              <Image source={{ uri: product.image_url }} style={styles.thumbnail} contentFit="cover" cachePolicy="disk" />
             ) : (
               <View style={[styles.thumbnail, styles.thumbnailPlaceholder, { backgroundColor: colors.border }]}>
                 <Text style={{ fontSize: 24 }}>📷</Text>
@@ -1175,7 +1175,7 @@ export default function ProductsScreen() {
                         activeOpacity={0.85}
                         onPress={() => setViewingImage({ uri: createImageUri, productId: '' })}
                       >
-                        <Image source={{ uri: createImageUri }} style={styles.createImagePreview} resizeMode="cover" />
+                        <Image source={{ uri: createImageUri }} style={styles.createImagePreview} contentFit="cover" cachePolicy="disk" />
                       </TouchableOpacity>
                       <View style={styles.createImageActions}>
                         <TouchableOpacity onPress={showCreateImageOptions}>

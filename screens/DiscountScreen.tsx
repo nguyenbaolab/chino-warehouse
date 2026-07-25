@@ -4,7 +4,6 @@ import {
   Alert,
   Dimensions,
   FlatList,
-  Image,
   Modal,
   StyleSheet,
   Text,
@@ -12,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import * as FileSystem from 'expo-file-system/legacy'
@@ -509,7 +509,8 @@ export default function DiscountScreen() {
                 <Image
                   source={{ uri: product.image_url }}
                   style={styles.cardImage}
-                  resizeMode="cover"
+                  contentFit="cover"
+                  cachePolicy="disk"
                 />
               </TouchableOpacity>
             ) : (
@@ -815,7 +816,8 @@ export default function DiscountScreen() {
                         <Image
                           source={{ uri: item.image_url }}
                           style={styles.addProductThumb}
-                          resizeMode="cover"
+                          contentFit="cover"
+                          cachePolicy="disk"
                         />
                       ) : (
                         <View

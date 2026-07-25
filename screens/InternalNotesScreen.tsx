@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -15,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import { Image } from 'expo-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { useWarehouseStore } from '../stores/warehouseStore'
@@ -187,7 +187,7 @@ export default function InternalNotesScreen() {
         {imageUri ? (
           <View style={styles.noteImageWrap}>
             <TouchableOpacity onPress={() => setZoomImageUrl(imageUri)}>
-              <Image source={{ uri: imageUri }} style={styles.noteImagePreview} resizeMode="cover" />
+              <Image source={{ uri: imageUri }} style={styles.noteImagePreview} contentFit="cover" cachePolicy="disk" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.removeImageBtn} onPress={() => onSet(null)}>
               <Text style={{ color: colors.sub, fontSize: 12 }}>✕ Xoá ảnh</Text>
@@ -557,7 +557,7 @@ export default function InternalNotesScreen() {
         <View style={styles.thumbnailContainer}>
           {imageUrl ? (
             <TouchableOpacity activeOpacity={0.85} onPress={() => setZoomImageUrl(imageUrl)}>
-              <Image source={{ uri: imageUrl }} style={styles.thumbnail} resizeMode="cover" />
+              <Image source={{ uri: imageUrl }} style={styles.thumbnail} contentFit="cover" cachePolicy="disk" />
             </TouchableOpacity>
           ) : canWrite ? (
             <TouchableOpacity
@@ -806,7 +806,8 @@ export default function InternalNotesScreen() {
                         <Image
                           source={{ uri: selectedProduct.image_url }}
                           style={styles.selectedThumb}
-                          resizeMode="cover"
+                          contentFit="cover"
+                          cachePolicy="disk"
                         />
                       </TouchableOpacity>
                     ) : (
