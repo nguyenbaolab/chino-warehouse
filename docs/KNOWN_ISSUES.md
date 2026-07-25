@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-086] Settings subtitle refresh không TTL — chạy lại mọi lần focus
+
+- **Mức độ:** Medium (perf / UX)
+- **File liên quan:** `screens/SettingsScreen.tsx`
+- **Mô tả:** `useFocusEffect` luôn gọi `refreshStockCheckSubtitle` (3 query Supabase tuần tự), `refreshDiscountSubtitle`, `refreshNotifSubtitle` mỗi lần vào tab Settings — kể cả vừa fetch xong. Nhóm discontinued/notes/categories/audit đã có TTL 30s; 3 subtitle network không có → lag/đơ khi tap tab Cài đặt.
+- **Hướng fix:** Áp dụng cùng pattern TTL 30s (`lastSubtitleFetchedAt` + skip trong window; chỉ set timestamp sau khi 3 fetch hoàn tất). `refreshBiometric` giữ luôn chạy (local API).
+- **Trạng thái:** Resolved
+- **Đã fix:** TTL 30s cho 3 subtitle network; biometric không TTL. PLAN_7 B12.
+- **Tham chiếu:** PLAN_7 B12 (phát sinh recon Settings lag)
+
+---
+
 ### [KI-085] App không bootstrap data sau login — tab đầu luôn spinner
 
 - **Mức độ:** Medium (perf / UX)

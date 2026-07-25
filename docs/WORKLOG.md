@@ -4,6 +4,16 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(settings): B12 TTL 30s cho 3 subtitle network
+
+- SettingsScreen: `lastSubtitleFetchedAt` + TTL 30s cho stock/discount/notif subtitle (skip re-fetch trong window)
+- Chỉ set timestamp sau `Promise.all` 3 refresh thành công; `refreshBiometric` giữ luôn chạy (local)
+- Không đổi logic tính subtitle / UI / 3 query tuần tự trong stock-check
+- KI-086 → Resolved; PLAN_7 B12 Done
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — feat(app): B11 splash loading động — gate bootstrap sau login
 
 - Thêm `components/AppLoadingScreen.tsx`: logo splash-icon + SVG rounded rect stroke progress (0→90→100)

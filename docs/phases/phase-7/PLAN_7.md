@@ -135,6 +135,14 @@ Phase 7 tập trung **đóng nợ F27 mở rộng (A1)** — feature bắt buộ
 - **Hướng fix:** Sau login thành công, prefetch song song `fetchLocations` + `fetchProducts` (critical path MapScreen). Lazy fetch phần còn lại khi user vào các tab khác.
 - **KI:** KI-085
 
+### B12 — Settings subtitle focus TTL (phát sinh recon lag) — Done
+
+- **Vấn đề:** 3 subtitle network (`refreshStockCheckSubtitle`, `refreshDiscountSubtitle`, `refreshNotifSubtitle`) chạy lại **mọi lần** focus Settings — không TTL; nhóm discontinued/notes/audit đã có TTL 30s. Gây lag khi tap tab Cài đặt.
+- **Files:** `screens/SettingsScreen.tsx`
+- **Hướng fix:** Cùng pattern TTL 30s (`lastSubtitleFetchedAt`; chỉ update timestamp sau fetch OK). Biometric không TTL.
+- **KI:** KI-086
+- **Trạng thái:** Done
+
 ---
 
 ## Thứ tự làm việc Group B

@@ -46,6 +46,8 @@ export default function SettingsScreen() {
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricEnabled, setBiometricEnabled] = useState(false)
   const lastFetchedAt = useRef(0)
+  /** TTL riêng cho 3 subtitle network (stock / discount / notif) — KI-086 */
+  const lastSubtitleFetchedAt = useRef(0)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const FOCUS_FETCH_TTL_MS = 30_000
   const REALTIME_DEBOUNCE_MS = 2_000
@@ -141,11 +143,24 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // Subtitle Kiểm hàng + giảm giá + thông báo + biometric luôn refresh khi vào Settings
-      void refreshStockCheckSubtitle()
-      void refreshDiscountSubtitle()
-      void refreshNotifSubtitle()
+      // Biometric = local API — luôn refresh; không TTL
       void refreshBiometric()
+
+      // Subtitle network (stock / discount / notif): TTL 30s giống nhóm discontinued/notes/audit
+      if (Date.now() - lastSubtitleFetchedAt.current > FOCUS_FETCH_TTL_MS) {
+        void (async () => {
+          try {
+            await Promise.all([
+              refreshStockCheckSubtitle(),
+              refreshDiscountSubtitle(),
+              refreshNotifSubtitle(),
+            ])
+            lastSubtitleFetchedAt.current = Date.now()
+          } catch {
+            // Fetch lỗi — không set timestamp, lần focus sau vẫn thử lại
+          }
+        })()
+      }
 
       if (Date.now() - lastFetchedAt.current <= FOCUS_FETCH_TTL_MS) return
 
