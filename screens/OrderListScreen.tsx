@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
@@ -8,6 +8,11 @@ import { useCanWrite, useIsReadOnly } from '../stores/authStore'
 import { OrderListStatus, PickingListStatus } from '../types'
 
 type ListTab = 'orders' | 'picking'
+
+/** B13 — key TTL trong warehouseStore.fetchTimestamps */
+const TTL_ORDER_LIST = 'orderList'
+const TTL_PICKING_LIST = 'pickingList'
+const FOCUS_FETCH_TTL_MS = 30_000
 
 function orderStatusLabel(status: OrderListStatus): string {
   if (status === 'confirmed') return 'Đã confirm'
@@ -39,22 +44,22 @@ export default function OrderListScreen() {
 
   const [activeTab, setActiveTab] = useState<ListTab>('picking')
 
-  // KI-039: TTL 30s — riêng từng tab
-  const FOCUS_FETCH_TTL_MS = 30_000
-  const lastOrderFetchRef = useRef(0)
-  const lastPickingFetchRef = useRef(0)
-
+  // B13: TTL 30s qua store (shouldRefetch / markFetched) — mark sau khi Promise resolve
   useFocusEffect(
     useCallback(() => {
-      const now = Date.now()
+      const { shouldRefetch, markFetched } = useWarehouseStore.getState()
       if (activeTab === 'orders') {
-        if (now - lastOrderFetchRef.current < FOCUS_FETCH_TTL_MS) return
-        lastOrderFetchRef.current = now
-        void fetchOrderLists()
+        if (!shouldRefetch(TTL_ORDER_LIST, FOCUS_FETCH_TTL_MS)) return
+        void (async () => {
+          await fetchOrderLists()
+          markFetched(TTL_ORDER_LIST)
+        })()
       } else {
-        if (now - lastPickingFetchRef.current < FOCUS_FETCH_TTL_MS) return
-        lastPickingFetchRef.current = now
-        void fetchPickingLists()
+        if (!shouldRefetch(TTL_PICKING_LIST, FOCUS_FETCH_TTL_MS)) return
+        void (async () => {
+          await fetchPickingLists()
+          markFetched(TTL_PICKING_LIST)
+        })()
       }
     }, [activeTab, fetchOrderLists, fetchPickingLists]),
   )
@@ -62,15 +67,18 @@ export default function OrderListScreen() {
   // Prefetch khi đổi tab (nếu TTL đã hết)
   function switchTab(tab: ListTab) {
     setActiveTab(tab)
-    const now = Date.now()
+    const { shouldRefetch, markFetched } = useWarehouseStore.getState()
     if (tab === 'orders') {
-      if (now - lastOrderFetchRef.current >= FOCUS_FETCH_TTL_MS) {
-        lastOrderFetchRef.current = now
-        void fetchOrderLists()
-      }
-    } else if (now - lastPickingFetchRef.current >= FOCUS_FETCH_TTL_MS) {
-      lastPickingFetchRef.current = now
-      void fetchPickingLists()
+      if (!shouldRefetch(TTL_ORDER_LIST, FOCUS_FETCH_TTL_MS)) return
+      void (async () => {
+        await fetchOrderLists()
+        markFetched(TTL_ORDER_LIST)
+      })()
+    } else if (shouldRefetch(TTL_PICKING_LIST, FOCUS_FETCH_TTL_MS)) {
+      void (async () => {
+        await fetchPickingLists()
+        markFetched(TTL_PICKING_LIST)
+      })()
     }
   }
 

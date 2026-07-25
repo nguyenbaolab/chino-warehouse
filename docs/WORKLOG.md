@@ -4,6 +4,15 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — perf(store): B13.1 fetchTimestamps + migrate OrderList TTL
+
+- warehouseStore: `fetchTimestamps`, `shouldRefetch(key, ttlMs)`, `markFetched(key)`
+- OrderListScreen: bỏ useRef cục bộ; keys `orderList` / `pickingList`; markFetched sau await fetch
+- KI-087 Partial (còn Discount, Notifications, InternalNotes, Settings, Products + warm trigger)
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — perf(settings): B12 TTL 30s cho 3 subtitle network
 
 - SettingsScreen: `lastSubtitleFetchedAt` + TTL 30s cho stock/discount/notif subtitle (skip re-fetch trong window)

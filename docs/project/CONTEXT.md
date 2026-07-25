@@ -204,11 +204,13 @@ README.md
 
 ## §4a Store — `warehouseStore.ts`
 
-**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`, **`type`**), `selectedLocationId`, **`appMode`** (`'warehouse' | 'market'`, default `'warehouse'`), `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, **`discountedEntries`**, **`productsScreenEntries`**, **`expiryEntries`**, **`lowStockEntries`** (B1 Phase 7 — scope riêng từng màn), `orderLists`, `orderItems`, **`internalNotes`** (F31), `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail). **F24 Task 2+ (planned):** `users` (danh sách cho admin/super_admin).
+**State:** `locations` (mỗi `Location` có `grid_rows`, `grid_cols`, **`type`**), `selectedLocationId`, **`appMode`** (`'warehouse' | 'market'`, default `'warehouse'`), `zones`, `products`, `productCategoriesL1`, `productCategoriesL2`, `inventoryEntries`, **`discountedEntries`**, **`productsScreenEntries`**, **`expiryEntries`**, **`lowStockEntries`** (B1 Phase 7 — scope riêng từng màn), `orderLists`, `orderItems`, **`internalNotes`** (F31), `isLoading`, **`locateIntent`** (`LocateIntent | null` — cross-tab Map locate từ ProductDetail), **`fetchTimestamps`** (`Record<string, number>` — B13 TTL dùng chung). **F24 Task 2+ (planned):** `users` (danh sách cho admin/super_admin).
 
 **Actions — mode (F36 C2):** `setAppMode(mode)` — set `appMode`, clear `selectedLocationId` / `zones` / `inventoryEntries`, gọi `fetchLocations()`; **`getQtyUnit()`** → `'thùng'` | `'sản phẩm'`.
 
 **Actions — locate:** `setLocateIntent`, `clearLocateIntent`.
+
+**Actions — TTL / warm-cache (B13):** **`shouldRefetch(key, ttlMs)`** — `true` nếu chưa có timestamp hoặc đã quá TTL; **`markFetched(key)`** — ghi `fetchTimestamps[key] = Date.now()` (gọi sau fetch OK). Keys đang dùng: `'orderList'`, `'pickingList'` (OrderListScreen). Màn khác vẫn `useRef` cục bộ — migrate dần.
 
 **Actions — user management (F24 Task 2+):** `fetchUsers`, `createUser`, `updateUserRole`, `toggleUserDisabled`, `toggleUserGuest`.
 

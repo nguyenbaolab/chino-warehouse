@@ -54,9 +54,14 @@ type WarehouseStore = {
   internalNoteFolders: InternalNoteFolder[]
   isLoading: boolean
   locateIntent: LocateIntent | null
+  /** B13 — TTL timestamps theo key (vd 'orderList', 'pickingList'); warm-cache dùng chung */
+  fetchTimestamps: Record<string, number>
 
   setSelectedLocation: (id: string) => void
   setAppMode: (mode: 'warehouse' | 'market') => void
+  /** true nếu chưa fetch hoặc đã quá ttlMs kể từ markFetched */
+  shouldRefetch: (key: string, ttlMs: number) => boolean
+  markFetched: (key: string) => void
   /** Label đơn vị số lượng theo mode: thùng | sản phẩm */
   // TODO: Phase tiếp theo — cho user tự thêm mode + đơn vị custom (bảng location_types).
   // Hiện tại hardcode 'warehouse' → 'thùng', 'market' → 'sản phẩm'.
@@ -255,6 +260,7 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   internalNoteFolders: [],
   isLoading: false,
   locateIntent: null,
+  fetchTimestamps: {},
 
   setSelectedLocation: (id) => {
     set({ selectedLocationId: id })
@@ -278,6 +284,19 @@ export const useWarehouseStore = create<WarehouseStore>((set, get) => ({
   setLocateIntent: (intent) => set({ locateIntent: intent }),
 
   clearLocateIntent: () => set({ locateIntent: null }),
+
+  // B13 — TTL dùng chung (OrderList proof-of-concept; màn khác migrate sau)
+  shouldRefetch: (key, ttlMs) => {
+    const ts = get().fetchTimestamps[key]
+    if (ts == null) return true
+    return Date.now() - ts > ttlMs
+  },
+
+  markFetched: (key) => {
+    set((state) => ({
+      fetchTimestamps: { ...state.fetchTimestamps, [key]: Date.now() },
+    }))
+  },
 
   fetchLocations: async () => {
     const { data } = await supabase
