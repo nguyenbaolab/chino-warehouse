@@ -4,6 +4,18 @@ Nhật ký thay đổi có ý nghĩa (DEV ghi sau mỗi task theo `docs/project/
 
 ---
 
+## [tháng 7/2026] — fix(ui): KI-092 Dashboard double-fetch + spinner refcount + Realtime stable
+
+- Filter inventory effect: skip mount + fetchAll chỉ khi filterLocationId đổi
+- refreshData: inFlightRefreshCountRef cho isRefreshing
+- Realtime: refreshDataRef, deps [] (không resubscribe khi đổi filter)
+- useShallow cho store slice Dashboard
+- Không đụng fetchAll/byZone race (KI-078 / B4)
+- KI-092 → Resolved; REQUIREMENTS v1.3.61
+- npx tsc --noEmit pass
+
+---
+
 ## [tháng 7/2026] — fix(ui): KI-091 DiscontinuedProducts debounce + spinner + useShallow
 
 - Realtime products/inventory: debounce 2s (mẫu Dashboard), clearTimeout khi unmount

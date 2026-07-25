@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import { useShallow } from 'zustand/react/shallow'
 import SimplePieChart, { PieSlice } from '../components/SimplePieChart'
 import FilterModal, { formatFilterSummary, type FilterMode } from '../components/FilterModal'
 import { useThemeStore } from '../stores/themeStore'
@@ -46,7 +47,17 @@ export default function DashboardScreen() {
     fetchProducts,
     fetchAllInventoryEntries,
     fetchInventoryByZone,
-  } = useWarehouseStore()
+  } = useWarehouseStore(
+    useShallow((s) => ({
+      locations: s.locations,
+      products: s.products,
+      inventoryEntries: s.inventoryEntries,
+      fetchLocations: s.fetchLocations,
+      fetchProducts: s.fetchProducts,
+      fetchAllInventoryEntries: s.fetchAllInventoryEntries,
+      fetchInventoryByZone: s.fetchInventoryByZone,
+    })),
+  )
 
   const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [filterLocationId, setFilterLocationId] = useState<string | null>(null)
@@ -60,6 +71,14 @@ export default function DashboardScreen() {
 
   const lastFetchedAt = useRef(0)
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** KI-092 — đếm refreshData chồng nhau; chỉ tắt spinner khi về 0 */
+  const inFlightRefreshCountRef = useRef(0)
+  const refreshDataRef = useRef<
+    ((source?: 'realtime' | 'manual') => Promise<void>) | null
+  >(null)
+  /** Skip fetch inventory theo filter ở lần mount đầu (focus lo) */
+  const filterInventoryFetchMountedRef = useRef(false)
+  const prevFilterLocationIdForFetchRef = useRef<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -216,7 +235,8 @@ export default function DashboardScreen() {
   )
 
   const refreshData = useCallback(async (source: 'realtime' | 'manual' = 'manual') => {
-    setIsRefreshing(true)
+    inFlightRefreshCountRef.current += 1
+    if (inFlightRefreshCountRef.current === 1) setIsRefreshing(true)
     try {
       // Realtime: chỉ inventory — tránh refetch locations/products làm re-render rộng
       if (source === 'manual') {
@@ -230,7 +250,8 @@ export default function DashboardScreen() {
       }
       lastFetchedAt.current = Date.now()
     } finally {
-      setIsRefreshing(false)
+      inFlightRefreshCountRef.current -= 1
+      if (inFlightRefreshCountRef.current === 0) setIsRefreshing(false)
     }
   }, [
     fetchLocations,
@@ -241,6 +262,11 @@ export default function DashboardScreen() {
     zonesForFilterLoc,
   ])
 
+  // Giữ callback mới nhất — Realtime không phụ thuộc refreshData (tránh resubscribe khi đổi filter)
+  useEffect(() => {
+    refreshDataRef.current = refreshData
+  }, [refreshData])
+
   useFocusEffect(
     useCallback(() => {
       if (Date.now() - lastFetchedAt.current <= FOCUS_FETCH_TTL_MS) return
@@ -250,8 +276,9 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     if (!filterLocationId) {
-      setZonesForFilterLoc([])
-      setSelectedZoneId(null)
+      // Tránh set [] mới mỗi lần → không kích effect inventory thừa lúc mount
+      setZonesForFilterLoc((prev) => (prev.length === 0 ? prev : []))
+      setSelectedZoneId((prev) => (prev === null ? prev : null))
       return
     }
     let cancelled = false
@@ -271,11 +298,26 @@ export default function DashboardScreen() {
     }
   }, [filterLocationId])
 
+  // Bypass TTL khi user ĐỔI filter — skip lần mount đầu (focus đã fetch; tránh double fetchAll)
   useEffect(() => {
-    if (!filterLocationId) {
-      void fetchAllInventoryEntries()
+    if (!filterInventoryFetchMountedRef.current) {
+      filterInventoryFetchMountedRef.current = true
+      prevFilterLocationIdForFetchRef.current = filterLocationId
       return
     }
+
+    const locationChanged = prevFilterLocationIdForFetchRef.current !== filterLocationId
+    if (locationChanged) {
+      prevFilterLocationIdForFetchRef.current = filterLocationId
+    }
+
+    if (!filterLocationId) {
+      // Clear kho → fetch all chỉ khi location vừa đổi (không khi zones reset)
+      if (locationChanged) void fetchAllInventoryEntries()
+      return
+    }
+
+    // Chọn kho: chờ zones load rồi fetch (có thể locationChanged=false ở lần zones cập nhật)
     if (zonesForFilterLoc.length === 0) return
     void Promise.all(zonesForFilterLoc.map((z) => fetchInventoryByZone(z.id)))
   }, [filterLocationId, zonesForFilterLoc, fetchAllInventoryEntries, fetchInventoryByZone])
@@ -285,7 +327,7 @@ export default function DashboardScreen() {
       if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current)
       realtimeDebounceRef.current = setTimeout(() => {
         realtimeDebounceRef.current = null
-        void refreshData('realtime')
+        void refreshDataRef.current?.('realtime')
       }, REALTIME_DEBOUNCE_MS)
     }
 
@@ -302,7 +344,7 @@ export default function DashboardScreen() {
       realtimeDebounceRef.current = null
       void supabase.removeChannel(channel)
     }
-  }, [refreshData])
+  }, [])
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.bg }]}>

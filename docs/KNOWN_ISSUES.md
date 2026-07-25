@@ -2,6 +2,18 @@
 
 ---
 
+### [KI-092] Dashboard — double fetch mount + spinner chồng + Realtime resubscribe
+
+- **Mức độ:** Medium (perf / UX)
+- **File liên quan:** `screens/DashboardScreen.tsx`
+- **Mô tả:** (1) useEffect filter (`filterLocationId`/`zonesForFilterLoc`) gọi `fetchAllInventoryEntries` cả lúc mount → chồng `useFocusEffect` → double fetch khi mở Dashboard; (2) `isRefreshing` true/false theo từng `refreshData` không refcount → spinner nhấp nháy khi manual + Realtime chồng; (3) Realtime `useEffect` deps `[refreshData]` → resubscribe mỗi lần đổi filter (vì `refreshData` phụ thuộc `zonesForFilterLoc`); (4) full `useWarehouseStore()` không useShallow.
+- **Hướng fix:** Skip mount + chỉ fetchAll khi location đổi; refcount `inFlightRefreshCountRef`; `refreshDataRef` + Realtime deps `[]`; useShallow.
+- **Trạng thái:** Resolved
+- **Đã fix:** Double fetch mount; refcount spinner; stable Realtime; useShallow. **KI-078** (race `inventoryEntries` giữa fetchAll / byZone) **vẫn mở** — không thuộc fix này.
+- **Tham chiếu:** Recon Dashboard spinner sau B13; KI-078
+
+---
+
 ### [KI-091] DiscontinuedProducts — Realtime không debounce + spinner TTL + full store subscribe
 
 - **Mức độ:** Medium (perf / UX)
